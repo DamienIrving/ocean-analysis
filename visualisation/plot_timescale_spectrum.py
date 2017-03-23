@@ -25,7 +25,7 @@ cwd = os.getcwd()
 repo_dir = '/'
 for directory in cwd.split('/')[1:]:
     repo_dir = os.path.join(repo_dir, directory)
-    if directory == 'climate-analysis':
+    if directory == 'ocean-analysis':
         break
 
 modules_dir = os.path.join(repo_dir, 'modules')
@@ -37,7 +37,7 @@ try:
     import calc_fourier_transform as cft
     import calc_composite
 except ImportError:
-    raise ImportError('Must run this script from anywhere within the climate-analysis git repo')
+    raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
 
 # Define functions

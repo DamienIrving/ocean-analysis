@@ -162,9 +162,9 @@ for region in ${regions[@]}; do
         climatology_files="${obs_clim} ${canesm_clim} ${ccsm_clim} ${csiro_clim} ${fgoals_clim} ${gfdl_cm_clim} ${gfdl_esm_clim} ${gisseh_p1_clim} ${gisseh_p3_clim} ${gisser_p1_clim} ${gisser_p3_clim} ${ipsl_clim} ${noresm_clim}"  
 
     if [[ ${dry_run} == 'yes' ]] ; then
-        echo  ${python} ~/climate-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historical  --runs ${runs[@]}
+        echo  ${python} ~/ocean-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historical  --runs ${runs[@]}
     else
-         ${python} ~/climate-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historical  --runs ${runs[@]}
+         ${python} ~/ocean-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historical  --runs ${runs[@]}
         echo ${outfile}
     fi
 
@@ -283,9 +283,9 @@ for region in ${regions[@]}; do
         climatology_files="${canesm_clim} ${ccsm_clim} ${csiro_clim} ${fgoals_clim} ${gfdl_cm_clim} ${gfdl_esm_clim} ${gisseh_clim} blank ${gisser_clim} blank ${ipsl_clim} ${noresm_clim}"
 
     if [[ ${dry_run} == 'yes' ]] ; then
-        echo  ${python} ~/climate-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historicalGHG  --runs ${runs[@]}
+        echo  ${python} ~/ocean-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historicalGHG  --runs ${runs[@]}
     else
-         ${python} ~/climate-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historicalGHG  --runs ${runs[@]}
+         ${python} ~/ocean-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historicalGHG  --runs ${runs[@]}
         echo ${outfile}
     fi
 
@@ -414,9 +414,9 @@ for region in ${regions[@]}; do
         climatology_files="${canesm_clim} ${ccsm_clim} ${csiro_clim} ${fgoals_clim} ${gfdl_cm_clim} ${gfdl_esm_clim} ${gisseh_p107_clim} ${gisseh_p310_clim} ${gisser_p107_clim} ${gisser_p310_clim} ${ipsl_clim} ${noresm_clim}"
 
     if [[ ${dry_run} == 'yes' ]] ; then
-        echo  ${python} ~/climate-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historicalAA  --runs ${runs[@]}
+        echo  ${python} ~/ocean-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historicalAA  --runs ${runs[@]}
     else
-         ${python} ~/climate-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historicalAA  --runs ${runs[@]}
+         ${python} ~/ocean-analysis/visualisation/plot_ocean_trend_ensemble.py ${data_files[@]} ${long_name} ${region} ${nrows} ${ncols} ${outfile} --palette ${palette} --climatology_files ${climatology_files[@]} ${ticks[@]} --scale_factor 3 --experiment historicalAA  --runs ${runs[@]}
         echo ${outfile}
     fi
 

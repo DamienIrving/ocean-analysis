@@ -86,6 +86,6 @@ for run in "${runs[@]}"; do
 
     echo ${out_file}
     mkdir -p ${outdir}
-    ${python} ~/climate-analysis/data_processing/calc_global_metric.py ${data_file} ${standard_name} ${metric} ${out_file} --area_file ${area_file}
+    ${python} ~/ocean-analysis/data_processing/calc_global_metric.py ${data_file} ${standard_name} ${metric} ${out_file} --area_file ${area_file}
 
 done

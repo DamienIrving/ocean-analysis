@@ -77,7 +77,7 @@ def calc_ensmean(infiles, execute):
 def main(inargs):
     """Run the program."""
 
-    command_list = ['python', '/home/599/dbi599/climate-analysis/visualisation/plot_global_indicators.py']
+    command_list = ['python', '/home/599/dbi599/ocean-analysis/visualisation/plot_global_indicators.py']
     experiments = [('historical', 'p1'), ('historicalGHG', 'p1'), ('historicalNat', 'p1')]
     if inargs.aa_physics:
         experiments.append(('historicalMisc', 'p' + inargs.aa_physics))

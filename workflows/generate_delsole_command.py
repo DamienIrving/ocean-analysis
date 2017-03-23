@@ -37,7 +37,7 @@ def main(inargs):
     xvar_id, xregion, xmetric, xname = variable_details(inargs.xvar)
     yvar_id, xregion, ymetric, yname = variable_details(inargs.yvar)
     
-    command_list = ['python', '/home/599/dbi599/climate-analysis/visualisation/plot_delsole.py', xname, yname, xmetric, ymetric]
+    command_list = ['python', '/home/599/dbi599/ocean-analysis/visualisation/plot_delsole.py', xname, yname, xmetric, ymetric]
     experiment_list = []
     for experiment, physics in inargs.experiment:
         xfiles = glob.glob('/g/data/r87/dbi599/drstree/CMIP5/GCM/*/%s/%s/yr/*/%s/%si1%s/%s-%s-%s_*.nc'  %(inargs.model, experiment, xvar_id, inargs.run, physics, xvar_id, xregion, xmetric))

@@ -76,5 +76,5 @@ climatology=${model_dir}/historical/yr/ocean/${variable}-maps/${run}i1p1/${varia
 file_AA=${model_dir}/historicalMisc/yr/ocean/${variable}-maps/${run}i1${aa_physics}/${variable}-maps-global-tas-trend_Oyr_${model}_historicalMisc_${run}i1${aa_physics}_1950-01-01_2000-12-31.nc
 
 
-echo ${python} ~/climate-analysis/visualisation/plot_ocean_trend.py ${file_GHG} ${long_name} ${plot_type}_mean ${outfile} --palette ${palette} --sub_file ${file_AA} --climatology_file ${climatology} --${tick_label}_ticks ${tick_max} ${tick_step} 
+echo ${python} ~/ocean-analysis/visualisation/plot_ocean_trend.py ${file_GHG} ${long_name} ${plot_type}_mean ${outfile} --palette ${palette} --sub_file ${file_AA} --climatology_file ${climatology} --${tick_label}_ticks ${tick_max} ${tick_step} 
 

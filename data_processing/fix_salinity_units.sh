@@ -15,7 +15,7 @@ for infile in "${infiles[@]}"; do
 
     echo ${infile} 
     outfile=`echo ${infile} | sed s:ua6:r87/dbi599:`
-    /g/data/r87/dbi599/miniconda2/envs/default/bin/python ~/climate-analysis/data_processing/fix_salinity_units.py ${infile} ${outfile}
+    /g/data/r87/dbi599/miniconda2/envs/default/bin/python ~/ocean-analysis/data_processing/fix_salinity_units.py ${infile} ${outfile}
 
 done
 
