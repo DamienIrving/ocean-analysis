@@ -95,7 +95,7 @@ def check_attributes(x_cube, y_cube):
 
     atts = (x_model, x_experiment, float(x_physics))
 
-    if atts in experiment_names.keys():
+    if atts in list(experiment_names.keys()):
         experiment = experiment_names[atts]
     else:
         experiment = x_experiment
@@ -113,7 +113,7 @@ def calc_trend(x_data, y_data, experiment):
     a_coefficient, b_coefficient = numpy.polynomial.polynomial.polyfit(x_data, y_data, 1)
     x_trend = numpy.arange(x_data.min(), x_data.max(), 0.01)
     y_trend = a_coefficient + b_coefficient * x_trend
-    print experiment, 'trend:', b_coefficient
+    print(experiment, 'trend:', b_coefficient)
 
     mean_value = y_data.mean()
     pct_change = (b_coefficient / mean_value) * 100
@@ -148,7 +148,7 @@ def main(inargs):
     """Run the program."""
  
     data_dict = {}
-    for experiment in experiment_colors.keys():
+    for experiment in list(experiment_colors.keys()):
         data_dict[(experiment, 'x_data')] = numpy.array([]) 
         data_dict[(experiment, 'y_data')] = numpy.array([])
 
@@ -172,7 +172,7 @@ def main(inargs):
     ylabel, yunits = get_label(yvar, inargs.ymetric)
     fig = plt.figure(figsize=(12,8))
     annotation_vertical_pos = 0.96
-    for experiment, color in experiment_colors.iteritems():
+    for experiment, color in experiment_colors.items():
         x_data = data_dict[(experiment, 'x_data')]
         y_data = data_dict[(experiment, 'y_data')]
 

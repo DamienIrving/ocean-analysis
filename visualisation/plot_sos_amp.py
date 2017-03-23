@@ -90,7 +90,7 @@ def calc_trend(x_data, y_data, experiment):
     step = x_data.max() / 50.
     x_trend = numpy.arange(x_data.min(), x_data.max(), step)
     y_trend = a_coefficient + b_coefficient * x_trend
-    print experiment, 'trend:', b_coefficient
+    print(experiment, 'trend:', b_coefficient)
 
     return x_trend, y_trend
 
@@ -118,7 +118,7 @@ def get_experiment_details(cube):
 
     atts = (model, experiment, float(physics))
 
-    if atts in experiment_names.keys():
+    if atts in list(experiment_names.keys()):
         experiment = experiment_names[atts]
 
     return model, experiment
@@ -128,7 +128,7 @@ def main(inargs):
     """Run the program."""
 
     data_dict = {}
-    for experiment in experiment_colors.keys():
+    for experiment in list(experiment_colors.keys()):
         data_dict[(experiment, 'x_data')] = numpy.ma.array([]) 
         data_dict[(experiment, 'y_data')] = numpy.ma.array([])
 
@@ -151,14 +151,14 @@ def main(inargs):
 
         model, experiment = get_experiment_details(cube)
 
-        for basin in basins.keys():
+        for basin in list(basins.keys()):
             zonal_climatology, zonal_trends = calc_zonal_stats(cube.copy(), basin_array, basin)
             data_dict[(experiment, 'x_data')] = numpy.ma.append(data_dict[(experiment, 'x_data')], zonal_climatology)
             data_dict[(experiment, 'y_data')] = numpy.ma.append(data_dict[(experiment, 'y_data')], zonal_trends)
 
 
     fig = plt.figure(figsize=(12,8))
-    for experiment, color in experiment_colors.iteritems():
+    for experiment, color in experiment_colors.items():
         x_data = data_dict[(experiment, 'x_data')]
         y_data = data_dict[(experiment, 'y_data')]
 

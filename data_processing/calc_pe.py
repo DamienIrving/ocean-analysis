@@ -80,7 +80,7 @@ def main(inargs):
 
         assert pe_cube.data.dtype == numpy.float32
         iris.save(pe_cube, pe_file, netcdf_format='NETCDF3_CLASSIC')
-        print pe_file
+        print(pe_file)
         del pe_cube
 
 

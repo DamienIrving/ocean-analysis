@@ -112,8 +112,8 @@ def main(inargs):
     metadata_dict = {}
     fig = plt.figure(figsize=inargs.figsize)
     if not inargs.figsize:
-        print 'figure width: %s' %(str(fig.get_figwidth()))
-        print 'figure height: %s' %(str(fig.get_figheight()))
+        print('figure width: %s' %(str(fig.get_figwidth())))
+        print('figure height: %s' %(str(fig.get_figheight())))
 
     for plotnum, infile in enumerate(inargs.infiles):
 
@@ -136,7 +136,7 @@ def main(inargs):
         metadata_dict[infile] = data_dict['globe'].attributes['history']
 
         # Calculate the annual mean timeseries
-        for key, value in data_dict.iteritems():
+        for key, value in data_dict.items():
             data_dict[key] = value.rolling_window('time', iris.analysis.MEAN, 12)
         tex_units, exponent = uconv.units_info(str(value.units))
 

@@ -245,7 +245,7 @@ def main(inargs):
         if not inargs.dummy:
             new_cube = data_cube - drift_signal
         else:
-            print 'fake run - drift signal not subtracted'
+            print('fake run - drift signal not subtracted')
             new_cube = data_cube
         new_cube.metadata = data_cube.metadata
         new_cube.attributes['drift_removal'] = sanity_summary
@@ -265,7 +265,7 @@ def main(inargs):
 
             assert new_cube.data.dtype == numpy.float32
             iris.save(new_cube, outfile, netcdf_format='NETCDF3_CLASSIC')
-            print 'output:', outfile
+            print('output:', outfile)
             del new_cube
             del drift_signal
             

@@ -76,7 +76,7 @@ def collapse_time(cube, ntimes, timestep):
     """Select the desired timestep from the time axis."""
 
     if timestep == None:
-        print 'Averaging over the %s time points' %(str(ntimes))
+        print('Averaging over the %s time points' %(str(ntimes)))
         new_cube = cube.collapsed('time', iris.analysis.MEAN)
     else:
         assert new_cube.coords()[0] == 'time'
@@ -109,7 +109,7 @@ def extract_data(infile_list, output_projection):
     for infile, long_name, start_date, end_date, timestep, plot_type, plot_number, input_projection in infile_list:
         
         assert plot_type[:-1] in plot_types
-        assert input_projection in input_projections.keys()
+        assert input_projection in list(input_projections.keys())
 
         # Define data constraints
         time_constraint = get_time_constraint(start_date, end_date)
@@ -157,10 +157,10 @@ def get_palette(palette_name):
 
     if hasattr(plt.cm, palette_name):
         cmap = getattr(plt.cm, palette_name)
-    elif palette_name in mpl_cm.cmap_d.keys():
+    elif palette_name in list(mpl_cm.cmap_d.keys()):
         cmap = mpl_cm.get_cmap(palette_name)
     else:
-        print "Error, color option '", palette_name, "' not a valid option"
+        print("Error, color option '", palette_name, "' not a valid option")
         sys.exit(1)
 
     return cmap
@@ -253,8 +253,8 @@ def multiplot(cube_dict, nrows, ncols,
 
     fig = plt.figure(figsize=figure_size)
     if not figure_size:
-        print 'figure width: %s' %(str(fig.get_figwidth()))
-        print 'figure height: %s' %(str(fig.get_figheight()))
+        print('figure width: %s' %(str(fig.get_figwidth())))
+        print('figure height: %s' %(str(fig.get_figheight())))
 
     set_spacing(colourbar_type, colourbar_orientation, subplot_spacing)
 
@@ -262,7 +262,7 @@ def multiplot(cube_dict, nrows, ncols,
         fig.suptitle(title.replace('_',' '), fontsize=title_size)
 
     axis_list = []
-    layers = range(0, max_layers + 1)
+    layers = list(range(0, max_layers + 1))
     colour_plot_switch = False
 
     output_projection = duplicate_input(output_projection, nrows, ncols, "projection")
@@ -270,7 +270,7 @@ def multiplot(cube_dict, nrows, ncols,
     palette = duplicate_input(palette, nrows, ncols, "palette")
     units = duplicate_input(units, nrows, ncols, "units")
     no_colourbar = duplicate_input(no_colourbar, nrows, ncols, "no colourbar switch")
-    no_colourbar = map(eval, no_colourbar)
+    no_colourbar = list(map(eval, no_colourbar))
     if colourbar_ticks:
         colourbar_ticks = duplicate_input(colourbar_ticks, nrows, ncols, "colourbar ticks")
 
@@ -336,7 +336,7 @@ def multiplot(cube_dict, nrows, ncols,
                         set_individual_colourbar(colourbar_orientation, cf, units_name, units_size, colourbar_number_size)
                     colour_plot_switch = True
                     if layer > 0:
-                        print "WARNING: More than one colour layer. Only the uppermost will show."
+                        print("WARNING: More than one colour layer. Only the uppermost will show.")
                 except KeyError:
                     pass
 
@@ -397,7 +397,7 @@ def multiplot(cube_dict, nrows, ncols,
                 if colourbar_type == 'global' and colour_plot_switch:
                     set_global_colourbar(colourbar_orientation, global_colourbar_span, cf, fig, units_name, units_size, colourbar_number_size)       
 
-    dpi = dpi if dpi else plt.savefig.func_globals['rcParams']['figure.dpi']
+    dpi = dpi if dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     fig.savefig(ofile, bbox_inches='tight', dpi=dpi)
 
 
@@ -428,7 +428,7 @@ def plot_contour(cube, ax, levels, labels_switch,
     x, y, inproj = get_spatial_info(cube)
     contour_plot = ax.contour(x, y, cube.data, transform=inproj,
                               colors=colour, linewidths=width, levels=levels)  
-    print 'contour levels:', contour_plot.levels
+    print('contour levels:', contour_plot.levels)
     if labels_switch:
         plt.clabel(contour_plot, fmt='%.1f')
 
@@ -503,7 +503,7 @@ def plot_lines(line_list, line_width=1.0):
     for line in line_list: 
         start_lat, end_lat, start_lon, end_lon, color, style, input_projection, resolution = line
     
-        assert style in line_style_dict.keys()
+        assert style in list(line_style_dict.keys())
         assert resolution in ['high', 'low']
 
         start_lat = float(start_lat)
@@ -611,7 +611,7 @@ def get_blanks(nrows, ncols, plot_set):
     assert type(plot_set) == set
 
     nplots = nrows * ncols
-    plot_numbers = range(1, nplots + 1)
+    plot_numbers = list(range(1, nplots + 1))
 
     return list(set(plot_numbers) - plot_set)
 
@@ -721,7 +721,7 @@ example:
                                 PROJECTION is PlateCarree for regular lat/lon grid""")
 
     # Plot size, spacing, projection etc
-    parser.add_argument("--output_projection", type=str, nargs='*', choices=output_projections.keys(), default=['PlateCarree_Dateline',],
+    parser.add_argument("--output_projection", type=str, nargs='*', choices=list(output_projections.keys()), default=['PlateCarree_Dateline',],
                         help="""output map projection: 
                                 default is all PlateCarree_Dateline
                                 specify a projection for all plots (order top left to bottom right, write none for blank)
@@ -736,7 +736,7 @@ example:
                         help="Figure resolution in dots per square inch [default=auto]")
 
     # Spatial bounds
-    region_choices = gio.regions.keys()
+    region_choices = list(gio.regions.keys())
     region_choices.append('None')
     parser.add_argument("--region", type=str, nargs='*', choices=region_choices, default=['None',],
                         help="""name of predefined region to plot:
@@ -840,7 +840,7 @@ example:
     # Hatching
     parser.add_argument("--hatch_bounds", type=float, nargs='*', default=(0.0, 0.05),   
                         help="list of bounds for the hatching [default: 0.0, 0.05]") 
-    parser.add_argument("--hatch_styles", type=str, nargs = '*', default=('bwdlines_tight'), choices=hatch_style_dict.keys(), 
+    parser.add_argument("--hatch_styles", type=str, nargs = '*', default=('bwdlines_tight'), choices=list(hatch_style_dict.keys()), 
                         help="type of hatching for each bound interval [default: bwdlines_tight]")  
 
     # Output options

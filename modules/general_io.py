@@ -128,10 +128,10 @@ def check_xarrayDataset(dset, var_list):
     for var in var_list:
     
         # Variable attributes
-        assert 'units' in dset[var].attrs.keys(), \
+        assert 'units' in list(dset[var].attrs.keys()), \
         "variable must have a units attribute"
     
-        assert 'long_name' in dset[var].attrs.keys(), \
+        assert 'long_name' in list(dset[var].attrs.keys()), \
         "variable must have a long_name attribute"
     
         assert len(dset[var].attrs['long_name'].split(' ')) == 1, \
@@ -149,17 +149,17 @@ def check_xarrayDataset(dset, var_list):
                 correct_order.append(dim_name)
     
         if dset[var].dims != tuple(correct_order):
-            print 'swapping dimension order...'
+            print('swapping dimension order...')
             dset[var] = dset[var].transpose(*correct_order)
         
     # Axis values 
-    if 'latitude' in dset.keys():
+    if 'latitude' in list(dset.keys()):
         lat_values = dset['latitude'].values
         
         assert lat_values[0] <= lat_values[-1], \
         'Latitude axis must be in ascending order'
         
-    if 'longitude' in dset.keys():
+    if 'longitude' in list(dset.keys()):
         lon_values = dset['longitude'].values
     
         assert lon_values[0] <= lon_values[-1], \
@@ -267,11 +267,11 @@ def get_timescale(times):
             break
     
     if not timescale:
-        print 'Invalid timescale data.'
-        print 'Must be between hourly and yearly.'
+        print('Invalid timescale data.')
+        print('Must be between hourly and yearly.')
         sys.exit(1)
 
-    print timescale
+    print(timescale)
 
     return timescale
 
@@ -414,7 +414,7 @@ def set_global_atts(dset, dset_template, hist_dict):
     
     dset.attrs = dset_template
     
-    if 'calendar' in dset.attrs.keys():
+    if 'calendar' in list(dset.attrs.keys()):
         del dset.attrs['calendar']  # Iris does not like it
 
     dset.attrs['history'] = write_metadata(file_info=hist_dict)
@@ -494,8 +494,8 @@ def write_metadata(ofile=None, file_info=None, extra_notes=None):
     # Write the file details
     if file_info:
         assert type(file_info) == dict
-        nfiles = len(file_info.keys())
-        for fname, history in file_info.iteritems():
+        nfiles = len(list(file_info.keys()))
+        for fname, history in file_info.items():
             if nfiles > 1:
                 result += 'History of %s: \n %s \n' %(fname, history)
             else:

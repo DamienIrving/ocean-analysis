@@ -294,7 +294,7 @@ def main(inargs):
         gs = gridspec.GridSpec(2, 2)
  
     for plotnum, plot_name in enumerate(plot_names):
-        print plot_name
+        print(plot_name)
 
         standard_name = '%s_%s_%s' %(inargs.plot_type, plot_name, inargs.var)
         long_name = standard_name.replace('_', ' ')
