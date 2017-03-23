@@ -211,7 +211,7 @@ def get_subset_kwargs(namespace):
     try:
         south_lat, north_lat, west_lon, east_lon = regions[namespace.region]
         kwarg_dict['latitude'] = slice(south_lat, north_lat)
-	kwarg_dict['longitude'] = slice(west_lon, east_lon)
+        kwarg_dict['longitude'] = slice(west_lon, east_lon)
     except AttributeError:
         pass 
 
