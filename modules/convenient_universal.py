@@ -169,7 +169,7 @@ def coordinate_pairs(lat_axis, lon_axis):
 def dict_filter(indict, key_list):
     """Filter dictionary according to specified keys."""
     
-    return dict((key, value) for key, value in indict.iteritems() if key in key_list)
+    return dict((key, value) for key, value in indict.items() if key in key_list)
 
 
 def find_duplicates(inlist):
@@ -178,7 +178,7 @@ def find_duplicates(inlist):
     D = defaultdict(list)
     for i,item in enumerate(mylist):
         D[item].append(i)
-    D = {k:v for k,v in D.items() if len(v)>1}
+    D = {k:v for k,v in list(D.items()) if len(v)>1}
     
     return D
 
@@ -200,7 +200,7 @@ def fix_label(label):
                     '1000000 m2.s-1': '$10^6$m$^2$s$^{-1}$'
                    } 
 
-    for value, replacement in replace_dict.iteritems():
+    for value, replacement in replace_dict.items():
         label = label.replace(value, replacement)
 
     return label 
@@ -262,8 +262,8 @@ def match_dates(datetimes, datetime_axis):
         
     """
 
-    dates = map(split_dt, datetimes)
-    date_axis = map(split_dt, datetime_axis[:]) 
+    dates = list(map(split_dt, datetimes))
+    date_axis = list(map(split_dt, datetime_axis[:])) 
     
     match_datetimes = []
     miss_datetimes = [] 
