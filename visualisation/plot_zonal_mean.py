@@ -42,13 +42,39 @@ experiment_colors['historicalAA'] = 'blue'
 experiment_colors['historicalGHG'] = 'red'
                
 
+def get_var(invar):
+    """Account for non-standard iris names."""
+
+    if invar == 'precipitation_minus_evaporation_flux':
+        var = 'precipitation minus evaporation flux'
+    else:
+        var = invar
+
+    return var
+
+
+def scale_data(cube, var):
+    """Scale data"""
+
+    if var == 'precipitation minus evaporation flux':
+        cube.data = cube.data * 86400
+        units = 'mm/day'
+    else:
+        units = cube.units
+
+    return cube, units
+
+
 def main(inargs):
     """Run the program."""
 
     metadata_dict = {}
     for filename, experiment in inargs.infile:
         assert experiment in experiment_colors.keys()
-        cube = iris.load_cube(filename, inargs.var)
+        var = get_var(inargs.var)
+        cube = iris.load_cube(filename, var)
+
+        cube, units = scale_data(cube)
 
         zonal_mean_cube = cube.collapsed('longitude', iris.analysis.MEAN)
         zonal_mean_cube.remove_coord('longitude')
@@ -60,7 +86,7 @@ def main(inargs):
 
     #plt.xlim(-70, 70)
     plt.legend(loc=inargs.legloc)
-    plt.ylabel('Zonal mean %s (%s)' %(inargs.var.replace('_', ' '), cube.units) )
+    plt.ylabel('Zonal mean %s (%s)' %(inargs.var.replace('_', ' '), units) )
     plt.xlabel('latitude')
     plt.title('%s (%s)' %(inargs.model, inargs.run.replace('_', ' ')))
 
