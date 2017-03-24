@@ -50,8 +50,15 @@ def save_history(cube, field, filename):
 def main(inargs):
     """Run the program."""
 
+    # Read data
+    try:
+        time_constraint = gio.get_time_constraint(inargs.time)
+    except AttributeError:
+        time_constraint = iris.Constraint()
+
     # Read the data
-    cube = iris.load(inargs.infiles, inargs.var, callback=save_history)
+    with iris.FUTURE.context(cell_datetime_objects=True):
+        cube = iris.load(inargs.infiles, inargs.var & time_constraint, callback=save_history)
     equalise_attributes(cube)
     cube = cube.concatenate_cube()
 
@@ -80,6 +87,9 @@ author:
     parser.add_argument("infiles", type=str, nargs='*', help="Input file names")
     parser.add_argument("var", type=str, help="Input file variable (standard_name)")
     parser.add_argument("outfile", type=str, help="Output file name")
+
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        help="Time period [default = entire]")
 
     args = parser.parse_args()
     main(args)
