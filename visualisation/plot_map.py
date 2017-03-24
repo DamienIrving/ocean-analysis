@@ -517,8 +517,8 @@ def plot_lines(line_list, line_width=1.0):
         if resolution == 'low':
             lats = numpy.array([start_lat, end_lat])         
         elif resolution == 'high':
-	    assert start_lat == end_lat or start_lon == end_lon, \
-	    "High res lines need constant lat or lon in reference coordinate system"
+            assert start_lat == end_lat or start_lon == end_lon, \
+            "High res lines need constant lat or lon in reference coordinate system"
 
             if start_lat == end_lat:
                 lons = numpy.arange(lons[0], lons[-1] + 0.5, 0.5)
