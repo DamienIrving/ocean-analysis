@@ -47,7 +47,7 @@ SOS_FILE=$(wildcard ${ORIG_SOS_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/mon/o
 GLOBAL_SOS_DIR=${MY_CMIP5_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/yr/ocean/sos/${RUN}
 GLOBAL_GRIDDEV_SOS_FILE=${GLOBAL_SOS_DIR}/sos-global-griddev_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 GLOBAL_BULKDEV_SOS_FILE=${GLOBAL_SOS_DIR}/sos-global-bulkdev_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
-SOS_CLIM_FILE=${GLOBAL_SOS_DIR}/sos-clim_Omon_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+SOS_CLIM_FILE=${GLOBAL_SOS_DIR}/sos-clim_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 GLOBAL_MYAMP_SOS_FILE=${GLOBAL_SOS_DIR}/sos-global-myamp_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
 PR_FILE=$(wildcard ${ORIG_PR_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/mon/atmos/pr/${RUN}/pr_Amon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
