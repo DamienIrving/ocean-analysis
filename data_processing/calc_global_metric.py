@@ -224,10 +224,7 @@ def main(inargs):
     else:
         level_constraint = iris.Constraint()
     
-    if inargs.var == 'precipitation_minus_evaporation_flux':
-        iris.std_names.STD_NAMES['precipitation_minus_evaporation_flux'] = {'canonical_units': "kg m-2 s-1"}
-
-    cube = iris.load(inargs.infiles, inargs.var & level_constraint, callback=save_history)
+    cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var) & level_constraint, callback=save_history)
     equalise_attributes(cube)
     iris.util.unify_time_units(cube)
     cube = cube.concatenate_cube()

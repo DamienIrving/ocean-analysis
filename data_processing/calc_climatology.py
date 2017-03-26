@@ -58,7 +58,7 @@ def main(inargs):
 
     # Read the data
     with iris.FUTURE.context(cell_datetime_objects=True):
-        cube = iris.load(inargs.infiles, inargs.var & time_constraint, callback=save_history)
+        cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var) & time_constraint, callback=save_history)
     equalise_attributes(cube)
     cube = cube.concatenate_cube()
 

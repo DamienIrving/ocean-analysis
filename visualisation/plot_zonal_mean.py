@@ -42,21 +42,10 @@ experiment_colors['historicalAA'] = 'blue'
 experiment_colors['historicalGHG'] = 'red'
                
 
-def get_var(invar):
-    """Account for non-standard iris names."""
-
-    if invar == 'precipitation_minus_evaporation_flux':
-        var = 'precipitation minus evaporation flux'
-    else:
-        var = invar
-
-    return var
-
-
 def scale_data(cube, var):
     """Scale data"""
 
-    if var == 'precipitation minus evaporation flux':
+    if var == 'precipitation_minus_evaporation_flux':
         cube.data = cube.data * 86400
         units = 'mm/day'
     else:
@@ -71,10 +60,9 @@ def main(inargs):
     metadata_dict = {}
     for filename, experiment in inargs.infile:
         assert experiment in experiment_colors.keys()
-        var = get_var(inargs.var)
-        cube = iris.load_cube(filename, var)
 
-        cube, units = scale_data(cube)
+        cube = iris.load_cube(filename, gio.check_iris_var(inargs.var))
+        cube, units = scale_data(cube, inargs.var)
 
         zonal_mean_cube = cube.collapsed('longitude', iris.analysis.MEAN)
         zonal_mean_cube.remove_coord('longitude')

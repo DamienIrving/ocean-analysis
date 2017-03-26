@@ -2,6 +2,7 @@
 Collection of commonly used functions for general file input and output.
 
 Functions:
+  check_iris_var           -- Check if a variable is in the list of iris standard names
   check_time_units         -- Check time axis units
   check_xarrayDataset      -- Check xarray.Dataset for data format compliance
   get_cmip5_file_details   -- Extract details from a CMIP5 filename
@@ -93,6 +94,20 @@ regions = {'asl': [-75, -60, 180, 310],
            'zw32': [-50, -45, 161, 171],
            'zw33': [-50, -45, 279, 289],
            }
+
+
+def check_iris_var(var):
+    """Check if variable is in the list of iris standard variables.
+
+    If not, replace underscores with spaces (my convention is to give
+      an appropriate long_name (with spaces) if not an iris standard name.
+
+    """
+
+    if not var in list(iris.std_names.STD_NAMES.keys()):
+        var = var.replace('_', ' ')
+
+    return var
 
 
 def check_time_units(cube):
