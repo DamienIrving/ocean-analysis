@@ -11,6 +11,7 @@ import sys, os, pdb
 import argparse
 import numpy
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import iris
 import iris.plot as iplt
 import seaborn
@@ -57,7 +58,14 @@ def scale_data(cube, var):
 def main(inargs):
     """Run the program."""
 
+    if inargs.difference:
+        fig = plt.figure(figsize=[10, 10])
+        gs = gridspec.GridSpec(2, 1, height_ratios=[3,1])
+        ax_main = plt.subplot(gs[0])
+        plt.sca(ax_main)
+
     metadata_dict = {}
+    data_dict = {}
     for filename, experiment in inargs.infile:
         assert experiment in experiment_colors.keys()
 
@@ -69,15 +77,26 @@ def main(inargs):
 
         color = experiment_colors[experiment]
         iplt.plot(zonal_mean_cube, color=color, alpha=0.8, label=experiment)
-    
+
+        data_dict[experiment] = zonal_mean_cube   
         metadata_dict[filename] = cube.attributes['history']
 
-    #plt.xlim(-70, 70)
     plt.legend(loc=inargs.legloc)
     plt.ylabel('Zonal mean %s (%s)' %(inargs.var.replace('_', ' '), units) )
-    plt.xlabel('latitude')
     plt.title('%s (%s)' %(inargs.model, inargs.run.replace('_', ' ')))
 
+    if inargs.difference:
+        ax_diff = plt.subplot(gs[1])
+        plt.sca(ax_diff)
+        ghg_diff_cube = data_dict['historicalGHG'] - data_dict['piControl']
+        aa_diff_cube = data_dict['historicalAA'] - data_dict['piControl']
+
+        iplt.plot(ghg_diff_cube, color=experiment_colors['historicalGHG'], alpha=0.8)
+        iplt.plot(aa_diff_cube, color=experiment_colors['historicalAA'], alpha=0.8)
+        plt.ylabel('Experiment - piControl')
+
+    plt.xlabel('latitude')
+        
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
 
@@ -107,6 +126,8 @@ note:
 
     parser.add_argument("--legloc", type=int, default=8,
                         help="Legend location")
+    parser.add_argument("--difference", action="store_true", default=False,
+                        help="Include a difference plot")
     
     args = parser.parse_args()            
     main(args)
