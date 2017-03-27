@@ -120,7 +120,7 @@ def extract_data(infile_list, output_projection):
 
         # Read data
         with iris.FUTURE.context(cell_datetime_objects=True):
-            new_cube = iris.load_cube(infile, long_name & time_constraint & lat_constraint)       
+            new_cube = iris.load_cube(infile, gio.check_iris_var(long_name) & time_constraint & lat_constraint)       
         try:
             new_cube = iris.util.squeeze(new_cube)
         except AttributeError:
