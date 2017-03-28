@@ -40,5 +40,15 @@ Install miniconda at `/g/data/r87/dbi599` and use conda environments.
 
 If you go to the "TurboVNC Viewer" menu in the top left when quitting, it will give you the option of having the VM continue to run while you're logged out.
 
+### Version control
+
+Need to use ssh (not https) when cloning.  
+  
+The following seems to help with a `git push ERROR: Permission to git denied to deploy key`:  
+```
+eval "$(ssh-agent -s)"  
+ssh-add ~/.ssh/id_rsa_nci_virtuallab
+``` 
+
   
   
