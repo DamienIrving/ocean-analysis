@@ -90,9 +90,11 @@ def main(inargs):
         plt.sca(ax_diff)
         ghg_diff_cube = data_dict['historicalGHG'] - data_dict['piControl']
         aa_diff_cube = data_dict['historicalAA'] - data_dict['piControl']
+        hist_diff_cube = data_dict['historical'] - data_dict['piControl']
 
         iplt.plot(ghg_diff_cube, color=experiment_colors['historicalGHG'], alpha=0.8)
         iplt.plot(aa_diff_cube, color=experiment_colors['historicalAA'], alpha=0.8)
+        iplt.plot(hist_diff_cube, color=experiment_colors['historical'], alpha=0.8)
         plt.ylabel('Experiment - piControl')
 
     plt.xlabel('latitude')
