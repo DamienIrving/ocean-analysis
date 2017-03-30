@@ -32,7 +32,6 @@ ORGANISATION=CCCMA
 MODEL=CanESM2
 EXPERIMENT=historicalMisc
 RUN=r1i1p4
-CONTROL_RUN=r1i1p1
 FX_RUN=r0i0p0
 
 # Analysis details (specific)

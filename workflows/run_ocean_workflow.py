@@ -27,10 +27,33 @@ def directory_tree(owner):
     return full_dir
 
 
-def add_subsurface_row_commands(df, command_list, row, variable):
+def add_row_exceptions(df, command_list, row, variable=False):
+    """Set the makfile variables that can be weird."""
+    
+    fxrun = 'r0i0p0'
+    if (row['model'] == 'CSIRO-Mk3-6-0') & (row['experiment'] == 'historicalMisc'):
+        fx_run = 'r0io' + run['run'][-2:]
+    command_list.append('FX_RUN=' + fxrun)
+
+    if variable:
+        control_run = 'r1i1p1'
+        if (row['model'] == 'IPSL-CM5A-LR') & (row['run'] == 'r1i1p4'):
+            control_run == 'r2i1p1'
+        elif ('GISS-E2' in row['model']) & ('p3' in row['run']):
+            control_run = 'r1i1p3'
+        command_list.append('CONTROL_RUN=' + control_run)
+          
+        control_selection = df.loc[(df['model'] == row['model']) & (df['experiment'] == 'piControl') & (df['run'] == control_run)]
+        assert control_selection.shape[0] == 1
+        orig_control_dir = control_selection.iloc[0][variable]
+        command_list.append('ORIG_CONTROL_DIR=' + directory_tree(orig_control_dir))
+    
+    return command_list
+
+
+def add_row_commands(df, command_list, row, variable=False, metric=False):
     """Add row-specific commands."""
     
-    command_list.append('ORIG_VARIABLE_DIR=' + directory_tree(row[variable]))
     command_list.append('ORGANISATION=' + row['organisation'])
     command_list.append('RUN=' + row['run'])
     command_list.append('ORIG_VOL_DIR=' + directory_tree(row['volcello']))  
@@ -39,37 +62,22 @@ def add_subsurface_row_commands(df, command_list, row, variable):
     command_list.append('ORIG_AREAA_DIR=' + directory_tree(row['areacella']))  
     command_list.append('ORIG_AREAO_DIR=' + directory_tree(row['areacello']))  
     command_list.append('ORIG_TAS_DIR=' + directory_tree(row['tas']))
-    command_list = add_subsurface_row_exceptions(df, command_list, row, variable)
+    command_list = add_row_exceptions(df, command_list, row, variable=variable)
     
-    return command_list
-
-
-def add_subsurface_row_exceptions(df, command_list, row, variable):
-    """Set the subsurface makfile variables that can be weird."""
+    if metric:
+        command_list.append('ORIG_SOS_DIR=' + directory_tree(row['sos']))  
+        command_list.append('ORIG_SO_DIR=' + directory_tree(row['so'])) 
+        command_list.append('ORIG_PR_DIR=' + directory_tree(row['pr']))  
+        command_list.append('ORIG_EVSPSBL_DIR=' + directory_tree(row['areacello']))
     
-    fxrun = 'r0i0p0'
-    if (row['model'] == 'CSIRO-Mk3-6-0') & (row['experiment'] == 'historicalMisc'):
-        fx_run = 'r0io' + run['run'][-2:]
-
-    control_run = 'r1i1p1'
-    if (row['model'] == 'IPSL-CM5A-LR') & (row['run'] == 'r1i1p4'):
-        control_run == 'r2i1p1'
-    elif ('GISS-E2' in row['model']) & ('p3' in row['run']):
-        control_run = 'r1i1p3'
+    if variable:
+        command_list.append('ORIG_VARIABLE_DIR=' + directory_tree(row[variable]))
         
-    control_selection = df.loc[(df['model'] == row['model']) & (df['experiment'] == 'piControl') & (df['run'] == control_run)]
-    assert control_selection.shape[0] == 1
-    orig_control_dir = control_selection.iloc[0][variable]
-    
-    command_list.append('FX_RUN=' + fxrun)
-    command_list.append('CONTROL_RUN=' + control_run)
-    command_list.append('ORIG_CONTROL_DIR=' + directory_tree(orig_control_dir))
-    
     return command_list
 
 
 def run_subsurface(df, command_list, variables, models, experiments, user_runs=None, execute=False):
-    """Run the subsurface_oceanmk workflow."""
+    """Run the subsurface_ocean.mk workflow."""
     
     command_list.append('subsurface_ocean.mk')
     for variable in variables:
@@ -98,7 +106,7 @@ def run_subsurface(df, command_list, variables, models, experiments, user_runs=N
                     df_selection = df.loc[(df['model'] == model) & (df['alt_experiment'] == experiment) & (df['run'] == run)]                
                     assert df_selection.shape[0] == 1
                     row = df_selection.iloc[0]
-                    current_command_list = add_subsurface_row_commands(df, current_command_list, row, variable)
+                    current_command_list = add_row_commands(df, current_command_list, row, variable=variable)
 
                     current_command_list.append('MODEL=' + model)
                     current_command_list.append('EXPERIMENT=' + row['experiment'])
@@ -107,6 +115,33 @@ def run_subsurface(df, command_list, variables, models, experiments, user_runs=N
                     if execute:
                         os.system(subsurface_command)
                     print(subsurface_command)
+
+
+def run_metrics(df, command_list, models, experiments, user_runs=None, execute=False):
+    """Run the surface_metrics.mk workflow."""
+    
+    command_list.append('surface_metrics.mk')
+    for experiment in experiments:
+        for model in models:
+            if user_runs == None:
+                runs = df.loc[(df['model'] == model) & (df['alt_experiment'] == experiment)]['run'].values
+            else:
+                runs = user_runs
+            for run in runs:
+                current_command_list = command_list.copy()
+
+                df_selection = df.loc[(df['model'] == model) & (df['alt_experiment'] == experiment) & (df['run'] == run)]                
+                assert df_selection.shape[0] == 1
+                row = df_selection.iloc[0]
+                current_command_list = add_row_commands(df, current_command_list, row, metric=True)
+
+                current_command_list.append('MODEL=' + model)
+                current_command_list.append('EXPERIMENT=' + row['experiment'])
+
+                metric_command = " ".join(current_command_list)
+                if execute:
+                    os.system(metric_command)
+                print(metric_command)
 
 
 def main(inargs):
@@ -131,6 +166,13 @@ def main(inargs):
                        inargs.experiments,
                        user_runs=inargs.runs,
                        execute=inargs.execute) 
+
+    if inargs.metric_workflow:
+        run_metrics(df, command_list, 
+                    inargs.models,
+                    inargs.experiments,
+                    user_runs=inargs.runs,
+                    execute=inargs.execute) 
 
 
 if __name__ == '__main__':
