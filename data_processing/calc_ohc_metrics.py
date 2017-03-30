@@ -207,7 +207,10 @@ def read_optional_data(inargs, level_subset):
 
     with iris.FUTURE.context(cell_datetime_objects=True):
         if inargs.volume_file:
-            volume_cube = iris.load_cube(inargs.volume_file, 'ocean_volume' & level_subset)
+            if 'no_data' in inargs.volume_file:
+                volume_cube = None
+            else:
+                volume_cube = iris.load_cube(inargs.volume_file, 'ocean_volume' & level_subset)
         else:
             volume_cube = None
 

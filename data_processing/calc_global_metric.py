@@ -49,7 +49,10 @@ def read_optional(optional_file):
     """Read an optional file (e.g. area, basin) file."""
 
     if optional_file:
-        cube = iris.load_cube(optional_file)
+        if 'no_data' in optional_file:
+            cube = None
+        else:
+            cube = iris.load_cube(optional_file)
     else:
         cube = None
 

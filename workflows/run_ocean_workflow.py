@@ -48,15 +48,22 @@ def add_subsurface_row_exceptions(df, command_list, row, variable):
     """Set the subsurface makfile variables that can be weird."""
     
     fxrun = 'r0i0p0'
-    control_run = row['run']
+    if (row['model'] == 'CSIRO-Mk3-6-0') & (row['experiment'] == 'historicalMisc'):
+        fx_run = 'r0io' + run['run'][-2:]
 
+    control_run = 'r1i1p1'
+    if (row['model'] == 'IPSL-CM5A-LR') & (row['run'] == 'r1i1p4'):
+        control_run == 'r2i1p1'
+    elif ('GISS-E2' in row['model']) & ('p3' in row['run']):
+        control_run = 'r1i1p3'
+        
     control_selection = df.loc[(df['model'] == row['model']) & (df['experiment'] == 'piControl') & (df['run'] == control_run)]
     assert control_selection.shape[0] == 1
     orig_control_dir = control_selection.iloc[0][variable]
     
     command_list.append('FX_RUN=' + fxrun)
     command_list.append('CONTROL_RUN=' + control_run)
-    command_list.append('ORIG_CONTROL_DIR=' + orig_control_dir)
+    command_list.append('ORIG_CONTROL_DIR=' + directory_tree(orig_control_dir))
     
     return command_list
 
@@ -69,7 +76,7 @@ def run_subsurface(df, command_list, variables, models, experiments, user_runs=N
         for experiment in experiments:
             for model in models:
                 if user_runs == None:
-                    runs = df.loc[(df['model'] == model) & (df['experiment'] == experiment)]['run'].values
+                    runs = df.loc[(df['model'] == model) & (df['alt_experiment'] == experiment)]['run'].values
                 else:
                     runs = user_runs
                 for run in runs:
@@ -88,13 +95,13 @@ def run_subsurface(df, command_list, variables, models, experiments, user_runs=N
                         current_command_list.append('SCALE_FACTOR=3')
                         current_command_list.append('PALETTE=RdBu_r')
 
-                    current_command_list.append('MODEL=' + model)
-                    current_command_list.append('EXPERIMENT=' + experiment)
-
-                    df_selection = df.loc[(df['model'] == model) & (df['experiment'] == experiment) & (df['run'] == run)]                
+                    df_selection = df.loc[(df['model'] == model) & (df['alt_experiment'] == experiment) & (df['run'] == run)]                
                     assert df_selection.shape[0] == 1
                     row = df_selection.iloc[0]
                     current_command_list = add_subsurface_row_commands(df, current_command_list, row, variable)
+
+                    current_command_list.append('MODEL=' + model)
+                    current_command_list.append('EXPERIMENT=' + row['experiment'])
 
                     subsurface_command = " ".join(current_command_list)
                     if execute:
@@ -107,9 +114,9 @@ def main(inargs):
 
     command_list = ['make']
     if inargs.dry_run:
-        command.append('-n')
+        command_list.append('-n')
     if inargs.force:
-        command.append('-B')
+        command_list.append('-B')
     command_list.append('-f')
     
     assert inargs.models, "Must specify which models"
@@ -118,13 +125,13 @@ def main(inargs):
     df = pandas.read_csv(inargs.data_locs)
     
     if inargs.subsurface_workflow:
-        subsurface_command = run_subsurface(df, command_list, 
-                                            inargs.subsurface_workflow,
-                                            inargs.models,
-                                            inargs.experiments,
-                                            user_runs=inargs.runs,
-                                            execute=inargs.execute) 
-    
+        run_subsurface(df, command_list, 
+                       inargs.subsurface_workflow,
+                       inargs.models,
+                       inargs.experiments,
+                       user_runs=inargs.runs,
+                       execute=inargs.execute) 
+
 
 if __name__ == '__main__':
 
@@ -152,7 +159,7 @@ author:
     parser.add_argument("--models", type=str, nargs='*', default=None,
                         help="Models to process [Must give at least one]")
     parser.add_argument("--experiments", type=str, nargs='*', default=None,
-                        help="Experiments to process [Must give at least one]")
+                        help="Experiments to process [Must give at least one]. Use historicalAA etc, not historicalMisc.")
     parser.add_argument("--runs", type=str, nargs='*', default=None,
                         help="Runs to process [default=all]")
 
