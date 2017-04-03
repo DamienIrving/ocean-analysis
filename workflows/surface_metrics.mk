@@ -15,41 +15,41 @@ all : ${TARGET}
 
 # Filenames
 
-SO_FILE=$(wildcard ${ORIG_SO_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/so/latest/so_Omon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
-GLOBAL_SO_DIR=${MY_CMIP5_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/so/latest
+SO_FILE=$(wildcard ${ORIG_SO_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/so/latest/so_Omon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
+GLOBAL_SO_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/so/latest
 GLOBAL_MEAN_SO_FILE=${GLOBAL_SO_DIR}/so-global-mean_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 GLOBAL_GRIDDEV_SO_FILE=${GLOBAL_SO_DIR}/so-global-griddev_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
-TAS_FILE=$(wildcard ${ORIG_TAS_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/tas/latest/tas_Amon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
-GLOBAL_MEAN_TAS_DIR=${MY_CMIP5_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/tas/latest
+TAS_FILE=$(wildcard ${ORIG_TAS_DIR}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/tas/latest/tas_Amon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
+GLOBAL_MEAN_TAS_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/tas/latest
 GLOBAL_MEAN_TAS_FILE=${GLOBAL_MEAN_TAS_DIR}/tas-global-mean_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
-SOS_FILE=$(wildcard ${ORIG_SOS_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/sos/latest/sos_Omon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
-GLOBAL_SOS_DIR=${MY_CMIP5_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/sos/latest
+SOS_FILE=$(wildcard ${ORIG_SOS_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/sos/latest/sos_Omon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
+GLOBAL_SOS_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/sos/latest
 GLOBAL_GRIDDEV_SOS_FILE=${GLOBAL_SOS_DIR}/sos-global-griddev_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 GLOBAL_BULKDEV_SOS_FILE=${GLOBAL_SOS_DIR}/sos-global-bulkdev_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 SOS_CLIM_FILE=${GLOBAL_SOS_DIR}/sos-clim_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 GLOBAL_MYAMP_SOS_FILE=${GLOBAL_SOS_DIR}/sos-global-myamp_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
-PR_FILE=$(wildcard ${ORIG_PR_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/pr/latest/pr_Amon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
-GLOBAL_MEAN_PR_DIR=${MY_CMIP5_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/pr/latest
+PR_FILE=$(wildcard ${ORIG_PR_DIR}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/pr/latest/pr_Amon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
+GLOBAL_MEAN_PR_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/pr/latest
 GLOBAL_MEAN_PR_FILE=${GLOBAL_MEAN_PR_DIR}/pr-global-mean_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
-EVSPSBL_DIR=${ORIG_EVSPSBL_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/evspsbl/latest
+EVSPSBL_DIR=${ORIG_EVSPSBL_DIR}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/evspsbl/latest
 EVSPSBL_FILE=$(wildcard ${EVSPSBL_DIR}/evspsbl_Amon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
-GLOBAL_MEAN_EVSPSBL_DIR=${MY_CMIP5_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/evspsbl/latest
+GLOBAL_MEAN_EVSPSBL_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/evspsbl/latest
 GLOBAL_MEAN_EVSPSBL_FILE=${GLOBAL_MEAN_EVSPSBL_DIR}/evspsbl-global-mean_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
-PE_DIR=${MY_CMIP5_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/pe/latest
-GLOBAL_PE_DIR=${MY_CMIP5_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/pe/latest
+PE_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/pe/latest
+GLOBAL_PE_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/pe/latest
 GLOBAL_GRIDDEV_PE_FILE=${GLOBAL_PE_DIR}/pe-global-griddev_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 OCEAN_GRIDDEV_PE_FILE=${GLOBAL_PE_DIR}/pe-ocean-griddev_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 LAND_GRIDDEV_PE_FILE=${GLOBAL_PE_DIR}/pe-land-griddev_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
-SFTLF_FILE=${ORIG_SFTLF_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/fx/atmos/${FX_RUN}/sftlf/latest/sftlf_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
-BASIN_FILE=${ORIG_BASIN_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/fx/ocean/${FX_RUN}/basin/latest/basin_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
-ATMOS_AREA_FILE=${ORIG_AREAA_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/fx/atmos/${FX_RUN}/areacella/latest/areacella_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
-OCEAN_AREA_FILE=${ORIG_AREAO_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/fx/ocean/${FX_RUN}/areacello/latest/areacello_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
+SFTLF_FILE=${ORIG_SFTLF_DIR}/${MODEL}/${EXPERIMENT}/fx/atmos/${FX_RUN}/sftlf/latest/sftlf_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
+BASIN_FILE=${ORIG_BASIN_DIR}/${MODEL}/${EXPERIMENT}/fx/ocean/${FX_RUN}/basin/latest/basin_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
+ATMOS_AREA_FILE=${ORIG_AREAA_DIR}/${MODEL}/${EXPERIMENT}/fx/atmos/${FX_RUN}/areacella/latest/areacella_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
+OCEAN_AREA_FILE=${ORIG_AREAO_DIR}/${MODEL}/${EXPERIMENT}/fx/ocean/${FX_RUN}/areacello/latest/areacello_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
 
 GLOBAL_METRICS=global_metrics.nc
 

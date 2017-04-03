@@ -28,7 +28,6 @@ ORIG_SO_DIR=${UA6_CMIP5_DIR}
 ORIG_PR_DIR=${UA6_CMIP5_DIR}
 ORIG_EVSPSBL_DIR=${UA6_CMIP5_DIR}
 
-ORGANISATION=CCCMA
 MODEL=CanESM2
 EXPERIMENT=historicalMisc
 RUN=r1i1p4
@@ -40,5 +39,5 @@ START_DATE=1950-01-01
 END_DATE=2000-12-31
 
 TARGET=global_metrics.nc
-#${MY_CMIP5_DIR}/${ORGANISATION}/${MODEL}/${EXPERIMENT}/yr/ocean/so/${RUN}/so-global-abs_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+#${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/so/latest/so-global-abs_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
