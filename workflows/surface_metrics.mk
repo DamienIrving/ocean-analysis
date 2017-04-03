@@ -4,13 +4,13 @@
 #
 # To execute:
 #   1. copy name of target file from surface_metrics.mk 
-#   2. paste it into surface_config.mk as the target variable  
+#   2. paste it into surface_metrics_config.mk as the target variable  
 #   3. $ make -n -B -f surface_metrics.mk  (-n is a dry run) (-B is a force make)
 
 
 # Define marcos
 
-include surface_config.mk
+include surface_metrics_config.mk
 all : ${TARGET}
 
 # Filenames

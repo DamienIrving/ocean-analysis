@@ -1,7 +1,8 @@
 """
 Filename:     run_ocean_workflow.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Create the command line entry to run one of the ocean makefiles
+Description:  Create the command line entry to run subsurface_ocean.mk or surface_metrics.mk
+              
 
 """
 
@@ -183,7 +184,7 @@ author:
     
 """
 
-    description='Create the command line entry to run one of the ocean makefiles'
+    description='Create the command line entry to run subsurface_ocean.mk or surface_metrics.mk'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,

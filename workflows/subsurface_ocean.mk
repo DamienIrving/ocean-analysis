@@ -7,13 +7,13 @@
 #
 # To execute:
 #   1. copy name of target file from subsurface_ocean.mk 
-#   2. paste it into subsurface_config.mk as the target variable  
+#   2. paste it into subsurface_ocean_config.mk as the target variable  
 #   3. $ make -n -B -f subsurface_ocean.mk  (-n is a dry run) (-B is a force make)
 
 
 # Define marcos
 
-include subsurface_config.mk
+include subsurface_ocean_config.mk
 all : ${TARGET}
 
 # Filenames
