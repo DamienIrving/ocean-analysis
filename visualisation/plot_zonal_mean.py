@@ -160,14 +160,14 @@ def main(inargs):
 
     # Read the data
 
-    file_dict = {'historical': inargs.hist_files,
-                 'historicalGHG': inargs.ghg_files,
-                 'historicalAA': inargs.aa_files,
-                 'piControl': inargs.control_files}
+    file_dict = {'historical': inargs.historical_files,
+                 'historicalGHG': inargs.historicalghg_files,
+                 'historicalAA': inargs.historicalaa_files,
+                 'piControl': inargs.picontrol_files}
     
-    tas_dict = {'historical': inargs.hist_tas_file,
-                'historicalGHG': inargs.ghg_tas_file,
-                'historicalAA': inargs.aa_tas_file,
+    tas_dict = {'historical': inargs.historical_tas_file,
+                'historicalGHG': inargs.historicalghg_tas_file,
+                'historicalAA': inargs.historicalaa_tas_file,
                 'piControl': None}
     
     metadata_dict = {}
@@ -252,22 +252,22 @@ note:
     parser.add_argument("outfile", type=str, help="Output file name")
     parser.add_argument("var", type=str, help="Variable standard_name")
     parser.add_argument("model", type=str, help="Model name")
-    parser.add_argument("run", type=str, help="Run")
+    parser.add_argument("run", type=str, help="Run (e.g. r1)")
     
-    parser.add_argument("--hist_files", type=str, default=None, nargs='*',
+    parser.add_argument("--historical_files", type=str, default=None, nargs='*',
                         help="Input files for the historical experiment")
-    parser.add_argument("--ghg_files", type=str, default=None, nargs='*',
+    parser.add_argument("--historicalghg_files", type=str, default=None, nargs='*',
                         help="Input files for the historicalGHG experiment")
-    parser.add_argument("--aa_files", type=str, default=None, nargs='*',
+    parser.add_argument("--historicalaa_files", type=str, default=None, nargs='*',
                         help="Input files for the historicalAA experiment")
-    parser.add_argument("--control_files", type=str, default=None, nargs='*',
+    parser.add_argument("--picontrol_files", type=str, default=None, nargs='*',
                         help="Input files for the piControl experiment")
 
-    parser.add_argument("--hist_tas_file", type=str, default=None,
+    parser.add_argument("--historical_tas_file", type=str, default=None,
                         help="Global mean surface temperature file for historical experiment")
-    parser.add_argument("--ghg_tas_file", type=str, default=None,
+    parser.add_argument("--historicalghg_tas_file", type=str, default=None,
                         help="Global mean surface temperature file for historicalGHG experiment")
-    parser.add_argument("--aa_tas_file", type=str, default=None,
+    parser.add_argument("--historicalaa_tas_file", type=str, default=None,
                         help="Global mean surface temperature file for historicalAA experiment")
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
