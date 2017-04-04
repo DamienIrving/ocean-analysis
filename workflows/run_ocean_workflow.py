@@ -33,7 +33,7 @@ def add_row_exceptions(df, command_list, row, variable=False):
     
     fxrun = 'r0i0p0'
     if (row['model'] == 'CSIRO-Mk3-6-0') & (row['experiment'] == 'historicalMisc'):
-        fx_run = 'r0io' + run['run'][-2:]
+        fx_run = 'r0io' + row['run'][-2:]
     command_list.append('FX_RUN=' + fxrun)
 
     if variable:
