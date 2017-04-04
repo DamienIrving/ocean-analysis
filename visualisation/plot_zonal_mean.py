@@ -31,6 +31,8 @@ sys.path.append(modules_dir)
 
 try:
     import general_io as gio
+    import timeseries
+    import grids
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -56,14 +58,19 @@ def scale_data(cube, var):
     return cube, units
 
 
-def set_plot_grid(tas_trend_flag):
-    """Set the grid of plots."""
+def set_plot_grid(tas_trend=False):
+    """Set the grid of plots.
     
-    if tas_trend_flag:
+    Args:
+      tas_trend (bool): Include a panel for the tas trend?
+    
+    """
+    
+    if tas_trend:
         nrows = 4
         heights = [3, 1, 1, 1]
     else:
-        nrwos = 3
+        nrows = 3
         heights = [3, 1, 1]
         
     gs = gridspec.GridSpec(nrows, 1, height_ratios=heights)
@@ -78,7 +85,8 @@ def calculate_climatology(cube, time_bounds, experiment):
         time_constraint = gio.get_time_constraint(time_bounds)
         cube = cube.extract(time_constraint) 
         
-    cube.collapsed('time', iris.analysis.MEAN)
+    cube = cube.collapsed('time', iris.analysis.MEAN)
+    cube.remove_coord('time')
 
     return cube
 
@@ -108,15 +116,15 @@ def get_trend_cube(cube, xaxis='time'):
 
     return trend_cube
 
-def plot_climatology(climatology_dict, var, model, run, units):
+def plot_climatology(climatology_dict, var, model, run, units, legloc):
     """Plot the zonal mean climatology"""
     
     for experiment in ['historical', 'historicalGHG', 'historicalAA', 'piControl']:
-        if climatology_cube
-        color = experiment_colors[experiment]
-        iplt.plot(climatology_cube, color=color, alpha=0.8, label=experiment)
+        if climatology_dict[experiment]:
+            color = experiment_colors[experiment]
+            iplt.plot(climatology_dict[experiment], color=color, alpha=0.8, label=experiment)
 
-    plt.legend(loc=inargs.legloc)
+    plt.legend(loc=legloc)
     plt.ylabel('Zonal mean %s (%s)' %(var.replace('_', ' '), units) )
     plt.title('%s (%s)' %(model, run.replace('_', ' ')))
 
@@ -127,8 +135,9 @@ def plot_difference(climatology_dict):
     assert climatology_dict['piControl'], 'must have control data for difference plot'
     
     for experiment in ['historical', 'historicalGHG', 'historicalAA']:
-        diff_cube = climatology_dict[experiment] - climatology_dict['piControl']
-        iplt.plot(diff_cube, color=experiment_colors[experiment], alpha=0.8)
+        if climatology_dict[experiment]:
+            diff_cube = climatology_dict[experiment] - climatology_dict['piControl']
+            iplt.plot(diff_cube, color=experiment_colors[experiment], alpha=0.8)
 
     plt.ylabel('Experiment - piControl')
 
@@ -141,9 +150,9 @@ def plot_trend(trend_dict, xaxis='time'):
             iplt.plot(trend_dict[experiment], color=experiment_colors[experiment], alpha=0.8)
 
     if xaxis == 'time':
-        plt.ylabel('Trend ($K yr^{-1}$)')
+        plt.ylabel('Trend ($K \enspace yr^{-1}$)')
     elif xaxis == 'tas':
-        plt.ylabel('Trend ($K K^{-1}$)')
+        plt.ylabel('Trend ($K \enspace K^{-1}$)')
 
 
 def main(inargs):
@@ -168,31 +177,31 @@ def main(inargs):
     experiments = file_dict.keys()
     for experiment in experiments:
         filenames = file_dict[experiment]
-        pdb.set_trace()  #check the if statement
-        if (filenames == None) or (filenames == 'no_data'):
+        if not filenames:
             climatology_dict[experiment] = None
             time_trend_dict[experiment] = None
             tas_trend_dict[experiment] = None
         else:
-			with iris.FUTURE.context(cell_datetime_objects=True):
-				cube = iris.load(filenames, gio.check_iris_var(inargs.var))
+            with iris.FUTURE.context(cell_datetime_objects=True):
+                cube = iris.load(filenames, gio.check_iris_var(inargs.var))
 
-			metadata_dict[filenames[0]] = cube[0].attributes['history']
-			equalise_attributes(cube)
-			cube = cube.concatenate_cube()
-			cube, units = scale_data(cube, inargs.var)
+                metadata_dict[filenames[0]] = cube[0].attributes['history']
+                equalise_attributes(cube)
+                cube = cube.concatenate_cube()
+                cube, units = scale_data(cube, inargs.var)
 
-			zonal_mean_cube = cube.collapsed('longitude', iris.analysis.MEAN)
-			zonal_mean_cube.remove_coord('longitude')
+                cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+                zonal_mean_cube = cube.collapsed('longitude', iris.analysis.MEAN)
+                zonal_mean_cube.remove_coord('longitude')
 
-			climatology_dict[experiment] = calculate_climatology(cube, inargs.time, experiment)
-			time_trend_dict[experiment] = get_trend_cube(cube)
-			if tas_dict[experiment]:
-				tas_cube = iris.load_cube(tas_dict[experiment], 'air_temperature')
-				tas_trend_dict[experiment] = get_trend_cube(cube, xaxis=tas_cube)
-				metadata_dict[tas_dict[experiment]] = tas_cube.attributes['history']
-			else:
-			    tas_trend_dict[experiment] = None
+                climatology_dict[experiment] = calculate_climatology(zonal_mean_cube, inargs.time, experiment)
+                time_trend_dict[experiment] = get_trend_cube(zonal_mean_cube)
+                if tas_dict[experiment]:
+                    tas_cube = iris.load_cube(tas_dict[experiment], 'air_temperature')
+                    tas_trend_dict[experiment] = get_trend_cube(zonal_mean_cube, xaxis=tas_cube)
+                    metadata_dict[tas_dict[experiment]] = tas_cube.attributes['history']
+                else:
+                    tas_trend_dict[experiment] = None
         
     # Create the plots
     
@@ -203,7 +212,7 @@ def main(inargs):
     
     ax_main = plt.subplot(gs[0])
     plt.sca(ax_main)
-    plot_climatology(climatology_dict, inargs.var, inargs.model, inargs.run, units)
+    plot_climatology(climatology_dict, inargs.var, inargs.model, inargs.run, units, inargs.legloc)
     
     ax_diff = plt.subplot(gs[1])
     plt.sca(ax_diff)
