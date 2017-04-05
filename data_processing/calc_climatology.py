@@ -28,6 +28,7 @@ sys.path.append(modules_dir)
 
 try:
     import general_io as gio
+    import grids
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -65,6 +66,10 @@ def main(inargs):
     # Calculate the climatology
     annual_climatology = cube.collapsed('time', iris.analysis.MEAN)
 
+    # Regrid
+    if inargs.regrid:
+        annual_climatology, coord_names, regrid_status = grids.curvilinear_to_rectilinear(annual_climatology)
+
     # Write the output file
     annual_climatology.attributes['history'] = gio.write_metadata(file_info={inargs.infiles[0]: history[0]}) 
     iris.save(annual_climatology, inargs.outfile)
@@ -90,6 +95,8 @@ author:
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
+    parser.add_argument("--regrid", action="store_true", default=False,
+                        help="Regrid the data from curvilinear to rectilinear grid")
 
     args = parser.parse_args()
     main(args)
