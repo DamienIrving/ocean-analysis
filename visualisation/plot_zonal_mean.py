@@ -91,6 +91,17 @@ def calculate_climatology(cube, time_bounds, experiment):
     return cube
 
 
+def calc_linear_trend(data, xaxis):
+    """Calculate the linear trend.
+    polyfit returns [a, b] corresponding to y = a + bx
+    """    
+
+    if data.mask[0]:
+        return data.fill_value
+    else:    
+        return numpy.polynomial.polynomial.polyfit(xaxis, data, 1)[-1]
+
+
 def get_trend_cube(cube, xaxis='time'):
     """Get the trend data.
     Args:
@@ -191,6 +202,8 @@ def main(inargs):
                 cube, units = scale_data(cube, inargs.var)
 
                 cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+                cube = timeseries.convert_to_annual(cube)
+
                 zonal_mean_cube = cube.collapsed('longitude', iris.analysis.MEAN)
                 zonal_mean_cube.remove_coord('longitude')
 
