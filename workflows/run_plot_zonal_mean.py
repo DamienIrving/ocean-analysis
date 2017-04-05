@@ -36,7 +36,14 @@ def find_files(df, inargs, alt_experiment, experiment, tas=False):
         data_dir = df_selection[var].values[0]
         if data_dir in ['ua6', 'r87/dbi59']:
             run = df_selection['run'].values[0]
-            file_list = glob.glob('/g/data/%s/DRSv2/CMIP5/%s/%s/mon/ocean/%s/%s/latest/%s_*.nc' %(data_dir, inargs.model, experiment, run, var, file_start))
+            if file_start == 'tas-global-mean':
+                data_dir = 'r87/dbi599'
+                tscale = 'yr'
+                realm = 'atmos'
+            else:
+                tscale = 'mon'
+                realm = 'ocean'
+            file_list = glob.glob('/g/data/%s/DRSv2/CMIP5/%s/%s/%s/%s/%s/%s/latest/%s_*.nc' %(data_dir, inargs.model, experiment, tscale, realm, run, var, file_start))
             files = " ".join(file_list)
         else:
             files = ' '
