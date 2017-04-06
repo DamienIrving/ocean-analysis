@@ -50,5 +50,10 @@ eval "$(ssh-agent -s)"
 ssh-add ~/.ssh/id_rsa_nci_virtuallab
 ``` 
 
+### Moving files to local computer  
+
+```
+$ scp dbi599@raijin.nci.org.au:/g/data/r87/dbi599/figures/tauuo-zm/* .
+```
   
   
