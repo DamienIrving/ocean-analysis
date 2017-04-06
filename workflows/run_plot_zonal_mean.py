@@ -30,7 +30,6 @@ def find_files(df, inargs, alt_experiment, experiment, tas=False):
 
     if experiment == 'piControl':
         df_selection = df_selection[df_selection.run.str.contains('r1i1')]
-        
     else:
         df_selection = df_selection[df_selection.run.str.contains(inargs.run+'i1')]
     
@@ -74,7 +73,12 @@ def main(inargs):
             experiment = alt_experiment
 
         command_list.append('--' + alt_experiment.lower() + '_files')
-        files = find_files(df, inargs, alt_experiment, experiment, tas=False)
+        if inargs.variable == 'pe':
+            physics = inargs.aa_physics if (alt_experiment == 'historicalAA') else 1
+            file_list = glob.glob('/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/mon/atmos/%si1p%s/pe/latest/pe_*.nc' %(inargs.model, experiment, inargs.run, str(physics)))
+            files = " ".join(file_list)
+        else:
+            files = find_files(df, inargs, alt_experiment, experiment, tas=False)
         command_list.append(files)
         
         if alt_experiment != 'piControl':
@@ -114,5 +118,7 @@ author:
 
     parser.add_argument("--legloc", type=int, default=8,
                         help="Legend location")
+    parser.add_argument("--aa_physics", type=int, default=None,
+                        help="Need to supply this for the P-E plot")
     args = parser.parse_args()            
     main(args)
