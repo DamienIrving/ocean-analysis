@@ -27,7 +27,12 @@ def find_files(df, inargs, alt_experiment, experiment, tas=False):
         file_start = var
     
     df_selection = df.loc[(df['model'] == inargs.model) & (df['alt_experiment'] == alt_experiment)]
-    df_selection = df_selection[df_selection.run.str.contains(inargs.run+'i1')]
+
+    if experiment == 'piControl':
+        df_selection = df_selection[df_selection.run.str.contains('r1i1')]
+        
+    else:
+        df_selection = df_selection[df_selection.run.str.contains(inargs.run+'i1')]
     
     assert df_selection.shape[0] in [0, 1]
     if df_selection.shape[0] == 0:
@@ -55,7 +60,7 @@ def main(inargs):
     """Run the program."""
 
     command_list = ['python ../visualisation/plot_zonal_mean.py']
-    command_list.append('%s-zm_Oyr_%s_piControl-historical-GHG-AA_%s_198601-200512.png'  %(inargs.variable, inargs.model, inargs.run))
+    command_list.append('/g/data/r87/dbi599/figures/%s-zm/%s-zm_Oyr_%s_piControl-historical-GHG-AA_%s_198601-200512.png'  %(inargs.variable, inargs.variable, inargs.model, inargs.run))
     command_list.append(inargs.standard_name)
     command_list.append(inargs.model)
     command_list.append(inargs.run)
@@ -77,8 +82,11 @@ def main(inargs):
             tas_file = find_files(df, inargs, alt_experiment, experiment, tas=True)
             command_list.append(tas_file)        
 
+    command_list.append('--legloc ' + str(inargs.legloc))
     final_command = " ".join(command_list)
     print(final_command)
+    if inargs.execute:
+        os.system(final_command)
 
 
 if __name__ == '__main__':
@@ -101,8 +109,10 @@ author:
     parser.add_argument("model", type=str, help="Model to process")
     parser.add_argument("run", type=str, help="Run to process (e.g. r1)")
 
-    #parser.add_argument("--execute", action="store_true", default=False,
-    #                    help="Switch to have this script execute the make command rather than printing to screen")
+    parser.add_argument("--execute", action="store_true", default=False,
+                        help="Switch to have this script execute the make command rather than printing to screen")
 
+    parser.add_argument("--legloc", type=int, default=8,
+                        help="Legend location")
     args = parser.parse_args()            
     main(args)
