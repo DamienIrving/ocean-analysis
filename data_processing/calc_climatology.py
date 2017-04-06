@@ -37,6 +37,17 @@ except ImportError:
 
 history = []
 
+def scale_data(cube, scale_factor):
+    """Scale a cube."""
+
+    cube.data = cube.data * 10 ** scale_factor
+
+    scale_label = '10^%s '   %(scale_factor)
+    cube.units = scale_label + str(cube.units)
+    
+    return cube
+
+
 def save_history(cube, field, filename):
     """Save the history attribute when reading the data.
 
@@ -51,26 +62,24 @@ def save_history(cube, field, filename):
 def main(inargs):
     """Run the program."""
 
-    # Read data
     try:
         time_constraint = gio.get_time_constraint(inargs.time)
     except AttributeError:
         time_constraint = iris.Constraint()
 
-    # Read the data
     with iris.FUTURE.context(cell_datetime_objects=True):
         cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var) & time_constraint, callback=save_history)
     equalise_attributes(cube)
     cube = cube.concatenate_cube()
 
-    # Calculate the climatology
     annual_climatology = cube.collapsed('time', iris.analysis.MEAN)
 
-    # Regrid
     if inargs.regrid:
         annual_climatology, coord_names, regrid_status = grids.curvilinear_to_rectilinear(annual_climatology)
 
-    # Write the output file
+    if inargs.scale_factor:
+        annual_climatology = scale_data(annual_climatology, inargs.scale_factor)
+
     annual_climatology.attributes['history'] = gio.write_metadata(file_info={inargs.infiles[0]: history[0]}) 
     iris.save(annual_climatology, inargs.outfile)
 
@@ -97,6 +106,8 @@ author:
                         help="Time period [default = entire]")
     parser.add_argument("--regrid", action="store_true", default=False,
                         help="Regrid the data from curvilinear to rectilinear grid")
+    parser.add_argument("--scale_factor", type=int, default=None,
+                        help="Scale factor (i.e. multiple data by 10^scale_factor [default = entire]")
 
     args = parser.parse_args()
     main(args)
