@@ -54,7 +54,7 @@ def add_row_exceptions(df, command_list, row, variable=False):
 
 def add_row_commands(df, command_list, row, variable=False, metric=False):
     """Add row-specific commands."""
-    
+
     command_list.append('RUN=' + row['run'])
     command_list.append('ORIG_VOL_DIR=' + directory_tree(row['volcello']))  
     command_list.append('ORIG_BASIN_DIR=' + directory_tree(row['basin']))  
@@ -68,7 +68,7 @@ def add_row_commands(df, command_list, row, variable=False, metric=False):
         command_list.append('ORIG_SOS_DIR=' + directory_tree(row['sos']))  
         command_list.append('ORIG_SO_DIR=' + directory_tree(row['so'])) 
         command_list.append('ORIG_PR_DIR=' + directory_tree(row['pr']))  
-        command_list.append('ORIG_EVSPSBL_DIR=' + directory_tree(row['areacello']))
+        command_list.append('ORIG_EVSPSBL_DIR=' + directory_tree(row['evspsbl']))
     
     if variable:
         command_list.append('ORIG_VARIABLE_DIR=' + directory_tree(row[variable]))
