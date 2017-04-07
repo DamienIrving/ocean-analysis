@@ -80,7 +80,8 @@ def main(inargs):
         command_list.append('--' + alt_experiment.lower() + '_files')
         if inargs.variable == 'pe':
             physics = inargs.aa_physics if (alt_experiment == 'historicalAA') else 1
-            file_list = glob.glob('/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/mon/atmos/%si1p%s/pe/latest/pe_*.nc' %(inargs.model, experiment, inargs.run, str(physics)))
+            run = 'r1' if (experiment == 'piControl') else inargs.run
+            file_list = glob.glob('/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/mon/atmos/%si1p%s/pe/latest/pe_*.nc' %(inargs.model, experiment, run, str(physics)))
             files = " ".join(file_list)
         else:
             files = find_files(df, inargs, alt_experiment, experiment, tas=False)
