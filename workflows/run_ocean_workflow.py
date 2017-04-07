@@ -21,7 +21,7 @@ def directory_tree(owner):
     valid_owners = ['ua6', 'r87/dbi599']
     
     if owner in valid_owners:
-        full_dir = "/g/data/%s/drstree/CMIP5/GCM" %(owner)
+        full_dir = "/g/data/%s/DRSv2/CMIP5" %(owner)
     else:
         full_dir = 'no_data'
         
@@ -33,7 +33,7 @@ def add_row_exceptions(df, command_list, row, variable=False):
     
     fxrun = 'r0i0p0'
     if (row['model'] == 'CSIRO-Mk3-6-0') & (row['experiment'] == 'historicalMisc'):
-        fx_run = 'r0io' + row['run'][-2:]
+        fx_run = 'r0i0' + row['run'][-2:]
     command_list.append('FX_RUN=' + fxrun)
 
     if variable:
@@ -55,7 +55,6 @@ def add_row_exceptions(df, command_list, row, variable=False):
 def add_row_commands(df, command_list, row, variable=False, metric=False):
     """Add row-specific commands."""
     
-    command_list.append('ORGANISATION=' + row['organisation'])
     command_list.append('RUN=' + row['run'])
     command_list.append('ORIG_VOL_DIR=' + directory_tree(row['volcello']))  
     command_list.append('ORIG_BASIN_DIR=' + directory_tree(row['basin']))  
@@ -194,8 +193,6 @@ author:
 
     parser.add_argument("--subsurface_workflow", type=str, nargs='*', choices=('thetao', 'so'), default=None,
                         help="Run the subsurface ocean workflow for the listed variables")
-    parser.add_argument("--surface_workflow", type=str, nargs='*', choices=('hfds', 'hfy', 'tauuo', 'tauvo', 'pe'), default=None,
-                        help="Run the surface ocean workflow")
     parser.add_argument("--metric_workflow", action="store_true", default=False,
                         help="Run the metric workflow")
 
