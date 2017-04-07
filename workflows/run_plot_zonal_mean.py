@@ -33,13 +33,18 @@ def find_files(df, inargs, alt_experiment, experiment, tas=False):
     else:
         df_selection = df_selection[df_selection.run.str.contains(inargs.run+'i1')]
     
-    assert df_selection.shape[0] in [0, 1]
+    assert df_selection.shape[0] in [0, 1, 2]
+    if df_selection.shape[0] == 2:
+        row_index = inargs.match
+    else:
+        row_index = 0
+
     if df_selection.shape[0] == 0:
         files = ' '
     else:
-        data_dir = df_selection[var].values[0]
+        data_dir = df_selection[var].values[row_index]
         if data_dir in ['ua6', 'r87/dbi599']:
-            run = df_selection['run'].values[0]
+            run = df_selection['run'].values[row_index]
             if file_start == 'tas-global-mean':
                 data_dir = 'r87/dbi599'
                 tscale = 'yr'
@@ -120,5 +125,8 @@ author:
                         help="Legend location")
     parser.add_argument("--aa_physics", type=int, default=None,
                         help="Need to supply this for the P-E plot")
+    parser.add_argument("--match", type=int, default=0,
+                        help="Pick the first (index 0) or second (index 1) match - useful for GISS models with two p runs")
+
     args = parser.parse_args()            
     main(args)
