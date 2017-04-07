@@ -38,6 +38,7 @@ FX_RUN=r0i0p0
 START_DATE=1950-01-01
 END_DATE=2000-12-31
 
-TARGET=global_metrics.nc
+TARGET=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/pe/latest
+#global_metrics.nc
 #${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/so/latest/so-global-abs_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
