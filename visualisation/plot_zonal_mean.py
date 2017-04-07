@@ -140,6 +140,22 @@ def plot_climatology(climatology_dict, var, model, run, units, legloc):
     plt.title('%s (%s)' %(model, run.replace('_', ' ')))
 
 
+def check_lats(climatology_dict, experiment):
+    """Sometimes the latitude axes are not exactly equal after regridding."""
+
+    experiment_lats = climatology_dict[experiment].coord('latitude')
+    control_lats = climatology_dict['piControl'].coord('latitude')
+    if not control_lats == experiment_lats:
+        diffs = experiment_lats.points - control_lats.points
+        assert numpy.abs(diffs).max() < 0.0001, "%s and control have very different latitude axes" %(experiment) 
+        climatology_dict[experiment].coord('latitude').points = control_lats.points
+        climatology_dict[experiment].coord('latitude').bounds = control_lats.bounds
+        assert climatology_dict[experiment].coord('latitude') == climatology_dict['piControl'].coord('latitude'), \
+        "Problem with %s latitude axis" %(experiment)
+
+    return climatology_dict[experiment]
+
+
 def plot_difference(climatology_dict):
     """Plot the difference between experiment and control climatology"""
     
@@ -147,6 +163,7 @@ def plot_difference(climatology_dict):
     
     for experiment in ['historical', 'historicalGHG', 'historicalAA']:
         if climatology_dict[experiment]:
+            climatology_dict[experiment] = check_lats(climatology_dict, experiment)
             diff_cube = climatology_dict[experiment] - climatology_dict['piControl']
             iplt.plot(diff_cube, color=experiment_colors[experiment], alpha=0.8)
 
@@ -201,8 +218,8 @@ def main(inargs):
                 cube = cube.concatenate_cube()
                 cube, units = scale_data(cube, inargs.var)
 
-                cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
                 cube = timeseries.convert_to_annual(cube)
+                cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
 
                 zonal_mean_cube = cube.collapsed('longitude', iris.analysis.MEAN)
                 zonal_mean_cube.remove_coord('longitude')
