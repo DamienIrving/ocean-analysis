@@ -25,7 +25,7 @@ def find_files(df, inargs, alt_experiment, experiment, tas=False):
     else:
         var = inargs.variable
         file_start = var
-    
+
     df_selection = df.loc[(df['model'] == inargs.model) & (df['alt_experiment'] == alt_experiment)]
 
     if experiment == 'piControl':
@@ -38,7 +38,7 @@ def find_files(df, inargs, alt_experiment, experiment, tas=False):
         files = ' '
     else:
         data_dir = df_selection[var].values[0]
-        if data_dir in ['ua6', 'r87/dbi59']:
+        if data_dir in ['ua6', 'r87/dbi599']:
             run = df_selection['run'].values[0]
             if file_start == 'tas-global-mean':
                 data_dir = 'r87/dbi599'
