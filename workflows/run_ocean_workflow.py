@@ -31,10 +31,10 @@ def directory_tree(owner):
 def add_row_exceptions(df, command_list, row, variable=False):
     """Set the makfile variables that can be weird."""
     
-    fxrun = 'r0i0p0'
+    fx_run = 'r0i0p0'
     if (row['model'] == 'CSIRO-Mk3-6-0') & (row['experiment'] == 'historicalMisc'):
         fx_run = 'r0i0' + row['run'][-2:]
-    command_list.append('FX_RUN=' + fxrun)
+    command_list.append('FX_RUN=' + fx_run)
 
     if variable:
         control_run = 'r1i1p1'
