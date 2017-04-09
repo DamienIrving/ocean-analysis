@@ -44,6 +44,7 @@ experiment_colors['historical'] = 'green'
 experiment_colors['piControl'] = 'black'
 experiment_colors['historicalAA'] = 'blue'
 experiment_colors['historicalGHG'] = 'red'
+experiment_colors['historicalnoAA'] = 'orange'
                
 
 def scale_data(cube, var):
@@ -130,7 +131,7 @@ def get_trend_cube(cube, xaxis='time'):
 def plot_climatology(climatology_dict, var, model, run, units, legloc):
     """Plot the zonal mean climatology"""
     
-    for experiment in ['historical', 'historicalGHG', 'historicalAA', 'piControl']:
+    for experiment in ['historical', 'historicalGHG', 'historicalAA', 'historicalnoAA', 'piControl']:
         if climatology_dict[experiment]:
             color = experiment_colors[experiment]
             iplt.plot(climatology_dict[experiment], color=color, alpha=0.8, label=experiment)
@@ -161,7 +162,7 @@ def plot_difference(climatology_dict):
     
     assert climatology_dict['piControl'], 'must have control data for difference plot'
     
-    for experiment in ['historical', 'historicalGHG', 'historicalAA']:
+    for experiment in ['historical', 'historicalGHG', 'historicalAA', 'historicalnoAA']:
         if climatology_dict[experiment]:
             climatology_dict[experiment] = check_lats(climatology_dict, experiment)
             diff_cube = climatology_dict[experiment] - climatology_dict['piControl']
@@ -173,7 +174,7 @@ def plot_difference(climatology_dict):
 def plot_trend(trend_dict, xaxis='time'):
     """Plot the trend"""
 
-    for experiment in ['historical', 'historicalGHG', 'historicalAA']:
+    for experiment in ['historical', 'historicalGHG', 'historicalAA', 'historicalnoAA']:
         if trend_dict[experiment]:    
             iplt.plot(trend_dict[experiment], color=experiment_colors[experiment], alpha=0.8)
 
@@ -191,11 +192,13 @@ def main(inargs):
     file_dict = {'historical': inargs.historical_files,
                  'historicalGHG': inargs.historicalghg_files,
                  'historicalAA': inargs.historicalaa_files,
+                 'historicalnoAA': inargs.historicalaa_files,
                  'piControl': inargs.picontrol_files}
     
     tas_dict = {'historical': inargs.historical_tas_file,
                 'historicalGHG': inargs.historicalghg_tas_file,
                 'historicalAA': inargs.historicalaa_tas_file,
+                'historicalnoAA': inargs.historicalnoaa_tas_file,
                 'piControl': None}
     
     metadata_dict = {}
@@ -290,6 +293,8 @@ note:
                         help="Input files for the historicalGHG experiment")
     parser.add_argument("--historicalaa_files", type=str, default=None, nargs='*',
                         help="Input files for the historicalAA experiment")
+    parser.add_argument("--historicalnoaa_files", type=str, default=None, nargs='*',
+                        help="Input files for the historicalnoAA experiment")
     parser.add_argument("--picontrol_files", type=str, default=None, nargs='*',
                         help="Input files for the piControl experiment")
 
@@ -298,6 +303,8 @@ note:
     parser.add_argument("--historicalghg_tas_file", type=str, default=None,
                         help="Global mean surface temperature file for historicalGHG experiment")
     parser.add_argument("--historicalaa_tas_file", type=str, default=None,
+                        help="Global mean surface temperature file for historicalAA experiment")
+    parser.add_argument("--historicalnoaa_tas_file", type=str, default=None,
                         help="Global mean surface temperature file for historicalAA experiment")
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
