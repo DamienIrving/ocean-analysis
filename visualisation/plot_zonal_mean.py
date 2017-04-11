@@ -192,7 +192,7 @@ def main(inargs):
     file_dict = {'historical': inargs.historical_files,
                  'historicalGHG': inargs.historicalghg_files,
                  'historicalAA': inargs.historicalaa_files,
-                 'historicalnoAA': inargs.historicalaa_files,
+                 'historicalnoAA': inargs.historicalnoaa_files,
                  'piControl': inargs.picontrol_files}
     
     tas_dict = {'historical': inargs.historical_tas_file,
