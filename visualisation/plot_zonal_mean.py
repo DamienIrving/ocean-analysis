@@ -218,6 +218,7 @@ def main(inargs):
 
                 metadata_dict[filenames[0]] = cube[0].attributes['history']
                 equalise_attributes(cube)
+                iris.util.unify_time_units(cube)
                 cube = cube.concatenate_cube()
                 cube, units = scale_data(cube, inargs.var)
 
@@ -232,7 +233,7 @@ def main(inargs):
                 if tas_dict[experiment]:
                     tas_cube = iris.load_cube(tas_dict[experiment], 'air_temperature')
                     tas_trend_dict[experiment] = get_trend_cube(zonal_mean_cube, xaxis=tas_cube)
-                    metadata_dict[tas_dict[experiment]] = tas_cube.attributes['history']
+                    metadata_dict[tas_dict[experiment][0]] = tas_cube.attributes['history']
                 else:
                     tas_trend_dict[experiment] = None
         
@@ -298,13 +299,13 @@ note:
     parser.add_argument("--picontrol_files", type=str, default=None, nargs='*',
                         help="Input files for the piControl experiment")
 
-    parser.add_argument("--historical_tas_file", type=str, default=None,
+    parser.add_argument("--historical_tas_file", type=str, default=None, nargs='*',
                         help="Global mean surface temperature file for historical experiment")
-    parser.add_argument("--historicalghg_tas_file", type=str, default=None,
+    parser.add_argument("--historicalghg_tas_file", type=str, default=None, nargs='*',
                         help="Global mean surface temperature file for historicalGHG experiment")
-    parser.add_argument("--historicalaa_tas_file", type=str, default=None,
+    parser.add_argument("--historicalaa_tas_file", type=str, default=None, nargs='*',
                         help="Global mean surface temperature file for historicalAA experiment")
-    parser.add_argument("--historicalnoaa_tas_file", type=str, default=None,
+    parser.add_argument("--historicalnoaa_tas_file", type=str, default=None, nargs='*',
                         help="Global mean surface temperature file for historicalAA experiment")
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
