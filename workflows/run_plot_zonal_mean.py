@@ -22,9 +22,11 @@ def find_files(df, inargs, run, alt_experiment, experiment, tas=False):
     if tas:
         var = 'tas'
         file_start = 'tas-global-mean'
+        end = 'all.nc'
     else:
         var = inargs.variable
         file_start = var
+        end = '.nc'
 
     df_selection = df.loc[(df['model'] == inargs.model) & (df['alt_experiment'] == alt_experiment)]
     df_selection = df_selection[df_selection.run.str.contains(run+'i1')]
@@ -48,7 +50,7 @@ def find_files(df, inargs, run, alt_experiment, experiment, tas=False):
             else:
                 tscale = 'mon'
                 realm = 'ocean'
-            file_list = glob.glob('/g/data/%s/DRSv2/CMIP5/%s/%s/%s/%s/%s/%s/latest/%s_*.nc' %(data_dir, inargs.model, experiment, tscale, realm, run, var, file_start))
+            file_list = glob.glob('/g/data/%s/DRSv2/CMIP5/%s/%s/%s/%s/%s/%s/latest/%s_*%s' %(data_dir, inargs.model, experiment, tscale, realm, run, var, file_start, end))
             files = " ".join(file_list)
         else:
             files = ' '
