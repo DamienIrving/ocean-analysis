@@ -213,6 +213,14 @@ def main(inargs):
             time_trend_dict[experiment] = None
             tas_trend_dict[experiment] = None
         else:
+            if 'historical' in experiment:
+                try:
+                    time_constraint = gio.get_time_constraint(inargs.total_time)
+                except AttributeError:
+                    time_constraint = iris.Constraint()
+            else:
+                time_constraint = iris.Constraint()
+
             with iris.FUTURE.context(cell_datetime_objects=True):
                 cube = iris.load(filenames, gio.check_iris_var(inargs.var))
 
@@ -220,6 +228,8 @@ def main(inargs):
                 equalise_attributes(cube)
                 iris.util.unify_time_units(cube)
                 cube = cube.concatenate_cube()
+                cube = gio.check_time_units(cube)
+                cube = cube.extract(time_constraint)
                 cube, units = scale_data(cube, inargs.var)
 
                 cube = timeseries.convert_to_annual(cube)
@@ -228,10 +238,10 @@ def main(inargs):
                 zonal_mean_cube = cube.collapsed('longitude', iris.analysis.MEAN)
                 zonal_mean_cube.remove_coord('longitude')
 
-                climatology_dict[experiment] = calculate_climatology(zonal_mean_cube, inargs.time, experiment)
+                climatology_dict[experiment] = calculate_climatology(zonal_mean_cube, inargs.climatology_time, experiment)
                 time_trend_dict[experiment] = get_trend_cube(zonal_mean_cube)
                 if tas_dict[experiment]:
-                    tas_cube = iris.load_cube(tas_dict[experiment], 'air_temperature')
+                    tas_cube = iris.load_cube(tas_dict[experiment], 'air_temperature' & time_constraint)
                     tas_trend_dict[experiment] = get_trend_cube(zonal_mean_cube, xaxis=tas_cube)
                     metadata_dict[tas_dict[experiment][0]] = tas_cube.attributes['history']
                 else:
@@ -308,8 +318,10 @@ note:
     parser.add_argument("--historicalnoaa_tas_file", type=str, default=None, nargs='*',
                         help="Global mean surface temperature file for historicalAA experiment")
 
-    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+    parser.add_argument("--climatology_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1986-01-01', '2005-12-31'), help="Time period for climatology [default = entire]")
+    parser.add_argument("--total_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        default=None, help="Time period for entire analysis [default = entire]")
 
     parser.add_argument("--legloc", type=int, default=8,
                         help="Legend location")
