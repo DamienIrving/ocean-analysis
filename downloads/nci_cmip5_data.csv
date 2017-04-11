@@ -234,7 +234,7 @@ historicalMisc,historicalnoAA,IPSL-CM5A-LR,IPSL,r4i1p4,,,,,,r87/dbi599,,,,,,,,,,
 piControl,piControl,CanESM2,CCCMA,r1i1p1,,,,,,,ua6,ua6,,,,,,,,,,
 piControl,piControl,CCSM4,NCAR,r1i1p1,noesgf,noesgf,,ua6,ua6,,ua6,r87/dbi599,,,,,,ua6,ua6,,,Inconsistent so units among files. ua6 files corrected with fix_salinity_units.py 
 piControl,piControl,CSIRO-Mk3-6-0,CSIRO-QCCCE,r1i1p1,ua6,noesgf,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,
-piControl,piControl,FGOALS-g2,LASG-CESS,r1i1p1,,,,,,noesgf,ua6,ua6,ua6,ua6,,ua6,ua6,ua6,ua6,ua6,,
+piControl,piControl,FGOALS-g2,LASG-CESS,r1i1p1,,noesgf,,noesgf,noesgf,noesgf,ua6,ua6,ua6,ua6,,ua6,ua6,ua6,ua6,ua6,,
 piControl,piControl,GFDL-CM3,NOAA-GFDL,r1i1p1,,ua6,,ua6,ua6,ua6,ua6,ua6,ua6,,,ua6,ua6,ua6,ua6,ua6,,
 piControl,piControl,GFDL-ESM2M,NOAA-GFDL,r1i1p1,,,,,,ua6,ua6,ua6,ua6,ua6,,ua6,ua6,ua6,ua6,ua6,,
 piControl,piControl,GISS-E2-H,NASA-GISS,r1i1p1,,,,,,,ua6,ua6,,,,,,,,,,
