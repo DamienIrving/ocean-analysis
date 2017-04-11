@@ -56,4 +56,16 @@ ssh-add ~/.ssh/id_rsa_nci_virtuallab
 $ scp dbi599@raijin.nci.org.au:/g/data/r87/dbi599/figures/tauuo-zm/* .
 ```
   
+### Creating symlinks
+
+To create a new symlink (will fail if symlink exists already):  
+```
+ln -s /path/to/file /path/to/symlink
+```   
+
+To create or update a symlink:  
+```
+ln -sf /path/to/file /path/to/symlink
+```  
+
   
