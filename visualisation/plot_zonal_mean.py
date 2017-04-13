@@ -69,10 +69,10 @@ def set_plot_grid(tas_trend=False):
     
     if tas_trend:
         nrows = 4
-        heights = [3, 1, 1, 1]
+        heights = [2, 1, 1, 1]
     else:
         nrows = 3
-        heights = [3, 1, 1]
+        heights = [2, 1, 1]
         
     gs = gridspec.GridSpec(nrows, 1, height_ratios=heights)
 
@@ -128,6 +128,20 @@ def get_trend_cube(cube, xaxis='time'):
 
     return trend_cube
 
+
+def get_scale_factor(tas_cube):
+    """Calculate scale factor (linear warming).
+
+    Multiplies the linear trend (K / yr) by the number of years
+
+    """
+
+    linear_trend = get_trend_cube(tas_cube)
+    scale_factor = linear_trend.data * tas_cube.shape[0]
+
+    return scale_factor
+
+
 def plot_climatology(climatology_dict, var, model, run, units, legloc):
     """Plot the zonal mean climatology"""
     
@@ -171,17 +185,17 @@ def plot_difference(climatology_dict):
     plt.ylabel('Experiment - piControl')
 
 
-def plot_trend(trend_dict, xaxis='time'):
+def plot_trend(trend_dict, units, scaled=False):
     """Plot the trend"""
 
-    for experiment in ['historical', 'historicalGHG', 'historicalAA', 'historicalnoAA']:
+    for experiment in ['historical', 'historicalGHG', 'historicalAA', 'historicalnoAA', 'piControl']:
         if trend_dict[experiment]:    
             iplt.plot(trend_dict[experiment], color=experiment_colors[experiment], alpha=0.8)
 
-    if xaxis == 'time':
-        plt.ylabel('Trend ($K \enspace yr^{-1}$)')
-    elif xaxis == 'tas':
-        plt.ylabel('Trend ($K \enspace K^{-1}$)')
+    if not scaled:
+        plt.ylabel('Trend ($%s \enspace yr^{-1}$)' %(units) )
+    else:
+        plt.ylabel('Trend ($%s \enspace yr^{-1}$) scaled by warming' %(units) )
 
 
 def main(inargs):
@@ -204,7 +218,7 @@ def main(inargs):
     metadata_dict = {}
     climatology_dict = {}
     time_trend_dict = {}
-    tas_trend_dict = {}
+    tas_scaled_trend_dict = {}
     experiments = file_dict.keys()
     for experiment in experiments:
         filenames = file_dict[experiment]
@@ -216,7 +230,7 @@ def main(inargs):
             if 'historical' in experiment:
                 try:
                     time_constraint = gio.get_time_constraint(inargs.total_time)
-                except AttributeError:
+                except (AttributeError, TypeError):
                     time_constraint = iris.Constraint()
             else:
                 time_constraint = iris.Constraint()
@@ -242,17 +256,19 @@ def main(inargs):
                 time_trend_dict[experiment] = get_trend_cube(zonal_mean_cube)
                 if tas_dict[experiment]:
                     tas_cube = iris.load_cube(tas_dict[experiment], 'air_temperature' & time_constraint)
-                    tas_trend_dict[experiment] = get_trend_cube(zonal_mean_cube, xaxis=tas_cube)
+                    scale_factor = get_scale_factor(tas_cube)
+                    print(experiment, 'warming:', scale_factor)
+                    tas_scaled_trend_dict[experiment] = time_trend_dict[experiment] * (1. / abs(scale_factor))
                     metadata_dict[tas_dict[experiment][0]] = tas_cube.attributes['history']
                 else:
-                    tas_trend_dict[experiment] = None
+                    tas_scaled_trend_dict[experiment] = None
         
     # Create the plots
     
-    tas_trend_flag = tas_trend_dict['historicalGHG'] and tas_trend_dict['historicalAA']
+    tas_scaled_trend_flag = tas_scaled_trend_dict['historicalGHG'] and tas_scaled_trend_dict['historicalAA']
     
-    fig = plt.figure(figsize=[10, 10])
-    gs = set_plot_grid(tas_trend=tas_trend_flag)
+    fig = plt.figure(figsize=[10, 20])
+    gs = set_plot_grid(tas_trend=tas_scaled_trend_flag)
     
     ax_main = plt.subplot(gs[0])
     plt.sca(ax_main)
@@ -264,12 +280,12 @@ def main(inargs):
     
     ax_time_trend = plt.subplot(gs[2])
     plt.sca(ax_time_trend)
-    plot_trend(time_trend_dict, xaxis='time')
+    plot_trend(time_trend_dict, units)
 
-    if tas_trend_flag:
+    if tas_scaled_trend_flag:
         ax_tas_trend = plt.subplot(gs[3])
         plt.sca(ax_tas_trend)
-        plot_trend(tas_trend_dict, xaxis='tas')
+        plot_trend(tas_scaled_trend_dict, units, scaled=True)
     
     plt.xlabel('latitude')
         
