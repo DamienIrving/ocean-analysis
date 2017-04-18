@@ -33,6 +33,7 @@ try:
     import general_io as gio
     import timeseries
     import grids
+    import convenient_universal as uconv
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -198,10 +199,8 @@ def plot_trend(trend_dict, units, scaled=False):
         plt.ylabel('Trend ($%s \enspace yr^{-1}$) scaled by warming' %(units) )
 
 
-def main(inargs):
-    """Run the program."""
-
-    # Read the data
+def read_data(inargs):
+    """Read input data into appropriate dictionaries."""
 
     file_dict = {'historical': inargs.historical_files,
                  'historicalGHG': inargs.historicalghg_files,
@@ -214,7 +213,58 @@ def main(inargs):
                 'historicalAA': inargs.historicalaa_tas_file,
                 'historicalnoAA': inargs.historicalnoaa_tas_file,
                 'piControl': None}
-    
+
+    area_dict = {'historical': inargs.historical_area_file,
+                 'historicalGHG': inargs.historicalghg_area_file,
+                 'historicalAA': inargs.historicalaa_area_file,
+                 'historicalnoAA': inargs.historicalnoaa_area_file,
+                 'piControl': inargs.picontrol_area_file}
+
+    return file_dict, tas_dict, area_dict
+
+
+def get_areacello_data(cube):
+    """Generate an area data array."""
+
+    dim_coord_names = [coord.name() for coord in cube.dim_coords]
+    assert 'latitude' in dim_coord_names
+    assert 'longitude' in dim_coord_names
+
+    if not cube.coord('latitude').has_bounds():
+        cube.coord('latitude').guess_bounds()
+
+    if not cube.coord('longitude').has_bounds():
+        cube.coord('longitude').guess_bounds()
+
+    area_data = iris.analysis.cartography.area_weights(cube)
+    area_data = numpy.ma.masked_where(numpy.ma.getmask(cube.data), area_data)
+
+    return area_data
+
+
+def area_ajustment(data_cube, area_file):
+    """Multipy a data cube by its cell area."""
+
+    if area_file:
+        area_cube = iris.load_cube(area_file[0])
+        area_data = uconv.broadcast_array(area_cube.data, [1, 2], data_cube.shape)
+    else:
+        area_data = get_areacello_data(data_cube) 
+
+    data_cube.data = data_cube.data * area_data
+    if 'm-2' in str(data_cube.units):
+        units = str(data_cube.units).replace('m-2', "")
+    else:
+        units = str(data_cube.units) + ' m2'
+
+    return data_cube, units
+
+
+def main(inargs):
+    """Run the program."""
+
+    file_dict, tas_dict, area_dict = read_data(inargs)
+
     metadata_dict = {}
     climatology_dict = {}
     time_trend_dict = {}
@@ -249,11 +299,15 @@ def main(inargs):
                 cube = timeseries.convert_to_annual(cube)
                 cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
 
-                zonal_mean_cube = cube.collapsed('longitude', iris.analysis.MEAN)
-                zonal_mean_cube.remove_coord('longitude')
+                if inargs.area_adjust:
+                    cube, units = area_ajustment(cube, area_dict[experiment])
+                    zonal_cube = cube.collapsed('longitude', iris.analysis.SUM)
+                else:
+                    zonal_cube = cube.collapsed('longitude', iris.analysis.MEAN)
+                zonal_cube.remove_coord('longitude')
 
-                climatology_dict[experiment] = calculate_climatology(zonal_mean_cube, inargs.climatology_time, experiment)
-                time_trend_dict[experiment] = get_trend_cube(zonal_mean_cube)
+                climatology_dict[experiment] = calculate_climatology(zonal_cube, inargs.climatology_time, experiment)
+                time_trend_dict[experiment] = get_trend_cube(zonal_cube)
                 if tas_dict[experiment]:
                     tas_cube = iris.load_cube(tas_dict[experiment], 'air_temperature' & time_constraint)
                     scale_factor = get_scale_factor(tas_cube)
@@ -267,7 +321,7 @@ def main(inargs):
     
     tas_scaled_trend_flag = tas_scaled_trend_dict['historicalGHG'] and tas_scaled_trend_dict['historicalAA']
     
-    fig = plt.figure(figsize=[10, 20])
+    fig = plt.figure(figsize=[15, 20])
     gs = set_plot_grid(tas_trend=tas_scaled_trend_flag)
     
     ax_main = plt.subplot(gs[0])
@@ -332,7 +386,21 @@ note:
     parser.add_argument("--historicalaa_tas_file", type=str, default=None, nargs='*',
                         help="Global mean surface temperature file for historicalAA experiment")
     parser.add_argument("--historicalnoaa_tas_file", type=str, default=None, nargs='*',
-                        help="Global mean surface temperature file for historicalAA experiment")
+                        help="Global mean surface temperature file for historicalnoAA experiment")
+
+    parser.add_argument("--historical_area_file", type=str, default=None, nargs='*',
+                        help="Cell area file for historical experiment")
+    parser.add_argument("--historicalghg_area_file", type=str, default=None, nargs='*',
+                        help="Cell area file for historicalGHG experiment")
+    parser.add_argument("--historicalaa_area_file", type=str, default=None, nargs='*',
+                        help="Cell area file for historicalAA experiment")
+    parser.add_argument("--historicalnoaa_area_file", type=str, default=None, nargs='*',
+                        help="Cell area file for historicalnoAA experiment")
+    parser.add_argument("--picontrol_area_file", type=str, default=None, nargs='*',
+                        help="Cell area file for piControl experiment")
+
+    parser.add_argument("--area_adjust", action="store_true", default=False,
+                        help="Adjust plots for area [default=False]")
 
     parser.add_argument("--climatology_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1986-01-01', '2005-12-31'), help="Time period for climatology [default = entire]")
