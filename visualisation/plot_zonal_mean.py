@@ -143,7 +143,7 @@ def get_scale_factor(tas_cube):
     return scale_factor
 
 
-def plot_climatology(climatology_dict, var, model, run, units, legloc):
+def plot_climatology(climatology_dict, var, model, run, units, legloc, aggregation='Zonal mean'):
     """Plot the zonal mean climatology"""
     
     for experiment in ['historical', 'historicalGHG', 'historicalAA', 'historicalnoAA', 'piControl']:
@@ -152,7 +152,7 @@ def plot_climatology(climatology_dict, var, model, run, units, legloc):
             iplt.plot(climatology_dict[experiment], color=color, alpha=0.8, label=experiment)
 
     plt.legend(loc=legloc)
-    plt.ylabel('Zonal mean %s (%s)' %(var.replace('_', ' '), units) )
+    plt.ylabel('%s %s (%s)' %(aggregation, var.replace('_', ' '), units) )
     plt.title('%s (%s)' %(model, run.replace('_', ' ')))
 
 
@@ -242,12 +242,13 @@ def get_areacello_data(cube):
     return area_data
 
 
-def area_ajustment(data_cube, area_file):
+def area_ajustment(data_cube, area_file, metadata_dict):
     """Multipy a data cube by its cell area."""
 
     if area_file:
         area_cube = iris.load_cube(area_file[0])
         area_data = uconv.broadcast_array(area_cube.data, [1, 2], data_cube.shape)
+        metadata_dict[area_file[0]] = area_cube.attributes['history']
     else:
         area_data = get_areacello_data(data_cube) 
 
@@ -257,7 +258,7 @@ def area_ajustment(data_cube, area_file):
     else:
         units = str(data_cube.units) + ' m2'
 
-    return data_cube, units
+    return data_cube, units, metadata_dict
 
 
 def main(inargs):
@@ -300,10 +301,12 @@ def main(inargs):
                 cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
 
                 if inargs.area_adjust:
-                    cube, units = area_ajustment(cube, area_dict[experiment])
+                    cube, units, metadata_dict = area_ajustment(cube, area_dict[experiment], metadata_dict)
                     zonal_cube = cube.collapsed('longitude', iris.analysis.SUM)
+                    aggregation = 'Zonally integrated'
                 else:
                     zonal_cube = cube.collapsed('longitude', iris.analysis.MEAN)
+                    aggregation = 'Zonal mean'
                 zonal_cube.remove_coord('longitude')
 
                 climatology_dict[experiment] = calculate_climatology(zonal_cube, inargs.climatology_time, experiment)
@@ -326,7 +329,7 @@ def main(inargs):
     
     ax_main = plt.subplot(gs[0])
     plt.sca(ax_main)
-    plot_climatology(climatology_dict, inargs.var, inargs.model, inargs.run, units, inargs.legloc)
+    plot_climatology(climatology_dict, inargs.var, inargs.model, inargs.run, units, inargs.legloc, aggregation)
     
     ax_diff = plt.subplot(gs[1])
     plt.sca(ax_diff)
