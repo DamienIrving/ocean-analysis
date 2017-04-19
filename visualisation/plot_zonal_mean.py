@@ -48,7 +48,7 @@ experiment_colors['historicalGHG'] = 'red'
 experiment_colors['historicalnoAA'] = 'orange'
                
 
-def scale_data(cube, var):
+def scale_data(cube, var, reverse_sign=False):
     """Scale data"""
 
     if var == 'precipitation_minus_evaporation_flux':
@@ -56,6 +56,9 @@ def scale_data(cube, var):
         units = 'mm/day'
     else:
         units = cube.units
+
+    if reverse_sign:
+        cube.data = cube.data * -1
 
     return cube, units
 
@@ -276,7 +279,7 @@ def main(inargs):
         if not filenames:
             climatology_dict[experiment] = None
             time_trend_dict[experiment] = None
-            tas_trend_dict[experiment] = None
+            tas_scaled_trend_dict[experiment] = None
         else:
             if 'historical' in experiment:
                 try:
@@ -295,12 +298,14 @@ def main(inargs):
                 cube = cube.concatenate_cube()
                 cube = gio.check_time_units(cube)
                 cube = cube.extract(time_constraint)
-                cube, units = scale_data(cube, inargs.var)
+                cube, units = scale_data(cube, inargs.var, reverse_sign=inargs.reverse_sign)
 
                 cube = timeseries.convert_to_annual(cube)
                 cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
 
                 if inargs.area_adjust:
+                    if regrid_status:
+                        area_dict[experiment] = None 
                     cube, units, metadata_dict = area_ajustment(cube, area_dict[experiment], metadata_dict)
                     zonal_cube = cube.collapsed('longitude', iris.analysis.SUM)
                     aggregation = 'Zonally integrated'
@@ -404,6 +409,8 @@ note:
 
     parser.add_argument("--area_adjust", action="store_true", default=False,
                         help="Adjust plots for area [default=False]")
+    parser.add_argument("--reverse_sign", action="store_true", default=False,
+                        help="Multiple the data by -1 (CCSM4 has wrong sign for wind stress) [default=False]")
 
     parser.add_argument("--climatology_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1986-01-01', '2005-12-31'), help="Time period for climatology [default = entire]")
