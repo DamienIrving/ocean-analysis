@@ -105,6 +105,7 @@ def main(inargs, run):
             fx_physics = 'p' + str(inargs.noaa_physics)
         else:
             fx_physics = 'p0'
+
         area_file = find_files(df, exp_run, alt_experiment, experiment, 'areacello', inargs.model, 'fx', fx_physics=fx_physics)
         command_list.append(area_file)        
 
@@ -113,7 +114,7 @@ def main(inargs, run):
     elif inargs.variable == 'hfds':
         legloc = 8
     elif inargs.variable == 'pe':
-        legloc = 2
+        legloc = 3
     elif inargs.variable == 'tauuo':
         legloc = 9
     else:
@@ -152,7 +153,7 @@ author:
     parser.add_argument("--execute", action="store_true", default=False,
                         help="Switch to have this script execute the make command rather than printing to screen")
 
-    parser.add_argument("--legloc", type=int, default=8,
+    parser.add_argument("--legloc", type=int, default=None,
                         help="Legend location")
     parser.add_argument("--aa_physics", type=int, default=None,
                         help="Need to supply this for the P-E plot and CSIRO other plots")
