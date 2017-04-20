@@ -273,8 +273,8 @@ def main(inargs):
     climatology_dict = {}
     time_trend_dict = {}
     tas_scaled_trend_dict = {}
-    experiments = file_dict.keys()
-    for experiment in experiments:
+    branch_dict = {}
+    for experiment in ['historical', 'historicalGHG', 'historicalAA', 'historicalnoAA', 'piControl']:
         filenames = file_dict[experiment]
         if not filenames:
             climatology_dict[experiment] = None
@@ -293,21 +293,33 @@ def main(inargs):
             with iris.FUTURE.context(cell_datetime_objects=True):
                 cube = iris.load(filenames, gio.check_iris_var(inargs.var))
 
+                # Merge cubes
                 metadata_dict[filenames[0]] = cube[0].attributes['history']
                 equalise_attributes(cube)
                 iris.util.unify_time_units(cube)
                 cube = cube.concatenate_cube()
                 cube = gio.check_time_units(cube)
-                cube = cube.extract(time_constraint)
-                if inargs.control_timesteps and experiment == 'piControl':
-                    coord_names = [coord.name() for coord in cube.dim_coords]
-                    assert coord_names[0] == 'time'
-                    cube = cube[0:inargs.control_timesteps, ::]
-                cube, units = scale_data(cube, inargs.var, reverse_sign=inargs.reverse_sign)
 
+                # Branch time info
+                coord_names = [coord.name() for coord in cube.dim_coords]
+                assert coord_names[0] == 'time'
+
+                if 'historical' in experiment:
+                    branch_time = cube.attributes['branch_time']
+                    time_length = cube.shape[0]
+                    branch_dict[experiment] = (branch_time, time_length)
+                elif inargs.control_overlap and experiment == 'piControl':
+                    branch_time, time_length = branch_dict['historical']
+                    start_index = uconv.find_nearest(cube.coord('time').points, branch_time + 15.5, index=True)
+                    cube = cube[start_index:start_index+time_length, ::]
+
+                # Data scaling, temporal and spatial considerations 
+                cube = cube.extract(time_constraint)
+                cube, units = scale_data(cube, inargs.var, reverse_sign=inargs.reverse_sign)
                 cube = timeseries.convert_to_annual(cube)
                 cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
 
+                # Zonal statistic
                 if inargs.area_adjust:
                     if regrid_status:
                         area_dict[experiment] = None 
@@ -319,6 +331,7 @@ def main(inargs):
                     aggregation = 'Zonal mean'
                 zonal_cube.remove_coord('longitude')
 
+                # Climatology and trends
                 climatology_dict[experiment] = calculate_climatology(zonal_cube, inargs.climatology_time, experiment)
                 time_trend_dict[experiment] = get_trend_cube(zonal_cube)
                 if tas_dict[experiment]:
@@ -421,8 +434,8 @@ note:
                         default=('1986-01-01', '2005-12-31'), help="Time period for climatology [default = entire]")
     parser.add_argument("--total_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=None, help="Time period for entire analysis [default = entire]")
-    parser.add_argument("--control_timesteps", type=int, default=None,
-                        help="Restrict the control data to this many timesteps [default = entire]")
+    parser.add_argument("--control_overlap", action="store_true", default=False,
+                        help="Restrict the control data to overlap time period with historical experiment [default = False]")
 
     parser.add_argument("--legloc", type=int, default=8,
                         help="Legend location")

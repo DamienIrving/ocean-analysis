@@ -183,11 +183,18 @@ def find_duplicates(inlist):
     return D
 
 
-def find_nearest(array, value):
-    """Find the closest array item to value."""
+def find_nearest(array, value, index=False):
+    """Find the closest array item to value.
+
+    index: return index instead of value
+
+    """
     
     idx = (numpy.abs(numpy.array(array) - value)).argmin()
-    return array[idx]
+    if index:
+        return idx
+    else:
+        return array[idx]
 
 
 def fix_label(label):

@@ -124,6 +124,7 @@ def main(inargs, run):
     if inargs.area:
         command_list.append('--area_adjust ')
 
+    command_list.append('--control_overlap ')
     final_command = " ".join(command_list)
     print(final_command)
     if inargs.execute:
