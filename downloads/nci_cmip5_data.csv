@@ -232,7 +232,7 @@ historicalMisc,historicalnoAA,IPSL-CM5A-LR,IPSL,r4i1p4,,,,,,r87/dbi599,,,,,,,,,,
 1pctCO2,1pctCO2,CanESM2,CCCMA,r1i1p1,,,,,,ua6,,,ua6,,,,ua6,ua6,ua6,ua6,ua6,
 1pctCO2,1pctCO2,CCSM4,NCAR,r1i1p1,,,,,,r87/dbi599,,ua6,r87/dbi599,,,,ua6,ua6,r87/dbi599,r87/dbi599,ua6,
 piControl,piControl,CanESM2,CCCMA,r1i1p1,,,,ua6,ua6,ua6,ua6,ua6,ua6,ua6,,ua6,ua6,ua6,ua6,ua6,,
-piControl,piControl,CCSM4,NCAR,r1i1p1,,,,ua6,ua6,ua6,ua6,r87/dbi599,ua6,ua6,,,ua6,ua6,ua6,ua6,,Inconsistent so units among files. ua6 files corrected with fix_salinity_units.py 
+piControl,piControl,CCSM4,NCAR,r1i1p1,r87/dbi599,,,ua6,ua6,ua6,ua6,r87/dbi599,ua6,ua6,,,ua6,ua6,ua6,ua6,,Inconsistent so units among files. ua6 files corrected with fix_salinity_units.py 
 piControl,piControl,CSIRO-Mk3-6-0,CSIRO-QCCCE,r1i1p1,ua6,,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,
 piControl,piControl,FGOALS-g2,LASG-CESS,r1i1p1,ua6,,,,,,ua6,ua6,ua6,ua6,,ua6,ua6,ua6,ua6,ua6,,
 piControl,piControl,GFDL-CM3,NOAA-GFDL,r1i1p1,,ua6,,ua6,ua6,ua6,ua6,ua6,ua6,,,ua6,ua6,ua6,ua6,ua6,,
