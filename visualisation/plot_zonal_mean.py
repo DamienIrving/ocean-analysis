@@ -310,13 +310,14 @@ def main(inargs):
                     branch_dict[experiment] = (branch_time, time_length)
                 elif inargs.control_overlap and experiment == 'piControl':
                     branch_time, time_length = branch_dict['historical']
-                    start_index = uconv.find_nearest(cube.coord('time').points, branch_time + 15.5, index=True)
+                    start_index, error = uconv.find_nearest(cube.coord('time').points, branch_time + 15.5, index=True)
+                    assert abs(error) < 10, "Large error in locating branch time"
                     cube = cube[start_index:start_index+time_length, ::]
 
                 # Data scaling, temporal and spatial considerations 
                 cube = cube.extract(time_constraint)
                 cube, units = scale_data(cube, inargs.var, reverse_sign=inargs.reverse_sign)
-                cube = timeseries.convert_to_annual(cube)
+                cube = timeseries.convert_to_annual(cube, full_months=True)
                 cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
 
                 # Zonal statistic

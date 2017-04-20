@@ -116,15 +116,43 @@ def calc_trend(cube, running_mean=True, per_yr=True, remove_scaling=False):
     return trend
 
 
-def convert_to_annual(cube):
+def trim_incomplete_years(cube):
+    """Remove years from start or end with incomplete months."""
+
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    assert coord_names[0] == 'time'
+
+    years = list(cube.coord('year').points)
+    
+    start_index = years.index(years[0] + 1)
+    if start_index == 12:
+        start_index = 0
+    assert start_index < 12
+        
+    end_index = years.index(years[-1]) - len(years)
+    if end_index == -12:
+        cube = cube[start_index:, ::]
+    else:
+        assert -12 < end_index < 0
+        cube = cube[start_index:end_index, ::]
+
+    return cube
+
+
+def convert_to_annual(cube, full_months=False):
     """Convert data to annual timescale.
 
     Args:
       cube (iris.cube.Cube)
+      full_months(bool): only include years with data for all 12 months
 
     """
 
     iris.coord_categorisation.add_year(cube, 'time')
+
+    if full_months:
+        cube = trim_incomplete_years(cube)
+  
     cube = cube.aggregated_by(['year'], iris.analysis.MEAN)
     cube.remove_coord('year')
 

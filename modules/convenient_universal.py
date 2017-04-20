@@ -191,10 +191,11 @@ def find_nearest(array, value, index=False):
     """
     
     idx = (numpy.abs(numpy.array(array) - value)).argmin()
+    error = array[idx] - value
     if index:
-        return idx
+        return idx, error
     else:
-        return array[idx]
+        return array[idx], error
 
 
 def fix_label(label):
