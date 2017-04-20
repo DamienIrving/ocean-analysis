@@ -281,6 +281,7 @@ def main(inargs):
             time_trend_dict[experiment] = None
             tas_scaled_trend_dict[experiment] = None
         else:
+            print(experiment)
             if 'historical' in experiment:
                 try:
                     time_constraint = gio.get_time_constraint(inargs.total_time)
@@ -298,6 +299,10 @@ def main(inargs):
                 cube = cube.concatenate_cube()
                 cube = gio.check_time_units(cube)
                 cube = cube.extract(time_constraint)
+                if inargs.control_timesteps and experiment == 'piControl':
+                    coord_names = [coord.name() for coord in cube.dim_coords]
+                    assert coord_names[0] == 'time'
+                    cube = cube[0:inargs.control_timesteps, ::]
                 cube, units = scale_data(cube, inargs.var, reverse_sign=inargs.reverse_sign)
 
                 cube = timeseries.convert_to_annual(cube)
@@ -416,6 +421,8 @@ note:
                         default=('1986-01-01', '2005-12-31'), help="Time period for climatology [default = entire]")
     parser.add_argument("--total_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=None, help="Time period for entire analysis [default = entire]")
+    parser.add_argument("--control_timesteps", type=int, default=None,
+                        help="Restrict the control data to this many timesteps [default = entire]")
 
     parser.add_argument("--legloc", type=int, default=8,
                         help="Legend location")
