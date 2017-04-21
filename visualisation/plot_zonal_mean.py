@@ -342,6 +342,9 @@ def main(inargs):
                         basin_array = uconv.create_basin_array(cube)
                     cube.data.mask = numpy.where((cube.data.mask == False) & (basin_array == basins[inargs.basin]), False, True)
 
+                # Scale
+                cube, units = scale_data(cube, inargs.var, reverse_sign=inargs.reverse_sign)
+
                 # Zonal statistic
                 if inargs.area_adjust:
                     if regrid_status:
@@ -353,9 +356,6 @@ def main(inargs):
                     zonal_cube = cube.collapsed('longitude', iris.analysis.MEAN)
                     aggregation = 'Zonal mean'
                 zonal_cube.remove_coord('longitude')
-
-                # Scale
-                zonal_cube, units = scale_data(zonal_cube, inargs.var, reverse_sign=inargs.reverse_sign)
 
                 # Climatology and trends
                 climatology_dict[experiment] = calculate_climatology(zonal_cube, inargs.climatology_time, experiment)
