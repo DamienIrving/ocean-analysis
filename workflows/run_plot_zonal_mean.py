@@ -100,8 +100,10 @@ def main(inargs, run):
         # Cell area data files
         command_list.append('--' + alt_experiment.lower() + '_area_file')
         if alt_experiment == 'historicalAA' and inargs.model == 'CSIRO-Mk3-6-0':
+            assert inargs.aa_physics, "Need to provie --aa_physics"
             fx_physics = 'p' + str(inargs.aa_physics)
         elif alt_experiment == 'historicalnoAA' and inargs.model == 'CSIRO-Mk3-6-0':
+            assert inargs.noaa_physics, "Need to provie --noaa_physics"
             fx_physics = 'p' + str(inargs.noaa_physics)
         else:
             fx_physics = 'p0'
