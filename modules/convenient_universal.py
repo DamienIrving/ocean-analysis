@@ -6,6 +6,7 @@ Functions:
   broadcast_array    -- Broadcast an array to a target shape
   calc_significance  -- Perform significance test
   coordinate_paris   -- Generate lat/lon pairs
+  create_basin_array -- Create an ocean basin array
   dict_filter        -- Filter dictionary according to specified keys
   find_nearest       -- Find the closest array item to value
   find_duplicates    -- Return list of duplicates in a list
@@ -13,6 +14,7 @@ Functions:
   get_threshold      -- Turn the user input threshold into a numeric threshold
   hi_lo              -- Determine the new highest and lowest value.
   list_kwargs        -- List keyword arguments of a function
+  mask_marginal_seas -- Mask the marginal seas
   match_dates        -- Take list of dates and match with the corresponding times 
                         in a detailed time axis
   single2list        -- Check if item is a list, then convert if not
@@ -166,6 +168,45 @@ def coordinate_pairs(lat_axis, lon_axis):
     return lat_mesh.flatten(), lon_mesh.flatten()
 
 
+def create_basin_array(cube):
+    """Create an ocean basin array.
+
+    For similarity with the CMIP5 basin file, in the output:
+      Atlantic Ocean = 2
+      Pacific Ocean = 3
+      Indian Ocean = 5
+      (land = 0)
+
+    FIXME: When applied to CMIP5 data, some of the marginal seas might
+      not be masked
+
+    """
+
+    pacific_bounds = [147, 294]
+    indian_bounds = [23, 147]
+
+    lat_axis = cube.coord('latitude').points
+    lon_axis = adjust_lon_range(cube.coord('longitude').points, radians=False)
+
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    lat_index = coord_names.index('latitude')
+    lon_index = coord_names.index('longitude')
+
+    lat_array = broadcast_array(lat_axis, lat_index, cube.shape)
+    lon_array = broadcast_array(lon_axis, lon_index, cube.shape)
+
+    basin_array = numpy.ones(cube.shape) * 2
+    basin_array = numpy.where((lon_array >= pacific_bounds[0]) & (lon_array <= pacific_bounds[1]), 3, basin_array)
+    basin_array = numpy.where((lon_array >= indian_bounds[0]) & (lon_array <= indian_bounds[1]), 5, basin_array)
+
+    basin_array = numpy.where((basin_array == 3) & (lon_array >= 279) & (lat_array >= 10), 2, basin_array)
+    basin_array = numpy.where((basin_array == 5) & (lon_array >= 121) & (lat_array >= 0), 3, basin_array)
+
+    basin_array = numpy.where((basin_array == 5) & (lat_array >= 25), 0, basin_array)
+
+    return basin_array
+
+
 def dict_filter(indict, key_list):
     """Filter dictionary according to specified keys."""
     
@@ -260,6 +301,21 @@ def list_kwargs(func):
     nopt = len(details.defaults)
     
     return details.args[-nopt:]
+
+
+def mask_marginal_seas(data_cube, basin_cube):
+    """Mask marginal seas.
+
+    The marginal seas all have a basin value > 5.
+
+    """
+
+    ndim = data_cube.ndim
+    basin_array = broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], data_cube.shape)
+
+    data_cube.data.mask = numpy.where((data_cube.data.mask == False) & (basin_array <= 5), False, True)
+
+    return data_cube
 
 
 def match_dates(datetimes, datetime_axis):

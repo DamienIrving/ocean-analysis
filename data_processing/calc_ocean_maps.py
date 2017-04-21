@@ -141,45 +141,6 @@ def calc_zonal_vertical_mean(vertical_mean_cube, depth_cube, basin_array, basin_
     return zonal_vertical_mean_cube
 
 
-def create_basin_array(cube):
-    """Create a basin array.
-
-    For similarity with the CMIP5 basin file, in the output:
-      Atlantic Ocean = 2
-      Pacific Ocean = 3
-      Indian Ocean = 5
-      (land = 0)
-
-    FIXME: When applied to CMIP5 data, some of the marginal seas might
-      not be masked
-
-    """
-
-    pacific_bounds = [147, 294]
-    indian_bounds = [23, 147]
-
-    lat_axis = cube.coord('latitude').points
-    lon_axis = uconv.adjust_lon_range(cube.coord('longitude').points, radians=False)
-
-    coord_names = [coord.name() for coord in cube.dim_coords]
-    lat_index = coord_names.index('latitude')
-    lon_index = coord_names.index('longitude')
-
-    lat_array = uconv.broadcast_array(lat_axis, lat_index, cube.shape)
-    lon_array = uconv.broadcast_array(lon_axis, lon_index, cube.shape)
-
-    basin_array = numpy.ones(cube.shape) * 2
-    basin_array = numpy.where((lon_array >= pacific_bounds[0]) & (lon_array <= pacific_bounds[1]), 3, basin_array)
-    basin_array = numpy.where((lon_array >= indian_bounds[0]) & (lon_array <= indian_bounds[1]), 5, basin_array)
-
-    basin_array = numpy.where((basin_array == 3) & (lon_array >= 279) & (lat_array >= 10), 2, basin_array)
-    basin_array = numpy.where((basin_array == 5) & (lon_array >= 121) & (lat_array >= 0), 3, basin_array)
-
-    basin_array = numpy.where((basin_array == 5) & (lat_array >= 25), 0, basin_array)
-
-    return basin_array
-
-
 def create_depth_array(cube):
     """Create depth array."""
 
@@ -264,21 +225,6 @@ def get_chunks(cube_shape, coord_names, chunk=False):
     return start_indexes, step
 
 
-def mask_marginal_seas(data_cube, basin_cube):
-    """Mask marginal seas.
-
-    The marginal seas all have a basin value > 5.
-
-    """
-
-    ndim = data_cube.ndim
-    basin_array = uconv.broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], data_cube.shape)
-
-    data_cube.data.mask = numpy.where((data_cube.data.mask == False) & (basin_array <= 5), False, True)
-
-    return data_cube
-
-
 def regrid_cube(cube):
     """Regrid the cube.
 
@@ -331,7 +277,7 @@ def main(inargs):
             data_cube = data_cube - climatology_cube
 
         if basin_cube:
-            data_cube = mask_marginal_seas(data_cube, basin_cube)
+            data_cube = uconv.mask_marginal_seas(data_cube, basin_cube)
 
         data_cube, coord_names, regrid_status = regrid_cube(data_cube)
 
@@ -356,7 +302,7 @@ def main(inargs):
                         if basin_cube and not regrid_status:
                             basin_array = basin_cube.data
                         else: 
-                            basin_array = create_basin_array(vertical_mean)
+                            basin_array = uconv.create_basin_array(vertical_mean)
 
                         out_list.append(calc_zonal_vertical_mean(vertical_mean.copy(), depth_cube, basin_array, basin, layer, atts, standard_name, var_name))
 
@@ -366,7 +312,7 @@ def main(inargs):
                 ndim = cube_slice.ndim
                 basin_array = uconv.broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], cube_slice.shape) 
             else: 
-                basin_array = create_basin_array(cube_slice)
+                basin_array = uconv.create_basin_array(cube_slice)
 
             for basin in basins.keys():
                 out_list.append(calc_zonal_mean(cube_slice.copy(), basin_array, basin, atts, standard_name, var_name))

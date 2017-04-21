@@ -56,15 +56,16 @@ def find_files(df, run, alt_experiment, experiment, var, model, tscale, match=0,
     return files
     
 
-def main(inargs, run):
+def main(inargs, basin, run):
     """Run the program."""
 
     command_list = ['python ../visualisation/plot_zonal_mean.py']
     aggregator = 'zi' if inargs.area else 'zm'
-    command_list.append('/g/data/r87/dbi599/figures/%s-%s/%s-%s_Oyr_%s_piControl-historical-GHG-AA_%s_198601-200512.png'  %(inargs.variable, aggregator, inargs.variable, aggregator, inargs.model, run))
+    command_list.append('/g/data/r87/dbi599/figures/%s-%s/%s-%s_Oyr_%s_piControl-historical-GHG-AA_%s_%s_198601-200512.png'  %(inargs.variable, aggregator, inargs.variable, aggregator, inargs.model, run, basin))
     command_list.append(inargs.standard_name)
     command_list.append(inargs.model)
     command_list.append(run)
+    command_list.append(basin)
     
     df = pandas.read_csv(inargs.data_locs)
     
@@ -97,8 +98,7 @@ def main(inargs, run):
             tas_file = find_files(df, exp_run, alt_experiment, experiment, 'tas', inargs.model, 'yr', match=inargs.match)
             command_list.append(tas_file)        
 
-        # Cell area data files
-        command_list.append('--' + alt_experiment.lower() + '_area_file')
+        # Cell area and basin data files
         if alt_experiment == 'historicalAA' and inargs.model == 'CSIRO-Mk3-6-0':
             assert inargs.aa_physics, "Need to provie --aa_physics"
             fx_physics = 'p' + str(inargs.aa_physics)
@@ -109,7 +109,12 @@ def main(inargs, run):
             fx_physics = 'p0'
 
         area_file = find_files(df, exp_run, alt_experiment, experiment, 'areacello', inargs.model, 'fx', fx_physics=fx_physics)
-        command_list.append(area_file)        
+        command_list.append('--' + alt_experiment.lower() + '_area_file')
+        command_list.append(area_file)
+
+        basin_file = find_files(df, exp_run, alt_experiment, experiment, 'basin', inargs.model, 'fx', fx_physics=fx_physics)
+        command_list.append('--' + alt_experiment.lower() + '_basin_file')
+        command_list.append(basin_file)
 
     if inargs.legloc:
         legloc = inargs.legloc
@@ -168,5 +173,7 @@ author:
                         help="Add the area adjustment flag")
 
     args = parser.parse_args()
-    for run in args.runs:
-        main(args, run)
+
+    for basin in ('globe', 'atlantic', 'indian', 'pacific'):
+        for run in args.runs:
+            main(args, basin, run)

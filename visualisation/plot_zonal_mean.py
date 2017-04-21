@@ -47,6 +47,10 @@ experiment_colors['historicalAA'] = 'blue'
 experiment_colors['historicalGHG'] = 'red'
 experiment_colors['historicalnoAA'] = 'orange'
                
+basins = {'atlantic': 2, 
+          'pacific': 3,
+          'indian': 5}
+
 
 def scale_data(cube, var, reverse_sign=False):
     """Scale data"""
@@ -146,7 +150,7 @@ def get_scale_factor(tas_cube):
     return scale_factor
 
 
-def plot_climatology(climatology_dict, var, model, run, units, legloc, aggregation='Zonal mean'):
+def plot_climatology(climatology_dict, var, units, legloc, aggregation='Zonal mean'):
     """Plot the zonal mean climatology"""
     
     for experiment in ['historical', 'historicalGHG', 'historicalAA', 'historicalnoAA', 'piControl']:
@@ -156,7 +160,6 @@ def plot_climatology(climatology_dict, var, model, run, units, legloc, aggregati
 
     plt.legend(loc=legloc)
     plt.ylabel('%s %s (%s)' %(aggregation, var.replace('_', ' '), units) )
-    plt.title('%s (%s)' %(model, run.replace('_', ' ')))
 
 
 def check_lats(climatology_dict, experiment):
@@ -223,7 +226,13 @@ def read_data(inargs):
                  'historicalnoAA': inargs.historicalnoaa_area_file,
                  'piControl': inargs.picontrol_area_file}
 
-    return file_dict, tas_dict, area_dict
+    basin_dict = {'historical': inargs.historical_basin_file,
+                  'historicalGHG': inargs.historicalghg_basin_file,
+                  'historicalAA': inargs.historicalaa_basin_file,
+                  'historicalnoAA': inargs.historicalnoaa_basin_file,
+                  'piControl': inargs.picontrol_basin_file}
+
+    return file_dict, tas_dict, area_dict, basin_dict
 
 
 def get_areacello_data(cube):
@@ -267,7 +276,7 @@ def area_ajustment(data_cube, area_file, metadata_dict):
 def main(inargs):
     """Run the program."""
 
-    file_dict, tas_dict, area_dict = read_data(inargs)
+    file_dict, tas_dict, area_dict, basin_dict = read_data(inargs)
 
     metadata_dict = {}
     climatology_dict = {}
@@ -314,11 +323,24 @@ def main(inargs):
                     assert abs(error) < 10, "Large error in locating branch time"
                     cube = cube[start_index:start_index+time_length, ::]
 
-                # Data scaling, temporal and spatial considerations 
+                # Temporal subsetting and smoothing
                 cube = cube.extract(time_constraint)
-                cube, units = scale_data(cube, inargs.var, reverse_sign=inargs.reverse_sign)
                 cube = timeseries.convert_to_annual(cube, full_months=True)
+
+                # Mask marginal seas
+                if basin_dict[experiment]:
+                    basin_cube = iris.load_cube(basin_dict[experiment]) 
+                    cube = uconv.mask_marginal_seas(cube, basin_cube)
+
+                # Regrid and select basin
                 cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+                if not inargs.basin == 'globe':
+                    if basin_dict[experiment] and not regrid_status:
+                        ndim = cube.ndim
+                        basin_array = uconv.broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], cube.shape) 
+                    else: 
+                        basin_array = uconv.create_basin_array(cube)
+                    cube.data.mask = numpy.where((cube.data.mask == False) & (basin_array == basins[inargs.basin]), False, True)
 
                 # Zonal statistic
                 if inargs.area_adjust:
@@ -331,6 +353,9 @@ def main(inargs):
                     zonal_cube = cube.collapsed('longitude', iris.analysis.MEAN)
                     aggregation = 'Zonal mean'
                 zonal_cube.remove_coord('longitude')
+
+                # Scale
+                zonal_cube, units = scale_data(zonal_cube, inargs.var, reverse_sign=inargs.reverse_sign)
 
                 # Climatology and trends
                 climatology_dict[experiment] = calculate_climatology(zonal_cube, inargs.climatology_time, experiment)
@@ -353,7 +378,8 @@ def main(inargs):
     
     ax_main = plt.subplot(gs[0])
     plt.sca(ax_main)
-    plot_climatology(climatology_dict, inargs.var, inargs.model, inargs.run, units, inargs.legloc, aggregation)
+    plot_climatology(climatology_dict, inargs.var, units, inargs.legloc, aggregation)
+    plt.title('%s (%s), %s' %(inargs.model, inargs.run, inargs.basin) )
     
     ax_diff = plt.subplot(gs[1])
     plt.sca(ax_diff)
@@ -369,7 +395,7 @@ def main(inargs):
         plot_trend(tas_scaled_trend_dict, units, scaled=True)
     
     plt.xlabel('latitude')
-        
+
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
 
@@ -394,7 +420,8 @@ note:
     parser.add_argument("var", type=str, help="Variable standard_name")
     parser.add_argument("model", type=str, help="Model name")
     parser.add_argument("run", type=str, help="Run (e.g. r1)")
-    
+    parser.add_argument("basin", type=str, choices=('atlantic', 'pacific', 'indian', 'globe'), help="Ocean basin")
+
     parser.add_argument("--historical_files", type=str, default=None, nargs='*',
                         help="Input files for the historical experiment")
     parser.add_argument("--historicalghg_files", type=str, default=None, nargs='*',
@@ -425,6 +452,17 @@ note:
                         help="Cell area file for historicalnoAA experiment")
     parser.add_argument("--picontrol_area_file", type=str, default=None, nargs='*',
                         help="Cell area file for piControl experiment")
+
+    parser.add_argument("--historical_basin_file", type=str, default=None, nargs='*',
+                        help="Cell basin file for historical experiment")
+    parser.add_argument("--historicalghg_basin_file", type=str, default=None, nargs='*',
+                        help="Cell basin file for historicalGHG experiment")
+    parser.add_argument("--historicalaa_basin_file", type=str, default=None, nargs='*',
+                        help="Cell basin file for historicalAA experiment")
+    parser.add_argument("--historicalnoaa_basin_file", type=str, default=None, nargs='*',
+                        help="Cell basin file for historicalnoAA experiment")
+    parser.add_argument("--picontrol_basin_file", type=str, default=None, nargs='*',
+                        help="Cell basin file for piControl experiment")
 
     parser.add_argument("--area_adjust", action="store_true", default=False,
                         help="Adjust plots for area [default=False]")
