@@ -291,12 +291,9 @@ def main(inargs):
             tas_scaled_trend_dict[experiment] = None
         else:
             print(experiment)
-            if 'historical' in experiment:
-                try:
-                    time_constraint = gio.get_time_constraint(inargs.total_time)
-                except (AttributeError, TypeError):
-                    time_constraint = iris.Constraint()
-            else:
+            try:
+                time_constraint = gio.get_time_constraint(inargs.total_time)
+            except (AttributeError, TypeError):
                 time_constraint = iris.Constraint()
 
             with iris.FUTURE.context(cell_datetime_objects=True):
@@ -309,22 +306,30 @@ def main(inargs):
                 cube = cube.concatenate_cube()
                 cube = gio.check_time_units(cube)
 
-                # Branch time info
+                # Time extraction and branch time info
                 coord_names = [coord.name() for coord in cube.dim_coords]
                 assert coord_names[0] == 'time'
 
                 if 'historical' in experiment:
+                    original_time_length = cube.shape[0]
+                    cube = cube.extract(time_constraint)
+                    new_time_length = cube.shape[0]
+                    branch_time_index_offset = original_time_length - new_time_length
+
                     branch_time = cube.attributes['branch_time']
                     time_length = cube.shape[0]
-                    branch_dict[experiment] = (branch_time, time_length)
-                elif inargs.control_overlap and experiment == 'piControl':
-                    branch_time, time_length = branch_dict['historical']
+                    branch_dict[experiment] = (branch_time, time_length, branch_time_index_offset)
+
+                elif experiment == 'piControl':
+                    branch_time, time_length, branch_time_index_offset = branch_dict['historical']
                     start_index, error = uconv.find_nearest(cube.coord('time').points, branch_time + 15.5, index=True)
                     assert abs(error) < 10, "Large error in locating branch time"
+                    pdb.set_trace()
+                    start_index = start_index + branch_time_index_offset
                     cube = cube[start_index:start_index+time_length, ::]
 
-                # Temporal subsetting and smoothing
-                cube = cube.extract(time_constraint)
+                # Temporal smoothing
+                
                 cube = timeseries.convert_to_annual(cube, full_months=True)
 
                 # Mask marginal seas
@@ -472,9 +477,7 @@ note:
     parser.add_argument("--climatology_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1986-01-01', '2005-12-31'), help="Time period for climatology [default = entire]")
     parser.add_argument("--total_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
-                        default=None, help="Time period for entire analysis [default = entire]")
-    parser.add_argument("--control_overlap", action="store_true", default=False,
-                        help="Restrict the control data to overlap time period with historical experiment [default = False]")
+                        default=None, help="Time period for entire analysis. Must go right to end of experiment for control overlap period to be calculated correctly. [default = entire]")
 
     parser.add_argument("--legloc", type=int, default=8,
                         help="Legend location")
