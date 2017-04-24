@@ -61,7 +61,7 @@ def main(inargs, basin, run):
 
     command_list = ['python ../visualisation/plot_zonal_mean.py']
     aggregator = 'zi' if inargs.area else 'zm'
-    command_list.append('/g/data/r87/dbi599/figures/%s-%s/%s-%s_Oyr_%s_piControl-historical-GHG-AA_%s_%s_198601-200512.png'  %(inargs.variable, aggregator, inargs.variable, aggregator, inargs.model, run, basin))
+    command_list.append('/g/data/r87/dbi599/figures/%s-%s/%s-%s_Oyr_%s_piControl-historical-GHG-AA_%s_%s_clim-198601-200512_trend-all.png'  %(inargs.variable, aggregator, inargs.variable, aggregator, inargs.model, run, basin))
     command_list.append(inargs.standard_name)
     command_list.append(inargs.model)
     command_list.append(run)
