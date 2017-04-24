@@ -324,7 +324,6 @@ def main(inargs):
                     branch_time, time_length, branch_time_index_offset = branch_dict['historical']
                     start_index, error = uconv.find_nearest(cube.coord('time').points, branch_time + 15.5, index=True)
                     assert abs(error) < 10, "Large error in locating branch time"
-                    pdb.set_trace()
                     start_index = start_index + branch_time_index_offset
                     cube = cube[start_index:start_index+time_length, ::]
 
