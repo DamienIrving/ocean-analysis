@@ -74,8 +74,13 @@ def main(inargs, basin, run):
             experiment = 'historicalMisc'
         else:
             experiment = alt_experiment
-
-        exp_run = 'r1' if (experiment == 'piControl') else run
+        
+        if experiment == 'piControl':
+            exp_run = 'r1'
+        elif (experiment == 'historicalMisc') and (inargs.model == 'FGOALS-g2'):
+            exp_run = 'r2' 
+        else: 
+            exp_run = run
 
         # Variable data files
         command_list.append('--' + alt_experiment.lower() + '_files')
