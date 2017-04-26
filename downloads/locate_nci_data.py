@@ -26,13 +26,8 @@ def main(inargs):
                             mip = inargs.mip,
                             model = inargs.model,
                             ensemble = inargs.ensemble)
-
-    if inargs.mip[0] in ['A', 'O']:
-        tscale = inargs.mip[1:]
-    else:
-        tscale = inargs.mip
  
-    path = '/g/data/ua6/DRSv2/CMIP5/%s/%s/%s/%s/%s/%s/latest/*' %(inargs.model, inargs.experiment, tscale, inargs.realm, inargs.ensemble, inargs.variable)
+    path = '/g/data/ua6/DRSv2/CMIP5/%s/%s/%s/%s/%s/%s/latest/*' %(inargs.model, inargs.experiment, inargs.time_freq, inargs.realm, inargs.ensemble, inargs.variable)
     print('DRSv2:', glob.glob(path))
 
     print('Elsewhere path:')
@@ -66,8 +61,9 @@ dependencies:
 
     parser.add_argument("experiment", type=str, help="Experiment name")
     parser.add_argument("variable", type=str, help="var_name")
-    parser.add_argument("mip", type=str, help="e.g. Omon, Amon or fx")
-    parser.add_argument("realm", type=str, help="e.g. atmos or ocean")
+    parser.add_argument("time_freq", type=str, help="e.g. mon or fx")
+    parser.add_argument("mip", type=str, help="e.g. Omon, Amon, fx or aero")
+    parser.add_argument("realm", type=str, help="e.g. atmos, ocean or aerosol")
     parser.add_argument("model", type=str, help="Model name")
     parser.add_argument("ensemble", type=str, help="e.g. r1i1p1")
 
