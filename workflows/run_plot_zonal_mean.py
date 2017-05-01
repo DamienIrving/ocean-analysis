@@ -113,11 +113,18 @@ def main(inargs, basin, run):
         else:
             fx_physics = 'p0'
 
-        area_file = find_files(df, exp_run, alt_experiment, experiment, 'areacello', inargs.model, 'fx', fx_physics=fx_physics)
+        if inargs.historical_fx:
+            fx_alt_experiment = 'historical'
+            fx_experiment = 'historical'
+        else:
+            fx_alt_experiment = alt_experiment
+            fx_experiment = experiment
+
+        area_file = find_files(df, exp_run, fx_alt_experiment, fx_experiment, 'areacello', inargs.model, 'fx', fx_physics=fx_physics)
         command_list.append('--' + alt_experiment.lower() + '_area_file')
         command_list.append(area_file)
 
-        basin_file = find_files(df, exp_run, alt_experiment, experiment, 'basin', inargs.model, 'fx', fx_physics=fx_physics)
+        basin_file = find_files(df, exp_run, fx_alt_experiment, fx_experiment, 'basin', inargs.model, 'fx', fx_physics=fx_physics)
         command_list.append('--' + alt_experiment.lower() + '_basin_file')
         command_list.append(basin_file)
 
@@ -164,6 +171,8 @@ author:
 
     parser.add_argument("--execute", action="store_true", default=False,
                         help="Switch to have this script execute the make command rather than printing to screen")
+    parser.add_argument("--historical_fx", action="store_true", default=False,
+                        help="Use the historical areacello and basin files for GHG is AA too [default=False]")
 
     parser.add_argument("--legloc", type=int, default=None,
                         help="Legend location")
