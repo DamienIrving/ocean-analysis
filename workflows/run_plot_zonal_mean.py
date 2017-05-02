@@ -93,7 +93,7 @@ def main(inargs, basin, run):
                 physics = inargs.noaa_physics
             else:
                 physics = 1
-            file_list = glob.glob('/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/mon/atmos/%si1p%s/pe/latest/pe_*.nc' %(inargs.model, experiment, exp_run, str(physics)))
+            file_list = glob.glob('/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/mon/ocean/%si1p%s/pe/latest/pe_*.nc' %(inargs.model, experiment, exp_run, str(physics)))
             files = " ".join(file_list)
         else:
             files = find_files(df, exp_run, alt_experiment, experiment, inargs.variable, inargs.model, 'mon', match=inargs.match, fixed=inargs.fixed)
@@ -126,9 +126,10 @@ def main(inargs, basin, run):
         command_list.append('--' + alt_experiment.lower() + '_area_file')
         command_list.append(area_file)
 
-        basin_file = find_files(df, exp_run, fx_alt_experiment, fx_experiment, 'basin', inargs.model, 'fx', fx_physics=fx_physics)
-        command_list.append('--' + alt_experiment.lower() + '_basin_file')
-        command_list.append(basin_file)
+        if not inargs.exclude_basin:
+            basin_file = find_files(df, exp_run, fx_alt_experiment, fx_experiment, 'basin', inargs.model, 'fx', fx_physics=fx_physics)
+            command_list.append('--' + alt_experiment.lower() + '_basin_file')
+            command_list.append(basin_file)
 
     if inargs.legloc:
         legloc = inargs.legloc
@@ -173,6 +174,9 @@ author:
 
     parser.add_argument("--execute", action="store_true", default=False,
                         help="Switch to have this script execute the make command rather than printing to screen")
+
+    parser.add_argument("--exclude_basin", action="store_true", default=False,
+                        help="Leave out basin files [default=False]")
     parser.add_argument("--historical_fx", action="store_true", default=False,
                         help="Use the historical areacello and basin files for GHG is AA too [default=False]")
 
