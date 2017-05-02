@@ -102,7 +102,7 @@ author:
 
     parser.add_argument("precip_files", type=str, nargs='*', help="Precipitation file")
     parser.add_argument("precip_var", type=str, help="Precipitation standard_name")
-    parser.add_argument("evap_dir", type=str, help="Evaporation file")
+    parser.add_argument("evap_dir", type=str, help="Evaporation directory")
     parser.add_argument("evap_var", type=str, help="Evaporation standard_name")
     parser.add_argument("pe_dir", type=str, help="Output p-e directory")
 
