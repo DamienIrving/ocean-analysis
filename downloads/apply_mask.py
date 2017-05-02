@@ -110,6 +110,7 @@ def get_outfile(infile, outfile_list, fnum, fixed=False, ocean=False):
             file_name = file_name.replace('Amon', 'Omon')
 
         outfile = file_dir + '/' + file_name
+        assert outfile != infile 
         os.system('mkdir -p %s'  %(file_dir) )
 
     return outfile
