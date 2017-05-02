@@ -74,21 +74,54 @@ def copy_mask(mask_cube, target_shape):
     return mask
 
 
+def get_outfile(infile, outfile_list, fnum, fixed=False):
+    """Modify the infile to define outfile."""
+
+    if outfile_list:
+        outfile = outfile_list[fnum]
+    else:
+        file_components = infile.split('/')
+        file_name = file_components.pop(-1)
+        file_dir = "/".join(file_components)
+
+        file_dir = file_dir.replace('ua6', 'r87/dbi599')
+        if fixed:
+            file_dir = file_dir + '/fixed'
+
+        outfile = file_dir + '/' + file_name
+        os.system('mkdir -p %s'  %(file_dir) )
+
+    return outfile
+    
+
 def main(inargs):
     """Run the program."""
 
-    data_cube = read_data(inargs.infile)
-    mask_cube = read_data(inargs.mask_file)
+    if inargs.outfiles:
+        assert len(inargs.infiles) == len(inargs.outfiles)
 
-    if inargs.mask_method == 'copy':    
-        mask = copy_mask(mask_cube, data_cube.shape)
+    for fnum, infile in enumerate(inargs.infiles):
 
-        data_cube.data = numpy.ma.asarray(data_cube.data)
-        data_cube.data.mask = mask
+        data_cube = read_data(infile)
+        mask_cube = read_data(inargs.mask_file)
 
-    outfile_metadata = {inargs.infile: data_cube.attributes['history'],}
-    data_cube.attributes['history'] = gio.write_metadata(file_info=outfile_metadata)
-    iris.save(data_cube, inargs.outfile)
+        if inargs.mask_method == 'copy':    
+            assert type(data_cube.data) == numpy.ndarray, "It is assumed that the input data has no mask"
+
+            mask = copy_mask(mask_cube, data_cube.shape)
+
+            data_cube.data = numpy.ma.asarray(data_cube.data)
+            data_cube.data.mask = mask
+
+        outfile_metadata = {infile: data_cube.attributes['history'],}
+        data_cube.attributes['history'] = gio.write_metadata(file_info=outfile_metadata)
+
+        outfile = get_outfile(infile, inargs.outfiles, fnum, fixed=inargs.fixed)
+         
+        if inargs.dry_run:
+            print(infile, outfile)
+        else:
+            iris.save(data_cube, outfile)
 
 
 if __name__ == '__main__':
@@ -104,10 +137,17 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("infile", type=str, help="Input data file")
+    parser.add_argument("infiles", type=str, nargs='*', help="Input data files")
     parser.add_argument("mask_file", type=str, help="Input mask file")
     parser.add_argument("mask_method", type=str, choices=('copy', 'sftlf'), help="Mask method")
-    parser.add_argument("outfile", type=str, help="Output file name")    
+
+    parser.add_argument("--outfiles", type=str, nargs='*', default=None, 
+                        help="Custom outfile names (otherwise they are automatically generated)")    
+
+    parser.add_argument("--fixed", action="store_true", default=False,
+                        help="Put the output files in a directory labelled fixed")
+    parser.add_argument("--dry_run", action="store_true", default=False,
+                        help="Print outfile names instead of executing")
 
     args = parser.parse_args()             
 
