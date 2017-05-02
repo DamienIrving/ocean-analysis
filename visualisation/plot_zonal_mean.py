@@ -323,7 +323,7 @@ def main(inargs):
                 elif experiment == 'piControl':
                     branch_time, time_length, branch_time_index_offset = branch_dict['historical']
                     start_index, error = uconv.find_nearest(cube.coord('time').points, float(branch_time) + 15.5, index=True)
-                    if abs(error) < 15:
+                    if abs(error) > 15:
                         print("WARNING: Large error of %f in locating branch time"  %(error))
                         start_index = 0
                     start_index = start_index + branch_time_index_offset
