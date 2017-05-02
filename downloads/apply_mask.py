@@ -91,7 +91,7 @@ def copy_mask(mask_cube, target_shape):
     return mask
 
 
-def get_outfile(infile, outfile_list, fnum, fixed=False):
+def get_outfile(infile, outfile_list, fnum, fixed=False, ocean=False):
     """Modify the infile to define outfile."""
 
     if outfile_list:
@@ -104,6 +104,10 @@ def get_outfile(infile, outfile_list, fnum, fixed=False):
         file_dir = file_dir.replace('ua6', 'r87/dbi599')
         if fixed:
             file_dir = file_dir + '/fixed'
+
+        if ocean:
+            file_dir = file_dir.replace('atmos', 'ocean')
+            file_name = file_name.replace('Amon', 'Omon')
 
         outfile = file_dir + '/' + file_name
         os.system('mkdir -p %s'  %(file_dir) )
@@ -134,7 +138,7 @@ def main(inargs):
         outfile_metadata = {infile: data_cube.attributes['history'],}
         data_cube.attributes['history'] = gio.write_metadata(file_info=outfile_metadata)
 
-        outfile = get_outfile(infile, inargs.outfiles, fnum, fixed=inargs.fixed)
+        outfile = get_outfile(infile, inargs.outfiles, fnum, fixed=inargs.fixed, ocean=inargs.ocean)
         print('infile:', infile) 
         print('outfile:', outfile)
        
@@ -164,6 +168,8 @@ author:
 
     parser.add_argument("--fixed", action="store_true", default=False,
                         help="Put the output files in a directory labelled fixed")
+    parser.add_argument("--ocean", action="store_true", default=False,
+                        help="Input files are atmos and output ocean")
     parser.add_argument("--dry_run", action="store_true", default=False,
                         help="Print outfile names instead of executing")
 
