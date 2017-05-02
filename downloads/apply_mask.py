@@ -117,10 +117,10 @@ def main(inargs):
         data_cube.attributes['history'] = gio.write_metadata(file_info=outfile_metadata)
 
         outfile = get_outfile(infile, inargs.outfiles, fnum, fixed=inargs.fixed)
-         
-        if inargs.dry_run:
-            print(infile, outfile)
-        else:
+        print('infile:', infile) 
+        print('outfile:', outfile)
+       
+        if not inargs.dry_run:
             iris.save(data_cube, outfile)
 
 
