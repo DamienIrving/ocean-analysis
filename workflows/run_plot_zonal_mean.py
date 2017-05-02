@@ -16,16 +16,18 @@ import glob
 
 # Define functions
 
-def find_files(df, run, alt_experiment, experiment, var, model, tscale, match=0, fx_physics=None):
+def find_files(df, run, alt_experiment, experiment, var, model, tscale, match=0, fx_physics=None, fixed=False):
     """Define the file names."""
     
     if var == 'tas':
         file_start = 'tas-global-mean'
-        end = 'all.nc'
+        file_end = 'all.nc'
     else:
         file_start = var
-        end = '.nc'
+        file_end = '.nc'
 
+    dir_end = 'latest/fixed' if fixed else 'latest'
+        
     df_selection = df.loc[(df['model'] == model) & (df['alt_experiment'] == alt_experiment)]
     df_selection = df_selection[df_selection.run.str.contains(run+'i')]
 
@@ -48,7 +50,7 @@ def find_files(df, run, alt_experiment, experiment, var, model, tscale, match=0,
                 realm = 'ocean'
             if fx_physics:
                 run = 'r0i0'+fx_physics
-            file_list = glob.glob('/g/data/%s/DRSv2/CMIP5/%s/%s/%s/%s/%s/%s/latest/%s_*%s' %(data_dir, model, experiment, tscale, realm, run, var, file_start, end))
+            file_list = glob.glob('/g/data/%s/DRSv2/CMIP5/%s/%s/%s/%s/%s/%s/%s/%s_*%s' %(data_dir, model, experiment, tscale, realm, run, var, dir_end, file_start, file_end))
             files = " ".join(file_list)
         else:
             files = ' '
@@ -94,7 +96,7 @@ def main(inargs, basin, run):
             file_list = glob.glob('/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/mon/atmos/%si1p%s/pe/latest/pe_*.nc' %(inargs.model, experiment, exp_run, str(physics)))
             files = " ".join(file_list)
         else:
-            files = find_files(df, exp_run, alt_experiment, experiment, inargs.variable, inargs.model, 'mon', match=inargs.match)
+            files = find_files(df, exp_run, alt_experiment, experiment, inargs.variable, inargs.model, 'mon', match=inargs.match, fixed=inargs.fixed)
         command_list.append(files)
         
         # Global mean temperature data files
@@ -184,6 +186,9 @@ author:
                         help="Pick the first (index 0) or second (index 1) match - useful for GISS models with two p runs")
     parser.add_argument("--area", action="store_true", default=False,
                         help="Add the area adjustment flag")
+
+    parser.add_argument("--fixed", action="store_true", default=False,
+                        help="Look for files in a directory labelled fixed")
 
     args = parser.parse_args()
 
