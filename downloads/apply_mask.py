@@ -51,11 +51,27 @@ def read_data(infile):
     check_coords(cube)
 
     return cube
-    
+
+
+def create_mask(mask_cube, target_shape):
+    """Create mask from an sftlf (land surface fraction) file.
+
+    There is no land when cell value == 0
+
+    """
+
+    target_ndim = len(target_shape)
+    land_array = numpy.where(mask_cube.data < 0.001, False, True)
+    mask = uconv.broadcast_array(land_array, [target_ndim - 2, target_ndim - 1], target_shape)
+    assert mask.shape == target_shape 
+
+    return mask
+
 
 def copy_mask(mask_cube, target_shape):
-    """Copy mask."""
+    """Copy mask from another file."""
 
+    target_ndim = len(target_shape)
     mask_coords = [coord.name() for coord in mask_cube.dim_coords]
 
     assert mask_cube.ndim in [2, 3, 4]
@@ -69,7 +85,8 @@ def copy_mask(mask_cube, target_shape):
         print(mask_cube_subset.coord(mask_coords[0]))
         print(mask_cube_subset.coord(mask_coords[1]))
 
-    mask = uconv.broadcast_array(mask_cube_subset.data.mask, [mask_cube.ndim - 2, mask_cube.ndim - 1], target_shape)
+    mask = uconv.broadcast_array(mask_cube_subset.data.mask, [target_ndim - 2, target_ndim - 1], target_shape)
+    assert mask.shape == target_shape
 
     return mask
 
@@ -105,14 +122,15 @@ def main(inargs):
         data_cube = read_data(infile)
         mask_cube = read_data(inargs.mask_file)
 
+        assert inargs.mask_method in ['copy', 'sftlf']
         if inargs.mask_method == 'copy':    
             assert type(data_cube.data) == numpy.ndarray, "It is assumed that the input data has no mask"
-
             mask = copy_mask(mask_cube, data_cube.shape)
-
-            data_cube.data = numpy.ma.asarray(data_cube.data)
-            data_cube.data.mask = mask
-
+        else:
+            mask = create_mask(mask_cube, data_cube.shape)
+        data_cube.data = numpy.ma.asarray(data_cube.data)
+        data_cube.data.mask = mask
+            
         outfile_metadata = {infile: data_cube.attributes['history'],}
         data_cube.attributes['history'] = gio.write_metadata(file_info=outfile_metadata)
 
