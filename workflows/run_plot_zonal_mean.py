@@ -124,9 +124,10 @@ def main(inargs, basin, run):
             fx_alt_experiment = alt_experiment
             fx_experiment = experiment
 
-        area_file = find_files(df, exp_run, fx_alt_experiment, fx_experiment, 'areacello', inargs.model, 'fx', fx_physics=fx_physics)
-        command_list.append('--' + alt_experiment.lower() + '_area_file')
-        command_list.append(area_file)
+        if not inargs.exclude_area:
+            area_file = find_files(df, exp_run, fx_alt_experiment, fx_experiment, 'areacello', inargs.model, 'fx', fx_physics=fx_physics)
+            command_list.append('--' + alt_experiment.lower() + '_area_file')
+            command_list.append(area_file)
 
         if not inargs.exclude_basin:
             basin_file = find_files(df, exp_run, fx_alt_experiment, fx_experiment, 'basin', inargs.model, 'fx', fx_physics=fx_physics)
@@ -179,6 +180,9 @@ author:
 
     parser.add_argument("--exclude_basin", action="store_true", default=False,
                         help="Leave out basin files [default=False]")
+    parser.add_argument("--exclude_area", action="store_true", default=False,
+                        help="Leave out area files [default=False]")
+
     parser.add_argument("--historical_fx", action="store_true", default=False,
                         help="Use the historical areacello and basin files for GHG is AA too [default=False]")
 
