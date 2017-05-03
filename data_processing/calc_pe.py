@@ -44,12 +44,13 @@ def save_history(cube, field, filename):
     history.append(cube.attributes['history'])
 
 
-def get_file_names(precip_file, evap_dir, pe_dir):
+def get_file_names(precip_file, evap_dir, pe_dir, evs=False):
     """Get evap and p-e file names corresponding to precip file."""
 
     precip_fname = precip_file.split('/')[-1]
 
-    evap_fname = precip_fname.replace('pr_', 'evspsbl_')
+    evap_var = 'evs_' if evs else 'evspsbl_'
+    evap_fname = precip_fname.replace('pr_', evap_var)
     evap_file = evap_dir + '/' + evap_fname
 
     pe_fname = precip_fname.replace('pr_', 'pe_')
@@ -63,7 +64,7 @@ def main(inargs):
 
     for precip_file in inargs.precip_files:
         precip_cube = iris.load_cube(precip_file, inargs.precip_var)
-        evap_file, pe_file = get_file_names(precip_file, inargs.evap_dir, inargs.pe_dir)
+        evap_file, pe_file = get_file_names(precip_file, inargs.evap_dir, inargs.pe_dir, evs=inargs.evs)
 
         evap_cube = iris.load_cube(evap_file, inargs.evap_var)
 
@@ -105,6 +106,9 @@ author:
     parser.add_argument("evap_dir", type=str, help="Evaporation directory")
     parser.add_argument("evap_var", type=str, help="Evaporation standard_name")
     parser.add_argument("pe_dir", type=str, help="Output p-e directory")
+
+    parser.add_argument("--evs", action="store_true", default=False,
+                        help="Evaporation variable is evs instead of evspsbl")
 
     args = parser.parse_args()            
 
