@@ -61,9 +61,9 @@ def find_files(df, run, alt_experiment, experiment, var, model, tscale, match=0,
 def main(inargs, basin, run):
     """Run the program."""
 
-    command_list = ['python ../visualisation/plot_zonal_mean.py']
+    command_list = ['/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python ../visualisation/plot_zonal_mean.py']
     aggregator = 'zi' if inargs.area else 'zm'
-    command_list.append('/g/data/r87/dbi599/figures/%s-%s/%s-%s_Oyr_%s_piControl-historical-GHG-AA_%s_%s_clim-198601-200512_trend-all.png'  %(inargs.variable, aggregator, inargs.variable, aggregator, inargs.model, run, basin))
+    command_list.append('/g/data/r87/dbi599/figures/%s-%s/%s-%s_Oyr_%s_piControl-historical-GHG-AA_%si1p%s_%s_clim-198601-200512_trend-all.png'  %(inargs.variable, aggregator, inargs.variable, aggregator, inargs.model, run, inargs.physics, basin))
     command_list.append(inargs.standard_name)
     command_list.append(inargs.model)
     command_list.append(run)
@@ -91,8 +91,10 @@ def main(inargs, basin, run):
                 physics = inargs.aa_physics
             elif alt_experiment == 'historicalnoAA':
                 physics = inargs.noaa_physics
+            elif (experiment == 'historicalGHG') and inargs.ghg_physics:
+                physics = inargs.ghg_physics 
             else:
-                physics = 1
+                physics = inargs.physics
             file_list = glob.glob('/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/mon/ocean/%si1p%s/pe/latest/pe_*.nc' %(inargs.model, experiment, exp_run, str(physics)))
             files = " ".join(file_list)
         else:
@@ -186,6 +188,10 @@ author:
                         help="Need to supply this for the P-E plot and CSIRO other plots")
     parser.add_argument("--noaa_physics", type=int, default=None,
                         help="Need to supply this for the P-E plot and CSIRO other plots")
+    parser.add_argument("--ghg_physics", type=int, default=None,
+                        help="Override the --physics option for historicalGHG (used for GISS-E2 models)")
+    parser.add_argument("--physics", type=int, default=1,
+                        help="physics")
     parser.add_argument("--match", type=int, default=0,
                         help="Pick the first (index 0) or second (index 1) match - useful for GISS models with two p runs")
     parser.add_argument("--area", action="store_true", default=False,
