@@ -24,6 +24,12 @@ TAS_FILE=$(wildcard ${ORIG_TAS_DIR}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/tas/
 GLOBAL_MEAN_TAS_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/tas/latest
 GLOBAL_MEAN_TAS_FILE=${GLOBAL_MEAN_TAS_DIR}/tas-global-mean_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
+OD_FILE=$(wildcard ${ORIG_OD_DIR}/${MODEL}/${EXPERIMENT}/mon/aerosol/${RUN}/od550aer/latest/od550aer_aero_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
+GLOBAL_MEAN_OD_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/aerosol/${RUN}/od550aer/latest
+GLOBAL_MEAN_OD_FILE=${GLOBAL_MEAN_OD_DIR}/od550aer-global-mean_aero_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+NH_MEAN_OD_FILE=${GLOBAL_MEAN_OD_DIR}/od550aer-nh-mean_aero_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+SH_MEAN_OD_FILE=${GLOBAL_MEAN_OD_DIR}/od550aer-sh-mean_aero_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+
 SOS_FILE=$(wildcard ${ORIG_SOS_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/sos/latest/sos_Omon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
 GLOBAL_SOS_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/sos/latest
 GLOBAL_GRIDDEV_SOS_FILE=${GLOBAL_SOS_DIR}/sos-global-griddev_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
@@ -87,6 +93,18 @@ ${SOS_CLIM_FILE} :
 ${GLOBAL_MEAN_TAS_FILE} :  
 	mkdir -p ${GLOBAL_MEAN_TAS_DIR}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_global_metric.py ${TAS_FILE} air_temperature mean $@ --area_file ${ATMOS_AREA_FILE} --smoothing annual
+
+${GLOBAL_MEAN_OD_FILE} :  
+	mkdir -p ${GLOBAL_MEAN_OD_DIR}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_global_metric.py ${OD_FILE} atmosphere_optical_thickness_due_to_ambient_aerosol mean $@ --area_file ${ATMOS_AREA_FILE} --smoothing annual
+
+${NH_MEAN_OD_FILE} :  
+	mkdir -p ${GLOBAL_MEAN_OD_DIR}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_global_metric.py ${OD_FILE} atmosphere_optical_thickness_due_to_ambient_aerosol mean $@ --area_file ${ATMOS_AREA_FILE} --smoothing annual --hemisphere nh
+
+${SH_MEAN_OD_FILE} :  
+	mkdir -p ${GLOBAL_MEAN_OD_DIR}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_global_metric.py ${OD_FILE} atmosphere_optical_thickness_due_to_ambient_aerosol mean $@ --area_file ${ATMOS_AREA_FILE} --smoothing annual --hemisphere sh
 
 ${GLOBAL_MYAMP_SOS_FILE} : ${SOS_CLIM_FILE}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_my_salinity_amp.py ${SOS_FILE} sea_surface_salinity $< $@ --area_file ${OCEAN_AREA_FILE} --smoothing annual

@@ -62,6 +62,7 @@ def add_row_commands(df, command_list, row, variable=False, metric=False):
     command_list.append('ORIG_AREAA_DIR=' + directory_tree(row['areacella']))  
     command_list.append('ORIG_AREAO_DIR=' + directory_tree(row['areacello']))  
     command_list.append('ORIG_TAS_DIR=' + directory_tree(row['tas']))
+    command_list.append('ORIG_OD_DIR=' + directory_tree(row['od550aer']))
     command_list = add_row_exceptions(df, command_list, row, variable=variable)
     
     if metric:
