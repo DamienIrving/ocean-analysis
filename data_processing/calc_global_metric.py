@@ -29,6 +29,7 @@ try:
     import general_io as gio
     import convenient_universal as uconv
     import timeseries
+    import grids
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -219,21 +220,46 @@ def create_mask(land_fraction_cube, selected_region):
     return mask
 
 
+def get_constraints(depth_selection, hemisphere_selection):
+    """Get the constraints for loading input data."""
+    
+    if depth_selection:
+        level_constraint = iris.Constraint(depth=depth_selection)
+    else:
+        level_constraint = iris.Constraint()
+        
+    if hemipshere_selection == 'nh':
+        lat_subset = lambda cell: cell >= 0.0    
+        lat_constraint = iris.Constraint(latitude=lat_subset)
+    elif hemisphere_selection == 'sh':
+        lat_subset = lambda cell: cell <= 0.0    
+        lat_constraint = iris.Constraint(latitude=lat_subset)
+    else:
+        lat_constraint = iris.Constraint()
+    
+    return level_constraint, lat_constraint
+
+
 def main(inargs):
     """Run the program."""
 
-    if inargs.depth:
-        level_constraint = iris.Constraint(depth=inargs.depth)
-    else:
-        level_constraint = iris.Constraint()
-    
+    # Read data
+    level_constraint, lat_constraint = get_constraints(inargs.depth, inargs.hemisphere)
     cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var) & level_constraint, callback=save_history)
     equalise_attributes(cube)
     iris.util.unify_time_units(cube)
     cube = cube.concatenate_cube()
     cube = gio.check_time_units(cube)
 
-    area_cube = read_optional(inargs.area_file)
+    # Get area file (if applicable)
+    if inargs.hemisphere:
+        cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+        cube = cube.extract(lat_constraint)
+        area_cube = None
+    else:
+        area_cube = read_optional(inargs.area_file)
+
+    # Mask ocean or atmosphere (if applicable)
     if inargs.sftlf_file:
         sftlf_file, selected_region = inargs.sftlf_file
         sftlf_cube = read_optional(sftlf_file)
@@ -245,13 +271,16 @@ def main(inargs):
     else:
         areas_dict = {}
         sftlf_cube = None
-        
+    
+    # Outfile attributes    
     atts = set_attributes(inargs, cube, area_cube, sftlf_cube, areas_dict)
 
+    # Temporal smoothing
     if inargs.smoothing:
         cube = smooth_data(cube, inargs.smoothing)
-    area_weights = get_area_weights(cube, area_cube)
 
+    # Calculate metric
+    area_weights = get_area_weights(cube, area_cube)
     if inargs.metric == 'bulk-deviation':
         metric = calc_bulk_deviation(cube, area_weights, atts)
     elif inargs.metric == 'mean':
@@ -291,6 +320,8 @@ author:
 
     parser.add_argument("--depth", type=float, default=None, 
                         help="Level selection")
+    parser.add_argument("--hemisphere", type=str, choices=('nh' ,'sh'), default=None, 
+                        help="Restrict data to one hemisphere")
 
     args = parser.parse_args()            
 
