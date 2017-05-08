@@ -228,7 +228,7 @@ def get_constraints(depth_selection, hemisphere_selection):
     else:
         level_constraint = iris.Constraint()
         
-    if hemipshere_selection == 'nh':
+    if hemisphere_selection == 'nh':
         lat_subset = lambda cell: cell >= 0.0    
         lat_constraint = iris.Constraint(latitude=lat_subset)
     elif hemisphere_selection == 'sh':
