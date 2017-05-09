@@ -58,20 +58,21 @@ def get_file_info(infile):
     if experiment == 'historicalMisc':
         experiment = 'historicalAA'
 
-    return experiment, model, region
+    return experiment, model, region, mip
 
 
 def main(inargs):
     """Run the program."""
 
+    fig = plt.figure(figsize=[10, 10])
     for infile in inargs.infiles:
         cube = iris.load_cube(infile)
-        experiment, model, region = get_file_info(infile)
+        experiment, model, region, mip = get_file_info(infile)
 
         color = experiment_colors[experiment]
         style = region_styles[region]
         iplt.plot(cube, color=color, linestyle=style, label=experiment+', '+region)
-        plt.title(model)
+        plt.title(model + ', ' + mip[0:2])
 
     plt.legend()
     plt.ylabel('Aerosol optical depth at 550nm')
