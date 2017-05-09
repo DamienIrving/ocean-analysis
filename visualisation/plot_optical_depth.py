@@ -99,9 +99,6 @@ note:
 
     parser.add_argument("infiles", type=str, nargs='*', help="Input file names")
     parser.add_argument("outfile", type=str, help="Output file name")
- 
-    parser.add_argument("--legloc", type=int, default=8,
-                        help="Legend location")
     
     args = parser.parse_args()            
     main(args)
