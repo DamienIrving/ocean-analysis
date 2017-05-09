@@ -149,6 +149,9 @@ def main(inargs, basin, run):
     if inargs.area:
         command_list.append('--area_adjust ')
 
+    if (inargs.model == 'CCSM4') and (inargs.standard_name == 'surface_downward_x_stress'):
+        command_list.append('--reverse_sign ')
+
     final_command = " ".join(command_list)
     print(final_command)
     if inargs.execute:
