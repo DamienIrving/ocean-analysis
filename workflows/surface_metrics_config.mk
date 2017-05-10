@@ -23,6 +23,7 @@ ORIG_AREAA_DIR=${UA6_CMIP5_DIR}
 ORIG_AREAO_DIR=${UA6_CMIP5_DIR}
 ORIG_SFTLF_DIR=${UA6_CMIP5_DIR}
 ORIG_TAS_DIR=${UA6_CMIP5_DIR}
+ORIG_OD_DIR=${UA6_CMIP5_DIR}
 ORIG_SOS_DIR=${UA6_CMIP5_DIR}
 ORIG_SO_DIR=${UA6_CMIP5_DIR}
 ORIG_PR_DIR=${UA6_CMIP5_DIR}
@@ -31,14 +32,12 @@ ORIG_EVSPSBL_DIR=${UA6_CMIP5_DIR}
 MODEL=CanESM2
 EXPERIMENT=historicalMisc
 RUN=r1i1p4
-FX_RUN=r0i0p0
+FX_RUN=r0i0p3
 
-# Analysis details (specific)
 
-START_DATE=1950-01-01
-END_DATE=2000-12-31
-
-TARGET=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/pe/latest
+TARGET=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/aerosol/${RUN}/od550aer/latest/od550aer-global-mean_aero_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+#${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/tas/latest/tas-global-mean_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+#${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/pe/latest
 #global_metrics.nc
 #${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/so/latest/so-global-abs_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
