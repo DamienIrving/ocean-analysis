@@ -98,7 +98,7 @@ def run_subsurface(df, command_list, variables, models, experiments, user_runs=N
                         current_command_list.append('SCALE_FACTOR=3')
                         current_command_list.append('PALETTE=BrBG_r')
                     elif variable == 'thetao':
-                        current_command_list.append('LONG_NAME=sea_water_potential_temperature')
+                        current_command_list.append('VAR=%s LONG_NAME=sea_water_potential_temperature' %(variable))
                         current_command_list.append('ZM_TICK_MAX=15 ZM_TICK_STEP=3')
                         current_command_list.append('VM_TICK_MAX=25 VM_TICK_STEP=5')
                         current_command_list.append('SCALE_FACTOR=3')
@@ -131,7 +131,7 @@ def run_metrics(df, command_list, models, experiments, user_runs=None, execute=F
             for run in runs:
                 current_command_list = command_list.copy()
 
-                df_selection = df.loc[(df['model'] == model) & (df['alt_experiment'] == experiment) & (df['run'] == run)]                
+                df_selection = df.loc[(df['model'] == model) & (df['alt_experiment'] == experiment) & (df['run'] == run)]              
                 assert df_selection.shape[0] == 1
                 row = df_selection.iloc[0]
                 current_command_list = add_row_commands(df, current_command_list, row, metric=True)
