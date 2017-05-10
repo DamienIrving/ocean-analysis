@@ -153,8 +153,8 @@ def plot_zonal_mean_trend(trends, integral, lats, levs, gs, plotnum,
     cf = axMain.contourf(lats, levs, trends,
                          cmap=cmap, extend='both', levels=ticks)
     if type(climatology) == iris.cube.Cube:
-        cplot_main = axMain.contour(lats, levs, climatology.data, colors='0.2', levels=contour_levels)
-        plt.clabel(cplot_main, contour_levels[0::2], fmt='%2.1f', colors='0.2', fontsize=8)
+        cplot_main = axMain.contour(lats, levs, climatology.data, colors='0.3', levels=contour_levels)
+        plt.clabel(cplot_main, contour_levels[0::2], fmt='%2.1f', colors='0.3', fontsize=8)
 
     # Deep section
     axMain.set_ylim((500.0, 2000.0))
@@ -171,8 +171,8 @@ def plot_zonal_mean_trend(trends, integral, lats, levs, gs, plotnum,
     axShallow.contourf(lats, levs, trends,
                        cmap=cmap, extend='both', levels=ticks)
     if type(climatology) == iris.cube.Cube:
-        cplot_shallow = axShallow.contour(lats, levs, climatology.data, colors='0.2', levels=contour_levels)
-        plt.clabel(cplot_shallow, contour_levels[0::2], fmt='%2.1f', colors='0.2', fontsize=8)
+        cplot_shallow = axShallow.contour(lats, levs, climatology.data, colors='0.3', levels=contour_levels)
+        plt.clabel(cplot_shallow, contour_levels[0::2], fmt='%2.1f', colors='0.3', fontsize=8)
     axShallow.set_ylim((0.0, 500.0))
     axShallow.invert_yaxis()
     plt.setp(axShallow.get_xticklabels(), visible=False)
@@ -288,7 +288,7 @@ def main(inargs):
         gs = gridspec.GridSpec(5, 1)
     elif inargs.plot_type == 'zonal_mean':
         plot_names = ['globe', 'indian', 'pacific', 'atlantic']
-        fig = plt.figure(figsize=[18, 12])
+        fig = plt.figure(figsize=[18, 18])
         fig.subplots_adjust(right=0.85)
         colorbar_axes = fig.add_axes([0.9, 0.2, 0.02, 0.6])
         gs = gridspec.GridSpec(2, 2)
