@@ -185,7 +185,7 @@ def save_history(cube, field, filename):
     history.append(cube.attributes['history'])
 
 
-def set_attributes(inargs, data_cube, climatology_cube, basin_cube):
+def set_attributes(inargs, data_cube, climatology_cube, basin_cube, depth_cube):
     """Set the attributes for the output cube."""
     
     atts = data_cube.attributes
@@ -197,6 +197,8 @@ def set_attributes(inargs, data_cube, climatology_cube, basin_cube):
         infile_history[inargs.climatology_file] = climatology_cube.attributes['history']
     if basin_cube:                  
         infile_history[inargs.basin_file] = basin_cube.attributes['history']
+    if depth_cube:                  
+        infile_history[inargs.depth_file] = depth_cube.attributes['history']
 
     atts['history'] = gio.write_metadata(file_info=infile_history)
 
@@ -266,7 +268,7 @@ def main(inargs):
     basin_cube = read_optional(inargs.basin_file)
     depth_cube = read_optional(inargs.depth_file) 
 
-    atts = set_attributes(inargs, data_cubes[0], climatology_cube, basin_cube)
+    atts = set_attributes(inargs, data_cubes[0], climatology_cube, basin_cube, depth_cube)
 
     out_cubes = []
     for data_cube in data_cubes:
@@ -280,6 +282,9 @@ def main(inargs):
             data_cube = uconv.mask_marginal_seas(data_cube, basin_cube)
 
         data_cube, coord_names, regrid_status = regrid_cube(data_cube)
+        if regrid_status:
+            depth_cube = None
+            # FIXME: Could delete depth file from atts
 
         assert coord_names[-3:] == ['depth', 'latitude', 'longitude']
         depth_axis = data_cube.coord('depth')
