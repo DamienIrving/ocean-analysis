@@ -176,7 +176,7 @@ historicalMisc,historicalAA,GISS-E2-R,NASA-GISS,r3i1p310,ua6,ua6,,noesgf,r87/dbi
 historicalMisc,historicalAA,GISS-E2-R,NASA-GISS,r4i1p310,pxp581/requests,ua6,,noesgf,r87/dbi599,noesgf,r87/dbi599,r87/dbi599,r87/dbi599,use historical,noesgf,use historical,bogus,ua6,ua6,,r87/dbi599,noesgf,use historical,use historical,r87/dbi599,
 historicalMisc,historicalAA,GISS-E2-R,NASA-GISS,r5i1p310,ua6,ua6,,noesgf,r87/dbi599,noesgf,r87/dbi599,r87/dbi599,r87/dbi599,use historical,noesgf,use historical,bogus,ua6,ua6,,r87/dbi599,noesgf,use historical,use historical,r87/dbi599,
 historicalMisc,historicalAA,IPSL-CM5A-LR,IPSL,r1i1p3,noesgf,r87/dbi599,,r87/dbi599,,ua6,r87/dbi599,ua6,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,noesgf,ua6,ua6,ua6,r87/dbi599,r87/dbi599,r87/dbi599,,r87/dbi599,
-historicalMisc,historicalAA,NorESM1-M,NCC,r1i1p1,r87/dbi599,r87/dbi599,,r87/dbi599,,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,ua6,ua6,ua6,ua6,r87/dbi599,r87/dbi599,,r87/dbi599,
+historicalMisc,historicalAA,NorESM1-M,NCC,r1i1p1,r87/dbi599,r87/dbi599,,r87/dbi599,,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,noesgf,ua6,ua6,ua6,ua6,r87/dbi599,r87/dbi599,,r87/dbi599,
 historicalMisc,historicalAnt,CCSM4,NCAR,r1i1p11,,,,,,,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,noesgf,ua6,ua6,,r87/dbi599,noesgf,r87/dbi599,,,
 historicalMisc,historicalAnt,CCSM4,NCAR,r4i1p11,,,,,,,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,noesgf,ua6,ua6,,r87/dbi599,noesgf,r87/dbi599,,,
 historicalMisc,historicalAnt,CCSM4,NCAR,r6i1p11,,,,,,,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,r87/dbi599,noesgf,ua6,ua6,,r87/dbi599,noesgf,r87/dbi599,,,
@@ -244,3 +244,4 @@ piControl,piControl,GISS-E2-R,NASA-GISS,r1i1p3,ua6,,,,ua6,,,r87/dbi599,r87/dbi59
 piControl,piControl,IPSL-CM5A-LR,IPSL,r1i1p1,,ua6,,ua6,,ua6,,ua6,ua6,ua6,ua6,,noesgf,,ua6,ua6,ua6,ua6,,,ua6,
 piControl,piControl,IPSL-CM5A-LR,IPSL,r2i1p1,,,,,,,,r87/dbi599,r87/dbi599,ua6,ua6,,noesgf,,,,,,,,,
 piControl,piControl,NorESM1-M,NCC,r1i1p1,ua6,,,ua6,,ua6,,r87/dbi599,r87/dbi599,ua6,ua6,,ua6,,ua6,ua6,ua6,ua6,,,r87/dbi599,
+rcp85,rcp85,NorESM1-M,NCC,r1i1p1,ua6,,ua6,ua6,,,,ua6,ua6,ua6,,,not ua6,,,,,,,,,
