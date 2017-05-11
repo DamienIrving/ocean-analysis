@@ -39,16 +39,25 @@ def _linear_trend(data, time_axis):
 
     """    
 
-    if data.mask[0]:
+    masked_flag = False
+
+    if type(data) == numpy.ma.core.MaskedArray:
+        if type(data.mask) == numpy.bool_:
+            if data.mask:
+                masked_flag = True
+        elif data.mask[0]:
+            masked_flag = True
+            
+    if masked_flag:
         return data.fill_value
-    else:    
+    else:
         return numpy.polynomial.polynomial.polyfit(time_axis, data, 1)[-1]
 
 
 def _undo_unit_scaling(cube):
-    """Remove scale factor from input data so unit is Joules.
+    """Remove scale factor from input data.
 
-    Ocean heat content data will often have units like 10^12 J m-2.
+    e.g. Ocean heat content data will often have units like 10^12 J m-2.
 
     Args:
       cube (iris.cube.Cube)
@@ -85,7 +94,7 @@ def calc_seasonal_cycle(cube):
     return seasonal_cycle_cube
 
 
-def calc_trend(cube, running_mean=True, per_yr=True, remove_scaling=False):
+def calc_trend(cube, running_mean=False, per_yr=False, remove_scaling=False):
     """Calculate linear trend.
 
     Args:
@@ -100,7 +109,9 @@ def calc_trend(cube, running_mean=True, per_yr=True, remove_scaling=False):
     coord_names = [coord.name() for coord in cube.dim_coords]
     assert coord_names[0] == 'time'
 
-    cube = _undo_unit_scaling(cube)
+    if remove_scaling:
+        cube = _undo_unit_scaling(cube)
+
     if running_mean:
         cube = cube.rolling_window('time', iris.analysis.MEAN, 12)
 
@@ -108,7 +119,8 @@ def calc_trend(cube, running_mean=True, per_yr=True, remove_scaling=False):
     time_axis = _convert_to_seconds(time_axis)
 
     trend = numpy.ma.apply_along_axis(_linear_trend, 0, cube.data, time_axis.points)
-    trend = numpy.ma.masked_values(trend, cube.data.fill_value)
+    if type(cube.data) == numpy.ma.core.MaskedArray:
+        trend = numpy.ma.masked_values(trend, cube.data.fill_value)
 
     if per_yr:
         trend = trend * 60 * 60 * 24 * 365.25

@@ -330,7 +330,6 @@ def main(inargs):
                     cube = cube[start_index:start_index+time_length, ::]
 
                 # Temporal smoothing
-                
                 cube = timeseries.convert_to_annual(cube, full_months=True)
 
                 # Mask marginal seas
