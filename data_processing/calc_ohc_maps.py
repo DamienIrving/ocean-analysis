@@ -128,6 +128,7 @@ def main(inargs):
     climatology_cube = read_climatology(inargs.climatology_file, inargs.temperature_var, level_subset)
     temperature_cubes = iris.load(inargs.temperature_files, inargs.temperature_var & level_subset, callback=save_history)
     equalise_attributes(temperature_cubes)
+    iris.util.unify_time_units(temperature_cubes)
     atts = set_attributes(inargs, temperature_cubes[0], climatology_cube)
 
     out_cubes = []
