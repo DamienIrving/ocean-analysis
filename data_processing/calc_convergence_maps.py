@@ -58,34 +58,25 @@ def convergence(cube):
     return convergence_cube
 
 
-def get_history_attribute(data_file, data_cube, basin_file, basin_cube):
+def get_history_attribute(y_files, y_cube, x_files, x_cube, basin_file, basin_cube):
     """Generate the history attribute for the output file."""
 
-    history_dict = {data_file: data_cube.attributes['history']}
+    history_dict = {y_files[0]: y_cube.attributes['history']}
+    if x_files:
+        history_dict[x_files[0]] = x_cube.attributes['history']
     if basin_file:
         history_dict[basin_file] = basin_cube.attributes['history']
 
     return history_dict
         
 
-def read_data(infile_list, var):
+def read_data(infile_list, var, basin_cube):
     """Read the data files."""
 
     cube = iris.load(infile_list, gio.check_iris_var(var))
 
     if var == 'northward_ocean_heat_transport':
         cube = cube.extract(iris.Constraint(region='global_ocean'))
-        hfbasin_flag = True
-    else:
-        hfbasin_flag = False
-
-    return cube, hfbasin_flag
-
-
-def main(inargs):
-    """Run the program."""
-
-    cube, hfbasin_flag = read_data(inargs.infiles, inargs.var)
 
     atts = cube[0].attributes
     equalise_attributes(cube)
@@ -94,45 +85,78 @@ def main(inargs):
     cube = gio.check_time_units(cube)
     cube.attributes = atts
 
-    orig_standard_name = cube.standard_name
-    orig_var_name = cube.var_name
-
-    # Temporal smoothing
     cube = timeseries.convert_to_annual(cube, full_months=True)
 
-    # Mask marginal seas
-    if inargs.basin_file and not hfbasin_flag:
-        basin_cube = iris.load_cube(inargs.basin_file)
+    if basin_cube:
         cube = uconv.mask_marginal_seas(cube, basin_cube)
+
+    return cube
+
+
+def reorient_data(x_cube, y_cube):
+    """Orient the x and y data to a regular lat/lon grid."""
+
+    target_grid = iris.coord_systems.GeogCS(iris.fileformats.pp.EARTH_RADIUS)
+    new_x_cube, new_y_cube = iris.analysis.cartography.rotate_winds(x_cube, y_cube, target_grid)
+
+    new_x_cube.remove_coord('projection_x_coordinate')
+    new_x_cube.remove_coord('projection_y_coordinate')
+    new_y_cube.remove_coord('projection_x_coordinate')
+    new_y_cube.remove_coord('projection_y_coordinate')
+
+    return new_x_cube, new_y_cube
+
+
+def main(inargs):
+    """Run the program."""
+
+    # Basin data
+    hfbasin = True if inargs.var == 'northward_ocean_heat_transport' else False
+    if inargs.basin_file and not hfbasin:
+        basin_cube = iris.load_cube(inargs.basin_file)
     else:
         basin_cube = None
         inargs.basin_file = None
 
-    # History
-    history_attribute = get_history_attribute(inargs.infiles[0], cube, inargs.basin_file, basin_cube)
-    cube.attributes['history'] = gio.write_metadata(file_info=history_attribute)
+    # Heat transport data
+    y_cube = read_data(inargs.infiles, inargs.var, basin_cube)
+    orig_standard_name = y_cube.standard_name
+    orig_var_name = y_cube.var_name
+
+    x_cube = read_data(inargs.hfx_files, 'ocean_heat_x_transport', basin_cube) if inargs.hfx_files else None
+    # Quick fix for NorESM1-m (lat and lon don't match)
+    #x_cube.coord('longitude').points = y_cube.coord('longitude').points
+    #x_cube.coord('longitude').bounds = y_cube.coord('longitude').bounds
+    #x_cube.coord('latitude').points = y_cube.coord('latitude').points
+    #x_cube.coord('latitude').bounds = y_cube.coord('latitude').bounds
+  
+    history_attribute = get_history_attribute(inargs.infiles, y_cube, inargs.hfx_files, x_cube, inargs.basin_file, basin_cube)
+    y_cube.attributes['history'] = gio.write_metadata(file_info=history_attribute)
 
     # Regrid (if needed)
-    if not hfbasin_flag:
-        basin_list = ['atlantic', 'pacific', 'indian', 'globe']
-        cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+    if not hfbasin:
+        if inargs.hfx_files:
+            x_cube, y_cube = reorient_data(x_cube, y_cube)
+        y_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(y_cube)
+
         if inargs.basin_file and not regrid_status:
             ndim = cube.ndim
             basin_array = uconv.broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], cube.shape) 
         else: 
-            basin_array = uconv.create_basin_array(cube)
+            basin_array = uconv.create_basin_array(y_cube)
+        basin_list = ['atlantic', 'pacific', 'indian', 'globe']
     else:
         basin_list = ['globe']
         
     # Calculate output for each basin
     out_cubes = []
     for basin_name in basin_list:
-        data_cube = cube.copy()
+        data_cube = y_cube.copy()
         if not basin_name == 'globe':            
             data_cube.data.mask = numpy.where((data_cube.data.mask == False) & (basin_array == basins[basin_name]), False, True)
 
         # Zonal mean
-        if hfbasin_flag:
+        if hfbasin:
             zonal_cube = data_cube
         else:
             zonal_cube = data_cube.collapsed('longitude', iris.analysis.SUM)
@@ -177,6 +201,8 @@ note:
     parser.add_argument("var", type=str, help="Input variable standard_name")
     parser.add_argument("outfile", type=str, help="Output file name")
     
+    parser.add_argument("--hfx_files", type=str, nargs='*', default=None,
+                        help="Required to calculate heat transport if curvilinear grid")
     parser.add_argument("--basin_file", type=str, default=None,
                         help="Cell basin file (for ocean input variables)")
 
