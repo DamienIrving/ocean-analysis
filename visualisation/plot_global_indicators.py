@@ -106,7 +106,7 @@ def tas_plot(ax, cube_dict):
     
     plt.sca(ax)
     cube_dict = fake_ant(cube_dict, 'Near-Surface Air Temperature')
-    for experiment, color in experiments.iteritems():
+    for experiment, color in experiments.items():
         try:
             cube = cube_dict['Near-Surface Air Temperature', experiment]
             iplt.plot(cube, color=color, label=experiment, linestyle=get_linestyle(experiment))
@@ -133,7 +133,7 @@ def sos_plot(ax, cube_dict, so=False):
         var = 'Sea Surface Salinity'
 
     cube_dict = fake_ant(cube_dict, var)
-    for experiment, color in experiments.iteritems():
+    for experiment, color in experiments.items():
         try:
             cube = cube_dict[var, experiment]
             iplt.plot(cube, color=color, label=experiment, linestyle=get_linestyle(experiment))
@@ -146,12 +146,12 @@ def sos_plot(ax, cube_dict, so=False):
     plt.legend(fontsize='small', loc=2)
 
 
-def pe_plot(ax, cube_dict, data_type):
+def pe_plot(ax, cube_dict):
     """Plot the precipiation minus evaproation timeseries."""
     
     plt.sca(ax)
     cube_dict = fake_ant(cube_dict, 'precipitation minus evaporation flux')
-    for experiment, color in experiments.iteritems():
+    for experiment, color in experiments.items():
         try:
             cube = cube_dict['precipitation minus evaporation flux', experiment] * 86400
             iplt.plot(cube, color=color, label=experiment, linestyle=get_linestyle(experiment))
@@ -185,13 +185,13 @@ def main(inargs):
                 experiment = 'historicalAA'
             elif str(physics) == inargs.ant_physics:
                 experiment = 'historicalAnt'
-        assert experiment in experiments.keys(), '%s is not an acceptable experiment name' %(experiment)
+        assert experiment in list(experiments.keys()), '%s is not an acceptable experiment name' %(experiment)
         
         key = (long_name, experiment)
-        assert key not in cube_dict.keys(), '%s, %s not in cube dict' %(long_name, experiment)
+        assert key not in list(cube_dict.keys()), '%s, %s not in cube dict' %(long_name, experiment)
         cube_dict[key] = cube
 
-    for key, cube in cube_dict.iteritems():
+    for key, cube in cube_dict.items():
         baseline = cube[0:10].data.mean()
         cube_dict[key] = cube - baseline
 
