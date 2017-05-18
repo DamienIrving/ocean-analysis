@@ -37,7 +37,7 @@ def get_runs_file_list(model, experiment, physics, metric):
     """Get a list of files."""
 
     variable = metric.split('-')[0]
-    file_pattern = '/g/data/r87/dbi599/drstree/CMIP5/GCM/*/%s/%s/yr/*/%s/r*i1%s/%s_*.nc'  %(model, experiment, variable, physics, metric)
+    file_pattern = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr/*/r*i1%s/%s/latest/%s_*.nc'  %(model, experiment, physics, variable,  metric)
     file_list = glob.glob(file_pattern)
     file_list.sort()
 
@@ -48,7 +48,7 @@ def get_ensemble_file(model, experiment, physics, metric):
     """Get the ensemble file name."""
 
     variable = metric.split('-')[0]
-    file_pattern = '/g/data/r87/dbi599/drstree/CMIP5/GCM/*/%s/%s/yr/*/%s/ensmean-i1%s/%s_*.nc'  %(model, experiment, variable, physics, metric)
+    file_pattern = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr/*/ensmean-i1%s/%s/latest/%s_*.nc'  %(model, experiment, physics, variable,  metric)
     file_list = glob.glob(file_pattern)
     
     assert len(file_list) == 1
@@ -89,7 +89,7 @@ def main(inargs):
             tas_infiles = get_runs_file_list(inargs.model, experiment, physics, 'tas-global-mean')
             pe_infiles = get_runs_file_list(inargs.model, experiment, physics, 'pe-global-griddev')
             sos_infiles = get_runs_file_list(inargs.model, experiment, physics, 'sos-global-bulkdev')
-            
+
             assert tas_infiles 
             assert len(tas_infiles) == len(pe_infiles) == len(sos_infiles)
 
