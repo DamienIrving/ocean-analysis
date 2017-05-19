@@ -199,7 +199,14 @@ def main(inargs):
     tas_plot(axes[0], cube_dict) 
     sos_plot(axes[1], cube_dict, so=inargs.so)
     pe_plot(axes[2], cube_dict)
-        
+
+    title = cube.attributes['model_id']
+    if inargs.run:
+        title = str(cube.attributes['model_id']) + ', ' + inargs.run
+    else:    
+        title = str(cube.attributes['model_id']) + ', Run ' + str(cube.attributes['realization'])
+    plt.suptitle(title)
+
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
 
@@ -234,6 +241,9 @@ note:
 
     parser.add_argument("--so", action="store_true", default=False,
                         help="so rather than sos used for salinity [default: False]")
+
+    parser.add_argument("--run", type=str, default=None,
+                        help="Run for plot title")
 
     args = parser.parse_args()            
     main(args)
