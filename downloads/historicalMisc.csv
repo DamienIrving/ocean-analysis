@@ -1,0 +1,215 @@
+ model_ensemble/variable,hfsithermds_Omon,hfss_Omon,hfy_Omon,rsntds_Omon,hfx_Omon,hfbasin_Omon,hfls_Omon,rlds_Omon
+CCSM4_r1i1p10,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r1i1p11,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r1i1p12,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r1i1p13,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r1i1p14,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r1i1p15,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r1i1p16,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r1i1p17,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r2i1p11,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r3i1p13,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r4i1p10,NP, v20120618 latest new | v20120618 latest new | ,NP, v20120618 latest new | v20120618 latest new | ,NP,NP,NP,NP
+CCSM4_r4i1p11,NP, v20120620 latest new | v20120620 latest new | ,NP, v20120620 latest new | v20120620 latest new | ,NP,NP,NP, v20120620 latest new | v20120620 latest new | 
+CCSM4_r4i1p14,NP, v20120608 latest new | v20120608 latest new | ,NP, v20120608 latest new | v20120608 latest new | ,NP,NP,NP,NP
+CCSM4_r4i1p16,NP, v20120608 latest new | v20120608 latest new | ,NP, v20120608 latest new | v20120608 latest new | ,NP,NP,NP,NP
+CCSM4_r4i1p17,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP, v20121128 latest new | 
+CCSM4_r6i1p10,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r6i1p11,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r6i1p13,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r6i1p14,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r6i1p16,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CCSM4_r6i1p17,NP, v20121128 latest new | ,NP, v20121128 latest new | ,NP,NP,NP,NP
+CESM1-CAM5_r1i1p13,NP, v20131008 latest new | ,NP, v20131008 latest new | ,NP,NP,NP, v20131008 latest new | 
+CESM1-CAM5_r1i1p14,NP, v20131031 latest new | ,NP, v20131031 latest new | ,NP,NP,NP, v20131031 latest new | 
+CESM1-CAM5_r2i1p16,NP, v20131008 latest new | ,NP, v20131008 latest new | ,NP,NP,NP, v20131008 latest new | 
+CESM1-CAM5-1-FV2_r3i1p10,NP, v20120605 latest new | ,NP,NP,NP,NP,NP,NP
+CESM1-CAM5-1-FV2_r4i1p10,NP, v20120605 latest new | ,NP,NP,NP,NP,NP,NP
+CNRM-CM5_r10i1p1,NP,NP, v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | ,NP,NP,NP
+CNRM-CM5_r1i1p1,NP,NP, v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | ,NP,NP,NP
+CNRM-CM5_r2i1p1,NP,NP, v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | ,NP,NP,NP
+CNRM-CM5_r3i1p1,NP,NP, v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | ,NP,NP,NP
+CNRM-CM5_r4i1p1,NP,NP, v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | ,NP,NP,NP
+CNRM-CM5_r5i1p1,NP,NP, v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | ,NP,NP,NP
+CNRM-CM5_r6i1p1,NP,NP, v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | ,NP,NP,NP
+CNRM-CM5_r7i1p1,NP,NP, v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | ,NP,NP,NP
+CNRM-CM5_r8i1p1,NP,NP, v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | ,NP,NP,NP
+CNRM-CM5_r9i1p1,NP,NP, v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | , v20130101 latest new | v20130101 latest new | v20130101 latest new | ,NP,NP,NP
+CSIRO-Mk3-6-0_r10i1p1,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r10i1p2,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r10i1p3,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r10i1p4,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r10i1p5,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r10i1p6,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r1i1p1,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r1i1p2,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r1i1p3,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r1i1p4,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r1i1p5,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r1i1p6,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r2i1p1,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r2i1p2,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r2i1p3,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r2i1p4,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r2i1p5,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r2i1p6,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r3i1p1,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r3i1p2,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r3i1p3,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r3i1p4,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r3i1p5,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r3i1p6,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r4i1p1,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r4i1p2,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r4i1p3,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r4i1p4,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r4i1p5,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r4i1p6,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r5i1p1,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r5i1p2,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r5i1p3,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r5i1p4,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r5i1p5,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r5i1p6,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r6i1p1,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r6i1p2,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r6i1p3,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r6i1p4,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r6i1p5,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r6i1p6,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r7i1p1,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r7i1p2,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r7i1p3,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r7i1p4,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r7i1p5,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r7i1p6,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r8i1p1,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r8i1p2,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r8i1p3,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r8i1p4,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r8i1p5,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r8i1p6,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r9i1p1,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r9i1p2,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r9i1p3,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r9i1p4,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r9i1p5,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r9i1p6,NP,NP,NP,NP,NP, v20110518 | ,NP,NP
+CanESM2_r1i1p2, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest on 2017-05-18 | , v20120410 latest on 2017-05-18 | 
+CanESM2_r1i1p3, v20120410 latest new | v20120410 latest new | , v20120410 latest on 2017-05-18 | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest on 2017-05-18 | , v20120410 latest new | v20120410 latest new | 
+CanESM2_r1i1p4, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest on 2017-05-18 | , v20120410 latest new | v20120410 latest new | 
+CanESM2_r2i1p2, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest on 2017-05-18 | ,NP,NP, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | 
+CanESM2_r2i1p3, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | 
+CanESM2_r2i1p4, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | 
+CanESM2_r3i1p2, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest new | v20120410 latest new | , v20120410 latest on 2017-05-18 | 
+CanESM2_r3i1p3, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | 
+CanESM2_r3i1p4, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | 
+CanESM2_r4i1p2, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest on 2017-05-18 | , v20120410 latest new | v20120410 latest new | 
+CanESM2_r4i1p3, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest on 2017-05-18 | ,NP,NP, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | 
+CanESM2_r4i1p4, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | 
+CanESM2_r5i1p2, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest on 2017-05-18 | , v20120410 latest on 2017-05-18 | 
+CanESM2_r5i1p3, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest on 2017-05-18 | ,NP,NP, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | 
+CanESM2_r5i1p4, v20120410 latest new | v20120410 latest new | , v20120410 latest new | v20120410 latest new | ,NP, v20120410 latest new | v20120410 latest new | ,NP,NP, v20120410 latest new | v20120410 latest new | , v20120410 latest on 2017-05-18 | 
+GFDL-CM3_r1i1p1,NP, v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | ,NP, v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 to update  | 
+GFDL-CM3_r1i1p2,NP, v20110601 latest on 2017-05-18 | , v20110601 latest new | v20110601 latest new | , v20110601 latest on 2017-05-18 | , v20110601 latest new | v20110601 latest new | ,NP, v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | 
+GFDL-CM3_r3i1p1,NP, v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | ,NP, v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | 
+GFDL-CM3_r3i1p2,NP, v20110601 latest on 2017-05-18 | , v20110601 latest new | , v20110601 latest on 2017-05-18 | , v20110601 latest new | ,NP, v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | 
+GFDL-CM3_r5i1p1,NP, v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | ,NP, v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | 
+GFDL-CM3_r5i1p2,NP, v20110601 latest on 2017-05-18 | , v20110601 latest new | , v20110601 latest on 2017-05-18 | , v20110601 latest new | ,NP, v20110601 latest on 2017-05-18 | , v20110601 latest on 2017-05-18 | 
+GFDL-ESM2G_r1i1p3,NP, v20120820 latest new | v20120820 latest new | , v20120820 latest new | v20120820 latest new | , v20120820 latest new | v20120820 latest new | , v20120820 latest new | v20120820 latest new | ,NP, v20120820 latest new | v20120820 latest new | , v20120820 latest new | v20120820 latest new | 
+GFDL-ESM2G_r1i1p4,NP, v20120820 latest new | v20120820 latest new | , v20120820 latest new | v20120820 latest new | , v20120820 latest new | v20120820 latest new | , v20120820 latest new | v20120820 latest new | ,NP, v20120820 latest new | v20120820 latest new | , v20120820 latest new | v20120820 latest new | 
+GFDL-ESM2M_r1i1p2,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | , v20110601 | v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | ,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | 
+GFDL-ESM2M_r1i1p3,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | , v20110601 | v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | ,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | 
+GFDL-ESM2M_r1i1p4,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | , v20110601 | v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | ,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | 
+GFDL-ESM2M_r1i1p5,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest on 2017-05-18 | , v20110601 | v20130226 latest new | v20130226 latest new | , v20130226 latest on 2017-05-18 | ,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | 
+GFDL-ESM2M_r1i1p6,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | , v20110601 | v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | ,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | 
+GFDL-ESM2M_r1i1p7,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | , v20110601 | v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | ,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | 
+GFDL-ESM2M_r1i1p8,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | , v20110601 | v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | ,NP, v20130226 latest new | v20130226 latest new | , v20130226 latest new | v20130226 latest new | 
+GISS-E2-R_r1i1p1,NP,NP, v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p102,NP,NP, v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p103,NP,NP, v20130222 latest new | v20130222 latest new | ,NP, v20130222 latest new | v20130222 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p104,NP,NP, v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p105,NP,NP, v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p107,NP,NP, v20160503 | v20120518 latest new | v20120518 latest new | ,NP, v20160503 | v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p108,NP,NP, v20130611 latest new | ,NP, v20130611 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p109,NP,NP, v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p114,NP,NP, v20130220 latest new | v20130220 latest new | ,NP, v20130220 latest new | v20130220 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p122,NP,NP, v20130523 latest new | ,NP, v20130523 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p1221,NP,NP, v20130523 latest new | ,NP, v20130523 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p3001,NP,NP, v20130617 latest new | ,NP, v20130617 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p302,NP,NP, v20130103 latest new | v20130103 latest new | v20130103 latest new | ,NP, v20130103 latest new | v20130103 latest new | v20130103 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p303,NP,NP, v20130502 latest new | ,NP, v20130502 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p309,NP,NP, v20120620 latest new | v20120620 latest new | ,NP, v20120620 latest new | v20120620 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p310,NP,NP, v20160503 | v20130107 latest new | v20130107 latest new | v20130107 latest new | ,NP, v20160503 | v20130107 latest new | v20130107 latest new | v20130107 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p311,NP,NP, v20130109 latest new | v20130109 latest new | v20130109 latest new | ,NP, v20130109 latest new | v20130109 latest new | v20130109 latest new | ,NP,NP,NP
+GISS-E2-R_r1i1p312,NP,NP, v20130114 latest new | v20130114 latest new | v20130114 latest new | ,NP, v20130114 latest on 2017-05-18 | ,NP,NP,NP
+GISS-E2-R_r1i1p313,NP,NP, v20130122 latest new | v20130122 latest new | v20130122 latest new | ,NP, v20130122 latest new | v20130122 latest new | v20130122 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p1,NP,NP, v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p102,NP,NP, v20120518 latest new | ,NP, v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p103,NP,NP, v20130222 latest new | ,NP, v20130222 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p104,NP,NP, v20120518 latest new | ,NP, v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p105,NP,NP, v20120518 latest new | ,NP, v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p107,NP,NP, v20120518 latest new | ,NP, v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p109,NP,NP, v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p114,NP,NP, v20130220 latest new | ,NP, v20130220 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p302,NP,NP, v20130103 latest new | v20130103 latest new | ,NP, v20130103 latest new | v20130103 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p309,NP,NP, v20120622 latest new | ,NP, v20120622 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p310,NP,NP, v20160504 | v20130107 latest new | v20130107 latest new | ,NP, v20160504 | v20130107 latest new | v20130107 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p311,NP,NP, v20130109 latest new | v20130109 latest new | ,NP, v20130109 latest new | v20130109 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p312,NP,NP, v20130114 latest new | v20130114 latest new | ,NP, v20130114 latest new | v20130114 latest new | ,NP,NP,NP
+GISS-E2-R_r2i1p313,NP,NP, v20130122 latest on 2017-05-18 | ,NP, v20130122 latest new | v20130122 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p1,NP,NP, version not defined to update  | v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p102,NP,NP, v20120518 latest new | ,NP, version not defined to update  | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p103,NP,NP, v20130222 latest new | ,NP, v20130222 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p104,NP,NP, version not defined to update  | v20120518 latest new | ,NP, v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p105,NP,NP, v20120518 latest new | ,NP, v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p107,NP,NP, v20120518 latest new | ,NP, v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p109,NP,NP, v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p114,NP,NP, v20130220 latest new | ,NP, v20130220 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p302,NP,NP, v20130103 latest new | v20130103 latest new | ,NP, v20130103 latest new | v20130103 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p309,NP,NP, v20120622 latest new | ,NP, v20120622 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p310,NP,NP, v20160504 | v20130107 latest new | v20130107 latest new | ,NP, v20130107 latest on 2017-05-18 | v20160504 | ,NP,NP,NP
+GISS-E2-R_r3i1p311,NP,NP, v20130109 latest new | ,NP, v20130109 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p312,NP,NP, v20130114 latest new | v20130114 latest new | ,NP, v20130114 latest new | v20130114 latest new | ,NP,NP,NP
+GISS-E2-R_r3i1p313,NP,NP, v20130122 latest new | v20130122 latest new | ,NP, v20130122 latest new | v20130122 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p1,NP,NP, v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p102,NP,NP, version not defined to update  | v20120518 latest new | ,NP, v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p103,NP,NP, v20130222 latest new | ,NP, v20130222 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p104,NP,NP, v20120518 latest new | ,NP, v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p105,NP,NP, v20120518 latest new | ,NP, v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p107,NP,NP, v20160504 | v20120518 latest new | ,NP, v20160504 | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p109,NP,NP, v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p114,NP,NP, v20130220 latest new | ,NP, v20130220 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p302,NP,NP, v20130103 latest new | v20130103 latest new | ,NP, v20130103 latest on 2017-05-18 | ,NP,NP,NP
+GISS-E2-R_r4i1p309,NP,NP, v20120625 latest new | ,NP, v20120625 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p310,NP,NP, v20160504 | v20130107 latest new | v20130107 latest new | ,NP, v20160504 | v20130107 latest new | v20130107 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p311,NP,NP, v20130109 latest new | ,NP, v20130109 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p312,NP,NP, v20130114 latest new | v20130114 latest new | ,NP, v20130114 latest new | v20130114 latest new | ,NP,NP,NP
+GISS-E2-R_r4i1p313,NP,NP, v20130122 latest new | v20130122 latest new | ,NP, v20130122 latest new | v20130122 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p1,NP,NP, v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p102,NP,NP, v20120518 latest new | ,NP, v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p103,NP,NP, v20130222 latest new | ,NP, v20130222 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p104,NP,NP, v20120518 latest new | ,NP, version not defined to update  | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p105,NP,NP, v20120518 latest new | ,NP, version not defined to update  | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p107,NP,NP, v20160504 | v20120518 latest new | ,NP, v20160504 | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p109,NP,NP, version not defined to update  | v20120518 latest new | v20120518 latest new | ,NP, v20120518 latest new | v20120518 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p114,NP,NP, v20130220 latest new | ,NP, v20130220 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p302,NP,NP, v20130103 latest new | v20130103 latest new | ,NP, v20130103 latest on 2017-05-18 | ,NP,NP,NP
+GISS-E2-R_r5i1p309,NP,NP, v20120625 latest new | ,NP, v20120625 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p310,NP,NP, v20160504 | v20130107 latest new | v20130107 latest new | ,NP, v20130107 latest on 2017-05-18 | v20160504 | ,NP,NP,NP
+GISS-E2-R_r5i1p311,NP,NP, v20130109 latest new | v20130109 latest new | ,NP, v20130109 latest new | v20130109 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p312,NP,NP, v20130114 latest new | v20130114 latest new | ,NP, v20130114 latest new | v20130114 latest new | ,NP,NP,NP
+GISS-E2-R_r5i1p313,NP,NP, v20130122 latest new | v20130122 latest new | ,NP, v20130122 latest new | v20130122 latest new | ,NP,NP,NP
+IPSL-CM5A-LR_r1i1p1, v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP, v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP,NP,NP
+IPSL-CM5A-LR_r1i1p2, v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP, v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP,NP,NP
+IPSL-CM5A-LR_r1i1p3, v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP, v20111119 latest on 2017-05-18 | , v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest on 2017-05-18 | ,NP,NP,NP
+IPSL-CM5A-LR_r1i1p4, v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP, v20111119 latest on 2017-05-18 | , v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP,NP,NP
+IPSL-CM5A-LR_r1i1p6, v20120804 latest new | v20120804 latest new | v20120804 latest new | ,NP, v20120804 latest new | v20120804 latest new | v20120804 latest new | , v20120804 latest new | v20120804 latest new | v20120804 latest new | , v20120804 latest new | v20120804 latest new | v20120804 latest new | ,NP,NP,NP
+IPSL-CM5A-LR_r2i1p2, v20120114 latest new | v20120114 latest new | v20120114 latest new | ,NP, v20120114 latest new | v20120114 latest new | v20120114 latest new | , v20120114 latest new | v20120114 latest new | v20120114 latest new | , v20120114 latest new | v20120114 latest new | v20120114 latest new | ,NP,NP,NP
+IPSL-CM5A-LR_r2i1p4, v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP, v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP,NP,NP
+IPSL-CM5A-LR_r2i1p6, v20120804 latest new | v20120804 latest new | v20120804 latest new | ,NP, v20120804 latest new | v20120804 latest new | v20120804 latest new | , v20120804 latest new | v20120804 latest new | v20120804 latest new | , v20120804 latest new | v20120804 latest new | v20120804 latest new | ,NP,NP,NP
+IPSL-CM5A-LR_r3i1p1, v20120430 latest new | v20120430 latest new | v20120430 latest new | ,NP, v20120430 latest new | v20120430 latest new | v20120430 latest new | , v20120430 latest new | v20120430 latest new | v20120430 latest new | , v20120430 latest new | v20120430 latest new | v20120430 latest new | ,NP,NP,NP
+IPSL-CM5A-LR_r3i1p2, v20120430 latest new | v20120430 latest new | v20120430 latest new | ,NP, v20120430 latest new | v20120430 latest new | v20120430 latest new | , v20120430 latest new | v20120430 latest new | v20120430 latest new | , v20120430 latest new | v20120430 latest new | v20120430 latest new | ,NP,NP,NP
+IPSL-CM5A-LR_r3i1p4, v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP, v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP,NP,NP
+IPSL-CM5A-LR_r4i1p4, v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP, v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest new | v20111119 latest new | v20111119 latest new | , v20111119 latest new | v20111119 latest new | v20111119 latest new | ,NP,NP,NP
+NorESM1-M_r1i1p1, v20110918 latest new | v20110918 latest new | ,NP, v20110918 latest on 2017-05-18 | , v20110918 latest new | v20110918 latest new | , v20110918 latest on 2017-05-18 | , v20110918 latest new | v20110918 latest new | ,NP,NP
