@@ -62,11 +62,25 @@ def get_file_names(precip_file, evap_dir, pe_dir, evs=False):
 def main(inargs):
     """Run the program."""
 
-    for precip_file in inargs.precip_files:
-        precip_cube = iris.load_cube(precip_file, inargs.precip_var)
-        evap_file, pe_file = get_file_names(precip_file, inargs.evap_dir, inargs.pe_dir, evs=inargs.evs)
+    try:
+        time_constraint = gio.get_time_constraint(inargs.time)
+    except AttributeError:
+        time_constraint = iris.Constraint()
 
-        evap_cube = iris.load_cube(evap_file, inargs.evap_var)
+    if inargs.evap_files:
+        assert len(inargs.precip_files) == len(inargs.evap_files)
+        assert inargs.pe_files, "if you specify evap files must also do pe files"
+        assert len(inargs.precip_files) == len(inargs.pe_files)
+
+    for filenum, precip_file in enumerate(inargs.precip_files):
+        with iris.FUTURE.context(cell_datetime_objects=True):
+            precip_cube = iris.load_cube(precip_file, inargs.precip_var & time_constraint)
+            if inargs.evap_files:
+                evap_file = inargs.evap_files[filenum]
+                pe_file = inargs.pe_files[filenum]
+            else:
+                evap_file, pe_file = get_file_names(precip_file, inargs.evap_dir, inargs.pe_dir, evs=inargs.evs)
+            evap_cube = iris.load_cube(evap_file, inargs.evap_var & time_constraint)
 
         pe_cube = precip_cube - evap_cube
 
@@ -109,6 +123,14 @@ author:
 
     parser.add_argument("--evs", action="store_true", default=False,
                         help="Evaporation variable is evs instead of evspsbl")
+
+    parser.add_argument("--evap_files", type=str, nargs='*', default=None,
+                        help="Override the automatic evap infile names")
+    parser.add_argument("--pe_files", type=str, nargs='*', default=None,
+                        help="Override the automatic pe outfile names")
+
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        help="Time period [default = entire]")
 
     args = parser.parse_args()            
 
