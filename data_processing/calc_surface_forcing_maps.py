@@ -41,12 +41,14 @@ basins = {'atlantic': 2,
           'indian': 5}
 
 
-def get_history_attribute(data_file, data_cube, basin_file, basin_cube):
+def get_history_attribute(data_file, data_cube, basin_file, basin_cube, area_file, area_cube):
     """Generate the history attribute for the output file."""
 
     history_dict = {data_file: data_cube.attributes['history']}
     if basin_file:
         history_dict[basin_file] = basin_cube.attributes['history']
+    if area_file:
+        history_dict[area_file] = area_cube.attributes['history']
 
     return history_dict
         
@@ -60,9 +62,10 @@ def main(inargs):
     equalise_attributes(cube)
     iris.util.unify_time_units(cube)
     cube = cube.concatenate_cube()
-    cube = gio.check_time_units(cube)
-    cube.attributes = atts
+    cube = gio.check_time_units(cube)    
 
+    cube.attributes = atts
+    orig_long_name = cube.long_name
     orig_standard_name = cube.standard_name
     orig_var_name = cube.var_name
 
@@ -76,8 +79,21 @@ def main(inargs):
     else:
         basin_cube = None
 
+    # Change units (remove m-2)
+    if inargs.area_file:
+        area_cube = iris.load_cube(inargs.area_file)        
+        cube = cube * area_cube
+        cube.attributes = atts
+        cube.long_name = orig_long_name
+        cube.standard_name = orig_standard_name
+        cube.var_name = orig_var_name
+    else:
+        area_cube = None
+
     # History
-    history_attribute = get_history_attribute(inargs.infiles[0], cube, inargs.basin_file, basin_cube)
+    history_attribute = get_history_attribute(inargs.infiles[0], cube,
+                                              inargs.basin_file, basin_cube,
+                                              inargs.area_file, area_cube)
     cube.attributes['history'] = gio.write_metadata(file_info=history_attribute)
 
     # Regrid (if needed)
@@ -137,6 +153,8 @@ note:
     
     parser.add_argument("--basin_file", type=str, default=None,
                         help="Cell basin file (for ocean input variables)")
+    parser.add_argument("--area_file", type=str, default=None,
+                        help="Cell area file (used to remove m-2 from units)")
 
     args = parser.parse_args()            
     main(args)
