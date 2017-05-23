@@ -37,47 +37,48 @@ except ImportError:
 
 history = []
 
-def add_metadata(orig_atts, new_cube, dims, inargs):
-    """Add metadata to the output cube.
-    
-    dims = '3D' or '2D'
-    
-    """
+def add_metadata(orig_atts, new_cube, inargs, aggregation=None):
+    """Add metadata to the output cube."""
 
-    standard_name = 'ocean_heat_content_%s'  %(dims)
-    units = '10^%d J' %(inargs.scaling)
+    standard_name = 'ocean_heat_content'
+    long_name = 'ocean heat content'
+    var_name = 'ohc'
+    units = 'J'
+    if aggregation:
+        assert aggregation in ['zs']
+        standard_name = standard_name + '_zonal_sum'
+        long_name = long_name + ' zonal sum'
+        var_name = var_name + '_zs'
+
+    if inargs.scaling:
+        units = '10^%d %s' %(inargs.scaling, units)
     if not inargs.area_file:
         units = units + ' m-2'
     iris.std_names.STD_NAMES[standard_name] = {'canonical_units': units}
 
     new_cube.standard_name = standard_name
-    new_cube.long_name = 'ocean heat content %s'  %(dims)
-    new_cube.var_name = 'ohc_%s'  %(dims)
+    new_cube.long_name = long_name
+    new_cube.var_name = var_name
     new_cube.units = units
     new_cube.attributes = orig_atts  
 
     return new_cube
 
 
-def calc_ohc_2D(cube, weights, inargs):
-    """Calculate the 2D OHC field (time, latitude)"""
+def calc_ohc_vertical_integral(cube, weights, inargs):
+    """Calculate the ohc vertical integral.
 
-    integral = cube.collapsed(['depth', 'longitude'], iris.analysis.SUM, weights=weights)
-    ohc_2D = (integral * inargs.density * inargs.specific_heat) / (10**inargs.scaling)
-    ohc_2D.remove_coord('depth')
-    ohc_2D.remove_coord('longitude')
+    Output: dims = (time, latitude, longitude)
 
-    return ohc_2D
-
-
-def calc_ohc_3D(cube, weights, inargs):
-    """Calculate the 3D OHC field (time, latitude, longitude)"""
+    """
 
     integral = cube.collapsed('depth', iris.analysis.SUM, weights=weights)
-    ohc_3D = (integral * inargs.density * inargs.specific_heat) / (10**inargs.scaling)
-    ohc_3D.remove_coord('depth')
+    ohc = (integral * inargs.density * inargs.specific_heat) 
+    ohc.remove_coord('depth')
+    if inargs.scaling:
+        ohc = ohc / (10**inargs.scaling)
 
-    return ohc_3D
+    return ohc
 
 
 def read_climatology(climatology_file, variable, level_subset):
@@ -165,19 +166,18 @@ def main(inargs):
         elif depth_axis.units == 'dbar':
             vertical_weights = spatial_weights.calc_vertical_weights_2D(depth_axis, temperature_cube.coord('latitude'), coord_names, temperature_cube.shape)
 
-        zonal_weights = spatial_weights.calc_zonal_weights(temperature_cube, coord_names)
-
-        ohc_3D = calc_ohc_3D(temperature_cube, vertical_weights.astype(numpy.float32), inargs)
-        ohc_2D = calc_ohc_2D(temperature_cube, vertical_weights * zonal_weights, inargs)
+        ohc_3D = calc_ohc_vertical_integral(temperature_cube, vertical_weights.astype(numpy.float32), inargs)
+        ohc_zonal_sum = ohc_3D.collapsed('longitude', iris.analysis.SUM)
+        ohc_zonal_sum.remove_coord('longitude')
 
         # Create the cube
         ohc_3D.data = ohc_3D.data.astype(numpy.float32)
-        ohc_2D.data = ohc_2D.data.astype(numpy.float32)
+        ohc_zonal_sum.data = ohc_zonal_sum.data.astype(numpy.float32)
 
-        ohc_3D = add_metadata(atts, ohc_3D, '3D', inargs)
-        ohc_2D = add_metadata(atts, ohc_2D, '2D', inargs)
+        ohc_3D = add_metadata(atts, ohc_3D, inargs)
+        ohc_zonal_sum = add_metadata(atts, ohc_zonal_sum, inargs, aggregation='zs')
 
-        ohc_list = iris.cube.CubeList([ohc_3D, ohc_2D])
+        ohc_list = iris.cube.CubeList([ohc_3D, ohc_zonal_sum])
         out_cubes.append(ohc_list.concatenate())
 
     cube_list = []
@@ -233,8 +233,8 @@ notes:
     parser.add_argument("--specific_heat", type=float, default=4000,
                         help="Specific heat of seawater (in J / kg.K). Default of 4000 J/kg.K from Hobbs2016")
     
-    parser.add_argument("--scaling", type=int, default=12,
-                        help="Factor by which to scale heat content (default value of 9 gives units of 10^9 J m-2)")
+    parser.add_argument("--scaling", type=int, default=None,
+                        help="Factor by which to scale heat content (e.g. value of 9 gives units of 10^9 J m-2 or 10^9 J)")
     
     args = parser.parse_args()             
     main(args)
