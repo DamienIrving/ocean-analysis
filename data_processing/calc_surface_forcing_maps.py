@@ -40,6 +40,12 @@ basins = {'atlantic': 2,
           'pacific': 3,
           'indian': 5}
 
+aggregation_functions = {'mean': iris.analysis.MEAN,
+                         'sum': iris.analysis.SUM}
+
+aggregation_abbreviations = {'mean': 'zm',
+                             'sum': 'zi'}
+
 
 def get_history_attribute(data_file, data_cube, basin_file, basin_cube, area_file, area_cube):
     """Generate the history attribute for the output file."""
@@ -111,13 +117,13 @@ def main(inargs):
         if not basin_name == 'globe':            
             data_cube.data.mask = numpy.where((data_cube.data.mask == False) & (basin_array == basins[basin_name]), False, True)
 
-        # Zonal mean
-        zonal_cube = data_cube.collapsed('longitude', iris.analysis.MEAN)
+        # Zonal statistic
+        zonal_cube = data_cube.collapsed('longitude', aggregation_functions[inargs.zonal_stat])
         zonal_cube.remove_coord('longitude')
 
         # Attributes
-        standard_name = 'zonal_mean_%s_%s' %(orig_standard_name, basin_name)
-        var_name = '%s_zm_%s'   %(orig_var_name, basin_name)
+        standard_name = 'zonal_%s_%s_%s' %(inargs.zonal_stat, orig_standard_name, basin_name)
+        var_name = '%s_%s_%s'   %(orig_var_name, aggregation_abbreviations[inargs.zonal_stat], basin_name)
         iris.std_names.STD_NAMES[standard_name] = {'canonical_units': zonal_cube.units}
 
         zonal_cube.standard_name = standard_name
@@ -151,6 +157,9 @@ note:
     parser.add_argument("var", type=str, help="Input variable standard_name")
     parser.add_argument("outfile", type=str, help="Output file name")
     
+    parser.add_argument("--zonal_stat", type=str, choices=('mean', 'sum'), default='mean',
+                        help="Zonal statistic")
+
     parser.add_argument("--basin_file", type=str, default=None,
                         help="Cell basin file (for ocean input variables)")
     parser.add_argument("--area_file", type=str, default=None,
