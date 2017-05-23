@@ -54,7 +54,7 @@ def _linear_trend(data, time_axis):
         return numpy.polynomial.polynomial.polyfit(time_axis, data, 1)[-1]
 
 
-def _undo_unit_scaling(cube):
+def undo_unit_scaling(cube):
     """Remove scale factor from input data.
 
     e.g. Ocean heat content data will often have units like 10^12 J m-2.
@@ -110,7 +110,7 @@ def calc_trend(cube, running_mean=False, per_yr=False, remove_scaling=False):
     assert coord_names[0] == 'time'
 
     if remove_scaling:
-        cube = _undo_unit_scaling(cube)
+        cube = undo_unit_scaling(cube)
 
     if running_mean:
         cube = cube.rolling_window('time', iris.analysis.MEAN, 12)
