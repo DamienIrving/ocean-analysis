@@ -1,6 +1,6 @@
 """
 Filename:     plot_heat_trends.py
-Author:       Damien Irving, d.irving@student.unimelb.edu.au
+Author:       Damien Irving, irving.damien@gmail.com
 Description:  Plot trend in ocean heat transport convergence, surface heat flux and ocean heat content
 
 Input:        List of netCDF files to plot
@@ -50,21 +50,23 @@ def calc_trend_cube(cube):
 
 
 def get_ohc_trend(ohc_file, metadata_dict):
-    """Read ocean heat content data and calculate trend.
+    """Read ocean heat content data and calculate tendency trend.
     
-    Input units: 10^12 J m-2
-    Output units: W m-2 s-1
+    Input units: J
+    Output units: W s-1
     
     """
     
-    # FIXME: I haven't accounted for the 10^12 (remove from ohc calculation)
-    
-    ohc_cube = iris.load_cube(ohc_file, 'ocean heat content 2D')
+    ohc_cube = iris.load_cube(ohc_file, 'ocean heat content zonal sum')
     metadata_dict[ohc_file] = ohc_cube.attributes['history']
 
-    ohc_cube = ohc_cube / 86400.   # J m-2 to W m-2
+    ohc_cube = ohc_cube / 86400.   # J to W
 
+    # Take sqrt, calculate trend, then square
+    ohc_cube.data = numpy.ma.sqrt(ohc_cube.data)
     ohc_trend = calc_trend_cube(ohc_cube)
+    ohc_trend = ohc_trend ** 2
+
     ohc_trend.attributes = ohc_cube.attributes
     
     return ohc_trend, metadata_dict
@@ -73,12 +75,12 @@ def get_ohc_trend(ohc_file, metadata_dict):
 def get_hfds_trend(hfds_file, metadata_dict):
     """Read surface heat flux data and calculate trend.
     
-    Input units: W m-2
-    Output units: W m-2 s-1
+    Input units: W
+    Output units: W s-1
     
     """
     
-    hfds_cube = iris.load_cube(hfds_file, 'zonal mean surface downward heat flux in sea water globe')
+    hfds_cube = iris.load_cube(hfds_file, 'zonal sum surface downward heat flux in sea water globe')
     metadata_dict[hfds_file] = hfds_cube.attributes['history']
 
     hfds_trend = calc_trend_cube(hfds_cube)
@@ -91,8 +93,8 @@ def get_htc_trend(htc_file, metadata_dict):
     
     A hfbasin CMIP5 file is expected.
     
-    Input units: W
-    Output units: W m-2 s-2
+    Input: units = W, timescale = monhtly
+    Output: units = W s-1, timescale = annual
     
     """
     
@@ -102,7 +104,7 @@ def get_htc_trend(htc_file, metadata_dict):
     htc_cube = htc_cube.extract(iris.Constraint(region='global_ocean'))
     htc_cube = timeseries.convert_to_annual(htc_cube)
 
-    htc_trend = calc_trend_cube(htc_cube / (3.1 * 10**12)) # FIXME: Need to convert W to W m -2 more accurately (use actual ocean area at each latitude)
+    htc_trend = calc_trend_cube(htc_cube)
     htc_trend.attributes = htc_cube.attributes
     
     return htc_trend, metadata_dict
@@ -120,12 +122,13 @@ def main(inargs):
     iplt.plot(htc_trend * -1, label='heat transport convergence') 
     iplt.plot(hfds_trend, label='surface heat flux')  
     iplt.plot(ohc_trend, label='ocean heat content') 
-     
+    # FIXME: Plot residual hfds - htc. Should come close to ohc   
+  
     plt.legend(loc=2)
     plt.xlabel('latitude')
-    plt.ylabel('Trend ($W m^{-2} s^{-1}$)')  # FIXME: Include an option for W s-1 (otherwise small ocean areas come up large)
-    pdb.set_trace()
+    plt.ylabel('Trend ($W s^{-1}$)')
     plt.title(htc_trend.attributes['model_id'])
+
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
 
