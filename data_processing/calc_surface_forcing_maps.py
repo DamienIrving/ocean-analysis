@@ -44,7 +44,7 @@ aggregation_functions = {'mean': iris.analysis.MEAN,
                          'sum': iris.analysis.SUM}
 
 aggregation_abbreviations = {'mean': 'zm',
-                             'sum': 'zi'}
+                             'sum': 'zs'}
 
 
 def get_history_attribute(data_file, data_cube, basin_file, basin_cube, area_file, area_cube):
