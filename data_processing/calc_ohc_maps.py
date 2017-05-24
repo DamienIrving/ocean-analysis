@@ -29,6 +29,7 @@ try:
     import convenient_universal as uconv
     import spatial_weights
     import grids
+    import timeseries
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -36,6 +37,10 @@ except ImportError:
 # Define functions
 
 history = []
+
+agg_abbrevs = {'zm': 'zonal_mean',
+               'zs': 'zonal_sum'}
+
 
 def add_metadata(orig_atts, new_cube, inargs, aggregation=None):
     """Add metadata to the output cube."""
@@ -45,10 +50,10 @@ def add_metadata(orig_atts, new_cube, inargs, aggregation=None):
     var_name = 'ohc'
     units = 'J'
     if aggregation:
-        assert aggregation in ['zs']
-        standard_name = standard_name + '_zonal_sum'
-        long_name = long_name + ' zonal sum'
-        var_name = var_name + '_zs'
+        assert aggregation in ['zs', 'zm']
+        standard_name = standard_name + '_' + agg_abbrevs[aggregation]
+        long_name = standard_name.replace('_', ' ')
+        var_name = var_name + '_' + aggregation
 
     if inargs.scaling:
         units = '10^%d %s' %(inargs.scaling, units)
@@ -169,21 +174,25 @@ def main(inargs):
         ohc_3D = calc_ohc_vertical_integral(temperature_cube, vertical_weights.astype(numpy.float32), inargs)
         ohc_zonal_sum = ohc_3D.collapsed('longitude', iris.analysis.SUM)
         ohc_zonal_sum.remove_coord('longitude')
+        ohc_zonal_mean = ohc_3D.collapsed('longitude', iris.analysis.MEAN)
+        ohc_zonal_mean.remove_coord('longitude')
 
         # Create the cube
         ohc_3D.data = ohc_3D.data.astype(numpy.float32)
         ohc_zonal_sum.data = ohc_zonal_sum.data.astype(numpy.float32)
+        ohc_zonal_mean.data = ohc_zonal_mean.data.astype(numpy.float32)
 
         ohc_3D = add_metadata(atts, ohc_3D, inargs)
         ohc_zonal_sum = add_metadata(atts, ohc_zonal_sum, inargs, aggregation='zs')
+        ohc_zonal_mean = add_metadata(atts, ohc_zonal_mean, inargs, aggregation='zm')
 
-        ohc_list = iris.cube.CubeList([ohc_3D, ohc_zonal_sum])
+        ohc_list = iris.cube.CubeList([ohc_3D, ohc_zonal_sum, ohc_zonal_mean])
         out_cubes.append(ohc_list.concatenate())
 
     cube_list = []
-    for var_index in (0, 1):
+    for var_index in range(len(ohc_list)):
         temp_list = []
-        for infile_index in range(0, len(inargs.temperature_files)):
+        for infile_index in range(len(inargs.temperature_files)):
             temp_list.append(out_cubes[infile_index][var_index])
         
         temp_list = iris.cube.CubeList(temp_list)     
@@ -235,6 +244,6 @@ notes:
     
     parser.add_argument("--scaling", type=int, default=None,
                         help="Factor by which to scale heat content (e.g. value of 9 gives units of 10^9 J m-2 or 10^9 J)")
-    
+
     args = parser.parse_args()             
     main(args)
