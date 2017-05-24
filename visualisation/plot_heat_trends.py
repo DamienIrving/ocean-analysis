@@ -49,7 +49,7 @@ def calc_trend_cube(cube):
     return new_cube
 
 
-def get_ohc_trend(ohc_file, metadata_dict):
+def get_ohc_trend(ohc_file, metadata_dict, zonal_stat):
     """Read ocean heat content data and calculate tendency trend.
     
     Input units: J
@@ -57,22 +57,23 @@ def get_ohc_trend(ohc_file, metadata_dict):
     
     """
     
-    ohc_cube = iris.load_cube(ohc_file, 'ocean heat content zonal sum')
+    long_name = 'ocean heat content zonal %s'  %(zonal_stat)
+    ohc_cube = iris.load_cube(ohc_file, long_name)
     metadata_dict[ohc_file] = ohc_cube.attributes['history']
-
-    ohc_cube = ohc_cube / 86400.   # J to W
 
     # Take sqrt, calculate trend, then square
     ohc_cube.data = numpy.ma.sqrt(ohc_cube.data)
     ohc_trend = calc_trend_cube(ohc_cube)
     ohc_trend = ohc_trend ** 2
 
+    ohc_trend = ohc_trend / 86400.   # J s-1 to W s-1
+
     ohc_trend.attributes = ohc_cube.attributes
     
     return ohc_trend, metadata_dict
 
 
-def get_hfds_trend(hfds_file, metadata_dict):
+def get_hfds_trend(hfds_file, metadata_dict, zonal_stat):
     """Read surface heat flux data and calculate trend.
     
     Input units: W
@@ -80,7 +81,8 @@ def get_hfds_trend(hfds_file, metadata_dict):
     
     """
     
-    hfds_cube = iris.load_cube(hfds_file, 'zonal sum surface downward heat flux in sea water globe')
+    long_name = 'zonal %s surface downward heat flux in sea water globe'  %(zonal_stat)
+    hfds_cube = iris.load_cube(hfds_file, long_name)
     metadata_dict[hfds_file] = hfds_cube.attributes['history']
 
     hfds_trend = calc_trend_cube(hfds_cube)
@@ -116,14 +118,27 @@ def main(inargs):
     metadata_dict = {}
   
     htc_trend, metadata_dict = get_htc_trend(inargs.htc_file, metadata_dict)
-    hfds_trend, metadata_dict = get_hfds_trend(inargs.hfds_file, metadata_dict)  
-    ohc_trend, metadata_dict = get_ohc_trend(inargs.ohc_file, metadata_dict)  
+    hfds_trend, metadata_dict = get_hfds_trend(inargs.hfds_file, metadata_dict, zonal_stat=inargs.zonal_stat)  
+    ohc_trend, metadata_dict = get_ohc_trend(inargs.ohc_file, metadata_dict, zonal_stat=inargs.zonal_stat)  
     
-    iplt.plot(htc_trend * -1, label='heat transport convergence') 
-    iplt.plot(hfds_trend, label='surface heat flux')  
-    iplt.plot(ohc_trend, label='ocean heat content') 
+    if not inargs.exclude_htc:
+        iplt.plot(htc_trend * -1, label='heat transport convergence', color='green') 
+    if not inargs.exclude_hfds:
+        iplt.plot(hfds_trend, label='surface heat flux', color='orange', linestyle='--')  
+    if not inargs.exclude_ohc:
+        iplt.plot(ohc_trend, label='ocean heat content', color='black') 
+    
     # FIXME: Plot residual hfds - htc. Should come close to ohc   
   
+    if inargs.nummelin:
+        color = '0.7'
+        width = 0.5
+        plt.axhline(y=0, linestyle='--', color=color, linewidth=width)
+        plt.axvline(x=30, color=color, linewidth=width)
+        plt.axvline(x=50, color=color, linewidth=width)
+        plt.axvline(x=77, color=color, linewidth=width)
+        plt.xlim(20, 90)
+
     plt.legend(loc=2)
     plt.xlabel('latitude')
     plt.ylabel('Trend ($W s^{-1}$)')
@@ -152,6 +167,19 @@ author:
     parser.add_argument("hfds_file", type=str, help="Surface heat flux file (usually hfds)")
     parser.add_argument("ohc_file", type=str, help="Ocean heat content file")
     parser.add_argument("outfile", type=str, help="Output file")
+
+    parser.add_argument("--exclude_htc", action="store_true", default=False,
+                        help="Leave htc off plot")
+    parser.add_argument("--exclude_hfds", action="store_true", default=False,
+                        help="Leave hfds off plot")
+    parser.add_argument("--exclude_ohc", action="store_true", default=False,
+                        help="Leave ohc off plot")
+
+    parser.add_argument("--nummelin", action="store_true", default=False,
+                        help="Restrict plot to Nummelin et al (2016) bounds")
+
+    parser.add_argument("--zonal_stat", type=str, choices=('mean', 'sum'), default='sum',
+                        help="Zonal statistic")
 
     args = parser.parse_args()             
     main(args)
