@@ -49,6 +49,7 @@ GLOBAL_MEAN_EVSPSBL_FILE=${GLOBAL_MEAN_EVSPSBL_DIR}/evspsbl-global-mean_Ayr_${MO
 PE_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/pe/latest
 GLOBAL_PE_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/pe/latest
 GLOBAL_GRIDDEV_PE_FILE=${GLOBAL_PE_DIR}/pe-global-griddev_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+GLOBAL_BULKDEV_PE_FILE=${GLOBAL_PE_DIR}/pe-global-bulkdev_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 OCEAN_GRIDDEV_PE_FILE=${GLOBAL_PE_DIR}/pe-ocean-griddev_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 LAND_GRIDDEV_PE_FILE=${GLOBAL_PE_DIR}/pe-land-griddev_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
@@ -57,7 +58,18 @@ BASIN_FILE=${ORIG_BASIN_DIR}/${MODEL}/${EXPERIMENT}/fx/ocean/${FX_RUN}/basin/lat
 ATMOS_AREA_FILE=${ORIG_AREAA_DIR}/${MODEL}/${EXPERIMENT}/fx/atmos/${FX_RUN}/areacella/latest/areacella_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
 OCEAN_AREA_FILE=${ORIG_AREAO_DIR}/${MODEL}/${EXPERIMENT}/fx/ocean/${FX_RUN}/areacello/latest/areacello_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
 
-GLOBAL_METRICS=global_metrics.nc
+HFDS_FILE=$(wildcard ${ORIG_HFDS_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/hfds/latest/hfds_Omon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
+HFDS_ZONAL_SUM_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/hfds/latest
+HFDS_ZONAL_SUM_FILE=${HFDS_ZONAL_SUM_DIR}/hfds-by-areacello-zs_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+
+HFBASIN_FILE=$(wildcard ${ORIG_HFBASIN_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/hfbasin/latest/hfbasin_Omon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
+HTC_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/hfbasin/latest
+HTC_FILE=${HTC_DIR}/hfbasin-convergence_Omon_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+
+OHC_MAPS_FILE=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/ohc-maps/latest/ohc-by-areacello-maps_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+
+GLOBAL_METRICS=global_metrics
+NUMMELIN_PLOT=/g/data/r87/dbi599/figures/heat-cycle/htc-hfds-ohc_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.png
 
 
 # Global indicators
@@ -69,6 +81,10 @@ ${PE_DIR} :
 ${GLOBAL_GRIDDEV_PE_FILE} :
 	mkdir -p ${GLOBAL_PE_DIR}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_global_metric.py $(wildcard ${PE_DIR}/pe_Amon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc) precipitation_minus_evaporation_flux grid-deviation $@ --area_file ${ATMOS_AREA_FILE} --smoothing annual
+
+${GLOBAL_BULKDEV_PE_FILE} :
+	mkdir -p ${GLOBAL_PE_DIR}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_global_metric.py $(wildcard ${PE_DIR}/pe_Amon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc) precipitation_minus_evaporation_flux bulk-deviation $@ --area_file ${ATMOS_AREA_FILE} --smoothing annual
 
 ${OCEAN_GRIDDEV_PE_FILE} :
 	mkdir -p ${GLOBAL_PE_DIR}
@@ -125,7 +141,22 @@ ${GLOBAL_GRIDDEV_SO_FILE} :
 	mkdir -p ${GLOBAL_SO_DIR}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_global_3D_metric.py ${DEDRIFTED_VARIABLE_FILES} sea_water_salinity grid-deviation $@ --volume_file ${VOLUME_FILE} --smoothing annual
 
-${GLOBAL_METRICS} : ${GLOBAL_MEAN_TAS_FILE} ${GLOBAL_MEAN_PR_FILE} ${GLOBAL_MEAN_EVSPSBL_FILE} ${GLOBAL_BULKDEV_SOS_FILE} ${GLOBAL_GRIDDEV_SOS_FILE} ${GLOBAL_GRIDDEV_PE_FILE} ${OCEAN_GRIDDEV_PE_FILE} ${LAND_GRIDDEV_PE_FILE}
+${GLOBAL_METRICS} : ${GLOBAL_MEAN_TAS_FILE} ${GLOBAL_GRIDDEV_PE_FILE} ${GLOBAL_BULKDEV_PE_FILE} ${GLOBAL_BULKDEV_SOS_FILE} 
 	echo generate_delsole_command.py
 	echo generate_global_indicator_command.py
 	echo plot_comparison_timeseries.py
+
+
+# Nummelin et al (2017) plot
+
+${HFDS_ZONAL_SUM_FILE} : 
+	mkdir -p ${HFDS_ZONAL_SUM_DIR}	
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_surface_forcing_maps.py ${HFDS_FILE} surface_downward_heat_flux_in_sea_water $@ --area_file ${OCEAN_AREA_FILE} --zonal_stat sum
+
+${HTC_FILE} :
+	mkdir -p ${HTC_DIR} 
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_convergence_maps.py ${HFBASIN_FILE} northward_ocean_heat_transport ${MODEL} $@ 
+	
+${NUMMELIN_PLOT} : ${HTC_FILE} ${HFDS_ZONAL_SUM_FILE} ${OHC_MAPS_FILE} 
+	${PYTHON} ${VIS_SCRIPT_DIR}/plot_heat_trends.py $< $(word 2,$^) $(word 3,$^) $@
+

@@ -28,16 +28,22 @@ ORIG_SOS_DIR=${UA6_CMIP5_DIR}
 ORIG_SO_DIR=${UA6_CMIP5_DIR}
 ORIG_PR_DIR=${UA6_CMIP5_DIR}
 ORIG_EVSPSBL_DIR=${UA6_CMIP5_DIR}
+ORIG_HFDS_DIR=${UA6_CMIP5_DIR}
+ORIG_HFBASIN_DIR=${UA6_CMIP5_DIR}
 
-MODEL=CanESM2
-EXPERIMENT=historicalMisc
-RUN=r1i1p4
-FX_RUN=r0i0p3
+MODEL=CSIRO-Mk3-6-0
+EXPERIMENT=rcp85
+RUN=r1i1p1
+FX_RUN=r0i0p0
 
 
-TARGET=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/aerosol/${RUN}/od550aer/latest/od550aer-global-mean_aero_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
-#${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/tas/latest/tas-global-mean_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+TARGET=/g/data/r87/dbi599/figures/heat-cycle/htc-hfds-ohc_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.png
+
 #${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/pe/latest
-#global_metrics.nc
+#global_metrics
+
+#${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/aerosol/${RUN}/od550aer/latest/od550aer-global-mean_aero_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+#${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/tas/latest/tas-global-mean_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+
 #${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/so/latest/so-global-abs_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
