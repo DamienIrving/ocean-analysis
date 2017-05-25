@@ -93,7 +93,7 @@ def get_hfds_trend(hfds_file, metadata_dict, zonal_stat):
 def get_htc_trend(htc_file, metadata_dict):
     """Read ocean heat transport convergence data and calculate trend.
     
-    A hfbasin CMIP5 file is expected.
+    A hfbasin-convengence file is expected.
     
     Input: units = W, timescale = monhtly
     Output: units = W s-1, timescale = annual
@@ -103,7 +103,6 @@ def get_htc_trend(htc_file, metadata_dict):
     htc_cube = iris.load_cube(htc_file)
     metadata_dict[htc_file] = htc_cube.attributes['history']
 
-    htc_cube = htc_cube.extract(iris.Constraint(region='global_ocean'))
     htc_cube = timeseries.convert_to_annual(htc_cube)
 
     htc_trend = calc_trend_cube(htc_cube)
