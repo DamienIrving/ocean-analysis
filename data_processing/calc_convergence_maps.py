@@ -45,8 +45,9 @@ def convergence(cube):
 
     lat_points = cube.coord('latitude').points
     lat_diffs = numpy.diff(lat_points)
-    assert numpy.max(lat_diffs) == numpy.min(lat_diffs)
-    lat_spacing = lat_diffs[0]
+
+    assert numpy.abs(numpy.max(lat_diffs) - numpy.min(lat_diffs)) < 0.1
+    lat_spacing = numpy.mean(lat_diffs)
 
     convergence_cube = cube[:, 0:-1].copy()
     convergence_cube.data = numpy.diff(cube.data, axis=1)
@@ -70,20 +71,26 @@ def get_history_attribute(y_files, y_cube, x_files, x_cube, basin_file, basin_cu
     return history_dict
         
 
-def read_data(infile_list, var, basin_cube):
-    """Read the data files."""
+def read_data(infile_list, var, model, basin_cube):
+    """Read the data files.
 
+    The CSIRO-Mk3-6-0 model seems to be formatted incorrectly
+      and you can't select the "global_ocean" by name
+
+    """
     cube = iris.load(infile_list, gio.check_iris_var(var))
-
-    if var == 'northward_ocean_heat_transport':
-        cube = cube.extract(iris.Constraint(region='global_ocean'))
-
     atts = cube[0].attributes
     equalise_attributes(cube)
     iris.util.unify_time_units(cube)
     cube = cube.concatenate_cube()
     cube = gio.check_time_units(cube)
     cube.attributes = atts
+
+    if var == 'northward_ocean_heat_transport':
+        if model == 'CSIRO-Mk3-6-0':
+            cube = cube[:, 1, :]
+        else:
+            cube = cube.extract(iris.Constraint(region='global_ocean'))
 
     cube = timeseries.convert_to_annual(cube, full_months=True)
 
@@ -119,7 +126,7 @@ def main(inargs):
         inargs.basin_file = None
 
     # Heat transport data
-    y_cube = read_data(inargs.infiles, inargs.var, basin_cube)
+    y_cube = read_data(inargs.infiles, inargs.var, inargs.model, basin_cube)
     orig_standard_name = y_cube.standard_name
     orig_var_name = y_cube.var_name
 
@@ -166,8 +173,8 @@ def main(inargs):
         zonal_cube = convergence(zonal_cube)
 
         # Attributes
-        standard_name = 'zonal_integral_%s_convergence_%s' %(orig_standard_name, basin_name)
-        var_name = '%s_czi_%s'   %(orig_var_name, basin_name)
+        standard_name = 'zonal_sum_%s_convergence_%s' %(orig_standard_name, basin_name)
+        var_name = '%s_czs_%s'   %(orig_var_name, basin_name)
         iris.std_names.STD_NAMES[standard_name] = {'canonical_units': zonal_cube.units}
 
         zonal_cube.standard_name = standard_name
@@ -199,6 +206,7 @@ note:
 
     parser.add_argument("infiles", type=str, nargs='*', help="Input data files")
     parser.add_argument("var", type=str, help="Input variable standard_name")
+    parser.add_argument("model", type=str, help="model_id")
     parser.add_argument("outfile", type=str, help="Output file name")
     
     parser.add_argument("--hfx_files", type=str, nargs='*', default=None,
