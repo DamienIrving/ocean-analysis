@@ -125,7 +125,7 @@ def main(inargs):
     if not inargs.exclude_hfds:
         iplt.plot(hfds_trend, label='surface heat flux', color='orange', linestyle='--')  
     if not inargs.exclude_ohc:
-        iplt.plot(ohc_trend, label='ocean heat content', color='black') 
+        iplt.plot(ohc_trend, label='ocean heat content tendency', color='black') 
     
     # FIXME: Plot residual hfds - htc. Should come close to ohc   
   
