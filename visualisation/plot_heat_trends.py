@@ -121,7 +121,7 @@ def main(inargs):
     ohc_trend, metadata_dict = get_ohc_trend(inargs.ohc_file, metadata_dict, zonal_stat=inargs.zonal_stat)  
     
     if not inargs.exclude_htc:
-        iplt.plot(htc_trend * -1, label='heat transport convergence', color='green') 
+        iplt.plot(htc_trend, label='heat transport convergence', color='green') 
     if not inargs.exclude_hfds:
         iplt.plot(hfds_trend, label='surface heat flux', color='orange', linestyle='--')  
     if not inargs.exclude_ohc:

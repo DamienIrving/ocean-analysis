@@ -1,7 +1,8 @@
 """
-Filename:     calc_convergence_maps.py
+Filename:     calc_ocean_heat_transport_convergence.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Calculate zonal mean ocean heat transport convergence for each ocean basin
+Description:  Calculate zonal mean ocean heat transport convergence for each ocean basin.
+              Can handle hfbasin or hfy/hfx data.
 
 """
 
@@ -50,7 +51,7 @@ def convergence(cube):
     lat_spacing = numpy.mean(lat_diffs)
 
     convergence_cube = cube[:, 0:-1].copy()
-    convergence_cube.data = numpy.diff(cube.data, axis=1)
+    convergence_cube.data = numpy.diff(cube.data, axis=1) * -1
 
     new_lat_coord = convergence_cube.coord('latitude') + (lat_spacing / 2.0)
     convergence_cube.coord('latitude').points = new_lat_coord.points
@@ -194,11 +195,11 @@ author:
   Damien Irving, irving.damien@gmail.com
 
 note:
-  Calculate zonal mean surface forcing for each ocean basin
+  The hfx/hfy functionality is still under development.
 
 """
 
-    description=''
+    description='Calculate zonal mean ocean heat transport convergence for each ocean basin'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
