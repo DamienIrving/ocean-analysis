@@ -155,7 +155,7 @@ ${HFDS_ZONAL_SUM_FILE} :
 
 ${HTC_FILE} :
 	mkdir -p ${HTC_DIR} 
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_convergence_maps.py ${HFBASIN_FILE} northward_ocean_heat_transport ${MODEL} $@ 
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_ocean_heat_transport_convergence.py ${HFBASIN_FILE} northward_ocean_heat_transport ${MODEL} $@ 
 	
 ${NUMMELIN_PLOT} : ${HTC_FILE} ${HFDS_ZONAL_SUM_FILE} ${OHC_MAPS_FILE} 
 	${PYTHON} ${VIS_SCRIPT_DIR}/plot_heat_trends.py $< $(word 2,$^) $(word 3,$^) $@
