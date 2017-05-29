@@ -57,7 +57,8 @@ def add_metadata(orig_atts, new_cube, inargs, aggregation=None):
 
     if inargs.scaling:
         units = '10^%d %s' %(inargs.scaling, units)
-    if not inargs.area_file:
+
+    if not (inargs.area_file or inargs.volume_file):
         units = units + ' m-2'
     iris.std_names.STD_NAMES[standard_name] = {'canonical_units': units}
 
@@ -70,12 +71,8 @@ def add_metadata(orig_atts, new_cube, inargs, aggregation=None):
     return new_cube
 
 
-def calc_ohc_vertical_integral(cube, weights, inargs):
-    """Calculate the ohc vertical integral.
-
-    Output: dims = (time, latitude, longitude)
-
-    """
+def calc_ohc_vertical_integral(cube, inargs, weights=None):
+    """Calculate the ohc vertical integral."""
 
     integral = cube.collapsed('depth', iris.analysis.SUM, weights=weights)
     ohc = (integral * inargs.density * inargs.specific_heat) 
@@ -98,15 +95,15 @@ def read_climatology(climatology_file, variable, level_subset):
     return climatology_cube
 
 
-def read_area(area_file):
-    """Read optional areacello file."""
+def read_spatial_file(spatial_file):
+    """Read optional areacello or volcello file."""
 
-    if area_file:
-        area_cube = iris.load_cube(area_file)
+    if spatial_file:
+        cube = iris.load_cube(spatial_file)
     else:
-        area_cube = None
+        cube = None
 
-    return area_cube      
+    return cube      
 
 
 def save_history(cube, field, filename):
@@ -118,7 +115,7 @@ def save_history(cube, field, filename):
     history.append(cube.attributes['history'])
 
 
-def set_attributes(inargs, temperature_cube, climatology_cube, area_cube):
+def set_attributes(inargs, temperature_cube, climatology_cube, area_cube, volume_cube):
     """Set the attributes for the output cube."""
     
     atts = temperature_cube.attributes
@@ -134,6 +131,8 @@ def set_attributes(inargs, temperature_cube, climatology_cube, area_cube):
         infile_history[inargs.climatology_file] = climatology_cube.attributes['history']
     if area_cube:
         infile_history[inargs.area_file] = area_cube.attributes['history']
+    if volume_cube:
+        infile_history[inargs.volume_file] = volume_cube.attributes['history']
 
     atts['history'] = gio.write_metadata(file_info=infile_history)
 
@@ -145,33 +144,42 @@ def main(inargs):
 
     level_subset = gio.iris_vertical_constraint(inargs.min_depth, inargs.max_depth)
     climatology_cube = read_climatology(inargs.climatology_file, inargs.temperature_var, level_subset)
-    area_cube = read_area(inargs.area_file)
+    area_cube = read_spatial_file(inargs.area_file)
+    volume_cube = read_spatial_file(inargs.volume_file)
     temperature_cubes = iris.load(inargs.temperature_files, inargs.temperature_var & level_subset, callback=save_history)
     equalise_attributes(temperature_cubes)
     iris.util.unify_time_units(temperature_cubes)
-    atts = set_attributes(inargs, temperature_cubes[0], climatology_cube, area_cube)
+    atts = set_attributes(inargs, temperature_cubes[0], climatology_cube, area_cube, volume_cube)
 
     out_cubes = []
     for temperature_cube in temperature_cubes:
 
+        # Calculate 3D (time, lat, lon) OHC 
         if climatology_cube:
             temperature_cube = temperature_cube - climatology_cube
-        if area_cube:
-            temperature_cube = temperature_cube * area_cube
-        temperature_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(temperature_cube)
 
-        assert coord_names == ['time', 'depth', 'latitude', 'longitude']
-    
-        depth_axis = temperature_cube.coord('depth')
-        assert depth_axis.units in ['m', 'dbar'], "Unrecognised depth axis units"
+        if volume_cube:
+            temperature_cube = temperature_cube * volume_cube
+            vertical_weights = None
+        else:
+            if area_cube:
+                temperature_cube = temperature_cube * area_cube
+        
+            depth_axis = temperature_cube.coord('depth')
+            assert depth_axis.units in ['m', 'dbar'], "Unrecognised depth axis units"
 
-        # Calculate heat content
-        if depth_axis.units == 'm':
-            vertical_weights = spatial_weights.calc_vertical_weights_1D(depth_axis, coord_names, temperature_cube.shape)
-        elif depth_axis.units == 'dbar':
-            vertical_weights = spatial_weights.calc_vertical_weights_2D(depth_axis, temperature_cube.coord('latitude'), coord_names, temperature_cube.shape)
+            if depth_axis.units == 'm':
+                vertical_weights = spatial_weights.calc_vertical_weights_1D(depth_axis, coord_names, temperature_cube.shape)
+            elif depth_axis.units == 'dbar':
+                vertical_weights = spatial_weights.calc_vertical_weights_2D(depth_axis, temperature_cube.coord('latitude'), coord_names, temperature_cube.shape)
+            vertical_weights = vertical_weights.astype(numpy.float32)
 
-        ohc_3D = calc_ohc_vertical_integral(temperature_cube, vertical_weights.astype(numpy.float32), inargs)
+        ohc_3D = calc_ohc_vertical_integral(temperature_cube, inargs, weights=vertical_weights)
+
+        # Regrid and collapse longitude
+        ohc_3D, coord_names, regrid_status = grids.curvilinear_to_rectilinear(ohc_3D)
+        assert coord_names == ['time', 'latitude', 'longitude']
+
         ohc_zonal_sum = ohc_3D.collapsed('longitude', iris.analysis.SUM)
         ohc_zonal_sum.remove_coord('longitude')
         ohc_zonal_mean = ohc_3D.collapsed('longitude', iris.analysis.MEAN)
@@ -230,8 +238,10 @@ notes:
                         help="Input temperature climatology file (required if input data not already anomaly)")
 
     parser.add_argument("--area_file", type=str, default=None,
-                        help="Cell area file (used to remove m-2 from units)")
-    
+                        help="Cell area file (used to make output units W instead of W m-2)")
+    parser.add_argument("--volume_file", type=str, default=None,
+                        help="Cell vole file (used to make output units W instead of W m-2)")
+
     parser.add_argument("--min_depth", type=float, default=None,
                         help="Only include data below this vertical level")
     parser.add_argument("--max_depth", type=float, default=None,
