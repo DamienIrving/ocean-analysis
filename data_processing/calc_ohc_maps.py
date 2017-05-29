@@ -165,12 +165,13 @@ def main(inargs):
             if area_cube:
                 temperature_cube = temperature_cube * area_cube
         
+            coord_names = [coord.name() for coord in temperature_cube.dim_coords]
             depth_axis = temperature_cube.coord('depth')
             assert depth_axis.units in ['m', 'dbar'], "Unrecognised depth axis units"
-
             if depth_axis.units == 'm':
                 vertical_weights = spatial_weights.calc_vertical_weights_1D(depth_axis, coord_names, temperature_cube.shape)
             elif depth_axis.units == 'dbar':
+                assert coord_names == ['time', 'depth', 'latitude', 'longitude'], "2D weights will not work for curvilinear grid"
                 vertical_weights = spatial_weights.calc_vertical_weights_2D(depth_axis, temperature_cube.coord('latitude'), coord_names, temperature_cube.shape)
             vertical_weights = vertical_weights.astype(numpy.float32)
 
