@@ -49,7 +49,23 @@ def calc_trend_cube(cube):
     return new_cube
 
 
-def get_ohc_trend(ohc_file, metadata_dict, zonal_stat='sum', derivative='sqrt'):
+def estimate_ohc_tendency(data, time_axis):
+    """Estimate the OHC tendency by taking derivative of fitted polynomial.
+
+    polyfit returns [c, b, a] corresponding to y = a + bx + cx^2
+    
+    """    
+
+    if data.mask[0]:
+        new_data = data
+    else:
+        coef_c, coef_b, coef_a = numpy.ma.polyfit(time_axis, data, 2)
+        new_data = coef_b + 2 * coef_c * time_axis
+
+    return new_data
+
+
+def get_ohc_tendency_trend(ohc_file, metadata_dict, zonal_stat='sum'):
     """Read ocean heat content data and calculate tendency trend.
     
     Input units: J
@@ -61,20 +77,17 @@ def get_ohc_trend(ohc_file, metadata_dict, zonal_stat='sum', derivative='sqrt'):
     ohc_cube = iris.load_cube(ohc_file, long_name)
     metadata_dict[ohc_file] = ohc_cube.attributes['history']
 
-    seconds_per_year = 60 * 60 * 24 * 365.25  # J to W
-    ohc_cube.data = ohc_cube.data / seconds_per_year
+    time_axis = timeseries.convert_to_seconds(ohc_cube.coord('time'))
+    ohc_tendency_data = numpy.ma.apply_along_axis(estimate_ohc_tendency, 0, ohc_cube.data, time_axis.points)
+    ohc_tendency_data = numpy.ma.masked_values(ohc_tendency_data, ohc_cube.data.fill_value)
 
-    assert derivative in ['sqrt', 'pass']
-    if derivative == 'sqrt':
-        ohc_cube.data = numpy.ma.sqrt(ohc_cube.data)
-        ohc_trend = calc_trend_cube(ohc_cube)
-        ohc_trend = ohc_trend ** 2
-    elif derivative == 'pass':
-        ohc_trend = calc_trend_cube(ohc_cube)
+    ohc_tendency_cube = ohc_cube.copy()
+    ohc_tendency_cube.data = ohc_tendency_data
 
-    ohc_trend.attributes = ohc_cube.attributes
+    ohc_tendency_trend_cube = calc_trend_cube(ohc_tendency_cube)
+    ohc_tendency_trend_cube.attributes = ohc_cube.attributes
     
-    return ohc_trend, metadata_dict
+    return ohc_tendency_trend_cube, metadata_dict
 
 
 def get_hfds_trend(hfds_file, metadata_dict, zonal_stat='sum'):
@@ -122,16 +135,14 @@ def main(inargs):
   
     htc_trend, metadata_dict = get_htc_trend(inargs.htc_file, metadata_dict)
     hfds_trend, metadata_dict = get_hfds_trend(inargs.hfds_file, metadata_dict, zonal_stat=inargs.zonal_stat)  
-    ohc_trend, metadata_dict = get_ohc_trend(inargs.ohc_file, metadata_dict,
-                                             zonal_stat=inargs.zonal_stat,
-                                             derivative=inargs.derivative)  
+    ohc_tendency_trend, metadata_dict = get_ohc_tendency_trend(inargs.ohc_file, metadata_dict, zonal_stat=inargs.zonal_stat,)  
     
     if not inargs.exclude_htc:
         iplt.plot(htc_trend, label='heat transport convergence', color='green') 
     if not inargs.exclude_hfds:
         iplt.plot(hfds_trend, label='surface heat flux', color='orange', linestyle='--')  
     if not inargs.exclude_ohc:
-        iplt.plot(ohc_trend, label='ocean heat content tendency', color='black') 
+        iplt.plot(ohc_tendency_trend, label='ocean heat content tendency', color='black') 
     
     # FIXME: Plot residual hfds - htc. Should come close to ohc   
   
@@ -179,9 +190,6 @@ author:
                         help="Leave hfds off plot")
     parser.add_argument("--exclude_ohc", action="store_true", default=False,
                         help="Leave ohc off plot")
-
-    parser.add_argument("--derivative", type=str, choices=('sqrt', 'pass'), default='sqrt',
-                        help="Method used to calculate the OHC tendency")
 
     parser.add_argument("--nummelin", action="store_true", default=False,
                         help="Restrict plot to Nummelin et al (2016) bounds")

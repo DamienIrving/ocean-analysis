@@ -14,7 +14,7 @@ import cf_units
 import pdb
 
 
-def _convert_to_seconds(time_axis):
+def convert_to_seconds(time_axis):
     """Convert time axis units to seconds.
 
     Args:
@@ -116,7 +116,7 @@ def calc_trend(cube, running_mean=False, per_yr=False, remove_scaling=False):
         cube = cube.rolling_window('time', iris.analysis.MEAN, 12)
 
     time_axis = cube.coord('time')
-    time_axis = _convert_to_seconds(time_axis)
+    time_axis = convert_to_seconds(time_axis)
 
     trend = numpy.ma.apply_along_axis(_linear_trend, 0, cube.data, time_axis.points)
     if type(cube.data) == numpy.ma.core.MaskedArray:
