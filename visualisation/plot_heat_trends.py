@@ -138,13 +138,27 @@ def main(inargs):
     ohc_tendency_trend, metadata_dict = get_ohc_tendency_trend(inargs.ohc_file, metadata_dict, zonal_stat=inargs.zonal_stat,)  
     
     if not inargs.exclude_htc:
-        iplt.plot(htc_trend, label='heat transport convergence', color='green') 
+        iplt.plot(htc_trend, label='heat transport convergence (HTC)', color='green') 
     if not inargs.exclude_hfds:
-        iplt.plot(hfds_trend, label='surface heat flux', color='orange', linestyle='--')  
+        iplt.plot(hfds_trend, label='surface heat flux (SFL)', color='orange', linestyle='--')  
     if not inargs.exclude_ohc:
         iplt.plot(ohc_tendency_trend, label='ocean heat content tendency', color='black') 
     
-    # FIXME: Plot residual hfds - htc. Should come close to ohc   
+    if not (inargs.exclude_htc and inargs.exclude_hfds):
+        htc_trend.remove_coord('region')
+        ref_lats = [('latitude', hfds_trend.coord('latitude').points)]  
+        regridded_htc_trend = htc_trend.interpolate(ref_lats, iris.analysis.Linear())
+        regridded_htc_trend.coord('latitude').bounds = hfds_trend.coord('latitude').bounds
+        regridded_htc_trend.coord('latitude').coord_system = hfds_trend.coord('latitude').coord_system
+
+        regridded_htc_trend.coord('latitude').var_name = 'lat'
+        hfds_trend.coord('latitude').var_name = 'lat'
+        regridded_htc_trend.coord('latitude').standard_name = 'latitude'
+        hfds_trend.coord('latitude').standard_name = 'latitude'
+        regridded_htc_trend.coord('latitude').long_name = 'latitude'
+        hfds_trend.coord('latitude').long_name = 'latitude'
+        
+        iplt.plot(regridded_htc_trend + hfds_trend, label='HTC + SFL', color='0.5')  
   
     if inargs.nummelin:
         color = '0.7'
