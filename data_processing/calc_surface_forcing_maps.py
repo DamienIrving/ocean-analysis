@@ -47,17 +47,36 @@ aggregation_abbreviations = {'mean': 'zm',
                              'sum': 'zs'}
 
 
-def get_history_attribute(data_file, data_cube, basin_file, basin_cube, area_file, area_cube):
+def get_history_attribute(data_file, data_cube, basin_file, basin_cube): # area_file, area_cube):
     """Generate the history attribute for the output file."""
 
     history_dict = {data_file: data_cube.attributes['history']}
     if basin_file:
         history_dict[basin_file] = basin_cube.attributes['history']
-    if area_file:
-        history_dict[area_file] = area_cube.attributes['history']
+    #if area_file:
+    #    history_dict[area_file] = area_cube.attributes['history']
 
     return history_dict
         
+
+def multiply_by_area(cube):
+    """Multiply by cell area."""
+
+    #area_cube = iris.load_cube(area_file)        
+    #cube = cube * area_cube
+
+    if not cube.coord('latitude').has_bounds():
+        cube.coord('latitude').guess_bounds()
+    if not cube.coord('longitude').has_bounds():
+        cube.coord('longitude').guess_bounds()
+    area_weights = iris.analysis.cartography.area_weights(cube)
+
+    units = str(cube.units)
+    cube = cube * area_weights   
+    cube.units = units.replace('m-2', '')
+
+    return cube
+
 
 def main(inargs):
     """Run the program."""
@@ -85,32 +104,30 @@ def main(inargs):
     else:
         basin_cube = None
 
+    # Regrid (if needed)
+    cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+
     # Change units (remove m-2)
-    if inargs.area_file:
-        area_cube = iris.load_cube(inargs.area_file)        
-        cube = cube * area_cube
-        cube.attributes = atts
-        cube.long_name = orig_long_name
-        cube.standard_name = orig_standard_name
-        cube.var_name = orig_var_name
-    else:
-        area_cube = None
+    pdb.set_trace()
+    cube = multiply_by_area(cube)
+    cube.attributes = atts
+    cube.long_name = orig_long_name
+    cube.standard_name = orig_standard_name
+    cube.var_name = orig_var_name
 
     # History
     history_attribute = get_history_attribute(inargs.infiles[0], cube,
-                                              inargs.basin_file, basin_cube,
-                                              inargs.area_file, area_cube)
+                                              inargs.basin_file, basin_cube)
+                                              #inargs.area_file, area_cube)
     cube.attributes['history'] = gio.write_metadata(file_info=history_attribute)
 
-    # Regrid (if needed)
-    cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+    # Calculate output for each basin
     if inargs.basin_file and not regrid_status:
         ndim = cube.ndim
         basin_array = uconv.broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], cube.shape) 
     else: 
         basin_array = uconv.create_basin_array(cube)
 
-    # Calculate output for each basin
     out_cubes = []
     for basin_name in ['atlantic', 'pacific', 'indian', 'globe']:
         data_cube = cube.copy()
@@ -162,8 +179,8 @@ note:
 
     parser.add_argument("--basin_file", type=str, default=None,
                         help="Cell basin file (for ocean input variables)")
-    parser.add_argument("--area_file", type=str, default=None,
-                        help="Cell area file (used to remove m-2 from units)")
+    #parser.add_argument("--area_file", type=str, default=None,
+    #                    help="Cell area file (used to remove m-2 from units)")
 
     args = parser.parse_args()            
     main(args)
