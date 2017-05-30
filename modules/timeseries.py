@@ -128,7 +128,7 @@ def calc_trend(cube, running_mean=False, per_yr=False, remove_scaling=False):
     return trend
 
 
-def convert_to_annual(cube, full_months=False):
+def convert_to_annual(cube, full_months=False, aggregation='mean'):
     """Convert data to annual timescale.
 
     Args:
@@ -140,7 +140,12 @@ def convert_to_annual(cube, full_months=False):
     iris.coord_categorisation.add_year(cube, 'time')
     iris.coord_categorisation.add_month(cube, 'time')
 
-    cube = cube.aggregated_by(['year'], iris.analysis.MEAN)
+    if aggregation == 'mean':
+        aggregator = iris.analysis.MEAN
+    elif aggregation == 'sum':
+        aggregator = iris.analysis.SUM
+
+    cube = cube.aggregated_by(['year'], aggregator)
 
     if full_months:
         cube = cube.extract(iris.Constraint(month='Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec'))
