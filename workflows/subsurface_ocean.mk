@@ -39,14 +39,7 @@ VARIABLE_MAPS_TAS_ZONAL_PLOT=${VARIABLE_MAPS_DIR}/${VAR}-maps-global-tas-trend-z
 CLIMATOLOGY_FILE=${DEDRIFTED_VARIABLE_DIR}/${VAR}-clim_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 CLIMATOLOGY_MAPS_FILE=${VARIABLE_MAPS_DIR}/${VAR}-maps-clim_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
-OHC_METRICS_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/${METRIC}/latest
-OHC_METRICS_FILE=${OHC_METRICS_DIR}/${METRIC}_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
-OHC_METRICS_PLOT=${OHC_METRICS_DIR}/${METRIC}_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.${FIG_TYPE}
-
-OHC_MAPS_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/ohc-maps/latest
-OHC_MAPS_FILE=${OHC_MAPS_DIR}/ohc-maps_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
-OHC_BY_AREA_MAPS_FILE=${OHC_MAPS_DIR}/ohc-by-areacello-maps_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
-OHC_MAPS_PLOT=${OHC_MAPS_DIR}/ohc-maps_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_${START_DATE}_${END_DATE}.${FIG_TYPE}
+OHC_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/ohc/latest
 
 VOLUME_FILE=${ORIG_VOL_DIR}/${MODEL}/${EXPERIMENT}/fx/ocean/${FX_RUN}/volcello/latest/volcello_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
 BASIN_FILE=${ORIG_BASIN_DIR}/${MODEL}/${EXPERIMENT}/fx/ocean/${FX_RUN}/basin/latest/basin_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
@@ -113,27 +106,10 @@ ${VARIABLE_MAPS_TAS_ZONAL_PLOT} : ${VARIABLE_MAPS_TAS_TREND} ${CLIMATOLOGY_MAPS_
 ## Use plot_integrated_ocean_trend_ensemble.py for zonal mean, vertical mean trend comparison between GHG and AA
 
 
-# OHC metrics
+# OHC
 
-${OHC_METRICS_FILE} : ${CLIMATOLOGY_FILE}
-	mkdir -p ${OHC_METRICS_DIR}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_ohc_metrics.py ${DEDRIFTED_VARIABLE_FILES} ${LONG_NAME} $@ --climatology_file $< --max_depth ${MAX_DEPTH} ${REF} --volume_file ${VOLUME_FILE}
-
-${OHC_METRICS_PLOT} : ${OHC_METRICS_FILE}
-	${PYTHON} ${VIS_SCRIPT_DIR}/plot_ohc_metric_timeseries.py $< $@ ${REF}
-
-# OHC maps
-
-${OHC_MAPS_FILE} : ${CLIMATOLOGY_FILE}
-	mkdir -p ${OHC_MAPS_DIR}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_ohc_maps.py ${DEDRIFTED_VARIABLE_FILES} ${LONG_NAME} $@ --climatology_file $<
+${OHC_DIR} :
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_ohc.py ${DEDRIFTED_VARIABLE_FILES} ${LONG_NAME}
         #--max_depth ${MAX_DEPTH} 
 
-${OHC_BY_AREA_MAPS_FILE} : 
-	mkdir -p ${OHC_MAPS_DIR}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_ohc_maps.py ${DEDRIFTED_VARIABLE_FILES} ${LONG_NAME} $@ --area_file ${OCEAN_AREA_FILE}
-
-
-${OHC_MAPS_PLOT} : ${OHC_MAPS_FILE}
-	${PYTHON} ${VIS_SCRIPT_DIR}/plot_ohc_trend.py $< $@ --time ${START_DATE} ${END_DATE} 
 
