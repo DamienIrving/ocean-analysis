@@ -33,17 +33,6 @@ except ImportError:
 
 # Define functions
 
-history = []
-
-def save_history(cube, field, filename):
-    """Save the history attribute when reading the data.
-    (This is required because the history attribute differs between input files 
-      and is therefore deleted upon equilising attributes)  
-    """ 
-
-    history.append(cube.attributes['history'])
-
-
 def get_file_names(precip_file, evap_dir, pe_dir, evs=False):
     """Get evap and p-e file names corresponding to precip file."""
 
