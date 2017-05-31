@@ -153,12 +153,11 @@ ${GLOBAL_METRICS} : ${GLOBAL_MEAN_TAS_FILE} ${GLOBAL_GRIDDEV_PE_FILE} ${GLOBAL_B
 
 ${HFDS_ZONAL_SUM_FILE} : 
 	mkdir -p ${HFDS_ZONAL_SUM_DIR}	
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_surface_forcing_maps.py ${HFDS_FILE} surface_downward_heat_flux_in_sea_water $@ --area_file ${OCEAN_AREA_FILE} --zonal_stat sum
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_surface_forcing_maps.py ${HFDS_FILE} surface_downward_heat_flux_in_sea_water $@ --area --zonal_stat sum
 
 ${OHC_ZONAL_SUM_FILE} : 
 	mkdir -p ${OHC_ZONAL_SUM_DIR}	
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_surface_forcing_maps.py ${OHC_FILE} ocean_heat_content $@ --zonal_stat sum
-        # --area
 
 ${HTC_FILE} :
 	mkdir -p ${HTC_DIR} 
