@@ -158,6 +158,7 @@ ${HFDS_ZONAL_SUM_FILE} :
 ${OHC_ZONAL_SUM_FILE} : 
 	mkdir -p ${OHC_ZONAL_SUM_DIR}	
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_surface_forcing_maps.py ${OHC_FILE} ocean_heat_content $@ --zonal_stat sum
+        # --area
 
 ${HTC_FILE} :
 	mkdir -p ${HTC_DIR} 

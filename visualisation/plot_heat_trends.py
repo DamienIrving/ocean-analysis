@@ -72,8 +72,8 @@ def get_ohc_tendency_trend(ohc_file, metadata_dict, zonal_stat='sum'):
     Output units: W s-1
     
     """
-    
-    long_name = 'ocean heat content zonal %s'  %(zonal_stat)
+
+    long_name = 'zonal %s ocean heat content globe'  %(zonal_stat)
     ohc_cube = iris.load_cube(ohc_file, long_name)
     metadata_dict[ohc_file] = ohc_cube.attributes['history']
 
