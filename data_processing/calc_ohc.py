@@ -142,8 +142,8 @@ def main(inargs):
         ohc_cube = add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, inargs)
         ohc_file = get_outfile_name(temperature_file)    
 
-    iris.save(ohc_cube, ohc_file)
-    print(ohc_file)
+        iris.save(ohc_cube, ohc_file)
+        print(ohc_file)
 
 
 if __name__ == '__main__':
