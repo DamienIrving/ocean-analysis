@@ -145,11 +145,12 @@ def main(inargs):
         iplt.plot(ohc_tendency_trend, label='ocean heat content tendency', color='black') 
     
     if not (inargs.exclude_htc and inargs.exclude_hfds):
-        htc_trend.remove_coord('region')
+        #htc_trend.remove_coord('region')
         ref_lats = [('latitude', hfds_trend.coord('latitude').points)]  
         regridded_htc_trend = htc_trend.interpolate(ref_lats, iris.analysis.Linear())
         regridded_htc_trend.coord('latitude').bounds = hfds_trend.coord('latitude').bounds
         regridded_htc_trend.coord('latitude').coord_system = hfds_trend.coord('latitude').coord_system
+        regridded_htc_trend.coord('latitude').attributes = hfds_trend.coord('latitude').attributes
 
         regridded_htc_trend.coord('latitude').var_name = 'lat'
         hfds_trend.coord('latitude').var_name = 'lat'
@@ -169,7 +170,11 @@ def main(inargs):
         plt.axvline(x=77, color=color, linewidth=width)
         plt.xlim(20, 90)
 
-    plt.legend(loc=2)
+    if inargs.ylim:
+        ymin, ymax = inargs.ylim
+        plt.ylim(ymin, ymax)
+
+    plt.legend(loc=inargs.legloc)
     plt.xlabel('latitude')
     plt.ylabel('Trend ($W s^{-1}$)')
     plt.title(htc_trend.attributes['model_id'])
@@ -210,6 +215,11 @@ author:
 
     parser.add_argument("--zonal_stat", type=str, choices=('mean', 'sum'), default='sum',
                         help="Zonal statistic")
+
+    parser.add_argument("--ylim", type=float, nargs=2, metavar=('MIN', 'MAX'), default=None,
+                        help="limits for y axis")
+    parser.add_argument("--legloc", type=int, default=2,
+                        help="Legend location")
 
     args = parser.parse_args()             
     main(args)
