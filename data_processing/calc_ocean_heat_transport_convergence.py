@@ -89,7 +89,7 @@ def read_data(infile_list, var, model, basin_cube):
 
     if var == 'northward_ocean_heat_transport':
         if model == 'CSIRO-Mk3-6-0':
-            cube = cube[:, 1, :]
+            cube = cube[:, 2, :]
         else:
             cube = cube.extract(iris.Constraint(region='global_ocean'))
 
