@@ -110,14 +110,17 @@ def get_hfds_trend(hfds_file, metadata_dict, zonal_stat='sum'):
 def get_htc_trend(htc_file, metadata_dict):
     """Read ocean heat transport convergence data and calculate trend.
     
-    A hfbasin-convengence file is expected.
+    A hfbasin-convengence or hfy-convergence file is expected.
     
     Input: units = W, timescale = monhtly
     Output: units = W s-1, timescale = annual
     
     """
     
-    htc_cube = iris.load_cube(htc_file)
+    if 'hfy' in htc_file:
+        htc_cube = iris.load_cube(htc_file, 'zonal sum ocean heat y transport convergence globe')
+    else:
+        htc_cube = iris.load_cube(htc_file)
     metadata_dict[htc_file] = htc_cube.attributes['history']
 
     htc_cube = timeseries.convert_to_annual(htc_cube)
