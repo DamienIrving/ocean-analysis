@@ -41,6 +41,17 @@ basins = {'atlantic': 2,
           'pacific': 3,
           'indian': 5}
 
+history = []
+
+def save_history(cube, field, filename):
+    """Save the history attribute when reading the data.
+    (This is required because the history attribute differs between input files 
+      and is therefore deleted upon equilising attributes)  
+    """ 
+
+    history.append(cube.attributes['history'])
+
+
 def convergence(cube):
     """Calculate convergence and adjust latitude axis accordingly."""
 
@@ -79,13 +90,14 @@ def read_data(infile_list, var, model, basin_cube):
       and you can't select the "global_ocean" by name
 
     """
-    cube = iris.load(infile_list, gio.check_iris_var(var))
+    cube = iris.load(infile_list, gio.check_iris_var(var),callback=save_history)
     atts = cube[0].attributes
     equalise_attributes(cube)
     iris.util.unify_time_units(cube)
     cube = cube.concatenate_cube()
     cube = gio.check_time_units(cube)
     cube.attributes = atts
+    cube.attributes['history'] = history[0]
 
     if var == 'northward_ocean_heat_transport':
         if model == 'CSIRO-Mk3-6-0':
