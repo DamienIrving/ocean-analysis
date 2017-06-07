@@ -65,7 +65,7 @@ def estimate_ohc_tendency(data, time_axis):
     return new_data
 
 
-def get_ohc_tendency_trend(ohc_file, metadata_dict, zonal_stat='sum'):
+def get_ohc_tendency_trend(ohc_file, metadata_dict):
     """Read ocean heat content data and calculate tendency trend.
     
     Input units: J
@@ -73,7 +73,7 @@ def get_ohc_tendency_trend(ohc_file, metadata_dict, zonal_stat='sum'):
     
     """
 
-    long_name = 'zonal %s ocean heat content globe'  %(zonal_stat)
+    long_name = 'zonal sum ocean heat content globe'
     ohc_cube = iris.load_cube(ohc_file, long_name)
     metadata_dict[ohc_file] = ohc_cube.attributes['history']
 
@@ -90,7 +90,7 @@ def get_ohc_tendency_trend(ohc_file, metadata_dict, zonal_stat='sum'):
     return ohc_tendency_trend_cube, metadata_dict
 
 
-def get_hfds_trend(hfds_file, metadata_dict, zonal_stat='sum'):
+def get_hfds_trend(hfds_file, metadata_dict):
     """Read surface heat flux data and calculate trend.
     
     Input units: W
@@ -98,7 +98,7 @@ def get_hfds_trend(hfds_file, metadata_dict, zonal_stat='sum'):
     
     """
     
-    long_name = 'zonal %s surface downward heat flux in sea water globe'  %(zonal_stat)
+    long_name = 'zonal sum surface downward heat flux in sea water globe'
     hfds_cube = iris.load_cube(hfds_file, long_name)
     metadata_dict[hfds_file] = hfds_cube.attributes['history']
 
@@ -137,8 +137,8 @@ def main(inargs):
     metadata_dict = {}
   
     htc_trend, metadata_dict = get_htc_trend(inargs.htc_file, metadata_dict)
-    hfds_trend, metadata_dict = get_hfds_trend(inargs.hfds_file, metadata_dict, zonal_stat=inargs.zonal_stat)  
-    ohc_tendency_trend, metadata_dict = get_ohc_tendency_trend(inargs.ohc_file, metadata_dict, zonal_stat=inargs.zonal_stat,)  
+    hfds_trend, metadata_dict = get_hfds_trend(inargs.hfds_file, metadata_dict)  
+    ohc_tendency_trend, metadata_dict = get_ohc_tendency_trend(inargs.ohc_file, metadata_dict)  
     
     if not inargs.exclude_htc:
         iplt.plot(htc_trend, label='heat transport convergence (HTC)', color='green') 
@@ -215,9 +215,6 @@ author:
 
     parser.add_argument("--nummelin", action="store_true", default=False,
                         help="Restrict plot to Nummelin et al (2016) bounds")
-
-    parser.add_argument("--zonal_stat", type=str, choices=('mean', 'sum'), default='sum',
-                        help="Zonal statistic")
 
     parser.add_argument("--ylim", type=float, nargs=2, metavar=('MIN', 'MAX'), default=None,
                         help="limits for y axis")
