@@ -78,9 +78,7 @@ def get_ohc_data(ohc_file, metadata_dict):
     ohc_cube = iris.load_cube(ohc_file, long_name)
     metadata_dict[ohc_file] = ohc_cube.attributes['history']
 
-    ohc_trend_cube = calc_trend_cube(ohc_cube)
-    ohc_trend_cube.attributes = ohc_cube.attributes
-
+    # OHC tendency trend
     time_axis = timeseries.convert_to_seconds(ohc_cube.coord('time'))
     ohc_tendency_data = numpy.ma.apply_along_axis(estimate_ohc_tendency, 0, ohc_cube.data, time_axis.points)
     ohc_tendency_data = numpy.ma.masked_values(ohc_tendency_data, ohc_cube.data.fill_value)
@@ -91,6 +89,10 @@ def get_ohc_data(ohc_file, metadata_dict):
     ohc_tendency_trend_cube = calc_trend_cube(ohc_tendency_cube)
     ohc_tendency_trend_cube.attributes = ohc_cube.attributes
     
+    # OHC trend
+    ohc_trend_cube = calc_trend_cube(ohc_cube / (60 * 60 * 24 * 365.25))  # units go from J to W, then calculate trend
+    ohc_trend_cube.attributes = ohc_cube.attributes
+
     return ohc_tendency_trend_cube, ohc_trend_cube, metadata_dict
 
 
@@ -150,17 +152,21 @@ def plot_data(htc_data, hfds_data, ohc_data, inargs, gs, plotnum, plot_type):
     ax = plt.subplot(gs[plotnum])
     plt.sca(ax)
 
-    ohc_label = 'ocean heat content'
     if plot_type == 'trends':
-        ohc_label = ohc_label + ' tendency'
+        htc_label = 'trend in heat transport convergence (HTC)'
+        hfds_label = 'trend in surface heat flux (SFL)'
+        ohc_label = 'trend in ocean heat content tendency'
         y_label = 'Trend ($W yr^{-1}$)'
     else:
-        y_label = '$W yr^{-1}$'
+        htc_label = 'average annual mean heat transport convergence (HTC)'
+        hfds_label = 'average annual mean surface heat flux (SFL)'
+        ohc_label = 'trend in ocean heat content'
+        y_label = '$W$ (or $W yr^{-1}$ for OHC trend)'
 
     if not inargs.exclude_htc:
-        iplt.plot(htc_data, label='heat transport convergence (HTC)', color='green') 
+        iplt.plot(htc_data, label=htc_label, color='green') 
     if not inargs.exclude_hfds:
-        iplt.plot(hfds_data, label='surface heat flux (SFL)', color='orange', linestyle='--')  
+        iplt.plot(hfds_data, label=hfds_label, color='orange', linestyle='--')  
     if not inargs.exclude_ohc:
         iplt.plot(ohc_data, label=ohc_label, color='black') 
     
