@@ -58,24 +58,26 @@ def save_history(cube, field, filename):
     history.append(cube.attributes['history'])
 
 
-def get_history_attribute(data_file, data_history, basin_file, basin_cube):
+def get_history_attribute(data_file, data_history):
     """Generate the history attribute for the output file."""
 
     history_dict = {data_file: data_history}
-    if basin_file:
-        history_dict[basin_file] = basin_cube.attributes['history']
 
     return history_dict
         
 
-def multiply_by_area(cube):
+def multiply_by_area(cube, area_option):
     """Multiply by cell area."""
 
-    if not cube.coord('latitude').has_bounds():
-        cube.coord('latitude').guess_bounds()
-    if not cube.coord('longitude').has_bounds():
-        cube.coord('longitude').guess_bounds()
-    area_weights = iris.analysis.cartography.area_weights(cube)
+    if '.nc' in area_option:
+        area_cube = iris.load_cube(area_option)
+        area_weights = area_cube.data
+    else:
+        if not cube.coord('latitude').has_bounds():
+            cube.coord('latitude').guess_bounds()
+        if not cube.coord('longitude').has_bounds():
+            cube.coord('longitude').guess_bounds()
+        area_weights = iris.analysis.cartography.area_weights(cube)
 
     units = str(cube.units)
     cube = cube * area_weights   
@@ -107,43 +109,62 @@ def main(inargs):
     cube = timeseries.convert_to_annual(cube, full_months=True)
 
     # Mask marginal seas
-    if inargs.basin_file:
-        basin_cube = iris.load_cube(inargs.basin_file)
-        cube = uconv.mask_marginal_seas(cube, basin_cube)
+    if inargs.basin:
+        if '.nc' in inargs.basin:
+            basin_cube = iris.load_cube(inargs.basin_file)
+            cube = uconv.mask_marginal_seas(cube, basin_cube)
+        else:
+            basin_cube = 'create'
     else:
         basin_cube = None
 
     # Regrid (if needed)
-    cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+    if inargs.regrid:
+        cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
 
     # Change units (remove m-2)
     if inargs.area:
-        cube = multiply_by_area(cube)
+        cube = multiply_by_area(cube, inargs.area)
         cube.attributes = atts
         cube.long_name = orig_long_name
         cube.standard_name = orig_standard_name
         cube.var_name = orig_var_name
 
     # History
-    history_attribute = get_history_attribute(inargs.infiles[0], history[0], inargs.basin_file, basin_cube)
+    history_attribute = get_history_attribute(inargs.infiles[0], history[0])
     cube.attributes['history'] = gio.write_metadata(file_info=history_attribute)
 
     # Calculate output for each basin
-    if inargs.basin_file and not regrid_status:
+    if type(basin_cube) == iris.cube.Cube:
         ndim = cube.ndim
         basin_array = uconv.broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], cube.shape) 
-    else: 
+        basin_list = ['atlantic', 'pacific', 'indian', 'globe']
+    elif type(basin_cube) == str: 
         basin_array = uconv.create_basin_array(cube)
+        basin_list = ['atlantic', 'pacific', 'indian', 'globe']
+    else:
+        basin_array = None
+        basin_list = ['globe']
+
+    dim_coord_names = [coord.name() for coord in cube.dim_coords]
+    aux_coord_names = [coord.name() for coord in cube.aux_coords]
+    assert len(dim_coord_names) == 3
+    assert dim_coord_names[0] == 'time'
+    x_axis = dim_coord_names[2]    
+
+    pdb.set_trace()
+    for aux_coord in aux_coord_names:
+        cube.remove_coord(aux_coord)
 
     out_cubes = []
-    for basin_name in ['atlantic', 'pacific', 'indian', 'globe']:
+    for basin_name in basin_list:
         data_cube = cube.copy()
         if not basin_name == 'globe':            
             data_cube.data.mask = numpy.where((data_cube.data.mask == False) & (basin_array == basins[basin_name]), False, True)
 
         # Zonal statistic
-        zonal_cube = data_cube.collapsed('longitude', aggregation_functions[inargs.zonal_stat])
-        zonal_cube.remove_coord('longitude')
+        zonal_cube = data_cube.collapsed(x_axis, aggregation_functions[inargs.zonal_stat])
+        zonal_cube.remove_coord(x_axis)
 
         # Attributes
         standard_name = 'zonal_%s_%s_%s' %(inargs.zonal_stat, orig_standard_name, basin_name)
@@ -183,11 +204,12 @@ note:
     
     parser.add_argument("--zonal_stat", type=str, choices=('mean', 'sum'), default='mean',
                         help="Zonal statistic")
-    parser.add_argument("--area", action="store_true", default=False,
-                        help="Multiply input data by area")
-
-    parser.add_argument("--basin_file", type=str, default=None,
-                        help="Cell basin file (for ocean input variables)")
+    parser.add_argument("--area", type=str, default=False,
+                        help="Multiply input data by area (give area file name or write auto if no area file available but infiles on regular lat/lon grid)")
+    parser.add_argument("--basin", type=str, default=None,
+                        help="Provide output for each ocean basin (give basin file name or write auto if no basin file available but infiles on regular lat/lon grid)")
+    parser.add_argument("--regrid", action="store_true", default=False,
+                        help="Regrid to a regular lat/lon grid")
 
     args = parser.parse_args()            
     main(args)
