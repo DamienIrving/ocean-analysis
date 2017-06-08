@@ -16,6 +16,7 @@ import numpy
 import iris
 import iris.plot as iplt
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import seaborn
 
 # Import my modules
@@ -41,7 +42,7 @@ except ImportError:
 def calc_trend_cube(cube):
     """Calculate and trend and put into appropriate cube."""
     
-    trend_array = timeseries.calc_trend(cube)
+    trend_array = timeseries.calc_trend(cube, per_yr=True)
     new_cube = cube[0,:].copy()
     new_cube.remove_coord('time')
     new_cube.data = trend_array
@@ -65,8 +66,8 @@ def estimate_ohc_tendency(data, time_axis):
     return new_data
 
 
-def get_ohc_tendency_trend(ohc_file, metadata_dict):
-    """Read ocean heat content data and calculate tendency trend.
+def get_ohc_data(ohc_file, metadata_dict):
+    """Read ocean heat content data and calculate trend in mean and tendency.
     
     Input units: J
     Output units: W s-1
@@ -76,6 +77,9 @@ def get_ohc_tendency_trend(ohc_file, metadata_dict):
     long_name = 'zonal sum ocean heat content globe'
     ohc_cube = iris.load_cube(ohc_file, long_name)
     metadata_dict[ohc_file] = ohc_cube.attributes['history']
+
+    ohc_trend_cube = calc_trend_cube(ohc_cube)
+    ohc_trend_cube.attributes = ohc_cube.attributes
 
     time_axis = timeseries.convert_to_seconds(ohc_cube.coord('time'))
     ohc_tendency_data = numpy.ma.apply_along_axis(estimate_ohc_tendency, 0, ohc_cube.data, time_axis.points)
@@ -87,11 +91,11 @@ def get_ohc_tendency_trend(ohc_file, metadata_dict):
     ohc_tendency_trend_cube = calc_trend_cube(ohc_tendency_cube)
     ohc_tendency_trend_cube.attributes = ohc_cube.attributes
     
-    return ohc_tendency_trend_cube, metadata_dict
+    return ohc_tendency_trend_cube, ohc_trend_cube, metadata_dict
 
 
-def get_hfds_trend(hfds_file, metadata_dict):
-    """Read surface heat flux data and calculate trend.
+def get_hfds_data(hfds_file, metadata_dict, rolling_window=None):
+    """Read surface heat flux data and calculate mean and trend.
     
     Input units: W
     Output units: W s-1
@@ -102,13 +106,17 @@ def get_hfds_trend(hfds_file, metadata_dict):
     hfds_cube = iris.load_cube(hfds_file, long_name)
     metadata_dict[hfds_file] = hfds_cube.attributes['history']
 
+    if rolling_window:
+        hfds_cube = hfds_cube.rolling_window('latitude', iris.analysis.MEAN, rolling_window)
+
     hfds_trend = calc_trend_cube(hfds_cube)
-    
-    return hfds_trend, metadata_dict
+    hfds_mean = hfds_cube.collapsed('time', iris.analysis.MEAN)    
+
+    return hfds_trend, hfds_mean, metadata_dict
 
 
-def get_htc_trend(htc_file, metadata_dict):
-    """Read ocean heat transport convergence data and calculate trend.
+def get_htc_data(htc_file, metadata_dict, rolling_window=None):
+    """Read ocean heat transport convergence data and calculate mean and trend.
     
     A hfbasin-convengence or hfy-convergence file is expected.
     
@@ -124,45 +132,54 @@ def get_htc_trend(htc_file, metadata_dict):
     metadata_dict[htc_file] = htc_cube.attributes['history']
 
     htc_cube = timeseries.convert_to_annual(htc_cube)
+    if rolling_window:
+        htc_cube = htc_cube.rolling_window('latitude', iris.analysis.MEAN, rolling_window)
 
     htc_trend = calc_trend_cube(htc_cube)
+    htc_mean = htc_cube.collapsed('time', iris.analysis.MEAN)
+
     htc_trend.attributes = htc_cube.attributes
+    htc_mean.atributes = htc_cube.attributes
     
-    return htc_trend, metadata_dict
+    return htc_trend, htc_mean, metadata_dict
 
 
-def main(inargs):
-    """Run the program."""
-  
-    metadata_dict = {}
-  
-    htc_trend, metadata_dict = get_htc_trend(inargs.htc_file, metadata_dict)
-    hfds_trend, metadata_dict = get_hfds_trend(inargs.hfds_file, metadata_dict)  
-    ohc_tendency_trend, metadata_dict = get_ohc_tendency_trend(inargs.ohc_file, metadata_dict)  
-    
+def plot_data(htc_data, hfds_data, ohc_data, inargs, gs, plotnum, plot_type):
+    """Plot trends."""
+
+    ax = plt.subplot(gs[plotnum])
+    plt.sca(ax)
+
+    ohc_label = 'ocean heat content'
+    if plot_type == 'trends':
+        ohc_label = ohc_label + ' tendency'
+        y_label = 'Trend ($W yr^{-1}$)'
+    else:
+        y_label = '$W yr^{-1}$'
+
     if not inargs.exclude_htc:
-        iplt.plot(htc_trend, label='heat transport convergence (HTC)', color='green') 
+        iplt.plot(htc_data, label='heat transport convergence (HTC)', color='green') 
     if not inargs.exclude_hfds:
-        iplt.plot(hfds_trend, label='surface heat flux (SFL)', color='orange', linestyle='--')  
+        iplt.plot(hfds_data, label='surface heat flux (SFL)', color='orange', linestyle='--')  
     if not inargs.exclude_ohc:
-        iplt.plot(ohc_tendency_trend, label='ocean heat content tendency', color='black') 
+        iplt.plot(ohc_data, label=ohc_label, color='black') 
     
     if not (inargs.exclude_htc and inargs.exclude_hfds):
         #htc_trend.remove_coord('region')
-        ref_lats = [('latitude', hfds_trend.coord('latitude').points)]  
-        regridded_htc_trend = htc_trend.interpolate(ref_lats, iris.analysis.Linear())
-        regridded_htc_trend.coord('latitude').bounds = hfds_trend.coord('latitude').bounds
-        regridded_htc_trend.coord('latitude').coord_system = hfds_trend.coord('latitude').coord_system
-        regridded_htc_trend.coord('latitude').attributes = hfds_trend.coord('latitude').attributes
+        ref_lats = [('latitude', hfds_data.coord('latitude').points)]  
+        regridded_htc_data = htc_data.interpolate(ref_lats, iris.analysis.Linear())
+        regridded_htc_data.coord('latitude').bounds = hfds_data.coord('latitude').bounds
+        regridded_htc_data.coord('latitude').coord_system = hfds_data.coord('latitude').coord_system
+        regridded_htc_data.coord('latitude').attributes = hfds_data.coord('latitude').attributes
 
-        regridded_htc_trend.coord('latitude').var_name = 'lat'
-        hfds_trend.coord('latitude').var_name = 'lat'
-        regridded_htc_trend.coord('latitude').standard_name = 'latitude'
-        hfds_trend.coord('latitude').standard_name = 'latitude'
-        regridded_htc_trend.coord('latitude').long_name = 'latitude'
-        hfds_trend.coord('latitude').long_name = 'latitude'
+        regridded_htc_data.coord('latitude').var_name = 'lat'
+        hfds_data.coord('latitude').var_name = 'lat'
+        regridded_htc_data.coord('latitude').standard_name = 'latitude'
+        hfds_data.coord('latitude').standard_name = 'latitude'
+        regridded_htc_data.coord('latitude').long_name = 'latitude'
+        hfds_data.coord('latitude').long_name = 'latitude'
         
-        iplt.plot(regridded_htc_trend + hfds_trend, label='HTC + SFL', color='0.5')  
+        iplt.plot(regridded_htc_data + hfds_data, label='HTC + SFL', color='0.5')  
   
     if inargs.nummelin:
         color = '0.7'
@@ -179,8 +196,26 @@ def main(inargs):
 
     plt.legend(loc=inargs.legloc)
     plt.xlabel('latitude')
-    plt.ylabel('Trend ($W s^{-1}$)')
-    plt.title(htc_trend.attributes['model_id'])
+    plt.ylabel(y_label)
+    plt.title(plot_type)
+
+
+def main(inargs):
+    """Run the program."""
+  
+    metadata_dict = {}
+   
+    fig = plt.figure(figsize=[10, 15])
+    gs = gridspec.GridSpec(2, 1)
+
+    htc_trend, htc_mean, metadata_dict = get_htc_data(inargs.htc_file, metadata_dict, rolling_window=inargs.rolling_window)
+    hfds_trend, hfds_mean, metadata_dict = get_hfds_data(inargs.hfds_file, metadata_dict, rolling_window=inargs.rolling_window)  
+    ohc_tendency_trend, ohc_trend, metadata_dict = get_ohc_data(inargs.ohc_file, metadata_dict)  
+    
+    plot_data(htc_mean, hfds_mean, ohc_trend, inargs, gs, 0, 'mean')
+    plot_data(htc_trend, hfds_trend, ohc_tendency_trend, inargs, gs, 1, 'trends')
+    
+    plt.suptitle(htc_trend.attributes['model_id'])
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
@@ -205,6 +240,9 @@ author:
     parser.add_argument("hfds_file", type=str, help="Surface heat flux file (usually hfds)")
     parser.add_argument("ohc_file", type=str, help="Ocean heat content file")
     parser.add_argument("outfile", type=str, help="Output file")
+
+    parser.add_argument("--rolling_window", type=int, default=None,
+                        help="Smoothing applied to htc and hfds data (along lat axis)")
 
     parser.add_argument("--exclude_htc", action="store_true", default=False,
                         help="Leave htc off plot")
