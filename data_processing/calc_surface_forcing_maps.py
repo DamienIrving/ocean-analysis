@@ -152,7 +152,6 @@ def main(inargs):
     assert dim_coord_names[0] == 'time'
     x_axis = dim_coord_names[2]    
 
-    pdb.set_trace()
     for aux_coord in aux_coord_names:
         cube.remove_coord(aux_coord)
 
