@@ -44,7 +44,7 @@ def main(inargs):
     for f in outputs.first().filenames():
         six.print_(f)
         if inargs.symlink:
-            assert len(elsewhere_path) == 1
+            #assert len(elsewhere_path) == 1
             command1 = 'mkdir -p %s' %(my_path)
             command2 = 'ln -s %s/%s %s/%s'  %(elsewhere_path[0], f, my_path, f)
             if inargs.execute:
