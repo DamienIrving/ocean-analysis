@@ -150,7 +150,7 @@ def main(inargs):
     aux_coord_names = [coord.name() for coord in cube.aux_coords]
     assert len(dim_coord_names) == 3
     assert dim_coord_names[0] == 'time'
-    x_axis = dim_coord_names[2]    
+    x_axis_name = dim_coord_names[2]    
 
     for aux_coord in aux_coord_names:
         cube.remove_coord(aux_coord)
@@ -162,8 +162,8 @@ def main(inargs):
             data_cube.data.mask = numpy.where((data_cube.data.mask == False) & (basin_array == basins[basin_name]), False, True)
 
         # Zonal statistic
-        zonal_cube = data_cube.collapsed(x_axis, aggregation_functions[inargs.zonal_stat])
-        zonal_cube.remove_coord(x_axis)
+        zonal_cube = data_cube.collapsed(x_axis_name, aggregation_functions[inargs.zonal_stat])
+        zonal_cube.remove_coord(x_axis_name)
 
         # Attributes
         standard_name = 'zonal_%s_%s_%s' %(inargs.zonal_stat, orig_standard_name, basin_name)
