@@ -39,6 +39,25 @@ except ImportError:
 
 # Define functions
 
+def get_y_axis_name(cube, verbose=False):
+    """Get the name of the y axis.
+ 
+    Verbose gives var_name, standard_name and long_name
+
+    """
+
+    dim_coord_names = [coord.name() for coord in cube.dim_coords]
+    y_axis_name = dim_coord_names[-1]
+  
+    if verbose:
+        var_name = cube.coord(y_axis_name).var_name
+        long_name = cube.coord(y_axis_name).long_name
+        standard_name = cube.coord(y_axis_name).standard_name
+        return y_axis_name, var_name, long_name, standard_name
+    else:
+        return y_axis_name
+
+
 def calc_trend_cube(cube):
     """Calculate and trend and put into appropriate cube."""
     
@@ -109,7 +128,8 @@ def get_hfds_data(hfds_file, metadata_dict, rolling_window=None):
     metadata_dict[hfds_file] = hfds_cube.attributes['history']
 
     if rolling_window:
-        hfds_cube = hfds_cube.rolling_window('latitude', iris.analysis.MEAN, rolling_window)
+        y_axis_name = get_y_axis_name(hfds_cube)
+        hfds_cube = hfds_cube.rolling_window(y_axis_name, iris.analysis.MEAN, rolling_window)
 
     hfds_trend = calc_trend_cube(hfds_cube)
     hfds_mean = hfds_cube.collapsed('time', iris.analysis.MEAN)    
@@ -135,7 +155,8 @@ def get_htc_data(htc_file, metadata_dict, rolling_window=None):
 
     htc_cube = timeseries.convert_to_annual(htc_cube)
     if rolling_window:
-        htc_cube = htc_cube.rolling_window('latitude', iris.analysis.MEAN, rolling_window)
+        y_axis_name = get_y_axis_name(htc_cube)
+        htc_cube = htc_cube.rolling_window(y_axis_name, iris.analysis.MEAN, rolling_window)
 
     htc_trend = calc_trend_cube(htc_cube)
     htc_mean = htc_cube.collapsed('time', iris.analysis.MEAN)
@@ -170,20 +191,22 @@ def plot_data(htc_data, hfds_data, ohc_data, inargs, gs, plotnum, plot_type):
     if not inargs.exclude_ohc:
         iplt.plot(ohc_data, label=ohc_label, color='black') 
     
+    y_axis_name, y_var_name, y_long_name, y_standard_name = get_y_axis_name(hfds_data, verbose=True)
+
     if not (inargs.exclude_htc and inargs.exclude_hfds):
         #htc_trend.remove_coord('region')
-        ref_lats = [('latitude', hfds_data.coord('latitude').points)]  
+        ref_lats = [(y_axis_name, hfds_data.coord(y_axis_name).points)]  
         regridded_htc_data = htc_data.interpolate(ref_lats, iris.analysis.Linear())
-        regridded_htc_data.coord('latitude').bounds = hfds_data.coord('latitude').bounds
-        regridded_htc_data.coord('latitude').coord_system = hfds_data.coord('latitude').coord_system
-        regridded_htc_data.coord('latitude').attributes = hfds_data.coord('latitude').attributes
+        regridded_htc_data.coord(y_axis_name).bounds = hfds_data.coord(y_axis_name).bounds
+        regridded_htc_data.coord(y_axis_name).coord_system = hfds_data.coord(y_axis_name).coord_system
+        regridded_htc_data.coord(y_axis_name).attributes = hfds_data.coord(y_axis_name).attributes
 
-        regridded_htc_data.coord('latitude').var_name = 'lat'
-        hfds_data.coord('latitude').var_name = 'lat'
-        regridded_htc_data.coord('latitude').standard_name = 'latitude'
-        hfds_data.coord('latitude').standard_name = 'latitude'
-        regridded_htc_data.coord('latitude').long_name = 'latitude'
-        hfds_data.coord('latitude').long_name = 'latitude'
+        regridded_htc_data.coord(y_axis_name).var_name = y_var_name
+        hfds_data.coord(y_axis_name).var_name = y_var_name
+        regridded_htc_data.coord(y_axis_name).standard_name = y_standard_name
+        hfds_data.coord(y_axis_name).standard_name = y_standard_name
+        regridded_htc_data.coord(y_axis_name).long_name = y_long_name
+        hfds_data.coord(y_axis_name).long_name = y_long_name
         
         iplt.plot(regridded_htc_data + hfds_data, label='HTC + SFL', color='0.5')  
   
@@ -201,7 +224,7 @@ def plot_data(htc_data, hfds_data, ohc_data, inargs, gs, plotnum, plot_type):
         plt.ylim(ymin, ymax)
 
     plt.legend(loc=inargs.legloc)
-    plt.xlabel('latitude')
+    plt.xlabel(y_axis_name)
     plt.ylabel(y_label)
     plt.title(plot_type)
 

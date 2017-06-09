@@ -52,29 +52,29 @@ def save_history(cube, field, filename):
     history.append(cube.attributes['history'])
 
 
-def convergence(cube):
-    """Calculate convergence and adjust latitude axis accordingly."""
+def convergence(cube, y_axis_name):
+    """Calculate convergence and adjust y axis accordingly."""
 
-    lat_points = cube.coord('latitude').points
-    lat_diffs = numpy.diff(lat_points)
+    y_points = cube.coord(y_axis_name).points
+    y_diffs = numpy.diff(y_points)
 
-    assert numpy.abs(numpy.max(lat_diffs) - numpy.min(lat_diffs)) < 0.1
-    lat_spacing = numpy.mean(lat_diffs)
+    assert numpy.abs(numpy.max(y_diffs) - numpy.min(y_diffs)) < 0.1
+    y_spacing = numpy.mean(y_diffs)
 
     convergence_cube = cube[:, 0:-1].copy()
     convergence_cube.data = numpy.diff(cube.data, axis=1) * -1
 
-    new_lat_coord = convergence_cube.coord('latitude') + (lat_spacing / 2.0)
-    convergence_cube.coord('latitude').points = new_lat_coord.points
-    convergence_cube.coord('latitude').bounds = new_lat_coord.bounds
+    new_y_coord = convergence_cube.coord(y_axis_name) + (y_spacing / 2.0)
+    convergence_cube.coord(y_axis_name).points = new_y_coord.points
+    convergence_cube.coord(y_axis_name).bounds = new_y_coord.bounds
 
     return convergence_cube
 
 
-def get_history_attribute(y_files, y_cube, basin_file, basin_cube):
+def get_history_attribute(y_files, data_cube, basin_file, basin_cube):
     """Generate the history attribute for the output file."""
 
-    history_dict = {y_files[0]: y_cube.attributes['history']}
+    history_dict = {y_files[0]: data_cube.attributes['history']}
     if basin_file:
         history_dict[basin_file] = basin_cube.attributes['history']
 
@@ -123,27 +123,27 @@ def main(inargs):
         inargs.basin_file = None
 
     # Heat transport data
-    y_cube = read_data(inargs.infiles, inargs.var, inargs.model, basin_cube)
-    orig_standard_name = y_cube.standard_name
-    orig_var_name = y_cube.var_name
+    data_cube = read_data(inargs.infiles, inargs.var, inargs.model, basin_cube)
+    orig_standard_name = data_cube.standard_name
+    orig_var_name = data_cube.var_name
   
-    history_attribute = get_history_attribute(inargs.infiles, y_cube, inargs.basin_file, basin_cube)
-    y_cube.attributes['history'] = gio.write_metadata(file_info=history_attribute)
+    history_attribute = get_history_attribute(inargs.infiles, data_cube, inargs.basin_file, basin_cube)
+    data_cube.attributes['history'] = gio.write_metadata(file_info=history_attribute)
 
     # Regrid (if needed)
     if inargs.regrid:
-        y_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(y_cube)
+        data_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(data_cube)
 
-    dim_coord_names = [coord.name() for coord in y_cube.dim_coords]
-    aux_coord_names = [coord.name() for coord in y_cube.aux_coords]
+    dim_coord_names = [coord.name() for coord in data_cube.dim_coords]
+    aux_coord_names = [coord.name() for coord in data_cube.aux_coords]
     
     regular_grid = False if aux_coord_names else True
 
     assert len(dim_coord_names) == 3
     assert dim_coord_names[0] == 'time'
-    x_axis = dim_coord_names[2]    
+    y_axis_name, x_axis_name = dim_coord_names[1:]    
     for aux_coord in aux_coord_names:
-        y_cube.remove_coord(aux_coord)
+        data_cube.remove_coord(aux_coord)
 
     # Basin array
     if inargs.basin_file and not inargs.regrid:
@@ -151,7 +151,7 @@ def main(inargs):
         basin_array = uconv.broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], cube.shape) 
         basin_list = ['atlantic', 'pacific', 'indian', 'globe']
     elif regular_grid: 
-        basin_array = uconv.create_basin_array(y_cube)
+        basin_array = uconv.create_basin_array(data_cube)
         basin_list = ['atlantic', 'pacific', 'indian', 'globe']
     else:
         basin_list = ['globe']
@@ -159,7 +159,7 @@ def main(inargs):
     # Calculate output for each basin
     out_cubes = []
     for basin_name in basin_list:
-        data_cube = y_cube.copy()
+        data_cube = data_cube.copy()
         if not basin_name == 'globe':            
             data_cube.data.mask = numpy.where((data_cube.data.mask == False) & (basin_array == basins[basin_name]), False, True)
 
@@ -167,11 +167,11 @@ def main(inargs):
         if hfbasin:
             zonal_cube = data_cube
         else:
-            zonal_cube = data_cube.collapsed(x_axis, iris.analysis.SUM)
-            zonal_cube.remove_coord(x_axis)
+            zonal_cube = data_cube.collapsed(x_axis_name, iris.analysis.SUM)
+            zonal_cube.remove_coord(x_axis_name)
 
         # Convergence 
-        zonal_cube = convergence(zonal_cube)
+        zonal_cube = convergence(zonal_cube, y_axis_name)
 
         # Attributes
         standard_name = 'zonal_sum_%s_convergence_%s' %(orig_standard_name, basin_name)
