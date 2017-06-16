@@ -244,7 +244,8 @@ def main(inargs):
     plot_data(htc_mean, hfds_mean, ohc_trend, inargs, gs, 0, 'mean')
     plot_data(htc_trend, hfds_trend, ohc_tendency_trend, inargs, gs, 1, 'trends')
     
-    plt.suptitle(htc_trend.attributes['model_id'])
+    run = 'r%si%sp%s'  %(htc_trend.attributes['realization'], htc_trend.attributes['initialization_method'], htc_trend.attributes['physics_version'])
+    plt.suptitle('%s, %s, %s'  %(htc_trend.attributes['model_id'], htc_trend.attributes['experiment'], run))
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
