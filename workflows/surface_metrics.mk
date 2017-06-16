@@ -63,8 +63,12 @@ HFDS_ZONAL_SUM_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/hfds/l
 HFDS_ZONAL_SUM_FILE=${HFDS_ZONAL_SUM_DIR}/hfds-by-areacello-zs_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
 HFBASIN_FILE=$(wildcard ${ORIG_HFBASIN_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/hfbasin/latest/hfbasin_Omon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
-HTC_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/hfbasin/latest
-HTC_FILE=${HTC_DIR}/hfbasin-convergence_Omon_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+HTC_FROM_HFBASIN_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/hfbasin/latest
+HTC_FROM_HFBASIN_FILE=${HTC_FROM_HFBASIN_DIR}/hfbasin-convergence_Omon_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
+
+HFY_FILE=$(wildcard ${ORIG_HFY_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/hfy/latest/hfy_Omon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
+HTC_FROM_HFY_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/hfy/latest
+HTC_FROM_HFY_FILE=${HTC_FROM_HFY_DIR}/hfy-convergence_Omon_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
 OHC_FILE=$(wildcard ${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/ohc/latest/ohc_Omon_${MODEL}_${EXPERIMENT}_${RUN}_*.nc)
 OHC_ZONAL_SUM_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/ohc/latest
@@ -153,16 +157,20 @@ ${GLOBAL_METRICS} : ${GLOBAL_MEAN_TAS_FILE} ${GLOBAL_GRIDDEV_PE_FILE} ${GLOBAL_B
 
 ${HFDS_ZONAL_SUM_FILE} : 
 	mkdir -p ${HFDS_ZONAL_SUM_DIR}	
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_surface_forcing_maps.py ${HFDS_FILE} surface_downward_heat_flux_in_sea_water $@ --area --zonal_stat sum
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_surface_forcing_maps.py ${HFDS_FILE} surface_downward_heat_flux_in_sea_water $@ --area ${OCEAN_AREA_FILE} --zonal_stat sum
 
 ${OHC_ZONAL_SUM_FILE} : 
 	mkdir -p ${OHC_ZONAL_SUM_DIR}	
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_surface_forcing_maps.py ${OHC_FILE} ocean_heat_content $@ --zonal_stat sum
 
-${HTC_FILE} :
-	mkdir -p ${HTC_DIR} 
+${HTC_FROM_HFBASIN_FILE} :
+	mkdir -p ${HTC_FROM_HFBASIN_DIR} 
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_ocean_heat_transport_convergence.py ${HFBASIN_FILE} northward_ocean_heat_transport ${MODEL} $@ 
-	
-${NUMMELIN_PLOT} : ${HTC_FILE} ${HFDS_ZONAL_SUM_FILE} ${OHC_ZONAL_SUM_FILE} 
+
+${HTC_FROM_HFY_FILE} :
+	mkdir -p ${HTC_FROM_HFY_DIR} 
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_ocean_heat_transport_convergence.py ${HFY_FILE} ocean_heat_y_transport ${MODEL} $@ 
+
+${NUMMELIN_PLOT} : ${HTC_FROM_HFY_FILE} ${HFDS_ZONAL_SUM_FILE} ${OHC_ZONAL_SUM_FILE} 
 	${PYTHON} ${VIS_SCRIPT_DIR}/plot_heat_trends.py $< $(word 2,$^) $(word 3,$^) $@
 
