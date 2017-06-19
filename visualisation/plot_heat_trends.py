@@ -268,6 +268,17 @@ def plot_data(htc_data, hfds_data, ohc_data, inargs, gs, plotnum, plot_type):
     plt.title(plot_type)
 
 
+def get_title(htc_cube, hfds_cube, ohc_cube):
+    """Get the plot title."""
+
+    title = None
+
+    #FIXME
+    while...
+        run = 'r%si%sp%s'  %(ohc_trend.attributes['realization'], ohc_trend.attributes['initialization_method'], ohc_trend.attributes['physics_version'])
+        title = '%s, %s, %s'  %(htc_trend.attributes['model_id'], htc_trend.attributes['experiment'], run))
+
+
 def main(inargs):
     """Run the program."""
   
@@ -282,9 +293,9 @@ def main(inargs):
     
     plot_data(htc_mean, hfds_mean, ohc_trend, inargs, gs, 0, 'mean')
     plot_data(htc_trend, hfds_trend, ohc_tendency_trend, inargs, gs, 1, 'trends')
-    
-    run = 'r%si%sp%s'  %(htc_trend.attributes['realization'], htc_trend.attributes['initialization_method'], htc_trend.attributes['physics_version'])
-    plt.suptitle('%s, %s, %s'  %(htc_trend.attributes['model_id'], htc_trend.attributes['experiment'], run))
+
+    title = get_title(htc_trend, hfds_trend, ohc_tendency_trend)
+    plt.suptitle(title)    
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
