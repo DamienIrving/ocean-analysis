@@ -93,24 +93,28 @@ def get_ohc_data(ohc_file, metadata_dict):
     
     """
 
-    long_name = 'zonal sum ocean heat content globe'
-    ohc_cube = iris.load_cube(ohc_file, long_name)
-    metadata_dict[ohc_file] = ohc_cube.attributes['history']
+    if ohc_file:
+        long_name = 'zonal sum ocean heat content globe'
+        ohc_cube = iris.load_cube(ohc_file, long_name)
+        metadata_dict[ohc_file] = ohc_cube.attributes['history']
 
-    # OHC tendency trend
-    time_axis = timeseries.convert_to_seconds(ohc_cube.coord('time'))
-    ohc_tendency_data = numpy.ma.apply_along_axis(estimate_ohc_tendency, 0, ohc_cube.data, time_axis.points)
-    ohc_tendency_data = numpy.ma.masked_values(ohc_tendency_data, ohc_cube.data.fill_value)
+        # OHC tendency trend
+        time_axis = timeseries.convert_to_seconds(ohc_cube.coord('time'))
+        ohc_tendency_data = numpy.ma.apply_along_axis(estimate_ohc_tendency, 0, ohc_cube.data, time_axis.points)
+        ohc_tendency_data = numpy.ma.masked_values(ohc_tendency_data, ohc_cube.data.fill_value)
 
-    ohc_tendency_cube = ohc_cube.copy()
-    ohc_tendency_cube.data = ohc_tendency_data
+        ohc_tendency_cube = ohc_cube.copy()
+        ohc_tendency_cube.data = ohc_tendency_data
 
-    ohc_tendency_trend_cube = calc_trend_cube(ohc_tendency_cube)
-    ohc_tendency_trend_cube.attributes = ohc_cube.attributes
+        ohc_tendency_trend_cube = calc_trend_cube(ohc_tendency_cube)
+        ohc_tendency_trend_cube.attributes = ohc_cube.attributes
     
-    # OHC trend
-    ohc_trend_cube = calc_trend_cube(ohc_cube / (60 * 60 * 24 * 365.25))  # units go from J to W, then calculate trend
-    ohc_trend_cube.attributes = ohc_cube.attributes
+        # OHC trend
+        ohc_trend_cube = calc_trend_cube(ohc_cube / (60 * 60 * 24 * 365.25))  # units go from J to W, then calculate trend
+        ohc_trend_cube.attributes = ohc_cube.attributes
+    else:
+        ohc_tendency_trend_cube = None
+        ohc_trend_cube = None
 
     return ohc_tendency_trend_cube, ohc_trend_cube, metadata_dict
 
@@ -123,16 +127,20 @@ def get_hfds_data(hfds_file, metadata_dict, rolling_window=None):
     
     """
     
-    long_name = 'zonal sum surface downward heat flux in sea water globe'
-    hfds_cube = iris.load_cube(hfds_file, long_name)
-    metadata_dict[hfds_file] = hfds_cube.attributes['history']
+    if hfds_file:
+        long_name = 'zonal sum surface downward heat flux in sea water globe'
+        hfds_cube = iris.load_cube(hfds_file, long_name)
+        metadata_dict[hfds_file] = hfds_cube.attributes['history']
 
-    if rolling_window:
-        y_axis_name = get_y_axis_name(hfds_cube)
-        hfds_cube = hfds_cube.rolling_window(y_axis_name, iris.analysis.MEAN, rolling_window)
+        if rolling_window:
+            y_axis_name = get_y_axis_name(hfds_cube)
+            hfds_cube = hfds_cube.rolling_window(y_axis_name, iris.analysis.MEAN, rolling_window)
 
-    hfds_trend = calc_trend_cube(hfds_cube)
-    hfds_mean = hfds_cube.collapsed('time', iris.analysis.MEAN)    
+        hfds_trend = calc_trend_cube(hfds_cube)
+        hfds_mean = hfds_cube.collapsed('time', iris.analysis.MEAN)    
+    else:
+        hfds_trend = None
+        hfds_mean = None
 
     return hfds_trend, hfds_mean, metadata_dict
 
@@ -147,24 +155,64 @@ def get_htc_data(htc_file, metadata_dict, rolling_window=None):
     
     """
     
-    if 'hfy' in htc_file:
-        htc_cube = iris.load_cube(htc_file, 'zonal sum ocean heat y transport convergence globe')
+    if htc_file:
+        if 'hfy' in htc_file:
+            htc_cube = iris.load_cube(htc_file, 'zonal sum ocean heat y transport convergence globe')
+        else:
+            htc_cube = iris.load_cube(htc_file)
+        metadata_dict[htc_file] = htc_cube.attributes['history']
+
+        htc_cube = timeseries.convert_to_annual(htc_cube)
+        if rolling_window:
+            y_axis_name = get_y_axis_name(htc_cube)
+            htc_cube = htc_cube.rolling_window(y_axis_name, iris.analysis.MEAN, rolling_window)
+
+        htc_trend = calc_trend_cube(htc_cube)
+        htc_mean = htc_cube.collapsed('time', iris.analysis.MEAN)
+
+        htc_trend.attributes = htc_cube.attributes
+        htc_mean.atributes = htc_cube.attributes
     else:
-        htc_cube = iris.load_cube(htc_file)
-    metadata_dict[htc_file] = htc_cube.attributes['history']
-
-    htc_cube = timeseries.convert_to_annual(htc_cube)
-    if rolling_window:
-        y_axis_name = get_y_axis_name(htc_cube)
-        htc_cube = htc_cube.rolling_window(y_axis_name, iris.analysis.MEAN, rolling_window)
-
-    htc_trend = calc_trend_cube(htc_cube)
-    htc_mean = htc_cube.collapsed('time', iris.analysis.MEAN)
-
-    htc_trend.attributes = htc_cube.attributes
-    htc_mean.atributes = htc_cube.attributes
+        htc_trend = None
+        htc_mean = None
     
     return htc_trend, htc_mean, metadata_dict
+
+
+def plot_inferred_ohc(primary_data, secondary_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity):
+    """Plot the inferred data.
+
+    inferred = primary + secondary (for quantity = OHC)
+    OR
+    inferred = primary - secondary (for HTC and SFL)
+
+    """
+
+    ref_lats = [(y_axis_name, primary_data.coord(y_axis_name).points)]  
+    regridded_secondary_data = secondary_data.interpolate(ref_lats, iris.analysis.Linear())
+    regridded_secondary_data.coord(y_axis_name).bounds = primary_data.coord(y_axis_name).bounds
+    regridded_secondary_data.coord(y_axis_name).coord_system = primary_data.coord(y_axis_name).coord_system
+    regridded_secondary_data.coord(y_axis_name).attributes = primary_data.coord(y_axis_name).attributes
+
+    regridded_secondary_data.coord(y_axis_name).var_name = y_var_name
+    primary_data.coord(y_axis_name).var_name = y_var_name
+    regridded_secondary_data.coord(y_axis_name).standard_name = y_standard_name
+    primary_data.coord(y_axis_name).standard_name = y_standard_name
+    regridded_secondary_data.coord(y_axis_name).long_name = y_long_name
+    primary_data.coord(y_axis_name).long_name = y_long_name
+
+    regridded_secondary_data.units= ''
+    primary_data.units = ''
+
+    if 'OHC' in quantity:       
+        label = 'inferred ' + quantity + ' (= HTC + SFL)'
+        iplt.plot(primary_data + regridded_secondary_data, label=label, color='black', linestyle='--')  
+    elif 'HTC' in quantity:       
+        label = 'inferred ' + quantity + ' (= OHC - SFL)'
+        iplt.plot(primary_data - regridded_secondary_data, label=label, color='green', linestyle='--')
+    elif 'SFL' in quantity:
+        label = 'inferred ' + quantity + ' (= OHC - HTC)'
+        iplt.plot(primary_data - regridded_secondary_data, label=label, color='orange', linestyle='--')
 
 
 def plot_data(htc_data, hfds_data, ohc_data, inargs, gs, plotnum, plot_type):
@@ -176,40 +224,31 @@ def plot_data(htc_data, hfds_data, ohc_data, inargs, gs, plotnum, plot_type):
     if plot_type == 'trends':
         htc_label = 'trend in heat transport convergence (HTC)'
         hfds_label = 'trend in surface heat flux (SFL)'
-        ohc_label = 'trend in ocean heat content tendency'
+        ohc_label = 'trend in ocean heat content tendency (OHC)'
         y_label = 'Trend ($W yr^{-1}$)'
     else:
         htc_label = 'average annual mean heat transport convergence (HTC)'
         hfds_label = 'average annual mean surface heat flux (SFL)'
-        ohc_label = 'trend in ocean heat content'
+        ohc_label = 'trend in ocean heat content (OHC)'
         y_label = '$W$ (or $W yr^{-1}$ for OHC trend)'
 
-    if not inargs.exclude_htc:
-        iplt.plot(htc_data, label=htc_label, color='green') 
-    if not inargs.exclude_hfds:
-        iplt.plot(hfds_data, label=hfds_label, color='orange', linestyle='--')  
-    if not inargs.exclude_ohc:
-        iplt.plot(ohc_data, label=ohc_label, color='black') 
-    
-    y_axis_name, y_var_name, y_long_name, y_standard_name = get_y_axis_name(hfds_data, verbose=True)
+    if htc_data:
+        iplt.plot(htc_data, label=htc_label, color='green')
+        y_axis_name, y_var_name, y_long_name, y_standard_name = get_y_axis_name(htc_data, verbose=True) 
+    if hfds_data:
+        iplt.plot(hfds_data, label=hfds_label, color='orange') 
+        y_axis_name, y_var_name, y_long_name, y_standard_name = get_y_axis_name(hfds_data, verbose=True) 
+    if ohc_data:
+        iplt.plot(ohc_data, label=ohc_label, color='black')
+        y_axis_name, y_var_name, y_long_name, y_standard_name = get_y_axis_name(ohc_data, verbose=True) 
 
-    if not (inargs.exclude_htc and inargs.exclude_hfds):
-        #htc_trend.remove_coord('region')
-        ref_lats = [(y_axis_name, hfds_data.coord(y_axis_name).points)]  
-        regridded_htc_data = htc_data.interpolate(ref_lats, iris.analysis.Linear())
-        regridded_htc_data.coord(y_axis_name).bounds = hfds_data.coord(y_axis_name).bounds
-        regridded_htc_data.coord(y_axis_name).coord_system = hfds_data.coord(y_axis_name).coord_system
-        regridded_htc_data.coord(y_axis_name).attributes = hfds_data.coord(y_axis_name).attributes
-
-        regridded_htc_data.coord(y_axis_name).var_name = y_var_name
-        hfds_data.coord(y_axis_name).var_name = y_var_name
-        regridded_htc_data.coord(y_axis_name).standard_name = y_standard_name
-        hfds_data.coord(y_axis_name).standard_name = y_standard_name
-        regridded_htc_data.coord(y_axis_name).long_name = y_long_name
-        hfds_data.coord(y_axis_name).long_name = y_long_name
-        
-        iplt.plot(regridded_htc_data + hfds_data, label='HTC + SFL', color='0.5')  
-  
+    if (htc_data and hfds_data):
+        plot_inferred_ohc(hfds_data, htc_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity=ohc_label)
+    if (ohc_data and hfds_data) and not hfds_data:
+        plot_inferred_ohc(ohc_data, hfds_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity=htc_label)
+    if (ohc_data and htc_data) and not hfds_data:
+        plot_inferred_ohc(ohc_data, htc_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity=hfds_label)
+      
     if inargs.nummelin:
         color = '0.7'
         width = 0.5
@@ -234,7 +273,7 @@ def main(inargs):
   
     metadata_dict = {}
    
-    fig = plt.figure(figsize=[10, 15])
+    fig = plt.figure(figsize=[10, 14])
     gs = gridspec.GridSpec(2, 1)
 
     htc_trend, htc_mean, metadata_dict = get_htc_data(inargs.htc_file, metadata_dict, rolling_window=inargs.rolling_window)
@@ -265,21 +304,17 @@ author:
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-                                     
-    parser.add_argument("htc_file", type=str, help="Heat transport convergence file (usually hfbasin)")
-    parser.add_argument("hfds_file", type=str, help="Surface heat flux file (usually hfds)")
-    parser.add_argument("ohc_file", type=str, help="Ocean heat content file")
-    parser.add_argument("outfile", type=str, help="Output file")
+    parser.add_argument("outfile", type=str, help="Output file")                                     
 
+    parser.add_argument("--htc_file", type=str, default=None,
+                        help="Heat transport convergence file (usually hfbasin or hfy)")
+    parser.add_argument("--hfds_file", type=str, default=None,
+                        help="Surface heat flux file (usually hfds)")
+    parser.add_argument("--ohc_file", type=str, default=None,
+                        help="Ocean heat content file")
+    
     parser.add_argument("--rolling_window", type=int, default=None,
                         help="Smoothing applied to htc and hfds data (along lat axis)")
-
-    parser.add_argument("--exclude_htc", action="store_true", default=False,
-                        help="Leave htc off plot")
-    parser.add_argument("--exclude_hfds", action="store_true", default=False,
-                        help="Leave hfds off plot")
-    parser.add_argument("--exclude_ohc", action="store_true", default=False,
-                        help="Leave ohc off plot")
 
     parser.add_argument("--nummelin", action="store_true", default=False,
                         help="Restrict plot to Nummelin et al (2016) bounds")

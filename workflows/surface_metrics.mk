@@ -172,5 +172,5 @@ ${HTC_FROM_HFY_FILE} :
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_ocean_heat_transport_convergence.py ${HFY_FILE} ocean_heat_y_transport ${MODEL} $@ 
 
 ${NUMMELIN_PLOT} : ${HTC_FROM_HFY_FILE} ${HFDS_ZONAL_SUM_FILE} ${OHC_ZONAL_SUM_FILE} 
-	${PYTHON} ${VIS_SCRIPT_DIR}/plot_heat_trends.py $< $(word 2,$^) $(word 3,$^) $@
+	${PYTHON} ${VIS_SCRIPT_DIR}/plot_heat_trends.py $@ --htc_file $< --hfds_file $(word 2,$^) --ohc_file $(word 3,$^)
 
