@@ -159,15 +159,15 @@ def main(inargs):
     # Calculate output for each basin
     out_cubes = []
     for basin_name in basin_list:
-        data_cube = data_cube.copy()
+        data_cube_copy = data_cube.copy()
         if not basin_name == 'globe':            
-            data_cube.data.mask = numpy.where((data_cube.data.mask == False) & (basin_array == basins[basin_name]), False, True)
+            data_cube_copy.data.mask = numpy.where((data_cube_copy.data.mask == False) & (basin_array == basins[basin_name]), False, True)
 
         # Zonal mean
         if hfbasin:
-            zonal_cube = data_cube
+            zonal_cube = data_cube_copy
         else:
-            zonal_cube = data_cube.collapsed(x_axis_name, iris.analysis.SUM)
+            zonal_cube = data_cube_copy.collapsed(x_axis_name, iris.analysis.SUM)
             zonal_cube.remove_coord(x_axis_name)
 
         # Convergence 
