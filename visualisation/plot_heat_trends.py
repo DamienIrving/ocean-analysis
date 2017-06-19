@@ -179,7 +179,7 @@ def get_htc_data(htc_file, metadata_dict, rolling_window=None):
     return htc_trend, htc_mean, metadata_dict
 
 
-def plot_inferred_ohc(primary_data, secondary_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity):
+def plot_inferred_data(primary_data, secondary_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity):
     """Plot the inferred data.
 
     inferred = primary + secondary (for quantity = OHC)
@@ -215,7 +215,7 @@ def plot_inferred_ohc(primary_data, secondary_data, y_axis_name, y_var_name, y_s
         iplt.plot(primary_data - regridded_secondary_data, label=label, color='orange', linestyle='--')
 
 
-def plot_data(htc_data, hfds_data, ohc_data, inargs, gs, plotnum, plot_type):
+def plot_data(htc_data, hfds_data, ohc_data, inargs, gs, plotnum, plot_type, infer_list):
     """Plot trends."""
 
     ax = plt.subplot(gs[plotnum])
@@ -242,12 +242,12 @@ def plot_data(htc_data, hfds_data, ohc_data, inargs, gs, plotnum, plot_type):
         iplt.plot(ohc_data, label=ohc_label, color='black')
         y_axis_name, y_var_name, y_long_name, y_standard_name = get_y_axis_name(ohc_data, verbose=True) 
 
-    if (htc_data and hfds_data):
-        plot_inferred_ohc(hfds_data, htc_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity=ohc_label)
-    if (ohc_data and hfds_data) and not hfds_data:
-        plot_inferred_ohc(ohc_data, hfds_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity=htc_label)
-    if (ohc_data and htc_data) and not hfds_data:
-        plot_inferred_ohc(ohc_data, htc_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity=hfds_label)
+    if 'OHC' in infer_list:
+        plot_inferred_data(hfds_data, htc_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity=ohc_label)
+    if 'HTC' in infer_list:
+        plot_inferred_data(ohc_data, hfds_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity=htc_label)
+    if 'SFL' in infer_list:
+        plot_inferred_data(ohc_data, htc_data, y_axis_name, y_var_name, y_standard_name, y_long_name, quantity=hfds_label)
       
     if inargs.nummelin:
         color = '0.7'
@@ -271,13 +271,33 @@ def plot_data(htc_data, hfds_data, ohc_data, inargs, gs, plotnum, plot_type):
 def get_title(htc_cube, hfds_cube, ohc_cube):
     """Get the plot title."""
 
-    title = None
+    for cube in [htc_cube, hfds_cube, ohc_cube]:
+        if cube:
+            run = 'r%si%sp%s'  %(cube.attributes['realization'], cube.attributes['initialization_method'], cube.attributes['physics_version'])
+            title = '%s, %s, %s'  %(cube.attributes['model_id'], cube.attributes['experiment'], run)
+            break
+    
+    return title
 
-    #FIXME
-    while...
-        run = 'r%si%sp%s'  %(ohc_trend.attributes['realization'], ohc_trend.attributes['initialization_method'], ohc_trend.attributes['physics_version'])
-        title = '%s, %s, %s'  %(htc_trend.attributes['model_id'], htc_trend.attributes['experiment'], run))
 
+def select_inferred_plots(user_selection, htc_cube, hfds_cube, ohc_cube):
+    """Determine which inferred curves to plot."""
+
+    if user_selection == 'withhold':
+        infer_list = []
+    elif user_selection:
+        infer_list = user_selection
+    else:
+        infer_list = []
+        if (htc_cube and hfds_cube):
+            infer_list.append('OHC')
+        if (ohc_cube and hfds_cube) and not htc_cube:
+            infer_list.append('HTC')
+        if (ohc_cube and htc_cube) and not hfds_cube:
+            infer_list.append('SFL')
+
+    return infer_list
+    
 
 def main(inargs):
     """Run the program."""
@@ -290,9 +310,11 @@ def main(inargs):
     htc_trend, htc_mean, metadata_dict = get_htc_data(inargs.htc_file, metadata_dict, rolling_window=inargs.rolling_window)
     hfds_trend, hfds_mean, metadata_dict = get_hfds_data(inargs.hfds_file, metadata_dict, rolling_window=inargs.rolling_window)  
     ohc_tendency_trend, ohc_trend, metadata_dict = get_ohc_data(inargs.ohc_file, metadata_dict)  
-    
-    plot_data(htc_mean, hfds_mean, ohc_trend, inargs, gs, 0, 'mean')
-    plot_data(htc_trend, hfds_trend, ohc_tendency_trend, inargs, gs, 1, 'trends')
+  
+    infer_list = select_inferred_plots(inargs.infer, htc_trend, hfds_trend, ohc_tendency_trend)
+
+    plot_data(htc_mean, hfds_mean, ohc_trend, inargs, gs, 0, 'mean', infer_list)
+    plot_data(htc_trend, hfds_trend, ohc_tendency_trend, inargs, gs, 1, 'trends', infer_list)
 
     title = get_title(htc_trend, hfds_trend, ohc_tendency_trend)
     plt.suptitle(title)    
@@ -324,6 +346,9 @@ author:
     parser.add_argument("--ohc_file", type=str, default=None,
                         help="Ocean heat content file")
     
+    parser.add_argument("--infer", type=str, nargs='*', default=None,
+                        help="plots to infer (can be HTC, OHC and/or SFL. Or the word withhold to not plot any.")
+
     parser.add_argument("--rolling_window", type=int, default=None,
                         help="Smoothing applied to htc and hfds data (along lat axis)")
 
