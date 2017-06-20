@@ -116,6 +116,7 @@ def main(inargs):
     level_subset = gio.iris_vertical_constraint(inargs.min_depth, inargs.max_depth)
     for temperature_file in inargs.temperature_files:
         temperature_cube = iris.load_cube(temperature_file, inargs.temperature_var & level_subset)
+        temperature_cube = gio.check_time_units(temperature_cube)
         metadata_dict = {temperature_file: temperature_cube.attributes['history']}
         temperature_atts = temperature_cube.attributes
 
