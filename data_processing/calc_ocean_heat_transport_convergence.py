@@ -139,18 +139,23 @@ def main(inargs):
     
     regular_grid = False if aux_coord_names else True
 
-    assert len(dim_coord_names) == 3
-    assert dim_coord_names[0] == 'time'
-    y_axis_name, x_axis_name = dim_coord_names[1:]    
-    for aux_coord in aux_coord_names:
-        data_cube.remove_coord(aux_coord)
+    if hfbasin:
+        assert len(dim_coord_names) == 2
+        assert dim_coord_names[0] == 'time'
+        y_axis_name = dim_coord_names[1]
+    else:
+        assert len(dim_coord_names) == 3
+        assert dim_coord_names[0] == 'time'
+        y_axis_name, x_axis_name = dim_coord_names[1:]    
+        for aux_coord in aux_coord_names:
+            data_cube.remove_coord(aux_coord)
 
     # Basin array
     if inargs.basin_file and not inargs.regrid:
         ndim = cube.ndim
         basin_array = uconv.broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], cube.shape) 
         basin_list = ['atlantic', 'pacific', 'indian', 'globe']
-    elif regular_grid: 
+    elif regular_grid and not hfbasin: 
         basin_array = uconv.create_basin_array(data_cube)
         basin_list = ['atlantic', 'pacific', 'indian', 'globe']
     else:
