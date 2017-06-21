@@ -58,15 +58,16 @@ def convergence(cube, y_axis_name):
     y_points = cube.coord(y_axis_name).points
     y_diffs = numpy.diff(y_points)
 
-    assert numpy.abs(numpy.max(y_diffs) - numpy.min(y_diffs)) < 0.1
+    #assert numpy.abs(numpy.max(y_diffs) - numpy.min(y_diffs)) < 0.1
     y_spacing = numpy.mean(y_diffs)
 
     convergence_cube = cube[:, 0:-1].copy()
     convergence_cube.data = numpy.diff(cube.data, axis=1) * -1
 
-    new_y_coord = convergence_cube.coord(y_axis_name) + (y_spacing / 2.0)
-    convergence_cube.coord(y_axis_name).points = new_y_coord.points
-    convergence_cube.coord(y_axis_name).bounds = new_y_coord.bounds
+    new_y_coord_points = convergence_cube.coord(y_axis_name).points + (y_diffs / 2.0)
+    convergence_cube.coord(y_axis_name).bounds = None
+    convergence_cube.coord(y_axis_name).points = new_y_coord_points
+    convergence_cube.coord(y_axis_name).guess_bounds()
 
     return convergence_cube
 
