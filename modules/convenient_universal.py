@@ -256,6 +256,32 @@ def fix_label(label):
     return label 
 
 
+def get_chunks(cube_shape, coord_names, chunk=True):
+    """Provide details for chunking along the time axis.
+
+    The chunk option can be used to just do one single chunk.
+
+    """
+
+    ntimes = cube_shape[0]
+
+    if chunk:
+        assert coord_names[0] == 'time'
+
+        step = 2
+        remainder = ntimes % step
+        while remainder == 1:
+            step = step + 1
+            remainder = ntimes % step
+
+        start_indexes = range(0, ntimes, step)
+    else:
+        start_indexes = [0]
+        step = ntimes
+
+    return start_indexes, step
+
+
 def get_threshold(data, threshold_str, axis=None):
     """Turn the user input threshold into a numeric threshold."""
     

@@ -26,6 +26,7 @@ sys.path.append(modules_dir)
 try:
     import general_io as gio
     import spatial_weights
+    import convenient_universal as uconv
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -58,13 +59,26 @@ def add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, in
     return ohc_cube
 
 
-def calc_ohc_vertical_integral(cube, density, specific_heat, weights=None):
-    """Calculate the ohc vertical integral."""
+def calc_ohc_vertical_integral(cube, density, specific_heat, coord_names, weights=None, chunk=False):
+    """Calculate the ohc vertical integral.
 
-    integral = cube.collapsed('depth', iris.analysis.SUM, weights=weights)
+    Chunking is an option to avoid memory errors.
+
+    """
+
+    if chunk:
+        integral_list = iris.cube.CubeList([])
+        start_indexes, step = uconv.get_chunks(cube.shape, coord_names, chunk=True)
+        for index in start_indexes:
+            integral_chunk = cube[index:index+step, ...].collapsed('depth', iris.analysis.SUM, weights=weights[index:index+step, ...])
+            integral_list.append(integral_chunk)
+        integral = integral_list.concatenate()[0]
+    else:
+        integral = cube.collapsed('depth', iris.analysis.SUM, weights=weights)
+       
     ohc = (integral * density * specific_heat) 
     ohc.remove_coord('depth')
-
+    
     return ohc
 
 
@@ -139,7 +153,7 @@ def main(inargs):
                 vertical_weights = spatial_weights.calc_vertical_weights_2D(depth_axis, temperature_cube.coord('latitude'), coord_names, temperature_cube.shape)
             #vertical_weights = vertical_weights.astype(numpy.float32)
 
-        ohc_cube = calc_ohc_vertical_integral(temperature_cube, inargs.density, inargs.specific_heat, weights=vertical_weights)
+        ohc_cube = calc_ohc_vertical_integral(temperature_cube, inargs.density, inargs.specific_heat, coord_names, weights=vertical_weights, chunk=inargs.chunk)
         ohc_cube = add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, inargs)
         ohc_file = get_outfile_name(temperature_file)    
 
@@ -183,6 +197,9 @@ notes:
                         help="Density of seawater (in kg.m-3). Default of 1023 kg.m-3 from Hobbs2016.")
     parser.add_argument("--specific_heat", type=float, default=4000,
                         help="Specific heat of seawater (in J / kg.K). Default of 4000 J/kg.K from Hobbs2016")
+
+    parser.add_argument("--chunk", action="store_true", default=False,
+                        help="Split input files on time axis to avoid memory errors [default: False]")
 
     args = parser.parse_args()             
     main(args)

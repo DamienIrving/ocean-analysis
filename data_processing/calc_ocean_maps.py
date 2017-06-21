@@ -291,7 +291,7 @@ def main(inargs):
         assert depth_axis.units in ['m', 'dbar'], "Unrecognised depth axis units"
 
         out_list = iris.cube.CubeList([])
-        start_indexes, step = get_chunks(data_cube.shape, coord_names, chunk=inargs.chunk)
+        start_indexes, step = uconv.get_chunks(data_cube.shape, coord_names, chunk=inargs.chunk)
         for index in start_indexes:
 
             cube_slice = data_cube[index:index+step, 0:1000, ...]
