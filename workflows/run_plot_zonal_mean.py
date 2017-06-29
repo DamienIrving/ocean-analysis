@@ -86,7 +86,7 @@ def main(inargs, basin, run):
 
         # Variable data files
         command_list.append('--' + alt_experiment.lower() + '_files')
-        if inargs.variable in ['pe', 'uas']:
+        if inargs.variable in ['pe', 'uas', 'rsds', 'rsus', 'rlds', 'rlus', 'hfss', 'hfls']:
             if alt_experiment == 'historicalAA':
                 physics = inargs.aa_physics
             elif alt_experiment == 'historicalnoAA':
@@ -179,7 +179,7 @@ author:
     parser.add_argument("runs", type=str, nargs='*', help="Runs to process (e.g. r1 r2)")
 
     parser.add_argument("--execute", action="store_true", default=False,
-                        help="Switch to have this script execute the make command rather than printing to screen")
+                        help="Switch to have this script execute the final command rather than printing to screen")
 
     parser.add_argument("--exclude_basin", action="store_true", default=False,
                         help="Leave out basin files [default=False]")
@@ -207,8 +207,12 @@ author:
     parser.add_argument("--fixed", action="store_true", default=False,
                         help="Look for files in a directory labelled fixed")
 
+    parser.add_argument("--basins", type=str, nargs='*', default=['globe'],
+                        choices=('globe', 'atlantic', 'indian', 'pacific'),
+                        help="Which basins to create plots for (default = globe only)")
+
     args = parser.parse_args()
 
-    for basin in ('globe', 'atlantic', 'indian', 'pacific'):
+    for basin in args.basins:
         for run in args.runs:
             main(args, basin, run)
