@@ -1,7 +1,7 @@
 """
-Filename:     plot_heat_trends.py
+Filename:     plot_ocean_heat_budget.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Plot trend in ocean heat transport convergence, surface heat flux and ocean heat content
+Description:  Plot climatology and trend in ocean heat transport convergence, surface heat flux and ocean heat content
 
 Input:        List of netCDF files to plot
 Output:       An image in either bitmap (e.g. .png) or vector (e.g. .svg, .eps) format
@@ -332,7 +332,7 @@ author:
 
 """
 
-    description = 'Plot trend in ocean heat transport convergence, surface heat flux and ocean heat content'
+    description = 'Plot climatology and trend in ocean heat transport convergence, surface heat flux and ocean heat content'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
