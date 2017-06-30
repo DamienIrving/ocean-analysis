@@ -171,6 +171,9 @@ ${HTC_FROM_HFY_FILE} :
 	mkdir -p ${HTC_FROM_HFY_DIR} 
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_ocean_heat_transport_convergence.py ${HFY_FILE} ocean_heat_y_transport ${MODEL} $@ 
 
-${NUMMELIN_PLOT} : ${HTC_FROM_HFY_FILE} ${HFDS_ZONAL_SUM_FILE} ${OHC_ZONAL_SUM_FILE} 
-	${PYTHON} ${VIS_SCRIPT_DIR}/plot_heat_trends.py $@ --htc_file $< --hfds_file $(word 2,$^) --ohc_file $(word 3,$^)
+#${NUMMELIN_PLOT} : ${HTC_FROM_HFY_FILE} ${HFDS_ZONAL_SUM_FILE} ${OHC_ZONAL_SUM_FILE} 
+#	${PYTHON} ${VIS_SCRIPT_DIR}/plot_heat_trends.py $@ --htc_file $< --hfds_file $(word 2,$^) --ohc_file $(word 3,$^)
+
+${NUMMELIN_PLOT} : ${HTC_FROM_HFY_FILE} ${OHC_ZONAL_SUM_FILE} 
+	${PYTHON} ${VIS_SCRIPT_DIR}/plot_heat_trends.py $@ --htc_file $(word 1,$^) --ohc_file $(word 2,$^) 
 
