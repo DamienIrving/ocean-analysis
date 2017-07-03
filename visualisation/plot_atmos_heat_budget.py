@@ -58,7 +58,7 @@ line_characteristics = {'rsds': ('downwelling shortwave', 'orange', 'dashed'),
 plot_order = ['rsds', 'rsus', 'rsns', 'rlds', 'rlus', 'rlns', 'rns', 'hfss', 'hfls', 'hfds', 'hfsithermds', 'hfns']
 
 
-def get_data(filenames, var, metadata_dict):
+def get_data(filenames, var, metadata_dict, area=False):
     """Read, merge, temporally aggregate and calculate zonal mean.
     
     Positive is defined as down.
@@ -80,6 +80,9 @@ def get_data(filenames, var, metadata_dict):
             cube.data = cube.data * -1
 
         cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+        if area:
+            cube = multiply_by_area(cube) 
+
         zonal_mean = cube.collapsed('longitude', iris.analysis.MEAN)
         zonal_mean.remove_coord('longitude')
     else:
@@ -135,7 +138,7 @@ def derived_energy_terms(cube_dict, inargs):
     return cube_dict
 
 
-def climatology_plot(cube_dict, gs, plotnum):
+def climatology_plot(cube_dict, gs, plotnum, area_scaled=False):
     """Plot the climatology """
     
     ax = plt.subplot(gs[plotnum])
@@ -148,11 +151,14 @@ def climatology_plot(cube_dict, gs, plotnum):
             iplt.plot(climatology_cube, label=label, color=color, linestyle=style)
     ax.legend(ncol=2)
     ax.set_title('climatology')
-    ax.set_ylabel('$W m^{-2}$')
+    if area_scaled:
+        ax.set_ylabel('$W$')
+    else:
+        ax.set_ylabel('$W m^{-2}$')
     
 
-def trend_plot(cube_dict, gs, plotnum):
-    """Plot the trends """
+def trend_plot(cube_dict, gs, plotnum, area_scaled=False):
+    """Plot the trends"""
     
     ax = plt.subplot(gs[plotnum])
     plt.sca(ax)
@@ -163,7 +169,10 @@ def trend_plot(cube_dict, gs, plotnum):
             label, color, style = line_characteristics[var]
             iplt.plot(trend_cube, color=color, linestyle=style)
     ax.set_title('trends')
-    ax.set_ylabel('$W m^{-2} yr^{-1}$')
+    if area_scaled:
+        ax.set_ylabel('$W yr^{-1}$')
+    else:
+        ax.set_ylabel('$W m^{-2} yr^{-1}$')
     ax.set_xlabel('latitude')
     
 
@@ -179,6 +188,22 @@ def get_title(cube_dict):
     return title
 
 
+def multiply_by_area(cube):
+    """Multiply by cell area."""
+
+    if not cube.coord('latitude').has_bounds():
+        cube.coord('latitude').guess_bounds()
+    if not cube.coord('longitude').has_bounds():
+        cube.coord('longitude').guess_bounds()
+    area_weights = iris.analysis.cartography.area_weights(cube)
+
+    units = str(cube.units)
+    cube.data = cube.data * area_weights   
+    cube.units = units.replace('m-2', '')
+
+    return cube
+
+
 def main(inargs):
     """Run the program."""
   
@@ -186,26 +211,26 @@ def main(inargs):
     metadata_dict = {}
     
     # Radiation flux at surface
-    cube_dict['rsds'], metadata_dict = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict)
-    cube_dict['rsus'], metadata_dict = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict)
-    cube_dict['rlds'], metadata_dict = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict)
-    cube_dict['rlus'], metadata_dict = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict)
+    cube_dict['rsds'], metadata_dict = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict, area=inargs.area)
+    cube_dict['rsus'], metadata_dict = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict, area=inargs.area)
+    cube_dict['rlds'], metadata_dict = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict, area=inargs.area)
+    cube_dict['rlus'], metadata_dict = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict, area=inargs.area)
     cube_dict = derived_radiation_fluxes(cube_dict, inargs)
  
     # Surface energy balance
-    cube_dict['hfss'], metadata_dict = get_data(inargs.hfss_files, 'surface_upward_sensible_heat_flux', metadata_dict)
-    cube_dict['hfls'], metadata_dict = get_data(inargs.hfls_files, 'surface_upward_latent_heat_flux', metadata_dict)
-    cube_dict['hfds'], metadata_dict = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict)
+    cube_dict['hfss'], metadata_dict = get_data(inargs.hfss_files, 'surface_upward_sensible_heat_flux', metadata_dict, area=inargs.area)
+    cube_dict['hfls'], metadata_dict = get_data(inargs.hfls_files, 'surface_upward_latent_heat_flux', metadata_dict, area=inargs.area)
+    cube_dict['hfds'], metadata_dict = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict, area=inargs.area)
     cube_dict['hfsithermds'], metadata_dict = get_data(inargs.hfsithermds_files,
                                                        'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
-                                                       metadata_dict)                           
+                                                       metadata_dict, area=inargs.area)                           
     cube_dict = derived_energy_terms(cube_dict, inargs)
 
     # Plot
     fig = plt.figure(figsize=[10, 14])
     gs = gridspec.GridSpec(2, 1)
-    climatology_plot(cube_dict, gs, 0)
-    trend_plot(cube_dict, gs, 1)
+    climatology_plot(cube_dict, gs, 0, area_scaled=inargs.area)
+    trend_plot(cube_dict, gs, 1, area_scaled=inargs.area)
         
     title = get_title(cube_dict)
     plt.suptitle(title)    
@@ -248,7 +273,8 @@ author:
     parser.add_argument("--hfsithermds_files", type=str, nargs='*', default=None,
                         help="heat flux due to sea ice files")
 
-    ## FIXME: add option to multiply by area and have untis be W
+    parser.add_argument("--area", action="store_true", default=False,
+	                help="Multiple data by area")
 
     args = parser.parse_args()             
     main(args)
