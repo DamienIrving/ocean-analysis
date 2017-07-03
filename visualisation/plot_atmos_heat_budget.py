@@ -49,8 +49,8 @@ line_styles = {'rsds': 'dashed', 'rsus': 'dotted', 'rsns': 'dashdot',
               }
 
 line_colors = {'rs': 'yellow',
-               'rl': 'red'
-               'rn': 'orange'
+               'rl': 'red',
+               'rn': 'orange',
                'hf': 'blue'}
 
 
@@ -65,17 +65,17 @@ def get_data(filenames, var, metadata_dict):
         cube = iris.load(filenames, gio.check_iris_var(var))
 
         metadata_dict[filenames[0]] = cube[0].attributes['history']
-		equalise_attributes(cube)
-		iris.util.unify_time_units(cube)
-		cube = cube.concatenate_cube()
-		cube = gio.check_time_units(cube)
+        equalise_attributes(cube)
+        iris.util.unify_time_units(cube)
+        cube = cube.concatenate_cube()
+        cube = gio.check_time_units(cube)
 
-		cube = timeseries.convert_to_annual(cube, full_months=True)
+        cube = timeseries.convert_to_annual(cube, full_months=True)
 
-		if 'up' in cube.standard_name:
-			cube.data = cube.data * -1
+        if 'up' in cube.standard_name:
+            cube.data = cube.data * -1
 
-		cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+        cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
         zonal_mean = cube.collapsed('longitude', iris.analysis.MEAN)
         zonal_mean.remove_coord('longitude')
     else:
