@@ -42,42 +42,165 @@ except ImportError:
 
 # Define functions
 
+line_styles = {'rsds': 'dashed', 'rsus': 'dotted', 'rsns': 'dashdot',
+               'rlds': 'dashed', 'rlus': 'dotted', 'rlns': 'dashdot',
+               'rns': 'solid',
+               'hfss': 'dashed', 'hfls': 'dotted', 'hfds': 'dashdot', 'hfns': 'solid'
+              }
+
+line_colors = {'rs': 'yellow',
+               'rl': 'red'
+               'rn': 'orange'
+               'hf': 'blue'}
+
+
 def get_data(filenames, var, metadata_dict):
-    """Calculate zonal mean climatology and trend."""
+    """Read, merge, temporally aggregate and calculate zonal mean.
     
-    cube = iris.load(filenames, gio.check_iris_var(var))
-
-    metadata_dict[filenames[0]] = cube[0].attributes['history']
-    equalise_attributes(cube)
-    iris.util.unify_time_units(cube)
-    cube = cube.concatenate_cube()
-    cube = gio.check_time_units(cube)
-
-    # Temporal smoothing
-    cube = timeseries.convert_to_annual(cube, full_months=True)
-
-    # Regrid
-    cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
-
-    # FIXME: Check sign (down is positive)
-
-    # Zonal mean
-    zonal_mean = cube.collapsed('longitude', iris.analysis.MEAN)
-    zonal_cube.remove_coord('longitude')
-
-    # Climatology and trends
-    climatology_cube = zonal_cube.collapsed('time', iris.analysis.MEAN)
-    trend_cube = get_trend_cube(zonal_cube)
-
-    return climatology_cube, trend_cube, metadata_dict
+    Positive is defined as down.
     
+    """
+    
+    if filenames:
+        cube = iris.load(filenames, gio.check_iris_var(var))
+
+        metadata_dict[filenames[0]] = cube[0].attributes['history']
+		equalise_attributes(cube)
+		iris.util.unify_time_units(cube)
+		cube = cube.concatenate_cube()
+		cube = gio.check_time_units(cube)
+
+		cube = timeseries.convert_to_annual(cube, full_months=True)
+
+		if 'up' in cube.standard_name:
+			cube.data = cube.data * -1
+
+		cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+        zonal_mean = cube.collapsed('longitude', iris.analysis.MEAN)
+        zonal_mean.remove_coord('longitude')
+    else:
+        zonal_mean = None
+
+    return zonal_mean, metadata_dict
+
+
+def calc_trend_cube(cube):
+    """Calculate trend and put into appropriate cube."""
+    
+    trend_array = timeseries.calc_trend(cube, per_yr=True)
+    new_cube = cube[0,:].copy()
+    new_cube.remove_coord('time')
+    new_cube.data = trend_array
+    
+    return new_cube
+
+
+def derived_radiation_fluxes(cube_dict, inargs):
+    """Calculate the net shortwave, longwave and total radiation flux."""
+    
+    if inargs.rsds_files and inargs.rsus_files:
+        cube_dict['rsns'] = cube_dict['rsds'] + cube_dict['rsus']   # net shortwave flux
+    else:
+        cube_dict['rsns'] = None
+    
+    if inargs.rlds_files and inargs.rlus_files:
+        cube_dict['rlns'] = cube_dict['rlds'] + cube_dict['rlus']   # net longwave flux
+    else:
+        cube_dict['rlns'] = None
+
+    if inargs.rsds_files and inargs.rsus_files and inargs.rlds_files and inargs.rlus_files:
+        cube_dict['rns'] = cube_dict['rsns'] + cube_dict['rlns']
+
+    return cube_dict
+
+
+def derived_energy_terms(cube_dict, inargs):
+    """Calculate the net energy balance.
+    
+    FIXME: This could possibly calculate hfsithermds too
+    
+    """
+    
+    if inargs.hfss_files and inargs.hfls_files and inargs.hfds_files:
+        cube_dict['hfns'] = cube_dict['hfss'] + cube_dict['hfls'] + cube_dict['hfds']
+    else:
+        cube_dict['hfns'] = None
+    
+    return cube_dict
+
+
+def climatology_plot(cube_dict, gs, plotnum):
+    """Plot the climatology """
+    
+    ax = plt.subplot(gs[plotnum])
+    plt.sca(ax)
+
+    for cube, var in cube_dict.iteritems():
+        climatology_cube = cube.collapsed('time', iris.analysis.MEAN)
+        iplt.plot(climatology_cube, label=var,
+                  color=line_colors[var[0:2]],
+                  linestyle=line_styles[var])
+    
+    ax.set_title('climatology')
+    
+    
+def trend_plot(cube_dict, gs, plotnum):
+    """Plot the trends """
+    
+    ax = plt.subplot(gs[plotnum])
+    plt.sca(ax)
+
+    for cube, var in cube_dict.iteritems():
+        trend_cube = calc_trend_cube(cube)
+        iplt.plot(trend_cube, label=var,
+                  color=line_colors[var[0:2]],
+                  linestyle=line_styles[var])
+    
+    ax.set_title('trends')
+    
+
+def get_title(cube_dict):
+    """Get the plot title."""
+
+    for cube in cube_dict.values:
+        if cube:
+            run = 'r%si%sp%s'  %(cube.attributes['realization'], cube.attributes['initialization_method'], cube.attributes['physics_version'])
+            title = '%s, %s, %s'  %(cube.attributes['model_id'], cube.attributes['experiment'], run)
+            break
+    
+    return title
+
 
 def main(inargs):
     """Run the program."""
   
+    cube_dict = {}
+    metadata_dict = {}
+    
+    # Radiation flux at surface
+    cube_dict['rsds'], metadata_dict = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict)
+    cube_dict['rsus'], metadata_dict = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict)
+    cube_dict['rlds'], metadata_dict = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict)
+    cube_dict['rlus'], metadata_dict = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict)
+    cube_dict = derived_radiation_fluxes(data_dict, inargs)
+ 
+    # Surface energy balance
+    cube_dict['hfss'], metadata_dict = get_data(inargs.hfss_files, 'surface_upward_sensible_heat_flux', metadata_dict)
+    cube_dict['hfls'], metadata_dict = get_data(inargs.hfls_files, 'surface_upward_latent_heat_flux', metadata_dict)
+    cube_dict['hfds'], metadata_dict = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict)
+    cube_dict = derived_energy_terms(cube_dict, inargs)
+    
+    # Plot
+    fig = plt.figure(figsize=[10, 14])
+    gs = gridspec.GridSpec(2, 1)
+    climatology_plot(cube_dict, gs, 0)
+    trend_plot(cube_dict, gs, 1)
+        
+    title = get_title(cube_dict)
+    plt.suptitle(title)    
 
-
-
+    plt.savefig(inargs.outfile, bbox_inches='tight')
+    gio.write_metadata(inargs.outfile, file_info=metadata_dict)
 
 
 if __name__ == '__main__':
