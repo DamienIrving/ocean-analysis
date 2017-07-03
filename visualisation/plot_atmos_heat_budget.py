@@ -42,32 +42,18 @@ except ImportError:
 
 # Define functions
 
-line_styles = {'rsds': 'dashed', 'rsus': 'dotted', 'rsns': 'dashdot',
-               'rlds': 'dashed', 'rlus': 'dotted', 'rlns': 'dashdot',
-               'rns': 'solid',
-               'hfss': 'dashed', 'hfls': 'dotted', 'hfds': 'dashdot', 'hfns': 'solid'
-              }
-
-line_colors = {'rs': 'orange',
-               'rl': 'red',
-               'rn': 'brown',
-               'hf': 'blue'}
-
-##FIXME: Color for sea ice flux
-
-labels = {'rsds': 'downwelling shortwave',
-          'rsus': 'upwelling shortwave',
-          'rsns': 'net shortwave',
-          'rlds': 'downwelling longwave',
-          'rlus': 'upwelling longwave',
-          'rlns': 'net longwave',
-          'rns': 'net radiative flux',
-          'hfss': 'sensible heat flux',
-          'hfls': 'latent heat flux',
-          'hfds': 'heat flux into ocean',
-          'hfsithermds' : 'heat flux from sea ice',
-          'hfns': 'net heat flux'
-         }
+line_characteristics = {'rsds': ('downwelling shortwave', 'orange', 'dashed'), 
+                        'rsus': ('upwelling shortwave', 'orange', 'dotted'),
+                        'rsns': ('net shortwave', 'orange', 'dashdot'),
+                        'rlds': ('downwelling longwave', 'red', 'dashed'), 
+                        'rlus': ('upwelling longwave', 'red', 'dotted'),
+                        'rlns': ('net longwave', 'red', 'dashdot'),
+                        'rns':  ('net radiative flux', 'brown','solid'),
+                        'hfss': ('sensible heat flux', 'blue', 'dashed'),
+                        'hfls': ('latent heat flux', 'blue', 'dotted'),
+                        'hfds': ('heat flux into ocean', 'blue', 'dashdot'),
+                        'hfsithermds' : ('heat flux from sea ice', 'cyan', 'dashdot'),
+                        'hfns': ('net heat flux', 'blue', 'solid')}
 
 plot_order = ['rsds', 'rsus', 'rsns', 'rlds', 'rlus', 'rlns', 'rns', 'hfss', 'hfls', 'hfds', 'hfsithermds', 'hfns']
 
@@ -133,11 +119,7 @@ def derived_radiation_fluxes(cube_dict, inargs):
 
 
 def derived_energy_terms(cube_dict, inargs):
-    """Calculate the net energy balance.
-    
-    FIXME: This could possibly calculate hfsithermds too
-    
-    """
+    """Calculate the net energy balance."""
     
     if inargs.hfss_files and inargs.hfls_files and inargs.hfds_files and inargs.hfsithermds_files:
         try:
@@ -162,9 +144,8 @@ def climatology_plot(cube_dict, gs, plotnum):
     for var in plot_order:
         if cube_dict[var]:
             climatology_cube = cube_dict[var].collapsed('time', iris.analysis.MEAN)
-            iplt.plot(climatology_cube, label=labels[var],
-                      color=line_colors[var[0:2]],
-                      linestyle=line_styles[var])
+            label, color, style = line_characteristics[var]
+            iplt.plot(climatology_cube, label=label, color=color, linestyle=style)
     ax.legend(ncol=2)
     ax.set_title('climatology')
     ax.set_ylabel('$W m^{-2}$')
@@ -179,9 +160,8 @@ def trend_plot(cube_dict, gs, plotnum):
     for var in plot_order:
         if cube_dict[var]:
             trend_cube = calc_trend_cube(cube_dict[var])
-            iplt.plot(trend_cube,
-                      color=line_colors[var[0:2]],
-                      linestyle=line_styles[var])
+            label, color, style = line_characteristics[var]
+            iplt.plot(trend_cube, color=color, linestyle=style)
     ax.set_title('trends')
     ax.set_ylabel('$W m^{-2} yr^{-1}$')
     ax.set_xlabel('latitude')
@@ -216,7 +196,9 @@ def main(inargs):
     cube_dict['hfss'], metadata_dict = get_data(inargs.hfss_files, 'surface_upward_sensible_heat_flux', metadata_dict)
     cube_dict['hfls'], metadata_dict = get_data(inargs.hfls_files, 'surface_upward_latent_heat_flux', metadata_dict)
     cube_dict['hfds'], metadata_dict = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict)
-    cube_dict['hfsithermds'], metadata_dict = get_data(inargs.hfds_files, 'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics', metadata_dict)                           
+    cube_dict['hfsithermds'], metadata_dict = get_data(inargs.hfsithermds_files,
+                                                       'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
+                                                       metadata_dict)                           
     cube_dict = derived_energy_terms(cube_dict, inargs)
 
     # Plot
