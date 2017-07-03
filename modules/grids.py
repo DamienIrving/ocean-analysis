@@ -3,6 +3,7 @@
 Functions:
   curvilinear_to_rectilinear  -- Regrid curvilinear data to a rectilinear 
                                  grid if necessary
+  regrid_1D                   -- Regrid data with only one spatial dimension
 
 """
 
@@ -135,3 +136,20 @@ def curvilinear_to_rectilinear(cube):
     return new_cube, coord_names, regrid_status
 
 
+def regrid_1D(cube, target_cube, y_axis_name, clear_units=False):
+    """Regrid data with only one spatial dimension"""
+
+    ref_lats = [(y_axis_name, target_cube.coord(y_axis_name).points)]  
+    regridded_cube = cube.interpolate(ref_lats, iris.analysis.Linear())
+    regridded_cube.coord(y_axis_name).bounds = target_cube.coord(y_axis_name).bounds
+    regridded_cube.coord(y_axis_name).coord_system = target_cube.coord(y_axis_name).coord_system
+    regridded_cube.coord(y_axis_name).attributes = target_cube.coord(y_axis_name).attributes
+
+    regridded_cube.coord(y_axis_name).var_name = target_cube.coord(y_axis_name).var_name
+    regridded_cube.coord(y_axis_name).standard_name = target_cube.coord(y_axis_name).standard_name
+    regridded_cube.coord(y_axis_name).long_name = target_cube.coord(y_axis_name).long_name
+
+    if clear_units:
+        regridded_cube.units= ''
+
+    return regridded_cube 
