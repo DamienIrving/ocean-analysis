@@ -33,6 +33,7 @@ sys.path.append(modules_dir)
 try:
     import general_io as gio
     import timeseries
+    import grids
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -188,21 +189,11 @@ def plot_inferred_data(primary_data, secondary_data, y_axis_name, y_var_name, y_
 
     """
 
-    ref_lats = [(y_axis_name, primary_data.coord(y_axis_name).points)]  
-    regridded_secondary_data = secondary_data.interpolate(ref_lats, iris.analysis.Linear())
-    regridded_secondary_data.coord(y_axis_name).bounds = primary_data.coord(y_axis_name).bounds
-    regridded_secondary_data.coord(y_axis_name).coord_system = primary_data.coord(y_axis_name).coord_system
-    regridded_secondary_data.coord(y_axis_name).attributes = primary_data.coord(y_axis_name).attributes
-
-    regridded_secondary_data.coord(y_axis_name).var_name = y_var_name
     primary_data.coord(y_axis_name).var_name = y_var_name
-    regridded_secondary_data.coord(y_axis_name).standard_name = y_standard_name
     primary_data.coord(y_axis_name).standard_name = y_standard_name
-    regridded_secondary_data.coord(y_axis_name).long_name = y_long_name
     primary_data.coord(y_axis_name).long_name = y_long_name
-
-    regridded_secondary_data.units= ''
-    primary_data.units = ''
+    primary_data.units= ''
+    regridded_secondary_data = grids.regrid_1D(secondary_data, primary_data, y_axis_name, clear_units=True)
 
     if 'OHC' in quantity:       
         label = 'inferred ' + quantity + ' (= HTC + SFL)'
