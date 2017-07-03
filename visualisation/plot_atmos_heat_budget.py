@@ -137,7 +137,12 @@ def derived_energy_terms(cube_dict, inargs):
     """
     
     if inargs.hfss_files and inargs.hfls_files and inargs.hfds_files:
-        cube_dict['hfns'] = cube_dict['hfss'] + cube_dict['hfls'] + cube_dict['hfds']
+        try:
+            cube_dict['hfns'] = cube_dict['hfss'] + cube_dict['hfls'] + cube_dict['hfds']
+        except Error:  #FIXME
+            cube_dict['hfls'] = grids.regrid_1D(cube_dict['hfls'], cube_dict['hfss'], 'latitude', clear_units=False)
+            cube_dict['hfds'] = grids.regrid_1D(cube_dict['hfds'], cube_dict['hfss'], 'latitude', clear_units=False)
+            cube_dict['hfns'] = cube_dict['hfss'] + cube_dict['hfls'] + cube_dict['hfds']
     else:
         cube_dict['hfns'] = None
     
@@ -254,9 +259,6 @@ author:
     parser.add_argument("--hfds_files", type=str, nargs='*', default=None,
                         help="surface downward heat flux files")
     ## FIXME: hfsithermds (heat flux into sea water due to sea ice thermdynamics) file
-
-    parser.add_argument("--legloc", type=int, default=2,
-                        help="Legend location")
 
     args = parser.parse_args()             
     main(args)
