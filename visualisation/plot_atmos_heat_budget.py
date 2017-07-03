@@ -48,10 +48,25 @@ line_styles = {'rsds': 'dashed', 'rsus': 'dotted', 'rsns': 'dashdot',
                'hfss': 'dashed', 'hfls': 'dotted', 'hfds': 'dashdot', 'hfns': 'solid'
               }
 
-line_colors = {'rs': 'yellow',
+line_colors = {'rs': 'orange',
                'rl': 'red',
-               'rn': 'orange',
+               'rn': 'brown',
                'hf': 'blue'}
+
+labels = {'rsds': 'downwelling shortwave',
+          'rsus': 'upwelling shortwave',
+          'rsns': 'net shortwave',
+          'rlds': 'downwelling longwave',
+          'rlus': 'upwelling longwave',
+          'rlns': 'net longwave',
+          'rns': 'net radiative flux',
+          'hfss': 'sensible heat flux',
+          'hfls': 'latent heat flux',
+          'hfds': 'heat flux into ocean',
+          'hfns': 'net heat flux'
+         }
+
+plot_order = ['rsds', 'rsus', 'rsns', 'rlds', 'rlus', 'rlns', 'rns', 'hfss', 'hfls', 'hfds', 'hfns']
 
 
 def get_data(filenames, var, metadata_dict):
@@ -135,34 +150,38 @@ def climatology_plot(cube_dict, gs, plotnum):
     ax = plt.subplot(gs[plotnum])
     plt.sca(ax)
 
-    for cube, var in cube_dict.iteritems():
-        climatology_cube = cube.collapsed('time', iris.analysis.MEAN)
-        iplt.plot(climatology_cube, label=var,
-                  color=line_colors[var[0:2]],
-                  linestyle=line_styles[var])
-    
+    for var in plot_order:
+        if cube_dict[var]:
+            climatology_cube = cube_dict[var].collapsed('time', iris.analysis.MEAN)
+            iplt.plot(climatology_cube, label=labels[var],
+                      color=line_colors[var[0:2]],
+                      linestyle=line_styles[var])
+    ax.legend()
     ax.set_title('climatology')
+    ax.set_ylabel('$W m^{-2}$')
     
-    
+
 def trend_plot(cube_dict, gs, plotnum):
     """Plot the trends """
     
     ax = plt.subplot(gs[plotnum])
     plt.sca(ax)
 
-    for cube, var in cube_dict.iteritems():
-        trend_cube = calc_trend_cube(cube)
-        iplt.plot(trend_cube, label=var,
-                  color=line_colors[var[0:2]],
-                  linestyle=line_styles[var])
-    
+    for var in plot_order:
+        if cube_dict[var]:
+            trend_cube = calc_trend_cube(cube_dict[var])
+            iplt.plot(trend_cube,
+                      color=line_colors[var[0:2]],
+                      linestyle=line_styles[var])
     ax.set_title('trends')
+    ax.set_ylabel('$W m^{-2} yr^{-1}$')
+    ax.set_xlabel('latitude')
     
 
 def get_title(cube_dict):
     """Get the plot title."""
 
-    for cube in cube_dict.values:
+    for cube in cube_dict.values():
         if cube:
             run = 'r%si%sp%s'  %(cube.attributes['realization'], cube.attributes['initialization_method'], cube.attributes['physics_version'])
             title = '%s, %s, %s'  %(cube.attributes['model_id'], cube.attributes['experiment'], run)
@@ -182,14 +201,14 @@ def main(inargs):
     cube_dict['rsus'], metadata_dict = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict)
     cube_dict['rlds'], metadata_dict = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict)
     cube_dict['rlus'], metadata_dict = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict)
-    cube_dict = derived_radiation_fluxes(data_dict, inargs)
+    cube_dict = derived_radiation_fluxes(cube_dict, inargs)
  
     # Surface energy balance
     cube_dict['hfss'], metadata_dict = get_data(inargs.hfss_files, 'surface_upward_sensible_heat_flux', metadata_dict)
     cube_dict['hfls'], metadata_dict = get_data(inargs.hfls_files, 'surface_upward_latent_heat_flux', metadata_dict)
     cube_dict['hfds'], metadata_dict = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict)
     cube_dict = derived_energy_terms(cube_dict, inargs)
-    
+
     # Plot
     fig = plt.figure(figsize=[10, 14])
     gs = gridspec.GridSpec(2, 1)
