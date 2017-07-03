@@ -53,6 +53,8 @@ line_colors = {'rs': 'orange',
                'rn': 'brown',
                'hf': 'blue'}
 
+##FIXME: Color for sea ice flux
+
 labels = {'rsds': 'downwelling shortwave',
           'rsus': 'upwelling shortwave',
           'rsns': 'net shortwave',
@@ -63,10 +65,11 @@ labels = {'rsds': 'downwelling shortwave',
           'hfss': 'sensible heat flux',
           'hfls': 'latent heat flux',
           'hfds': 'heat flux into ocean',
+          'hfsithermds' : 'heat flux from sea ice',
           'hfns': 'net heat flux'
          }
 
-plot_order = ['rsds', 'rsus', 'rsns', 'rlds', 'rlus', 'rlns', 'rns', 'hfss', 'hfls', 'hfds', 'hfns']
+plot_order = ['rsds', 'rsus', 'rsns', 'rlds', 'rlus', 'rlns', 'rns', 'hfss', 'hfls', 'hfds', 'hfsithermds', 'hfns']
 
 
 def get_data(filenames, var, metadata_dict):
@@ -136,13 +139,14 @@ def derived_energy_terms(cube_dict, inargs):
     
     """
     
-    if inargs.hfss_files and inargs.hfls_files and inargs.hfds_files:
+    if inargs.hfss_files and inargs.hfls_files and inargs.hfds_files and inargs.hfsithermds_files:
         try:
-            cube_dict['hfns'] = cube_dict['hfss'] + cube_dict['hfls'] + cube_dict['hfds']
+            cube_dict['hfns'] = cube_dict['hfss'] + cube_dict['hfls'] + cube_dict['hfds'] + cube_dict['hfsithermds']
         except ValueError:
             cube_dict['hfls'] = grids.regrid_1D(cube_dict['hfls'], cube_dict['hfss'], 'latitude', clear_units=False)
             cube_dict['hfds'] = grids.regrid_1D(cube_dict['hfds'], cube_dict['hfss'], 'latitude', clear_units=False)
-            cube_dict['hfns'] = cube_dict['hfss'] + cube_dict['hfls'] + cube_dict['hfds']
+            cube_dict['hfsithermds'] = grids.regrid_1D(cube_dict['hfsithermds'], cube_dict['hfss'], 'latitude', clear_units=False)
+            cube_dict['hfns'] = cube_dict['hfss'] + cube_dict['hfls'] + cube_dict['hfds'] + cube_dict['hfsithermds']
     else:
         cube_dict['hfns'] = None
     
@@ -161,7 +165,7 @@ def climatology_plot(cube_dict, gs, plotnum):
             iplt.plot(climatology_cube, label=labels[var],
                       color=line_colors[var[0:2]],
                       linestyle=line_styles[var])
-    ax.legend()
+    ax.legend(ncol=2)
     ax.set_title('climatology')
     ax.set_ylabel('$W m^{-2}$')
     
@@ -212,6 +216,7 @@ def main(inargs):
     cube_dict['hfss'], metadata_dict = get_data(inargs.hfss_files, 'surface_upward_sensible_heat_flux', metadata_dict)
     cube_dict['hfls'], metadata_dict = get_data(inargs.hfls_files, 'surface_upward_latent_heat_flux', metadata_dict)
     cube_dict['hfds'], metadata_dict = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict)
+    cube_dict['hfsithermds'], metadata_dict = get_data(inargs.hfds_files, 'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics', metadata_dict)                           
     cube_dict = derived_energy_terms(cube_dict, inargs)
 
     # Plot
@@ -258,7 +263,10 @@ author:
                         help="surface upward latent heat flux files")
     parser.add_argument("--hfds_files", type=str, nargs='*', default=None,
                         help="surface downward heat flux files")
-    ## FIXME: hfsithermds (heat flux into sea water due to sea ice thermdynamics) file
+    parser.add_argument("--hfsithermds_files", type=str, nargs='*', default=None,
+                        help="heat flux due to sea ice files")
+
+    ## FIXME: add option to multiply by area and have untis be W
 
     args = parser.parse_args()             
     main(args)
