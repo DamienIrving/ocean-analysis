@@ -1,3 +1,5 @@
+# Script for running the plot_atmos_heat_budget.py script
+# May need to run apply_mask.sh first to apply ocean mask to atmos data
 
 model=CSIRO-Mk3-6-0
 mip=r1i1p1
