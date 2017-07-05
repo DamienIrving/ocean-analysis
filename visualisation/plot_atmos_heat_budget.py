@@ -58,7 +58,7 @@ line_characteristics = {'rsds': ('downwelling shortwave', 'orange', 'dashed'),
 plot_order = ['rsds', 'rsus', 'rsns', 'rlds', 'rlus', 'rlns', 'rns', 'hfss', 'hfls', 'hfds', 'hfsithermds', 'hfns']
 
 
-def get_data(filenames, var, metadata_dict, area=False):
+def get_data(filenames, var, metadata_dict, time_constraint, area=False):
     """Read, merge, temporally aggregate and calculate zonal mean.
     
     Positive is defined as down.
@@ -66,13 +66,16 @@ def get_data(filenames, var, metadata_dict, area=False):
     """
     
     if filenames:
-        cube = iris.load(filenames, gio.check_iris_var(var))
+        with iris.FUTURE.context(cell_datetime_objects=True):
+            cube = iris.load(filenames, gio.check_iris_var(var))
 
-        metadata_dict[filenames[0]] = cube[0].attributes['history']
-        equalise_attributes(cube)
-        iris.util.unify_time_units(cube)
-        cube = cube.concatenate_cube()
-        cube = gio.check_time_units(cube)
+            metadata_dict[filenames[0]] = cube[0].attributes['history']
+            equalise_attributes(cube)
+            iris.util.unify_time_units(cube)
+            cube = cube.concatenate_cube()
+            cube = gio.check_time_units(cube)
+
+            cube = cube.extract(time_constraint)
 
         cube = timeseries.convert_to_annual(cube, full_months=True)
 
@@ -104,7 +107,7 @@ def calc_trend_cube(cube):
 
 def derived_radiation_fluxes(cube_dict, inargs):
     """Calculate the net shortwave, longwave and total radiation flux."""
-    
+
     if inargs.rsds_files and inargs.rsus_files:
         cube_dict['rsns'] = cube_dict['rsds'] + cube_dict['rsus']   # net shortwave flux
     else:
@@ -209,25 +212,29 @@ def main(inargs):
   
     cube_dict = {}
     metadata_dict = {}
-    
+    try:
+        time_constraint = gio.get_time_constraint(inargs.time)
+    except AttributeError:
+        time_constraint = iris.Constraint()    
+
     # Radiation flux at surface
-    cube_dict['rsds'], metadata_dict = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict, area=inargs.area)
-    cube_dict['rsus'], metadata_dict = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict, area=inargs.area)
-    cube_dict['rlds'], metadata_dict = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict, area=inargs.area)
-    cube_dict['rlus'], metadata_dict = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict, area=inargs.area)
+    cube_dict['rsds'], metadata_dict = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict, time_constraint, area=inargs.area)
+    cube_dict['rsus'], metadata_dict = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict, time_constraint, area=inargs.area)
+    cube_dict['rlds'], metadata_dict = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict, time_constraint, area=inargs.area)
+    cube_dict['rlus'], metadata_dict = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict, time_constraint, area=inargs.area)
     cube_dict = derived_radiation_fluxes(cube_dict, inargs)
  
     # Surface energy balance
-    cube_dict['hfss'], metadata_dict = get_data(inargs.hfss_files, 'surface_upward_sensible_heat_flux', metadata_dict, area=inargs.area)
-    cube_dict['hfls'], metadata_dict = get_data(inargs.hfls_files, 'surface_upward_latent_heat_flux', metadata_dict, area=inargs.area)
-    cube_dict['hfds'], metadata_dict = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict, area=inargs.area)
+    cube_dict['hfss'], metadata_dict = get_data(inargs.hfss_files, 'surface_upward_sensible_heat_flux', metadata_dict, time_constraint, area=inargs.area)
+    cube_dict['hfls'], metadata_dict = get_data(inargs.hfls_files, 'surface_upward_latent_heat_flux', metadata_dict, time_constraint, area=inargs.area)
+    cube_dict['hfds'], metadata_dict = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict, time_constraint, area=inargs.area)
     cube_dict['hfsithermds'], metadata_dict = get_data(inargs.hfsithermds_files,
                                                        'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
-                                                       metadata_dict, area=inargs.area)                           
+                                                       metadata_dict, time_constraint, area=inargs.area)                           
     cube_dict = derived_energy_terms(cube_dict, inargs)
 
     # Plot
-    fig = plt.figure() # figsize=[10, 14]
+    fig = plt.figure(figsize=[12, 14])
     gs = gridspec.GridSpec(2, 1)
     climatology_plot(cube_dict, gs, 0, area_scaled=inargs.area)
     trend_plot(cube_dict, gs, 1, area_scaled=inargs.area)
@@ -272,6 +279,9 @@ author:
                         help="surface downward heat flux files")
     parser.add_argument("--hfsithermds_files", type=str, nargs='*', default=None,
                         help="heat flux due to sea ice files")
+
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        help="Time period [default = entire]")
 
     parser.add_argument("--area", action="store_true", default=False,
 	                help="Multiple data by area")
