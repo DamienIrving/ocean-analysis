@@ -182,7 +182,7 @@ def get_title(cube_dict):
     for cube in cube_dict.values():
         if cube:
             run = 'r%si%sp%s'  %(cube.attributes['realization'], cube.attributes['initialization_method'], cube.attributes['physics_version'])
-            title = '%s, %s, %s'  %(cube.attributes['model_id'], cube.attributes['experiment'], run)
+            title = 'Radiation and energy budgets for global ocean surface \n %s, %s, %s'  %(cube.attributes['model_id'], cube.attributes['experiment'], run)
             break
     
     return title
@@ -227,7 +227,7 @@ def main(inargs):
     cube_dict = derived_energy_terms(cube_dict, inargs)
 
     # Plot
-    fig = plt.figure(figsize=[10, 14])
+    fig = plt.figure() # figsize=[10, 14]
     gs = gridspec.GridSpec(2, 1)
     climatology_plot(cube_dict, gs, 0, area_scaled=inargs.area)
     trend_plot(cube_dict, gs, 1, area_scaled=inargs.area)
