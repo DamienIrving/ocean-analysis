@@ -41,10 +41,10 @@ def check_coords(cube):
     assert coord_names[-1] == 'longitude'
 
 
-def read_data(infile):
+def read_data(infile, var):
     """Read a data file."""
 
-    cube_list = iris.load(infile)
+    cube_list = iris.load(infile, var)
     assert len(cube_list) == 1
     cube = cube_list[0]
 
@@ -124,8 +124,8 @@ def main(inargs):
 
     for fnum, infile in enumerate(inargs.infiles):
 
-        data_cube = read_data(infile)
-        mask_cube = read_data(inargs.mask_file)
+        data_cube = read_data(infile, inargs.var)
+        mask_cube = read_data(inargs.mask_file, inargs.mask_var)
 
         assert inargs.mask_method in ['copy', 'sftlf']
         if inargs.mask_method == 'copy':    
@@ -161,7 +161,9 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("infiles", type=str, nargs='*', help="Input data files")
+    parser.add_argument("var", type=str, help="Input variable standard_name")
     parser.add_argument("mask_file", type=str, help="Input mask file")
+    parser.add_argument("mask_var", type=str, help="Input mask variable standard_name")
     parser.add_argument("mask_method", type=str, choices=('copy', 'sftlf'), help="Mask method")
 
     parser.add_argument("--outfiles", type=str, nargs='*', default=None, 
