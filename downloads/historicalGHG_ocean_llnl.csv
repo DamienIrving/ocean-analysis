@@ -1,0 +1,54 @@
+ model_ensemble/variable,hfss_Omon,hfds_Omon,hfls_Omon,hfsithermds_Omon
+ACCESS1-3_r1i1p1, v20130219 | , v20130219 | , v20130219 | ,NP
+ACCESS1-3_r2i1p1, v20130812 | , v20130812 | , v20130812 | ,NP
+ACCESS1-3_r3i1p1, v20140428 latest on 2017-07-05 | , v20140428 latest on 2017-07-05 | , v20140428 latest on 2017-07-05 | ,NP
+CCSM4_r1i1p1, v20121128 | v20140820 latest new | , v20140820 latest on 2017-07-05 | ,NP,NP
+CCSM4_r4i1p1, v20120618 latest on 2017-07-05 | ,NP,NP,NP
+CCSM4_r6i1p1, v20121128 | v20140820 latest new | , v20140820 latest on 2017-07-05 | ,NP,NP
+CESM1-CAM5-1-FV2_r4i1p1, v20120605 | ,NP,NP,NP
+CNRM-CM5_r1i1p1,NP, v20130101 latest new | ,NP,NP
+CNRM-CM5_r2i1p1,NP, v20130101 latest new | ,NP,NP
+CNRM-CM5_r3i1p1,NP, v20130101 latest new | ,NP,NP
+CNRM-CM5_r4i1p1,NP, v20130101 latest new | ,NP,NP
+CNRM-CM5_r5i1p1,NP, v20130101 latest new | ,NP,NP
+CNRM-CM5_r8i1p1,NP, v20130101 latest new | ,NP,NP
+CSIRO-Mk3-6-0_r10i1p1,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r1i1p1,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r2i1p1,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r3i1p1,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r4i1p1,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r5i1p1,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r6i1p1,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r7i1p1,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r8i1p1,NP, v20110518 | ,NP,NP
+CSIRO-Mk3-6-0_r9i1p1,NP, v20110518 | ,NP,NP
+CanESM2_r1i1p1, v20111027 | v20130331 latest new | ,NP, v20111027 | v20130331 latest new | , v20111027 | v20130331 latest new | 
+CanESM2_r2i1p1, v20111028 | v20130331 latest new | ,NP, v20111028 | v20130331 latest new | , v20111028 | v20130331 latest new | 
+CanESM2_r3i1p1, v20111028 | v20130331 latest new | ,NP, v20111028 | v20130331 latest new | , v20111028 | v20130331 latest new | 
+CanESM2_r4i1p1, v20111028 | v20130331 latest new | ,NP, v20111028 | v20130331 latest new | , v20111028 | v20130331 latest new | 
+CanESM2_r5i1p1, v20111028 | v20130331 latest new | ,NP, v20111028 | v20130331 latest new | , v20111028 | v20130331 latest new | 
+FGOALS-g2_r1i1p1,NP, version not defined | ,NP,NP
+GFDL-CM3_r1i1p1, v20110601 latest on 2017-07-05 | ,NP, v20110601 latest on 2017-07-05 | ,NP
+GFDL-CM3_r3i1p1, v20110601 latest on 2017-07-05 | ,NP, v20110601 latest on 2017-07-05 | ,NP
+GFDL-CM3_r5i1p1, v20110601 latest on 2017-07-05 | ,NP, v20110601 latest on 2017-07-05 | ,NP
+GFDL-ESM2M_r1i1p1, v20130226 latest on 2017-07-05 | ,NP, v20130226 latest on 2017-07-05 | ,NP
+GISS-E2-R_r1i1p1,NP, v20160429 latest on 2017-07-05 | ,NP,NP
+GISS-E2-R_r2i1p1,NP, v20160429 latest on 2017-07-05 | ,NP,NP
+GISS-E2-R_r3i1p1,NP, v20160429 latest on 2017-07-05 | ,NP,NP
+GISS-E2-R_r4i1p1,NP, v20160429 latest on 2017-07-05 | ,NP,NP
+GISS-E2-R_r5i1p1,NP, v20160429 latest on 2017-07-05 | ,NP,NP
+IPSL-CM5A-LR_r1i1p1,NP,NP,NP, v20120526 | v20130506 latest new | 
+IPSL-CM5A-LR_r1i1p2,NP,NP,NP, v20121106 latest on 2017-07-05 | 
+IPSL-CM5A-LR_r2i1p1,NP,NP,NP, v20120526 latest on 2017-07-05 | 
+IPSL-CM5A-LR_r2i1p2,NP,NP,NP, v20121106 latest on 2017-07-05 | 
+IPSL-CM5A-LR_r3i1p1,NP,NP,NP, v20120526 latest on 2017-07-05 | 
+IPSL-CM5A-LR_r3i1p2,NP,NP,NP, v20121106 latest on 2017-07-05 | 
+IPSL-CM5A-MR_r1i1p2,NP,NP,NP, v20121106 latest on 2017-07-05 | 
+IPSL-CM5A-MR_r2i1p2,NP,NP,NP, v20121106 latest on 2017-07-05 | 
+IPSL-CM5A-MR_r3i1p2,NP,NP,NP, v20121106 latest on 2017-07-05 | 
+MIROC-ESM_r1i1p1,NP, v20131113 latest on 2017-07-05 | ,NP,NP
+MIROC-ESM_r2i1p1,NP, v20131113 latest new | ,NP,NP
+MIROC-ESM_r3i1p1,NP, v20131113 latest new | ,NP,NP
+MIROC-ESM-CHEM_r1i1p1,NP, v20140117 latest new | ,NP,NP
+MRI-CGCM3_r1i1p1, v20120510 latest on 2017-07-05 | , v20120510 latest new | , v20120510 latest on 2017-07-05 | , v20120510 latest on 2017-07-05 | 
+NorESM1-M_r1i1p1,NP, v20110918 latest on 2017-07-05 | ,NP, v20110918 latest on 2017-07-05 | 
