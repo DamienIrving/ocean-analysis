@@ -134,6 +134,7 @@ def derived_energy_terms(cube_dict, inargs):
             cube_dict['hfls'] = grids.regrid_1D(cube_dict['hfls'], cube_dict['hfss'], 'latitude', clear_units=False)
             cube_dict['hfds'] = grids.regrid_1D(cube_dict['hfds'], cube_dict['hfss'], 'latitude', clear_units=False)
             cube_dict['hfsithermds'] = grids.regrid_1D(cube_dict['hfsithermds'], cube_dict['hfss'], 'latitude', clear_units=False)
+            iris.util.unify_time_units([cube_dict['hfss'], cube_dict['hfls'], cube_dict['hfds'], cube_dict['hfsithermds']])
             cube_dict['hfns'] = cube_dict['hfss'] + cube_dict['hfls'] + cube_dict['hfds'] + cube_dict['hfsithermds']
     else:
         cube_dict['hfns'] = None
