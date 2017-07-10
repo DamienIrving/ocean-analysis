@@ -108,7 +108,10 @@ def get_outfile(infile, outfile_list, fnum, fixed=False, ocean=False):
         if ocean:
             file_dir = file_dir.replace('atmos', 'ocean')
             file_name = file_name.replace('Amon', 'Omon')
-
+            file_name_components = file_name.split('_')
+            file_name_components[0] = file_name_components[0] + '-atmos'
+            file_name = '_'.join(file_name_components)
+ 
         outfile = file_dir + '/' + file_name
         assert outfile != infile 
         os.system('mkdir -p %s'  %(file_dir) )
