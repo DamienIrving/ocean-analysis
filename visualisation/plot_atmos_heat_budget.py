@@ -74,6 +74,7 @@ def get_data(filenames, var, metadata_dict, time_constraint, area=False):
             iris.util.unify_time_units(cube)
             cube = cube.concatenate_cube()
             cube = gio.check_time_units(cube)
+            cube = iris.util.squeeze(cube)
 
             cube = cube.extract(time_constraint)
 
@@ -226,8 +227,14 @@ def main(inargs):
     cube_dict = derived_radiation_fluxes(cube_dict, inargs)
  
     # Surface energy balance
-    cube_dict['hfss'], metadata_dict = get_data(inargs.hfss_files, 'surface_upward_sensible_heat_flux', metadata_dict, time_constraint, area=inargs.area)
-    cube_dict['hfls'], metadata_dict = get_data(inargs.hfls_files, 'surface_upward_latent_heat_flux', metadata_dict, time_constraint, area=inargs.area)
+    if inargs.hfrealm == 'atmos':
+        hfss_name = 'surface_upward_sensible_heat_flux'
+        hfls_name = 'surface_upward_latent_heat_flux'
+    elif inargs.hfrealm == 'ocean':
+        hfss_name = 'surface_downward_sensible_heat_flux'
+        hfls_name = 'surface_downward_latent_heat_flux'
+    cube_dict['hfss'], metadata_dict = get_data(inargs.hfss_files, hfss_name, metadata_dict, time_constraint, area=inargs.area)
+    cube_dict['hfls'], metadata_dict = get_data(inargs.hfls_files, hfls_name, metadata_dict, time_constraint, area=inargs.area)
     cube_dict['hfds'], metadata_dict = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict, time_constraint, area=inargs.area)
     cube_dict['hfsithermds'], metadata_dict = get_data(inargs.hfsithermds_files,
                                                        'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
@@ -273,13 +280,16 @@ author:
                         help="surface upwelling longwave flux files")
 
     parser.add_argument("--hfss_files", type=str, nargs='*', default=None,
-                        help="surface upward sensible heat flux files")
+                        help="surface sensible heat flux files")
     parser.add_argument("--hfls_files", type=str, nargs='*', default=None,
-                        help="surface upward latent heat flux files")
+                        help="surface latent heat flux files")
     parser.add_argument("--hfds_files", type=str, nargs='*', default=None,
                         help="surface downward heat flux files")
     parser.add_argument("--hfsithermds_files", type=str, nargs='*', default=None,
                         help="heat flux due to sea ice files")
+
+    parser.add_argument("--hfrealm", type=str, choices=('atmos', 'ocean'), default='atmos',
+                        help="specify whether original hfss and hfls data were atmos or ocean")
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
