@@ -1,6 +1,6 @@
 
 
-experiment=historicalGHG
+experiment=historical
 fx_experiment=historical
 model=GFDL-CM3
 mip=r1i1p1
@@ -8,9 +8,9 @@ datadir=ua6
 fxdir=ua6
 fxmip=r0i0p0
 
-# hfss hfls
+# rsds rsus rlds rlus hfss hfls
 
-for var in rsds rsus rlds rlus; do
+for var in rsds rsus rlds rlus hfss hfls; do
 
 if [[ "${var}" == "rsds" ]] ; then
     standard_name='surface_downwelling_shortwave_flux_in_air'
