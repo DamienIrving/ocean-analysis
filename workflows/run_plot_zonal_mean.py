@@ -86,7 +86,7 @@ def main(inargs, basin, run):
 
         # Variable data files
         command_list.append('--' + alt_experiment.lower() + '_files')
-        if inargs.variable in ['pe', 'uas', 'rsds', 'rsus', 'rlds', 'rlus', 'hfss', 'hfls']:
+        if inargs.variable in ['pe', 'uas', 'rsds', 'rsus', 'rlds', 'rlus', 'hfss', 'hfls', 'pr', 'evspsbl']:
             if alt_experiment == 'historicalAA':
                 physics = inargs.aa_physics
             elif alt_experiment == 'historicalnoAA':
@@ -95,7 +95,7 @@ def main(inargs, basin, run):
                 physics = inargs.ghg_physics 
             else:
                 physics = inargs.physics
-            file_list = glob.glob('/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/mon/ocean/%si1p%s/%s/latest/%s_*.nc' %(inargs.model, experiment, exp_run, str(physics), inargs.variable, inargs.variable))
+            file_list = glob.glob('/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/mon/ocean/%si1p%s/%s/latest/%s*.nc' %(inargs.model, experiment, exp_run, str(physics), inargs.variable, inargs.variable))
             files = " ".join(file_list)
         else:
             files = find_files(df, exp_run, alt_experiment, experiment, inargs.variable, inargs.model, 'mon', match=inargs.match, fixed=inargs.fixed)
