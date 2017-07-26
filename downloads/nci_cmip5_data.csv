@@ -1,5 +1,5 @@
 experiment,alt_experiment,model,organisation,run,hfds,hfss-atmos,hfss-ocean,hfls-atmos,hfls-ocean,rsds,rsus,rlds,rlus,hfsithermds,hfy,hfx,hfbasin,tauuo,uas,tauvo,sos,thetao,so,areacello,volcello,depth,basin,tas,ps,pr,pr-ocean,evspsbl,evs,areacella,sftlf,od550aer,tro3,comments
-historical,historical,CanESM2,CCCMA,r1i1p1,noesgf,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,noesgf,,,ua6,,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,,ua6,noesgf,ua6,ua6,noesgf,ua6,
+historical,historical,CanESM2,CCCMA,r1i1p1,noesgf,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,noesgf,,,ua6,,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,r87/dbi599,,r87/dbi599,noesgf,ua6,ua6,noesgf,ua6,
 historical,historical,CanESM2,CCCMA,r2i1p1,noesgf,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,noesgf,,,ua6,,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,,ua6,noesgf,ua6,ua6,noesgf,ua6,
 historical,historical,CanESM2,CCCMA,r3i1p1,noesgf,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,noesgf,,,ua6,,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,,ua6,noesgf,ua6,ua6,noesgf,ua6,
 historical,historical,CanESM2,CCCMA,r4i1p1,noesgf,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,noesgf,,,ua6,,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,ua6,,ua6,noesgf,ua6,ua6,noesgf,ua6,
