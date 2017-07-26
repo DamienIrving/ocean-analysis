@@ -1,14 +1,13 @@
 # Script for running the plot_water_budget.py script
 # May need to run apply_mask.sh first to apply ocean mask to pr, evspsbl and pe data
 
-model=CSIRO-Mk3-6-0
+model=GFDL-CM3
 mip=r1i1p1
-experiment=historical
+experiment=historicalMisc
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/visualisation
 
-ua6_dir=/g/data/ua6/DRSv2/CMIP5/${model}/${experiment}/mon
 r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}/${experiment}/mon
 
 outfile=/g/data/r87/dbi599/figures/water-cycle/water-budget_Oyr_${model}_${experiment}_${mip}_all.png
@@ -20,5 +19,5 @@ command="${python} ${script_dir}/plot_water_budget.py ${outfile} ${pr_files} ${e
 # --area --time 1850-01-01 2005-12-31
 
 echo ${command}
-#${command}
-#echo ${outfile}
+${command}
+echo ${outfile}
