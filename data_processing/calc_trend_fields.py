@@ -71,19 +71,30 @@ def calc_fields(cube, sftlf_cube, aggregation_method, realm=None, area=False):
 
     # Full field 
     full_trends = calc_trend_cube(cube.copy())
+    rename_cube(full_trends, 'trend', None, None, realm)
+
     full_clim = cube.copy().collapsed('time', iris.analysis.MEAN)
     full_clim.remove_coord('time')
+    rename_cube(full_clim, 'climatology', None, None, realm)
     
     # Zonal aggregate
     zonal_aggregate = cube.copy().collapsed('longitude', aggregation_functions[aggregation_method])
     zonal_aggregate.remove_coord('longitude')
     zonal_trends = calc_trend_cube(zonal_aggregate.copy())
+    rename_cube(zonal_trends, 'trend', aggregation_method, 'zonal', realm)
+
     zonal_clim = zonal_aggregate.copy().collapsed('time', iris.analysis.MEAN)
     zonal_clim.remove_coord('time')
+    rename_cube(zonal_clim, 'climatology', aggregation_method, 'zonal', realm)
 
     # Hemispheric aggregates
     nh_trends, nh_clim = calc_hemispheric_aggregate(cube, 'nh', aggregation_method)
+    rename_cube(nh_trends, 'trend', aggregation_method, 'nh', realm)
+    rename_cube(nh_clim, 'climatology', aggregation_method, 'nh', realm)
+
     sh_trends, sh_clim = calc_hemispheric_aggregate(cube, 'sh', aggregation_method)
+    rename_cube(sh_trends, 'trend', aggregation_method, 'sh', realm)
+    rename_cube(sh_clim, 'climatology', aggregation_method, 'sh', realm)
 
     return full_trends, full_clim, zonal_trends, zonal_clim, nh_trends, nh_clim, sh_trends, sh_clim
     
@@ -100,18 +111,32 @@ def rename_cube(cube, temporal_method, aggregation_method, spatial_descriptor, r
     long_name = cube.long_name
     var_name = cube.var_name
 
-    if spatial_descriptor == 'zonal':
+    if spatial_descriptor:
         standard_name = standard_name + '_' + spatial_descriptor
-        long_name = long_name + ' ' + spatial_descriptor.title()
-        var_name = var_name + '-' + 'z'
-    elif spatial_descriptor in ['nh', 'sh']:
-        standard_name = standard_name + '_' + spatial_descriptor
-        long_name = long_name + ' ' + spatial_descriptor.title()
-        var_name = var_name + '-' + 'z'
+        long_name = long_name + ' ' + spatial_descriptor
+        var_name = var_name + '-' + spatial_descriptor
 
-    #iris.std_names.STD_NAMES[standard_name] = {'canonical_units': cube.units}
+    if realm:
+        standard_name = standard_name + '_' + realm
+        long_name = long_name + ' ' + realm
+        var_name = var_name + '-' + realm
 
-    # FIXME: Finish function and add throughout script
+    if aggregation_method:
+        standard_name = standard_name + '_' + aggregation_method
+        long_name = long_name + ' ' + aggregation_method
+        var_name = var_name + '-' + aggregation_method
+
+    standard_name = standard_name + '_' + temporal_method
+    long_name = long_name + ' ' + temporal_method
+    if temporal_method == 'climatology':
+        var_name = var_name + '-' + 'clim'
+    else:
+        var_name = var_name + '-' + 'trend'
+
+    iris.std_names.STD_NAMES[standard_name] = {'canonical_units': cube.units}
+    cube.standard_name = standard_name
+    cube.long_name = long_name
+    cube.var_name = var_name
 
 
 def calc_hemispheric_aggregate(cube, hemisphere, aggregation_method):
@@ -193,12 +218,14 @@ def main(inargs):
 
     with iris.FUTURE.context(cell_datetime_objects=True):
         cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var))
-        #metadata_dict[filenames[0]] = cube[0].attributes['history']
+        history = cube[0].attributes['history']
+
         equalise_attributes(cube)
         iris.util.unify_time_units(cube)
         cube = cube.concatenate_cube()
         cube = gio.check_time_units(cube)
         cube = iris.util.squeeze(cube)
+        cube.attributes['history'] = gio.write_metadata(file_info={inargs.infiles[0]: history}) 
 
         cube = cube.extract(time_constraint)
 
@@ -210,8 +237,13 @@ def main(inargs):
         for realm in ['ocean', 'land']:
             output[realm] = calc_fields(cube, sftlf_cube, inargs.aggregation, realm=realm, area=inargs.area)
 
-    pdb.set_trace()
+    cube_list = iris.cube.CubeList()
+    for realm, output_cubes in output.items():
+        for cube in output_cubes:
+            cube_list.append(cube)
 
+    iris.FUTURE.netcdf_no_unlimited = True
+    iris.save(cube_list, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
 
 if __name__ == '__main__':
 
@@ -241,8 +273,6 @@ author:
                         help="Method for zonal and hemispheric aggregation")
     parser.add_argument("--area", action="store_true", default=False,
 	                help="Multiply data by area")
-
-
 
 
     args = parser.parse_args()             
