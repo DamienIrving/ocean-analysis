@@ -95,7 +95,7 @@ def rename_cube(cube, temporal_method, aggregation_method, spatial_descriptor, r
 
     assert temporal_method in ['climatology', 'trend']
     assert aggregation_method in ['sum', 'mean', None]
-    assert spatial_descriptor in ['nh','zonal', None]
+    assert spatial_descriptor in ['zonal', None]
     assert realm in ['ocean', 'land', None]
 
     standard_name = cube.standard_name
