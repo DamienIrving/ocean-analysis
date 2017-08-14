@@ -119,10 +119,10 @@ def derived_toa_radiation_fluxes(cube_dict, inargs, hemisphere):
     """Calculate the net TOA flux."""
 
     if inargs.rsdt_files and inargs.rsut_files and inargs.rlut_files:
-        cube_dict['rnt'] = cube_dict['rsdt'] + cube_dict['rsut'] + cube_dict['rlut']   # net TOA flux
-        rename_cube(cube_dict['rnt'], hemisphere, None, 'toa_net_radiative_flux', 'TOA Net Radiative Flux', 'rnt')
+        cube_dict['rndt'] = cube_dict['rsdt'] - cube_dict['rsut'] - cube_dict['rlut']   # net TOA flux
+        rename_cube(cube_dict['rndt'], hemisphere, None, 'toa_incoming_net_flux', 'TOA Incoming Net Flux', 'rndt')
     else:
-        cube_dict['rnt'] = None
+        cube_dict['rndt'] = None
     
     return cube_dict
 
@@ -131,17 +131,17 @@ def derived_surface_radiation_fluxes(cube_dict, inargs, sftlf_cube, hemisphere):
     """Calculate the net surface radiation flux."""
 
     if inargs.rsds_files and inargs.rsus_files and inargs.rlds_files and inargs.rlus_files:
-        cube_dict['rns'] = cube_dict['rsds'] + cube_dict['rsus'] + cube_dict['rlds'] + cube_dict['rlus']
-        cube_dict['rns-ocean'] = cube_dict['rsds-ocean'] + cube_dict['rsus-ocean'] + cube_dict['rlds-ocean'] + cube_dict['rlus-ocean']
-        cube_dict['rns-land'] = cube_dict['rsds-land'] + cube_dict['rsus-land'] + cube_dict['rlds-land'] + cube_dict['rlus-land']
+        cube_dict['rnds'] = cube_dict['rsds'] - cube_dict['rsus'] + cube_dict['rlds'] - cube_dict['rlus']
+        cube_dict['rnds-ocean'] = cube_dict['rsds-ocean'] - cube_dict['rsus-ocean'] + cube_dict['rlds-ocean'] - cube_dict['rlus-ocean']
+        cube_dict['rnds-land'] = cube_dict['rsds-land'] - cube_dict['rsus-land'] + cube_dict['rlds-land'] - cube_dict['rlus-land']
 
-        rename_cube(cube_dict['rns'], hemisphere, None, 'surface_net_radiative_flux_in_air', 'Surface Net Radiative Flux in Air', 'rns')
-        rename_cube(cube_dict['rns-ocean'], hemisphere, 'ocean', 'surface_net_radiative_flux_in_air', 'Surface Net Radiative Flux in Air', 'rns')
-        rename_cube(cube_dict['rns-land'], hemisphere, 'land', 'surface_net_radiative_flux_in_air', 'Surface Net Radiative Flux in Air', 'rns')
+        rename_cube(cube_dict['rnds'], hemisphere, None, 'surface_downwelling_net_flux_in_air', 'Surface Downwelling Net Flux in Air', 'rnds')
+        rename_cube(cube_dict['rnds-ocean'], hemisphere, 'ocean', 'surface_downwelling_net_flux_in_air', 'Surface Downwelling Net Flux in Air', 'rnds')
+        rename_cube(cube_dict['rnds-land'], hemisphere, 'land', 'surface_downwelling_net_flux_in_air', 'Surface Downwelling Net Flux in Air', 'rnds')
     else:
-        cube_dict['rns'] = None
-        cube_dict['rns-ocean'] = None
-        cube_dict['rns-land'] = None
+        cube_dict['rnds'] = None
+        cube_dict['rnds-ocean'] = None
+        cube_dict['rnds-land'] = None
 
     return cube_dict
 
@@ -202,6 +202,7 @@ def create_cube_list(nh_cube_dict, sh_cube_dict, metadata_dict, attributes):
             cube_list.append(cube)
 
     equalise_attributes(cube_list)
+    iris.util.unify_time_units(cube_list)
     for cube in cube_list:
         cube.attributes = attributes
         cube.attributes['history'] = gio.write_metadata() #file_info=metadata_dict
