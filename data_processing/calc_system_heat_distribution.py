@@ -190,6 +190,25 @@ def rename_cube(cube, hemisphere, realm, standard_name=None, long_name=None, var
     cube.var_name = var_name
 
 
+def create_cube_list(nh_cube_dict, sh_cube_dict, metadata_dict, attributes):
+    """Create the cube list for output."""
+
+    cube_list = iris.cube.CubeList()
+    for var, cube in nh_cube_dict.items():
+        if cube:
+            cube_list.append(cube)
+    for var, cube in sh_cube_dict.items():
+        if cube:
+            cube_list.append(cube)
+
+    equalise_attributes(cube_list)
+    for cube in cube_list:
+        cube.attributes = attributes
+        cube.attributes['history'] = gio.write_metadata() #file_info=metadata_dict
+
+    return cube_list
+
+
 def main(inargs):
     """Run the program."""
 
@@ -242,24 +261,10 @@ def main(inargs):
                                                                                                     metadata_dict, attributes)                           
 
     # Ocean heat transport / storage
-    #nh_cube_dict['ohc'], sh_cube_dict['ohc'], metadata_dict = get_data(inargs.ohc_files, 'ocean_heat_content', metadata_dict)
+    nh_cube_dict['ohc'], sh_cube_dict['ohc'], metadata_dict, attributes = get_data(inargs.ohc_files, 'ocean_heat_content', metadata_dict, attributes)
     ## FIXME: Add hfy analysis
 
-    cube_list = iris.cube.CubeList()
-    for var, cube in nh_cube_dict.items():
-        if cube:
-            #cube.attributes = attributes
-            #cube.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
-            cube_list.append(cube)
-    for var, cube in sh_cube_dict.items():
-        if cube:
-            #cube.attributes = attributes
-            #cube.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
-            cube_list.append(cube)
-
-    equalise_attributes(cube_list)
-    pdb.set_trace()
-
+    cube_list = create_cube_list(nh_cube_dict, sh_cube_dict, metadata_dict, attributes)
     iris.save(cube_list, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
 
 
