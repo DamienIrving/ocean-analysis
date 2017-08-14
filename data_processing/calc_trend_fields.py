@@ -87,16 +87,7 @@ def calc_fields(cube, sftlf_cube, aggregation_method, realm=None, area=False):
     zonal_clim.remove_coord('time')
     rename_cube(zonal_clim, 'climatology', aggregation_method, 'zonal', realm)
 
-    # Hemispheric aggregates
-    nh_trends, nh_clim = calc_hemispheric_aggregate(cube, 'nh', aggregation_method)
-    rename_cube(nh_trends, 'trend', aggregation_method, 'nh', realm)
-    rename_cube(nh_clim, 'climatology', aggregation_method, 'nh', realm)
-
-    sh_trends, sh_clim = calc_hemispheric_aggregate(cube, 'sh', aggregation_method)
-    rename_cube(sh_trends, 'trend', aggregation_method, 'sh', realm)
-    rename_cube(sh_clim, 'climatology', aggregation_method, 'sh', realm)
-
-    return full_trends, full_clim, zonal_trends, zonal_clim, nh_trends, nh_clim, sh_trends, sh_clim
+    return full_trends, full_clim, zonal_trends, zonal_clim
     
 
 def rename_cube(cube, temporal_method, aggregation_method, spatial_descriptor, realm):
@@ -104,7 +95,7 @@ def rename_cube(cube, temporal_method, aggregation_method, spatial_descriptor, r
 
     assert temporal_method in ['climatology', 'trend']
     assert aggregation_method in ['sum', 'mean', None]
-    assert spatial_descriptor in ['nh', 'sh', 'zonal', None]
+    assert spatial_descriptor in ['nh','zonal', None]
     assert realm in ['ocean', 'land', None]
 
     standard_name = cube.standard_name
@@ -137,28 +128,6 @@ def rename_cube(cube, temporal_method, aggregation_method, spatial_descriptor, r
     cube.standard_name = standard_name
     cube.long_name = long_name
     cube.var_name = var_name
-
-
-def calc_hemispheric_aggregate(cube, hemisphere, aggregation_method):
-    """Calculate the hemispheric aggregate trend and climatology at each timestep"""
-
-    if hemisphere == 'nh':
-        lat_subset = lambda cell: cell >= 0.0    
-    elif hemisphere == 'sh':
-        lat_subset = lambda cell: cell <= 0.0
-
-    lat_constraint = iris.Constraint(latitude=lat_subset)
-
-    hemispheric_cube = cube.copy().extract(lat_constraint)
-    hemispheric_aggregate = hemispheric_cube.collapsed(['latitude', 'longitude'], aggregation_functions[aggregation_method])
-    hemispheric_aggregate.remove_coord('latitude')
-    hemispheric_aggregate.remove_coord('longitude')
-
-    hemispheric_trends = calc_trend_cube(hemispheric_aggregate.copy())
-    hemispheric_clim = hemispheric_aggregate.copy().collapsed('time', iris.analysis.MEAN)
-    hemispheric_clim.remove_coord('time')
-
-    return hemispheric_trends, hemispheric_clim
 
 
 def calc_trend_cube(cube):
