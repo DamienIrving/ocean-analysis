@@ -43,7 +43,7 @@ sh_lat_subset = lambda cell: cell <= 0.0
 sh_lat_constraint = iris.Constraint(latitude=sh_lat_subset)
 
 
-def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None, include_only=None):
+def get_data(filenames, var, metadata_dict, attributes, sftlf_cube=None, include_only=None):
     """Read, merge, temporally aggregate and calculate hemispheric totals.
 
     Args:
@@ -62,7 +62,7 @@ def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None, in
             cube = gio.check_time_units(cube)
             cube = iris.util.squeeze(cube)
 
-            cube = cube.extract(time_constraint)
+        attributes = cube.attributes
 
         cube = timeseries.convert_to_annual(cube, full_months=True)
 
@@ -78,13 +78,21 @@ def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None, in
         sh_cube = cube.copy().extract(sh_lat_constraint)
 
         nh_sum = nh_cube.collapsed(['latitude', 'longitude'], iris.analysis.SUM)
+        nh_sum.remove_coord('latitude')
+        nh_sum.remove_coord('longitude')
+
         sh_sum = sh_cube.collapsed(['latitude', 'longitude'], iris.analysis.SUM)
+        sh_sum.remove_coord('latitude')
+        sh_sum.remove_coord('longitude')
+
+        rename_cube(nh_sum, 'nh', include_only)
+        rename_cube(sh_sum, 'sh', include_only)
 
     else:
         nh_sum = None
         sh_sum = None
 
-    return nh_sum, sh_sum, metadata_dict
+    return nh_sum, sh_sum, metadata_dict, attributes
 
 
 def create_mask(mask_cube, target_shape, include_only):
@@ -107,56 +115,35 @@ def create_mask(mask_cube, target_shape, include_only):
     return mask
 
 
-def calc_trend_cube(cube):
-    """Calculate trend and put into appropriate cube."""
-    
-    trend_array = timeseries.calc_trend(cube, per_yr=True)
-    new_cube = cube[0,:].copy()
-    new_cube.remove_coord('time')
-    new_cube.data = trend_array
-    
-    return new_cube
-
-
-def derived_toa_radiation_fluxes(cube_dict, inargs):
+def derived_toa_radiation_fluxes(cube_dict, inargs, hemisphere):
     """Calculate the net TOA flux."""
 
     if inargs.rsdt_files and inargs.rsut_files and inargs.rlut_files:
         cube_dict['rnt'] = cube_dict['rsdt'] + cube_dict['rsut'] + cube_dict['rlut']   # net TOA flux
+        rename_cube(cube_dict['rnt'], hemisphere, None, 'toa_net_radiative_flux', 'TOA Net Radiative Flux', 'rnt')
     else:
         cube_dict['rnt'] = None
     
     return cube_dict
 
 
-def derived_surface_radiation_fluxes(cube_dict, inargs, sftlf_cube):
+def derived_surface_radiation_fluxes(cube_dict, inargs, sftlf_cube, hemisphere):
     """Calculate the net surface radiation flux."""
 
     if inargs.rsds_files and inargs.rsus_files and inargs.rlds_files and inargs.rlus_files:
         cube_dict['rns'] = cube_dict['rsds'] + cube_dict['rsus'] + cube_dict['rlds'] + cube_dict['rlus']
         cube_dict['rns-ocean'] = cube_dict['rsds-ocean'] + cube_dict['rsus-ocean'] + cube_dict['rlds-ocean'] + cube_dict['rlus-ocean']
         cube_dict['rns-land'] = cube_dict['rsds-land'] + cube_dict['rsus-land'] + cube_dict['rlds-land'] + cube_dict['rlus-land']
+
+        rename_cube(cube_dict['rns'], hemisphere, None, 'surface_net_radiative_flux_in_air', 'Surface Net Radiative Flux in Air', 'rns')
+        rename_cube(cube_dict['rns-ocean'], hemisphere, 'ocean', 'surface_net_radiative_flux_in_air', 'Surface Net Radiative Flux in Air', 'rns')
+        rename_cube(cube_dict['rns-land'], hemisphere, 'land', 'surface_net_radiative_flux_in_air', 'Surface Net Radiative Flux in Air', 'rns')
     else:
         cube_dict['rns'] = None
         cube_dict['rns-ocean'] = None
         cube_dict['rns-land'] = None
 
     return cube_dict
-
-
-def write_outfile(outfile_name, nh_cube_dict, sh_cube_dict):
-    """Write the output file."""
-
-    #run = 'r%si%sp%s'  %(cube.attributes['realization'], cube.attributes['initialization_method'], cube.attributes['physics_version'])
-    #title = 'Energy climatology and trends \n %s, %s, %s'  %(cube.attributes['model_id'], cube.attributes['experiment'], run)
-         
-    for var in ['rnt', 'rns', 'rns-ocean', 'rns-land', 'hfss', 'hfls', 'hfds']:
-        nh_climatology = nh_cube_dict[var].collapsed('time', iris.analysis.MEAN)
-        sh_climatology = sh_cube_dict[var].collapsed('time', iris.analysis.MEAN)
-        nh_trend = calc_trend_cube(nh_cube_dict[var])
-        sh_trend = calc_trend_cube(sh_cube_dict[var])
-        
-        pdb.set_trace()
 
 
 def multiply_by_area(cube):
@@ -175,6 +162,34 @@ def multiply_by_area(cube):
     return cube
 
 
+def rename_cube(cube, hemisphere, realm, standard_name=None, long_name=None, var_name=None):
+    """Rename a cube according to the specifics of the analysis"""
+
+    assert hemisphere in ['nh', 'sh']
+    assert realm in ['ocean', 'land', None]
+
+    if not standard_name:
+        standard_name = cube.standard_name
+    if not long_name:
+        long_name = cube.long_name
+    if not var_name:
+        var_name = cube.var_name
+
+    if realm:
+        standard_name = '%s_%s_%s_sum' %(standard_name, hemisphere, realm)
+        long_name = '%s %s %s sum' %(long_name, hemisphere, realm)
+        var_name = '%s-%s-%s-sum' %(var_name, hemisphere, realm)
+    else:
+        standard_name = '%s_%s_sum' %(standard_name, hemisphere)
+        long_name = '%s %s sum' %(long_name, hemisphere)
+        var_name = '%s-%s-sum' %(var_name, hemisphere)
+
+    iris.std_names.STD_NAMES[standard_name] = {'canonical_units': cube.units}
+    cube.standard_name = standard_name
+    cube.long_name = long_name
+    cube.var_name = var_name
+
+
 def main(inargs):
     """Run the program."""
 
@@ -183,37 +198,34 @@ def main(inargs):
     nh_cube_dict = {}
     sh_cube_dict = {}
     metadata_dict = {}
-    try:
-        time_constraint = gio.get_time_constraint(inargs.time)
-    except AttributeError:
-        time_constraint = iris.Constraint()    
+    attributes = {}
 
     # TOA radiation fluxes
-    nh_cube_dict['rsdt'], sh_cube_dict['rsdt'], metadata_dict = get_data(inargs.rsdt_files, 'toa_incoming_shortwave_flux', metadata_dict, time_constraint)
-    nh_cube_dict['rsut'], sh_cube_dict['rsut'], metadata_dict = get_data(inargs.rsut_files, 'toa_outgoing_shortwave_flux', metadata_dict, time_constraint)
-    nh_cube_dict['rlut'], sh_cube_dict['rlut'], metadata_dict = get_data(inargs.rlut_files, 'toa_outgoing_longwave_flux', metadata_dict, time_constraint)
+    nh_cube_dict['rsdt'], sh_cube_dict['rsdt'], metadata_dict, attributes = get_data(inargs.rsdt_files, 'toa_incoming_shortwave_flux', metadata_dict, attributes)
+    nh_cube_dict['rsut'], sh_cube_dict['rsut'], metadata_dict, attributes = get_data(inargs.rsut_files, 'toa_outgoing_shortwave_flux', metadata_dict, attributes)
+    nh_cube_dict['rlut'], sh_cube_dict['rlut'], metadata_dict, attributes = get_data(inargs.rlut_files, 'toa_outgoing_longwave_flux', metadata_dict, attributes)
 
-    nh_cube_dict = derived_toa_radiation_fluxes(nh_cube_dict, inargs)
-    sh_cube_dict = derived_toa_radiation_fluxes(sh_cube_dict, inargs)
+    nh_cube_dict = derived_toa_radiation_fluxes(nh_cube_dict, inargs, 'nh')
+    sh_cube_dict = derived_toa_radiation_fluxes(sh_cube_dict, inargs, 'sh')
 
     # Surface radiation fluxes
 
-    nh_cube_dict['rsds'], sh_cube_dict['rsds'], metadata_dict = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict, time_constraint)
-    nh_cube_dict['rsus'], sh_cube_dict['rsus'], metadata_dict = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict, time_constraint)
-    nh_cube_dict['rlds'], sh_cube_dict['rlds'], metadata_dict = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict, time_constraint)
-    nh_cube_dict['rlus'], sh_cube_dict['rlus'], metadata_dict = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict, time_constraint)
+    nh_cube_dict['rsds'], sh_cube_dict['rsds'], metadata_dict, attributes = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict, attributes)
+    nh_cube_dict['rsus'], sh_cube_dict['rsus'], metadata_dict, attributes = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict, attributes)
+    nh_cube_dict['rlds'], sh_cube_dict['rlds'], metadata_dict, attributes = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict, attributes)
+    nh_cube_dict['rlus'], sh_cube_dict['rlus'], metadata_dict, attributes = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict, attributes)
     for realm in ['ocean', 'land']:
-        nh_cube_dict['rsds'+'-'+realm], sh_cube_dict['rsds'+'-'+realm], metadata_dict = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict, time_constraint,
-                                                                                                 sftlf_cube=sftlf_cube, include_only=realm)
-        nh_cube_dict['rsus'+'-'+realm], sh_cube_dict['rsus'+'-'+realm], metadata_dict = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict, time_constraint,
-                                                                                                 sftlf_cube=sftlf_cube, include_only=realm)
-        nh_cube_dict['rlds'+'-'+realm], sh_cube_dict['rlds'+'-'+realm], metadata_dict = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict, time_constraint,
-                                                                                                 sftlf_cube=sftlf_cube, include_only=realm)
-        nh_cube_dict['rlus'+'-'+realm], sh_cube_dict['rlus'+'-'+realm], metadata_dict = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict, time_constraint,
-                                                                                                 sftlf_cube=sftlf_cube, include_only=realm)
+        nh_cube_dict['rsds'+'-'+realm], sh_cube_dict['rsds'+'-'+realm], metadata_dict, attributes = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict,
+                                                                                                             attributes, sftlf_cube=sftlf_cube, include_only=realm)
+        nh_cube_dict['rsus'+'-'+realm], sh_cube_dict['rsus'+'-'+realm], metadata_dict, attributes = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict,
+                                                                                                             attributes, sftlf_cube=sftlf_cube, include_only=realm)
+        nh_cube_dict['rlds'+'-'+realm], sh_cube_dict['rlds'+'-'+realm], metadata_dict, attributes = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict,
+                                                                                                             attributes, sftlf_cube=sftlf_cube, include_only=realm)
+        nh_cube_dict['rlus'+'-'+realm], sh_cube_dict['rlus'+'-'+realm], metadata_dict, attributes = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict,
+                                                                                                             attributes, sftlf_cube=sftlf_cube, include_only=realm)
 
-    nh_cube_dict = derived_surface_radiation_fluxes(nh_cube_dict, inargs, sftlf_cube)
-    sh_cube_dict = derived_surface_radiation_fluxes(sh_cube_dict, inargs, sftlf_cube)
+    nh_cube_dict = derived_surface_radiation_fluxes(nh_cube_dict, inargs, sftlf_cube, 'nh')
+    sh_cube_dict = derived_surface_radiation_fluxes(sh_cube_dict, inargs, sftlf_cube, 'sh')
 
     # Surface heat fluxes
     if inargs.hfrealm == 'atmos':
@@ -222,19 +234,33 @@ def main(inargs):
     elif inargs.hfrealm == 'ocean':
         hfss_name = 'surface_downward_sensible_heat_flux'
         hfls_name = 'surface_downward_latent_heat_flux'
-    nh_cube_dict['hfss'], sh_cube_dict['hfss'], metadata_dict = get_data(inargs.hfss_files, hfss_name, metadata_dict, time_constraint)
-    nh_cube_dict['hfls'], sh_cube_dict['hfls'], metadata_dict = get_data(inargs.hfls_files, hfls_name, metadata_dict, time_constraint)
-    nh_cube_dict['hfds'], sh_cube_dict['hfds'], metadata_dict = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict, time_constraint)
-    nh_cube_dict['hfsithermds'], sh_cube_dict['hfsithermds'], metadata_dict = get_data(inargs.hfsithermds_files,
-                                                                                       'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
-                                                                                       metadata_dict, time_constraint)                           
+    nh_cube_dict['hfss'], sh_cube_dict['hfss'], metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name, metadata_dict, attributes)
+    nh_cube_dict['hfls'], sh_cube_dict['hfls'], metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name, metadata_dict, attributes)
+    nh_cube_dict['hfds'], sh_cube_dict['hfds'], metadata_dict, attributes = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict, attributes)
+    nh_cube_dict['hfsithermds'], sh_cube_dict['hfsithermds'], metadata_dict, attributes = get_data(inargs.hfsithermds_files,
+                                                                                                   'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
+                                                                                                    metadata_dict, attributes)                           
 
     # Ocean heat transport / storage
-    #nh_cube_dict['ohc'], sh_cube_dict['ohc'], metadata_dict = get_data(inargs.ohc_files, 'ocean_heat_content', metadata_dict, time_constraint)
+    #nh_cube_dict['ohc'], sh_cube_dict['ohc'], metadata_dict = get_data(inargs.ohc_files, 'ocean_heat_content', metadata_dict)
     ## FIXME: Add hfy analysis
 
-    write_outfile(inargs.outfile, nh_cube_dict, sh_cube_dict)
-    gio.write_metadata(inargs.outfile, file_info=metadata_dict)
+    cube_list = iris.cube.CubeList()
+    for var, cube in nh_cube_dict.items():
+        if cube:
+            #cube.attributes = attributes
+            #cube.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
+            cube_list.append(cube)
+    for var, cube in sh_cube_dict.items():
+        if cube:
+            #cube.attributes = attributes
+            #cube.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
+            cube_list.append(cube)
+
+    equalise_attributes(cube_list)
+    pdb.set_trace()
+
+    iris.save(cube_list, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
 
 
 if __name__ == '__main__':
