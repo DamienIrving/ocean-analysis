@@ -1,8 +1,8 @@
 """
 Filename:     calc_trend_fields.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Take a 3D (time. lat, lon) variable and calculate the grid point, zonal
-              mean and hemispheruc mean trends and climatology for a given time period.  
+Description:  Take a 3D (time, lat, lon) variable and calculate the grid point and 
+              zonal aggregate trends and climatology for a given time period.  
 
 """
 
