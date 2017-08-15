@@ -28,7 +28,6 @@ sys.path.append(modules_dir)
 try:
     import general_io as gio
     import timeseries
-    import grids
     import convenient_universal as uconv
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
@@ -37,13 +36,40 @@ except ImportError:
 # Define functions
 
 nh_lat_subset = lambda cell: cell >= 0.0    
-nh_lat_constraint = iris.Constraint(latitude=nh_lat_subset)
-
 sh_lat_subset = lambda cell: cell <= 0.0    
-sh_lat_constraint = iris.Constraint(latitude=sh_lat_subset)
+hemisphere_constraints = {'nh': iris.Constraint(latitude=nh_lat_subset),
+                          'sh': iris.Constraint(latitude=sh_lat_subset)}
+
+def calc_sum(cube, var, hemisphere, area_cube):
+    """Calculate the hemispheric sum."""
+
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    assert 'time' in coord_names
+    assert len(coord_names) == 3
+    aux_coord_names = [coord.name() for coord in cube.aux_coords]
+    if aux_coord_names == ['latitude', 'longitude']:
+        assert area_cube, "Must give areacello file for non lat/lon grid data"
+        print("""processing %s on it's non lat/lon grid""" %(var))
+
+        hemisphere_mask = create_hemisphere_mask(cube.coord('latitude').points, cube.shape, hemisphere)
+        land_ocean_mask = cube.data.mask
+        complete_mask = hemisphere_mask + land_ocean_mask
+
+        cube.data = numpy.ma.asarray(cube.data)
+        cube.data.mask = complete_mask
+    else:
+        cube = cube.copy().extract(hemisphere_constraints[hemisphere])
+    
+    cube = multiply_by_area(cube, var, area_cube) # convert W m-2 to W
+    coord_names.remove('time')
+    sum_cube = cube.collapsed(coord_names, iris.analysis.SUM)
+    sum_cube.remove_coord(coord_names[0])
+    sum_cube.remove_coord(coord_names[1])
+
+    return sum_cube 
 
 
-def get_data(filenames, var, metadata_dict, attributes, sftlf_cube=None, include_only=None):
+def get_data(filenames, var, metadata_dict, attributes, sftlf_cube=None, include_only=None, area_cube=None):
     """Read, merge, temporally aggregate and calculate hemispheric totals.
 
     Args:
@@ -65,29 +91,18 @@ def get_data(filenames, var, metadata_dict, attributes, sftlf_cube=None, include
         attributes = cube.attributes
 
         cube = timeseries.convert_to_annual(cube, full_months=True)
-
-        if include_only:
-            mask = create_mask(sftlf_cube, cube.shape, include_only)
+            
+        if sftlf_cube:
+            assert include_only
+            mask = create_land_ocean_mask(sftlf_cube, cube.shape, include_only)
             cube.data = numpy.ma.asarray(cube.data)
             cube.data.mask = mask
             
-        cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
-        cube = multiply_by_area(cube) # convert W m-2 to W
-
-        nh_cube = cube.copy().extract(nh_lat_constraint)
-        sh_cube = cube.copy().extract(sh_lat_constraint)
-
-        nh_sum = nh_cube.collapsed(['latitude', 'longitude'], iris.analysis.SUM)
-        nh_sum.remove_coord('latitude')
-        nh_sum.remove_coord('longitude')
-
-        sh_sum = sh_cube.collapsed(['latitude', 'longitude'], iris.analysis.SUM)
-        sh_sum.remove_coord('latitude')
-        sh_sum.remove_coord('longitude')
+        nh_sum = calc_sum(cube, var, 'nh', area_cube)
+        sh_sum = calc_sum(cube, var, 'sh', area_cube)
 
         rename_cube(nh_sum, 'nh', include_only)
         rename_cube(sh_sum, 'sh', include_only)
-
     else:
         nh_sum = None
         sh_sum = None
@@ -95,8 +110,8 @@ def get_data(filenames, var, metadata_dict, attributes, sftlf_cube=None, include
     return nh_sum, sh_sum, metadata_dict, attributes
 
 
-def create_mask(mask_cube, target_shape, include_only):
-    """Create mask from an sftlf (land surface fraction) file.
+def create_land_ocean_mask(mask_cube, target_shape, include_only):
+    """Create a land or ocean mask from an sftlf (land surface fraction) file.
 
     There is no land when cell value == 0
 
@@ -108,6 +123,22 @@ def create_mask(mask_cube, target_shape, include_only):
         mask_array = numpy.where(mask_cube.data > 50, False, True)
     elif include_only == 'ocean':
         mask_array = numpy.where(mask_cube.data < 50, False, True)
+
+    mask = uconv.broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
+    assert mask.shape == target_shape 
+
+    return mask
+
+
+def create_hemisphere_mask(latitude_array, target_shape, hemisphere):
+    """Create mask from the latitude auxillary coordinate"""
+
+    target_ndim = len(target_shape)
+
+    if hemisphere == 'nh':
+        mask_array = numpy.where(latitude_array >= 0, False, True)
+    elif hemisphere == 'sh':
+        mask_array = numpy.where(latitude_array < 0, False, True)
 
     mask = uconv.broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
     assert mask.shape == target_shape 
@@ -146,18 +177,25 @@ def derived_surface_radiation_fluxes(cube_dict, inargs, sftlf_cube, hemisphere):
     return cube_dict
 
 
-def multiply_by_area(cube):
+def multiply_by_area(cube, var, area_cube):
     """Multiply by cell area."""
 
-    if not cube.coord('latitude').has_bounds():
-        cube.coord('latitude').guess_bounds()
-    if not cube.coord('longitude').has_bounds():
-        cube.coord('longitude').guess_bounds()
-    area_weights = iris.analysis.cartography.area_weights(cube)
+    if cube.units == 'W m-2':
 
-    units = str(cube.units)
-    cube.data = cube.data * area_weights   
-    cube.units = units.replace('m-2', '')
+        if area_cube:
+            area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
+        else:
+            if not cube.coord('latitude').has_bounds():
+                cube.coord('latitude').guess_bounds()
+            if not cube.coord('longitude').has_bounds():
+                cube.coord('longitude').guess_bounds()
+            area_data = iris.analysis.cartography.area_weights(cube)
+            units = str(cube.units)
+            cube.units = units.replace('m-2', '')
+
+        cube.data = cube.data * area_data
+    else:
+        print('Did not multiply %s by area. Units = %s' %(var, str(cube.units)))
 
     return cube
 
@@ -214,6 +252,10 @@ def main(inargs):
     """Run the program."""
 
     sftlf_cube = iris.load_cube(inargs.sftlf_file, 'land_area_fraction')
+    if inargs.areacello_file:
+        areacello_cube = iris.load_cube(inargs.areacello_file, 'cell_area')
+    else:
+        areacello_cube = None
 
     nh_cube_dict = {}
     sh_cube_dict = {}
@@ -251,15 +293,22 @@ def main(inargs):
     if inargs.hfrealm == 'atmos':
         hfss_name = 'surface_upward_sensible_heat_flux'
         hfls_name = 'surface_upward_latent_heat_flux'
+        nh_cube_dict['hfss'], sh_cube_dict['hfss'], metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name, metadata_dict, attributes)
+        nh_cube_dict['hfls'], sh_cube_dict['hfls'], metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name, metadata_dict, attributes)
+        for realm in ['ocean', 'land']:
+            nh_cube_dict['hfss'+'-'+realm], sh_cube_dict['hfss'+'-'+realm], metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name, metadata_dict, attributes, sftlf_cube=sftlf_cube, include_only=realm)
+            nh_cube_dict['hfls'+'-'+realm], sh_cube_dict['hfls'+'-'+realm], metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name, metadata_dict, attributes, sftlf_cube=sftlf_cube, include_only=realm)
     elif inargs.hfrealm == 'ocean':
         hfss_name = 'surface_downward_sensible_heat_flux'
         hfls_name = 'surface_downward_latent_heat_flux'
-    nh_cube_dict['hfss'], sh_cube_dict['hfss'], metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name, metadata_dict, attributes)
-    nh_cube_dict['hfls'], sh_cube_dict['hfls'], metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name, metadata_dict, attributes)
-    nh_cube_dict['hfds'], sh_cube_dict['hfds'], metadata_dict, attributes = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict, attributes)
-    nh_cube_dict['hfsithermds'], sh_cube_dict['hfsithermds'], metadata_dict, attributes = get_data(inargs.hfsithermds_files,
+        nh_cube_dict['hfss-ocean'], sh_cube_dict['hfss-ocean'], metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name, metadata_dict, attributes, include_only='ocean', area_cube=areacello_cube)
+        nh_cube_dict['hfls-ocean'], sh_cube_dict['hfls-ocean'], metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name, metadata_dict, attributes, include_only='ocean', area_cube=areacello_cube)
+
+    nh_cube_dict['hfds-ocean'], sh_cube_dict['hfds-ocean'], metadata_dict, attributes = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict,
+                                                                                                 attributes, include_only='ocean', area_cube=areacello_cube)
+    nh_cube_dict['hfsithermds-ocean'], sh_cube_dict['hfsithermds-ocean'], metadata_dict, attributes = get_data(inargs.hfsithermds_files,
                                                                                                    'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
-                                                                                                    metadata_dict, attributes)                           
+                                                                                                    metadata_dict, attributes, include_only='ocean', area_cube=areacello_cube)                           
 
     # Ocean heat transport / storage
     nh_cube_dict['ohc'], sh_cube_dict['ohc'], metadata_dict, attributes = get_data(inargs.ohc_files, 'ocean_heat_content', metadata_dict, attributes)
@@ -286,6 +335,9 @@ author:
 
     parser.add_argument("sftlf_file", type=str, help="Land fraction file")
     parser.add_argument("outfile", type=str, help="Output txt file")                                     
+
+    parser.add_argument("--areacello_file", type=str, default=None, 
+                        help="Input ocean area file [required for non lat/lon grids]")
 
     parser.add_argument("--rsdt_files", type=str, nargs='*', default=None,
                         help="toa incoming shortwave flux files")
@@ -315,7 +367,7 @@ author:
     parser.add_argument("--ohc_files", type=str, nargs='*', default=None,
                         help="ocean heat content files")
 
-    parser.add_argument("--hfrealm", type=str, choices=('atmos', 'ocean'), default='atmos',
+    parser.add_argument("--hfrealm", type=str, choices=('atmos', 'ocean'), required=True,
                         help="specify whether original hfss and hfls data were atmos or ocean")
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=('1850-01-01', '2005-12-31'),
