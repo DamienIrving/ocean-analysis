@@ -117,9 +117,9 @@ def plot_toa(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
 def plot_surface_radiation(axes, infile, hemisphere, realm, bar_width, agg_method, time_constraint):
     """Plot radiative surface fluxes."""
 
-    rns_var = 'Surface Net Radiation in Air '+hemisphere+' '+realm+' sum'
-    rsns_var = 'Surface Net Shortwave Radiation in Air '+hemisphere+' '+realm+' sum'
-    rlus_var = 'Surface Net Longwave Radiation in Air '+hemisphere+' '+realm+' sum'
+    rns_var = 'Surface Net Flux in Air '+hemisphere+' '+realm+' sum'
+    rsns_var = 'Surface Net Shortwave Flux in Air '+hemisphere+' '+realm+' sum'
+    rlus_var = 'Surface Net Longwave Flux in Air '+hemisphere+' '+realm+' sum'
     
     rns_value, rns_color = get_data(infile, rns_var, agg_method, time_constraint)
     rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint)

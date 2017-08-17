@@ -150,10 +150,14 @@ def derived_toa_radiation_fluxes(cube_dict, inargs, hemisphere):
     """Calculate the net TOA flux."""
 
     if inargs.rsdt_files and inargs.rsut_files and inargs.rlut_files:
-        cube_dict['rndt'] = cube_dict['rsdt'] - cube_dict['rsut'] - cube_dict['rlut']   # net TOA flux
-        rename_cube(cube_dict['rndt'], hemisphere, None, 'toa_incoming_net_flux', 'TOA Incoming Net Flux', 'rndt')
+        cube_dict['rsnt'] = cube_dict['rsdt'] - cube_dict['rsut'] 
+        rename_cube(cube_dict['rsnt'], hemisphere, None, 'toa_net_shortwave_radiation', 'TOA Net Shortwave Radiation', 'rsnt')
+
+        cube_dict['rnt'] = cube_dict['rsnt'] - cube_dict['rlut']   # net TOA flux
+        rename_cube(cube_dict['rnt'], hemisphere, None, 'toa_net_radiation', 'TOA Net Radiation', 'rnt')
     else:
-        cube_dict['rndt'] = None
+        cube_dict['rsnt'] = None
+        cube_dict['rnt'] = None
     
     return cube_dict
 
@@ -162,17 +166,22 @@ def derived_surface_radiation_fluxes(cube_dict, inargs, sftlf_cube, hemisphere):
     """Calculate the net surface radiation flux."""
 
     if inargs.rsds_files and inargs.rsus_files and inargs.rlds_files and inargs.rlus_files:
-        cube_dict['rnds'] = cube_dict['rsds'] - cube_dict['rsus'] + cube_dict['rlds'] - cube_dict['rlus']
-        cube_dict['rnds-ocean'] = cube_dict['rsds-ocean'] - cube_dict['rsus-ocean'] + cube_dict['rlds-ocean'] - cube_dict['rlus-ocean']
-        cube_dict['rnds-land'] = cube_dict['rsds-land'] - cube_dict['rsus-land'] + cube_dict['rlds-land'] - cube_dict['rlus-land']
+        for realm in ['', '-ocean', '-land']:
+            realm_arg = realm[1:] if realm else None
 
-        rename_cube(cube_dict['rnds'], hemisphere, None, 'surface_downwelling_net_flux_in_air', 'Surface Downwelling Net Flux in Air', 'rnds')
-        rename_cube(cube_dict['rnds-ocean'], hemisphere, 'ocean', 'surface_downwelling_net_flux_in_air', 'Surface Downwelling Net Flux in Air', 'rnds')
-        rename_cube(cube_dict['rnds-land'], hemisphere, 'land', 'surface_downwelling_net_flux_in_air', 'Surface Downwelling Net Flux in Air', 'rnds')
+            cube_dict['rsns'+realm] = cube_dict['rsds'+realm] - cube_dict['rsus'+realm]
+            rename_cube(cube_dict['rsns'], hemisphere, realm_arg, 'surface_net_shortwave_flux_in_air', 'Surface Net Shortwave Flux in Air', 'rsns')
+           
+            cube_dict['rlns'+realm] = cube_dict['rlds'+realm] - cube_dict['rlus'+realm]
+            rename_cube(cube_dict['rlns'], hemisphere, realm_arg, 'surface_net_longwave_flux_in_air', 'Surface Net Longwave Flux in Air', 'rlns')
+
+            cube_dict['rns'+realm] = cube_dict['rsns'+realm] + cube_dict['rlns'] 
+            rename_cube(cube_dict['rns'], hemisphere, realm_arg, 'surface_net_flux_in_air', 'Surface Net Flux in Air', 'rns')
     else:
-        cube_dict['rnds'] = None
-        cube_dict['rnds-ocean'] = None
-        cube_dict['rnds-land'] = None
+        for realm in ['', '-ocean', '-land']:
+            cube_dict['rsns'+realm] = None
+            cube_dict['rlns'+realm] = None
+            cube_dict['rns'+realm] = None
 
     return cube_dict
 
@@ -271,20 +280,16 @@ def main(inargs):
     sh_cube_dict = derived_toa_radiation_fluxes(sh_cube_dict, inargs, 'sh')
 
     # Surface radiation fluxes
-
-    nh_cube_dict['rsds'], sh_cube_dict['rsds'], metadata_dict, attributes = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict, attributes)
-    nh_cube_dict['rsus'], sh_cube_dict['rsus'], metadata_dict, attributes = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict, attributes)
-    nh_cube_dict['rlds'], sh_cube_dict['rlds'], metadata_dict, attributes = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict, attributes)
-    nh_cube_dict['rlus'], sh_cube_dict['rlus'], metadata_dict, attributes = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict, attributes)
-    for realm in ['ocean', 'land']:
-        nh_cube_dict['rsds'+'-'+realm], sh_cube_dict['rsds'+'-'+realm], metadata_dict, attributes = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict,
-                                                                                                             attributes, sftlf_cube=sftlf_cube, include_only=realm)
-        nh_cube_dict['rsus'+'-'+realm], sh_cube_dict['rsus'+'-'+realm], metadata_dict, attributes = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict,
-                                                                                                             attributes, sftlf_cube=sftlf_cube, include_only=realm)
-        nh_cube_dict['rlds'+'-'+realm], sh_cube_dict['rlds'+'-'+realm], metadata_dict, attributes = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict,
-                                                                                                             attributes, sftlf_cube=sftlf_cube, include_only=realm)
-        nh_cube_dict['rlus'+'-'+realm], sh_cube_dict['rlus'+'-'+realm], metadata_dict, attributes = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict,
-                                                                                                             attributes, sftlf_cube=sftlf_cube, include_only=realm)
+    for realm in ['', '-ocean', '-land']:
+        realm_arg = realm[1:] if realm else None
+        nh_cube_dict['rsds'+realm], sh_cube_dict['rsds'+realm], metadata_dict, attributes = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict,
+                                                                                                     attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
+        nh_cube_dict['rsus'+realm], sh_cube_dict['rsus'+realm], metadata_dict, attributes = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict,
+                                                                                                     attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
+        nh_cube_dict['rlds'+realm], sh_cube_dict['rlds'+realm], metadata_dict, attributes = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict,
+                                                                                                     attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
+        nh_cube_dict['rlus'+realm], sh_cube_dict['rlus'+realm], metadata_dict, attributes = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict,
+                                                                                                     attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
 
     nh_cube_dict = derived_surface_radiation_fluxes(nh_cube_dict, inargs, sftlf_cube, 'nh')
     sh_cube_dict = derived_surface_radiation_fluxes(sh_cube_dict, inargs, sftlf_cube, 'sh')
@@ -293,11 +298,10 @@ def main(inargs):
     if inargs.hfrealm == 'atmos':
         hfss_name = 'surface_upward_sensible_heat_flux'
         hfls_name = 'surface_upward_latent_heat_flux'
-        nh_cube_dict['hfss'], sh_cube_dict['hfss'], metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name, metadata_dict, attributes)
-        nh_cube_dict['hfls'], sh_cube_dict['hfls'], metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name, metadata_dict, attributes)
-        for realm in ['ocean', 'land']:
-            nh_cube_dict['hfss'+'-'+realm], sh_cube_dict['hfss'+'-'+realm], metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name, metadata_dict, attributes, sftlf_cube=sftlf_cube, include_only=realm)
-            nh_cube_dict['hfls'+'-'+realm], sh_cube_dict['hfls'+'-'+realm], metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name, metadata_dict, attributes, sftlf_cube=sftlf_cube, include_only=realm)
+        for realm in ['', '-ocean', '-land']:
+            realm_arg = realm[1:] if realm else None
+            nh_cube_dict['hfss'+realm], sh_cube_dict['hfss'+realm], metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name, metadata_dict, attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
+            nh_cube_dict['hfls'+realm], sh_cube_dict['hfls'+realm], metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name, metadata_dict, attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
     elif inargs.hfrealm == 'ocean':
         hfss_name = 'surface_downward_sensible_heat_flux'
         hfls_name = 'surface_downward_latent_heat_flux'
