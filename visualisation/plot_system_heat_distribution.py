@@ -43,11 +43,13 @@ def get_data(infile, var, agg_method, time_constraint):
             if agg_method == 'trend':
                 value = timeseries.calc_trend(cube, per_yr=True)
             elif agg_method == 'climatology':
-                value = cube.collapsed('time', iris.analysis.MEAN)
-    except:
-        value = None
+                value = float(cube.collapsed('time', iris.analysis.MEAN).data)
+        color = 'red'
+    except iris.exceptions.ConstraintMismatchError:
+        value = 0
+        color = 'black'
         
-    return value
+    return value, color
         
 
 def get_title(cube_dict):
@@ -84,7 +86,7 @@ def setup_plot():
     return fig, axes
     
     
-def plot_toa(infile, hemisphere, bar_width, agg_method, time_constraint):
+def plot_toa(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
     """Plot TOA data."""
 
     rndt_var = 'TOA Incoming Net Flux '+hemisphere+' sum'
@@ -92,21 +94,48 @@ def plot_toa(infile, hemisphere, bar_width, agg_method, time_constraint):
     rsut_var = 'TOA Outgoing Shortwave Radiation '+hemisphere+' sum'
     rlut_var = 'TOA Outgoing Longwave Radiation '+hemisphere+' sum'
     
-    rndt_value = get_data(infile, rndt_var, agg_method, time_constraint)
-    rsdt_value = get_data(infile, rsdt_var, agg_method, time_constraint)
-    rsut_value = get_data(infile, rsut_var, agg_method, time_constraint)
-    rlut_value = get_data(infile, rlut_var, agg_method, time_constraint)
+    rndt_value, rndt_color = get_data(infile, rndt_var, agg_method, time_constraint)
+    rsdt_value, rsdt_color = get_data(infile, rsdt_var, agg_method, time_constraint)
+    rsut_value, rsut_color = get_data(infile, rsut_var, agg_method, time_constraint)
+    rlut_value, rlut_color = get_data(infile, rlut_var, agg_method, time_constraint)
 
-    toa_values = (rndt_value, rsdt_value, rsut_value, rlut_value)
+    values = (rndt_value, rsdt_value, rsut_value, rlut_value)
+    edge_colors = (rndt_color, rsdt_color, rsut_color, rlut_color)
 
-    ind = numpy.arange(len(toa_values))  # the x locations for the groups
+    ind = numpy.arange(len(values))  # the x locations for the groups
     col = 0 if (hemisphere == 'sh') else 1 
-    axes[0, col].bar(ind, toa_values, bar_width,
-                     color=['r', 'None', 'None', 'None'],
-                     edgecolor=['r', 'r', 'b', 'b'],
+    axes[0, col].bar(ind, values, bar_width,
+                     color=[edge_colors[0], 'None', 'None', 'None'],
+                     edgecolor=edge_colors,
                      tick_label=['rndt', 'rsdt', 'rsut', 'rlut'],
                      linewidth=1.0)
+
+
+def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
+    """Plot radiative surface fluxes over the ocean."""
+
+    ## FIXME: Change the input file so it gives net shortwave and longwave
+
+    rns_var = 'Surface Net Radiation in Air '+hemisphere+' ocean sum'
+    rsns_var = 'Surface Net Shortwave Radiation in Air '+hemisphere+' ocean sum'
+    rlus_var = 'Surface Net Longwave Radiation in Air '+hemisphere+' ocean sum'
     
+    rns_value, rns_color = get_data(infile, rns_var, agg_method, time_constraint)
+    rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint)
+    rlus_value, rlus_color = get_data(infile, rlus_var, agg_method, time_constraint)
+
+    values = (rns_value, rsns_value, rlus_value)
+    edge_colors = (rns_color, rsns_color, rlus_color)
+
+    ind = numpy.arange(len(values))  # the x locations for the groups
+    col = 0 if (hemisphere == 'sh') else 1 
+    axes[1, col].bar(ind, values, bar_width,
+                     color=[edge_colors[0], 'None', 'None'],
+                     edgecolor=edge_colors,
+                     tick_label=['rns', 'rsns', 'rlus'],
+                     linewidth=1.0)
+
+
 
 def main(inargs):
     """Run the program."""
@@ -119,13 +148,17 @@ def main(inargs):
     fig, axes = setup_plot()
     bar_width = 0.7
     
-    plot_toa(inargs.infile, 'sh', bar_width, inargs.aggregation, time_contraint)
+    plot_toa(axes, inargs.infile, 'sh', bar_width, inargs.aggregation, time_constraint)
+    plot_toa(axes, inargs.infile, 'nh', bar_width, inargs.aggregation, time_constraint)
+
+    plot_atmos(axes, inargs.infile, 'sh', bar_width, inargs.aggregation, time_constraint)
+    plot_atmos(axes, inargs.infile, 'nh', bar_width, inargs.aggregation, time_constraint)
 
     fig.tight_layout()
     fig.subplots_adjust(left=0.15, top=0.95)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info=metadata_dict)
+    gio.write_metadata(inargs.outfile)    #, file_info=metadata_dict)
 
 
 if __name__ == '__main__':
@@ -148,8 +181,8 @@ author:
 
     parser.add_argument("--aggregation", type=str, default='trend', choices=('trend', 'climatology'),
                         help="Method used to aggregate over time [default = trend]")
-    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
-                        help="Time period [default = entire]")
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=('1850-01-01', '2005-12-31'),
+                        help="Time period [default = 1850-2005]")
 
     args = parser.parse_args()             
     main(args)
