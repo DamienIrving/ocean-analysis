@@ -34,6 +34,11 @@ except ImportError:
 
 # Define functions
 
+column_number = {('sh', 'land'): 0, ('sh', 'ocean'): 1,
+                 ('nh', 'ocean'): 2, ('nh', 'land'): 3,
+                 'sh': 1, 'nh': 2}
+
+
 def get_data(infile, var, agg_method, time_constraint):
     """Read and temporally aggregate the data."""
     
@@ -52,16 +57,16 @@ def get_data(infile, var, agg_method, time_constraint):
     return value, color
         
 
-def get_title(cube_dict):
-    """Get the plot title."""
-
-    for cube in cube_dict.values():
-        if cube:
-            run = 'r%si%sp%s'  %(cube.attributes['realization'], cube.attributes['initialization_method'], cube.attributes['physics_version'])
-            title = 'Energy budget for %s, %s, %s'  %(cube.attributes['model_id'], cube.attributes['experiment'], run)
-            break
-    
-    return title
+#def get_title(cube_dict):
+#    """Get the plot title."""
+#
+#    for cube in cube_dict.values():
+#        if cube:
+#            run = 'r%si%sp%s'  %(cube.attributes['realization'], cube.attributes['initialization_method'], cube.attributes['physics_version'])
+#            title = 'Energy budget for %s, %s, %s'  %(cube.attributes['model_id'], cube.attributes['experiment'], run)
+#            break
+#    
+#    return title
 
 
 def setup_plot():
@@ -70,7 +75,7 @@ def setup_plot():
     cols = ['Southern Hemisphere', 'Northern Hemisphere']
     rows = ['TOA', 'Surface radiation', 'Surface heat', 'Ocean']
 
-    fig, axes = plt.subplots(nrows=4, ncols=2, figsize=(8, 12))
+    fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(16, 12))
     pad = 5 # in points
 
     for ax, col in zip(axes[0], cols):
@@ -89,36 +94,32 @@ def setup_plot():
 def plot_toa(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
     """Plot TOA data."""
 
-    rndt_var = 'TOA Incoming Net Flux '+hemisphere+' sum'
-    rsdt_var = 'TOA Incident Shortwave Radiation '+hemisphere+' sum'
-    rsut_var = 'TOA Outgoing Shortwave Radiation '+hemisphere+' sum'
+    rnt_var = 'TOA Net Radiation '+hemisphere+' sum'
+    rsnt_var = 'TOA Net Shortwave Radiation '+hemisphere+' sum'
     rlut_var = 'TOA Outgoing Longwave Radiation '+hemisphere+' sum'
     
-    rndt_value, rndt_color = get_data(infile, rndt_var, agg_method, time_constraint)
-    rsdt_value, rsdt_color = get_data(infile, rsdt_var, agg_method, time_constraint)
-    rsut_value, rsut_color = get_data(infile, rsut_var, agg_method, time_constraint)
+    rnt_value, rnt_color = get_data(infile, rnt_var, agg_method, time_constraint)
+    rsnt_value, rsnt_color = get_data(infile, rsnt_var, agg_method, time_constraint)
     rlut_value, rlut_color = get_data(infile, rlut_var, agg_method, time_constraint)
 
-    values = (rndt_value, rsdt_value, rsut_value, rlut_value)
-    edge_colors = (rndt_color, rsdt_color, rsut_color, rlut_color)
+    values = (rnt_value, rsnt_value, rlut_value)
+    edge_colors = (rnt_color, rsnt_color, rlut_color)
 
     ind = numpy.arange(len(values))  # the x locations for the groups
-    col = 0 if (hemisphere == 'sh') else 1 
+    col = column_number[hemisphere] 
     axes[0, col].bar(ind, values, bar_width,
-                     color=[edge_colors[0], 'None', 'None', 'None'],
+                     color=[edge_colors[0], 'None', 'None'],
                      edgecolor=edge_colors,
-                     tick_label=['rndt', 'rsdt', 'rsut', 'rlut'],
+                     tick_label=['rnt', 'rsnt', 'rlut'],
                      linewidth=1.0)
 
 
-def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
-    """Plot radiative surface fluxes over the ocean."""
+def plot_surface_radiation(axes, infile, hemisphere, realm, bar_width, agg_method, time_constraint):
+    """Plot radiative surface fluxes."""
 
-    ## FIXME: Change the input file so it gives net shortwave and longwave
-
-    rns_var = 'Surface Net Radiation in Air '+hemisphere+' ocean sum'
-    rsns_var = 'Surface Net Shortwave Radiation in Air '+hemisphere+' ocean sum'
-    rlus_var = 'Surface Net Longwave Radiation in Air '+hemisphere+' ocean sum'
+    rns_var = 'Surface Net Radiation in Air '+hemisphere+' '+realm+' sum'
+    rsns_var = 'Surface Net Shortwave Radiation in Air '+hemisphere+' '+realm+' sum'
+    rlus_var = 'Surface Net Longwave Radiation in Air '+hemisphere+' '+realm+' sum'
     
     rns_value, rns_color = get_data(infile, rns_var, agg_method, time_constraint)
     rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint)
@@ -128,7 +129,7 @@ def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint)
     edge_colors = (rns_color, rsns_color, rlus_color)
 
     ind = numpy.arange(len(values))  # the x locations for the groups
-    col = 0 if (hemisphere == 'sh') else 1 
+    col = column_number[(hemisphere, realm)] 
     axes[1, col].bar(ind, values, bar_width,
                      color=[edge_colors[0], 'None', 'None'],
                      edgecolor=edge_colors,
@@ -136,6 +137,27 @@ def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint)
                      linewidth=1.0)
 
 
+def plot_surface_heat(axes, infile, hemisphere, realm, bar_width, agg_method, time_constraint):
+    """Plot surface heat fluxes."""
+
+    hfss_var = 'Surface Upward Sensible Heat Flux '+hemisphere+' '+realm+' sum'
+    hfls_var = 'Surface Upward Latent Heat Flux '+hemisphere+' '+realm+' sum'
+    hfds_var = 'Downward Heat Flux at Sea Water Surface '+hemisphere+' '+realm+' sum'
+    
+    hfss_value, hfss_color = get_data(infile, hfss_var, agg_method, time_constraint)
+    hfls_value, hfls_color = get_data(infile, hfls_var, agg_method, time_constraint)
+    hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint)
+
+    values = (hfss_value, hfls_value, hfds_value)
+    edge_colors = (hfss_color, hfls_color, hfds_color)
+
+    ind = numpy.arange(len(values))  # the x locations for the groups
+    col = column_number[(hemisphere, realm)] 
+    axes[1, col].bar(ind, values, bar_width,
+                     color=[edge_colors[0], 'None', 'None'],
+                     edgecolor=edge_colors,
+                     tick_label=['hfss', 'hfls', 'hfds'],
+                     linewidth=1.0)
 
 def main(inargs):
     """Run the program."""
@@ -148,11 +170,11 @@ def main(inargs):
     fig, axes = setup_plot()
     bar_width = 0.7
     
-    plot_toa(axes, inargs.infile, 'sh', bar_width, inargs.aggregation, time_constraint)
-    plot_toa(axes, inargs.infile, 'nh', bar_width, inargs.aggregation, time_constraint)
-
-    plot_atmos(axes, inargs.infile, 'sh', bar_width, inargs.aggregation, time_constraint)
-    plot_atmos(axes, inargs.infile, 'nh', bar_width, inargs.aggregation, time_constraint)
+    for hemisphere in ['sh', 'nh']:
+        plot_toa(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
+        for realm in ['ocean', 'land']:
+            plot_surface_radiation(axes, inargs.infile, hemisphere, realm, bar_width, inargs.aggregation, time_constraint)
+            plot_surface_heat(axes, inargs.infile, hemisphere, realm, bar_width, inargs.aggregation, time_constraint)
 
     fig.tight_layout()
     fig.subplots_adjust(left=0.15, top=0.95)
@@ -176,7 +198,8 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
                                      
-    parser.add_argument("infile", type=str, help="Input energy budget file generated from calc_system_heat_distribution.py")                                     
+    parser.add_argument("infile", type=str, 
+                        help="Input energy budget file generated from calc_system_heat_distribution.py")                                     
     parser.add_argument("outfile", type=str, help="Output file")                                     
 
     parser.add_argument("--aggregation", type=str, default='trend', choices=('trend', 'climatology'),
