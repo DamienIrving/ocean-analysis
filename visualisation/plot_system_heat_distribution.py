@@ -37,6 +37,36 @@ except ImportError:
 column_number = {'sh': 0, 'nh': 1}
 
 
+def setup_plot():
+    """Set the plot axes and headings."""
+
+    cols = ['Southern Hemisphere', 'Northern Hemisphere']
+    rows = ['TOA / Atmosphere', 'Surface', 'Ocean']
+
+    fig = plt.figure(figsize=(14, 9))
+    axes1 = fig.add_subplot(3, 2, 1)
+    axes2 = fig.add_subplot(3, 2, 2, sharey=axes1)
+    axes3 = fig.add_subplot(3, 2, 3)
+    axes4 = fig.add_subplot(3, 2, 4, sharey=axes3)
+    axes5 = fig.add_subplot(3, 2, 5)
+    axes6 = fig.add_subplot(3, 2, 6, sharey=axes5)
+    axes = numpy.array([(axes1, axes2), (axes3, axes4), (axes5, axes6)])
+
+    pad = 5 # in points
+
+    for ax, col in zip(axes[0], cols):
+        ax.annotate(col, xy=(0.5, 1), xytext=(0, pad),
+                    xycoords='axes fraction', textcoords='offset points',
+                    size='large', ha='center', va='baseline')
+
+    for ax, row in zip(axes[:,0], rows):
+        ax.annotate(row, xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - pad, 0),
+                    xycoords=ax.yaxis.label, textcoords='offset points',
+                    size='large', ha='right', va='center', rotation='vertical')
+
+    return fig, axes
+
+
 def get_data(infile, var, agg_method, time_constraint):
     """Read and temporally aggregate the data."""
     
@@ -71,63 +101,33 @@ def get_data(infile, var, agg_method, time_constraint):
 #    
 #    return title
 
-
-def setup_plot():
-    """Set the plot axes and headings."""
-
-    cols = ['Southern Hemisphere', 'Northern Hemisphere']
-    rows = ['TOA', 'Surface radiation', 'Surface heat', 'Ocean']
-
-    fig = plt.figure(figsize=(8, 12))
-    axes1 = fig.add_subplot(4, 2, 1)
-    axes2 = fig.add_subplot(4, 2, 2, sharey=axes1)
-    axes3 = fig.add_subplot(4, 2, 3)
-    axes4 = fig.add_subplot(4, 2, 4, sharey=axes3)
-    axes5 = fig.add_subplot(4, 2, 5)
-    axes6 = fig.add_subplot(4, 2, 6, sharey=axes5)
-    axes7 = fig.add_subplot(4, 2, 7)
-    axes8 = fig.add_subplot(4, 2, 8, sharey=axes7)
-    axes = numpy.array([(axes1, axes2), (axes3, axes4), (axes5, axes6), (axes7, axes8)])
-
-    pad = 5 # in points
-
-    for ax, col in zip(axes[0], cols):
-        ax.annotate(col, xy=(0.5, 1), xytext=(0, pad),
-                    xycoords='axes fraction', textcoords='offset points',
-                    size='large', ha='center', va='baseline')
-
-    for ax, row in zip(axes[:,0], rows):
-        ax.annotate(row, xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - pad, 0),
-                    xycoords=ax.yaxis.label, textcoords='offset points',
-                    size='large', ha='right', va='center', rotation='vertical')
-
-    return fig, axes
     
-    
-def plot_toa(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
-    """Plot TOA data."""
+def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
+    """Plot TOA and atmosphere data."""
 
-    rnt_var = 'TOA Net Radiation '+hemisphere+' sum'
-    rsnt_var = 'TOA Net Shortwave Radiation '+hemisphere+' sum'
-    rlut_var = 'TOA Outgoing Longwave Radiation '+hemisphere+' sum'
-    
-    rnt_value, rnt_color = get_data(infile, rnt_var, agg_method, time_constraint)
-    rsnt_value, rsnt_color = get_data(infile, rsnt_var, agg_method, time_constraint)
-    rlut_value, rlut_color = get_data(infile, rlut_var, agg_method, time_constraint)
+    rsdt_var = 'TOA Incident Shortwave Radiation '+hemisphere+' sum'
+    rsut_var = 'TOA Outgoing Shortwave Radiation '+hemisphere+' sum'
+    rsaa_var = 'Atmosphere Absorbed Shortwave Flux '+hemisphere+' sum'
+    rsns_var = 'Surface Net Shortwave Flux in Air '+hemisphere+' sum'
 
-    values = (rnt_value, rsnt_value, rlut_value)
-    edge_colors = (rnt_color, rsnt_color, rlut_color)
+    rsdt_value, rsdt_color = get_data(infile, rsdt_var, agg_method, time_constraint)
+    rsut_value, rsut_color = get_data(infile, rsut_var, agg_method, time_constraint)
+    rsaa_value, rsaa_color = get_data(infile, rsaa_var, agg_method, time_constraint)
+    rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint)
+
+    values = (rsdt_value, rsut_value, rsaa_value, rsns_value)
+    edge_colors = (rsdt_color, rsut_color, rsaa_color, rsns_color)
 
     ind = numpy.arange(len(values))  # the x locations for the groups
     col = column_number[hemisphere] 
     axes[0, col].bar(ind, values, bar_width,
-                     color=[edge_colors[0], 'None', 'None'],
+                     color=['None', 'None', 'None', edge_colors[-1]],
                      edgecolor=edge_colors,
-                     tick_label=['rnt', 'rsnt', 'rlut'],
+                     tick_label=['rsdt', 'rsut', 'rsaa', 'rsns'],
                      linewidth=1.0)
 
 
-def plot_surface_radiation(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
+def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
     """Plot radiative surface fluxes."""
 
     values = []
@@ -135,52 +135,29 @@ def plot_surface_radiation(axes, infile, hemisphere, bar_width, agg_method, time
     fill_colors = []
     tick_labels = []
     for realm in ['', ' ocean', ' land']:
-        rns_var = 'Surface Net Flux in Air ' + hemisphere + realm + ' sum'
         rsns_var = 'Surface Net Shortwave Flux in Air ' + hemisphere + realm + ' sum'
-        rlus_var = 'Surface Net Longwave Flux in Air ' + hemisphere +realm + ' sum'
+        hfss_var = 'Surface Upward Sensible Heat Flux ' + hemisphere + realm + ' sum'
+        hfls_var = 'Surface Upward Latent Heat Flux ' + hemisphere + realm + ' sum'
+        rlns_var = 'Surface Net Longwave Flux in Air ' + hemisphere +realm + ' sum'
+        if realm == '':
+            hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + ' ocean' + ' sum'
+        else:
+            hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + realm + ' sum'
     
-        rns_value, rns_color = get_data(infile, rns_var, agg_method, time_constraint)
         rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint)
-        rlus_value, rlus_color = get_data(infile, rlus_var, agg_method, time_constraint)
+        hfss_value, hfss_color = get_data(infile, hfss_var, agg_method, time_constraint)
+        hfls_value, hfls_color = get_data(infile, hfls_var, agg_method, time_constraint)
+        hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint)
+        rlns_value, rlns_color = get_data(infile, rlns_var, agg_method, time_constraint)
 
-        values.extend([rns_value, rsns_value, rlus_value])
-        edge_colors.extend([rns_color, rsns_color, rlus_color])
-        fill_colors.extend([rns_color, 'None', 'None'])
-        tick_labels.extend(['rns', 'rsns', 'rlus'])
+        values.extend([rsns_value, hfss_value, hfls_value, hfds_value, rlns_value])
+        edge_colors.extend([rsns_color, hfss_color, hfls_color, hfds_color, rlns_color])
+        fill_colors.extend([rsns_color, 'None', 'None', 'None', 'None'])
+        tick_labels.extend(['rsns', 'hfss', 'hfls', 'hfds', 'rlns'])
 
     ind = numpy.arange(len(values))  # the x locations for the groups
     col = column_number[hemisphere] 
     axes[1, col].bar(ind, values, bar_width,
-                     color=fill_colors,
-                     edgecolor=edge_colors,
-                     tick_label=tick_labels,
-                     linewidth=1.0)
-
-
-def plot_surface_heat(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
-    """Plot surface heat fluxes."""
-
-    values = []
-    edge_colors = []
-    fill_colors = []
-    tick_labels = []
-    for realm in ['', ' ocean', ' land']:
-        hfss_var = 'Surface Upward Sensible Heat Flux ' + hemisphere + realm + ' sum'
-        hfls_var = 'Surface Upward Latent Heat Flux ' + hemisphere + realm + ' sum'
-        hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + realm + ' sum'
-    
-        hfss_value, hfss_color = get_data(infile, hfss_var, agg_method, time_constraint)
-        hfls_value, hfls_color = get_data(infile, hfls_var, agg_method, time_constraint)
-        hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint)
-
-        values.extend([hfss_value, hfls_value, hfds_value])
-        edge_colors.extend([hfss_color, hfls_color, hfds_color])
-        fill_colors.extend(['None', 'None', 'None'])
-        tick_labels.extend(['hfss', 'hfls', 'hfds'])
-
-    ind = numpy.arange(len(values))  # the x locations for the groups
-    col = column_number[hemisphere] 
-    axes[2, col].bar(ind, values, bar_width,
                      color=fill_colors,
                      edgecolor=edge_colors,
                      tick_label=tick_labels,
@@ -199,9 +176,9 @@ def main(inargs):
     bar_width = 0.7
     
     for hemisphere in ['sh', 'nh']:
-        plot_toa(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
-        plot_surface_radiation(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
-        plot_surface_heat(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
+        plot_atmos(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
+        plot_surface(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
+        #plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
 
     fig.tight_layout()
     fig.subplots_adjust(left=0.15, top=0.95)

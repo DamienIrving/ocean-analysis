@@ -145,19 +145,19 @@ def create_hemisphere_mask(latitude_array, target_shape, hemisphere):
     return mask
 
 
-def derived_toa_radiation_fluxes(cube_dict, inargs, hemisphere):
+def derived_toa_radiation_fluxes(cube_dict, hemisphere):
     """Calculate the net TOA flux."""
 
-    if inargs.rsdt_files and inargs.rsut_files and inargs.rlut_files:
+    if cube_dict['rsdt'] and cube_dict['rsut']:
         cube_dict['rsnt'] = cube_dict['rsdt'] - cube_dict['rsut'] 
-        rename_cube(cube_dict['rsnt'], hemisphere, None, 'toa_net_shortwave_radiation', 'TOA Net Shortwave Radiation', 'rsnt')
-
-        cube_dict['rnt'] = cube_dict['rsnt'] - cube_dict['rlut']   # net TOA flux
-        rename_cube(cube_dict['rnt'], hemisphere, None, 'toa_net_radiation', 'TOA Net Radiation', 'rnt')
+        rename_cube(cube_dict['rsnt'], hemisphere, None, 'toa_net_shortwave_flux', 'TOA Net Shortwave Flux', 'rsnt')
     else:
         cube_dict['rsnt'] = None
-        cube_dict['rnt'] = None
     
+    if cube_dict['rsnt'] and cube_dict['rsns']:
+        cube_dict['rsaa'] = cube_dict['rsnt'] - cube_dict['rsns'] 
+        rename_cube(cube_dict['rsaa'], hemisphere, None, 'atmosphere_absorbed_shortwave_flux', 'Atmosphere Absorbed Shortwave Flux', 'rsaa')
+
     return cube_dict
 
 
@@ -171,16 +171,36 @@ def derived_surface_radiation_fluxes(cube_dict, inargs, sftlf_cube, hemisphere):
             cube_dict['rsns'+realm] = cube_dict['rsds'+realm] - cube_dict['rsus'+realm]
             rename_cube(cube_dict['rsns'+realm], hemisphere, realm_arg, 'surface_net_shortwave_flux_in_air', 'Surface Net Shortwave Flux in Air', 'rsns')
            
-            cube_dict['rlns'+realm] = cube_dict['rlds'+realm] - cube_dict['rlus'+realm]
+            cube_dict['rlns'+realm] = cube_dict['rlus'+realm] - cube_dict['rlds'+realm]
             rename_cube(cube_dict['rlns'+realm], hemisphere, realm_arg, 'surface_net_longwave_flux_in_air', 'Surface Net Longwave Flux in Air', 'rlns')
-
-            cube_dict['rns'+realm] = cube_dict['rsns'+realm] + cube_dict['rlns'] 
-            rename_cube(cube_dict['rns'+realm], hemisphere, realm_arg, 'surface_net_flux_in_air', 'Surface Net Flux in Air', 'rns')
     else:
         for realm in ['', '-ocean', '-land']:
             cube_dict['rsns'+realm] = None
             cube_dict['rlns'+realm] = None
-            cube_dict['rns'+realm] = None
+
+    return cube_dict
+
+
+def derived_surface_heat_fluxes(cube_dict, hemisphere):
+    """Calculate the surface heat flux totals."""
+
+    if cube_dict['hfss-ocean'] and cube_dict['hfls-ocean'] and cube_dict['hfds-ocean']:
+        cube_dict['hfts-ocean'] = cube_dict['hfss-ocean'] + cube_dict['hfls-ocean'] + cube_dict['hfds-ocean']
+        rename_cube(cube_dict['hfts-ocean'], hemisphere, 'ocean', 'surface_total_heat_flux', 'Surface Total Heat Flux', 'hfts')
+    else:
+        cube_dict['hfts-ocean'] = None
+
+    if cube_dict['hfss-land'] and cube_dict['hfls-land']:
+        cube_dict['hfts-land'] = cube_dict['hfss-land'] + cube_dict['hfls-land']
+        rename_cube(cube_dict['hfts-land'], hemisphere, 'land', 'surface_total_heat_flux', 'Surface Total Heat Flux', 'hfts')
+    else:
+        cube_dict['hfts-land'] = None
+
+    if cube_dict['hfts-ocean'] and cube_dict['hfts-land']:
+        cube_dict['hfts'] = cube_dict['hfts-ocean'] + cube_dict['hfts-land']
+        rename_cube(cube_dict['hfts'], hemisphere, None, 'surface_total_heat_flux', 'Surface Total Heat Flux', 'hfts')
+    else:
+        cube_dict['hfts'] = None
 
     return cube_dict
 
@@ -275,9 +295,6 @@ def main(inargs):
     nh_cube_dict['rsut'], sh_cube_dict['rsut'], metadata_dict, attributes = get_data(inargs.rsut_files, 'toa_outgoing_shortwave_flux', metadata_dict, attributes)
     nh_cube_dict['rlut'], sh_cube_dict['rlut'], metadata_dict, attributes = get_data(inargs.rlut_files, 'toa_outgoing_longwave_flux', metadata_dict, attributes)
 
-    nh_cube_dict = derived_toa_radiation_fluxes(nh_cube_dict, inargs, 'nh')
-    sh_cube_dict = derived_toa_radiation_fluxes(sh_cube_dict, inargs, 'sh')
-
     # Surface radiation fluxes
     for realm in ['', '-ocean', '-land']:
         realm_arg = realm[1:] if realm else None
@@ -292,6 +309,9 @@ def main(inargs):
 
     nh_cube_dict = derived_surface_radiation_fluxes(nh_cube_dict, inargs, sftlf_cube, 'nh')
     sh_cube_dict = derived_surface_radiation_fluxes(sh_cube_dict, inargs, sftlf_cube, 'sh')
+
+    nh_cube_dict = derived_toa_radiation_fluxes(nh_cube_dict, 'nh')
+    sh_cube_dict = derived_toa_radiation_fluxes(sh_cube_dict, 'sh')
 
     # Surface heat fluxes
     if inargs.hfrealm == 'atmos':
@@ -310,8 +330,10 @@ def main(inargs):
     nh_cube_dict['hfds-ocean'], sh_cube_dict['hfds-ocean'], metadata_dict, attributes = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict,
                                                                                                  attributes, include_only='ocean', area_cube=areacello_cube)
     nh_cube_dict['hfsithermds-ocean'], sh_cube_dict['hfsithermds-ocean'], metadata_dict, attributes = get_data(inargs.hfsithermds_files,
-                                                                                                   'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
-                                                                                                    metadata_dict, attributes, include_only='ocean', area_cube=areacello_cube)                           
+                                                                                                              'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
+                                                                                                               metadata_dict, attributes, include_only='ocean', area_cube=areacello_cube)
+    nh_cube_dict = derived_surface_heat_fluxes(nh_cube_dict, 'nh')
+    sh_cube_dict = derived_surface_heat_fluxes(sh_cube_dict, 'sh')
 
     # Ocean heat transport / storage
     nh_cube_dict['ohc'], sh_cube_dict['ohc'], metadata_dict, attributes = get_data(inargs.ohc_files, 'ocean_heat_content', metadata_dict, attributes)
