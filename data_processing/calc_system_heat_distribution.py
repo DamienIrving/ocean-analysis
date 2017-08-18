@@ -92,8 +92,7 @@ def get_data(filenames, var, metadata_dict, attributes, sftlf_cube=None, include
 
         cube = timeseries.convert_to_annual(cube, full_months=True)
             
-        if sftlf_cube:
-            assert include_only
+        if include_only and sftlf_cube:
             mask = create_land_ocean_mask(sftlf_cube, cube.shape, include_only)
             cube.data = numpy.ma.asarray(cube.data)
             cube.data.mask = mask
@@ -170,13 +169,13 @@ def derived_surface_radiation_fluxes(cube_dict, inargs, sftlf_cube, hemisphere):
             realm_arg = realm[1:] if realm else None
 
             cube_dict['rsns'+realm] = cube_dict['rsds'+realm] - cube_dict['rsus'+realm]
-            rename_cube(cube_dict['rsns'], hemisphere, realm_arg, 'surface_net_shortwave_flux_in_air', 'Surface Net Shortwave Flux in Air', 'rsns')
+            rename_cube(cube_dict['rsns'+realm], hemisphere, realm_arg, 'surface_net_shortwave_flux_in_air', 'Surface Net Shortwave Flux in Air', 'rsns')
            
             cube_dict['rlns'+realm] = cube_dict['rlds'+realm] - cube_dict['rlus'+realm]
-            rename_cube(cube_dict['rlns'], hemisphere, realm_arg, 'surface_net_longwave_flux_in_air', 'Surface Net Longwave Flux in Air', 'rlns')
+            rename_cube(cube_dict['rlns'+realm], hemisphere, realm_arg, 'surface_net_longwave_flux_in_air', 'Surface Net Longwave Flux in Air', 'rlns')
 
             cube_dict['rns'+realm] = cube_dict['rsns'+realm] + cube_dict['rlns'] 
-            rename_cube(cube_dict['rns'], hemisphere, realm_arg, 'surface_net_flux_in_air', 'Surface Net Flux in Air', 'rns')
+            rename_cube(cube_dict['rns'+realm], hemisphere, realm_arg, 'surface_net_flux_in_air', 'Surface Net Flux in Air', 'rns')
     else:
         for realm in ['', '-ocean', '-land']:
             cube_dict['rsns'+realm] = None
