@@ -185,7 +185,7 @@ def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint)
 
 def main(inargs):
     """Run the program."""
-  
+
     try:
         time_constraint = gio.get_time_constraint(inargs.time)
     except AttributeError:
@@ -203,7 +203,7 @@ def main(inargs):
     fig.subplots_adjust(left=0.15, top=0.95)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile)    #, file_info=metadata_dict)
+    gio.write_metadata(inargs.outfile, file_info={inargs.infile: iris.load(inargs.infile)[0].attributes['history']})
 
 
 if __name__ == '__main__':

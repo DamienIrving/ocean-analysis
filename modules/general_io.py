@@ -5,6 +5,7 @@ Functions:
   check_iris_var           -- Check if a variable is in the list of iris standard names
   check_time_units         -- Check time axis units
   check_xarrayDataset      -- Check xarray.Dataset for data format compliance
+  create_outdir            -- Create the output directory if it doesn't exist already
   get_cmip5_file_details   -- Extract details from a CMIP5 filename
   get_subset_kwargs        -- Get keyword arguments for xarray subsetting
   get_time_constraint      -- Get the time constraint used for reading an iris cube 
@@ -185,6 +186,23 @@ def check_xarrayDataset(dset, var_list):
 
         assert 0 <= lon_values.min() <= 360, \
         'Longitude axis must be 0 to 360E'
+
+
+def create_outdir(outfile):
+    """Create the output file directory if it doesn't exist already.
+
+    Expected input is the entire ouput file name and path:
+       /path/to/file/outfile.nc
+
+    """
+
+    outfile_components = outfile.split('/')
+    outfile_components.pop(-1)
+    outdir = "/".join(outfile_components)
+    mkdir_command = 'mkdir -p ' + outdir
+
+    print(mkdir_command)
+    os.system(mkdir_command)
 
 
 def get_cmip5_file_details(cube):

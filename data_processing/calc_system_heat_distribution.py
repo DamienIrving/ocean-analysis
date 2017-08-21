@@ -300,7 +300,7 @@ def create_cube_list(nh_cube_dict, sh_cube_dict, metadata_dict, attributes):
     iris.util.unify_time_units(cube_list)
     for cube in cube_list:
         cube.attributes = attributes
-        cube.attributes['history'] = gio.write_metadata() #file_info=metadata_dict
+        cube.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
 
     return cube_list
 
@@ -369,6 +369,7 @@ def main(inargs):
     ## FIXME: Add hfy analysis
 
     cube_list = create_cube_list(nh_cube_dict, sh_cube_dict, metadata_dict, attributes)
+    gio.create_outdir(inargs.outfile)
     iris.save(cube_list, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
 
 
