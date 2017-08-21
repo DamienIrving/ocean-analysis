@@ -164,6 +164,25 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
                      linewidth=1.0)
 
 
+def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
+    """Plot ocean data."""
+
+    ohc_var = 'ocean heat content '+hemisphere+' sum'
+
+    ohc_value, ohc_color = get_data(infile, ohc_var, agg_method, time_constraint)
+
+    values = (ohc_value,)
+    edge_colors = (ohc_color,)
+
+    ind = numpy.arange(len(values))  # the x locations for the groups
+    col = column_number[hemisphere] 
+    axes[2, col].bar(ind, values, bar_width,
+                     color=['None',],
+                     edgecolor=edge_colors,
+                     tick_label=['ohc',],
+                     linewidth=1.0)
+
+
 def main(inargs):
     """Run the program."""
   
@@ -178,7 +197,7 @@ def main(inargs):
     for hemisphere in ['sh', 'nh']:
         plot_atmos(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
         plot_surface(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
-        #plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
+        plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
 
     fig.tight_layout()
     fig.subplots_adjust(left=0.15, top=0.95)
