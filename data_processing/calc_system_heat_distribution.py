@@ -43,6 +43,8 @@ hemisphere_constraints = {'nh': iris.Constraint(latitude=nh_lat_subset),
 def calc_sum(cube, var, hemisphere, area_cube):
     """Calculate the hemispheric sum."""
 
+    cube = cube.copy() 
+
     coord_names = [coord.name() for coord in cube.dim_coords]
     assert 'time' in coord_names
     assert len(coord_names) == 3
@@ -58,7 +60,7 @@ def calc_sum(cube, var, hemisphere, area_cube):
         cube.data = numpy.ma.asarray(cube.data)
         cube.data.mask = complete_mask
     else:
-        cube = cube.copy().extract(hemisphere_constraints[hemisphere])
+        cube = cube.extract(hemisphere_constraints[hemisphere])
     
     cube = multiply_by_area(cube, var, area_cube) # convert W m-2 to W
     coord_names.remove('time')
@@ -238,7 +240,6 @@ def multiply_by_area(cube, var, area_cube):
     """Multiply by cell area."""
 
     if cube.units == 'W m-2':
-
         if area_cube:
             area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
         else:
@@ -247,9 +248,8 @@ def multiply_by_area(cube, var, area_cube):
             if not cube.coord('longitude').has_bounds():
                 cube.coord('longitude').guess_bounds()
             area_data = iris.analysis.cartography.area_weights(cube)
-            units = str(cube.units)
-            cube.units = units.replace('m-2', '')
-
+        units = str(cube.units)
+        cube.units = units.replace('m-2', '')
         cube.data = cube.data * area_data
     else:
         print('Did not multiply %s by area. Units = %s' %(var, str(cube.units)))
@@ -361,6 +361,11 @@ def main(inargs):
     nh_cube_dict['hfsithermds-ocean'], sh_cube_dict['hfsithermds-ocean'], metadata_dict, attributes = get_data(inargs.hfsithermds_files,
                                                                                                               'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
                                                                                                                metadata_dict, attributes, include_only='ocean', area_cube=areacello_cube)
+
+    ## FIXME: Unify all cubes at once
+    if nh_cube_dict['hfds-ocean']:
+        iris.util.unify_time_units([nh_cube_dict['hfss-ocean'], nh_cube_dict['hfls-ocean'], nh_cube_dict['hfds-ocean']])
+        iris.util.unify_time_units([sh_cube_dict['hfss-ocean'], sh_cube_dict['hfls-ocean'], sh_cube_dict['hfds-ocean']])
     nh_cube_dict = derived_surface_heat_fluxes(nh_cube_dict, 'nh')
     sh_cube_dict = derived_surface_heat_fluxes(sh_cube_dict, 'sh')
 
