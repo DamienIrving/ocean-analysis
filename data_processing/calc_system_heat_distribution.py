@@ -69,7 +69,8 @@ def calc_sum(cube, var, hemisphere, area_cube):
     return sum_cube 
 
 
-def get_data(filenames, var, metadata_dict, attributes, sftlf_cube=None, include_only=None, area_cube=None):
+def get_data(filenames, var, metadata_dict, attributes, input_timescale='monthly', 
+             sftlf_cube=None, include_only=None, area_cube=None):
     """Read, merge, temporally aggregate and calculate hemispheric totals.
 
     Args:
@@ -89,9 +90,13 @@ def get_data(filenames, var, metadata_dict, attributes, sftlf_cube=None, include
             cube = iris.util.squeeze(cube)
 
         attributes = cube.attributes
-
-        cube = timeseries.convert_to_annual(cube, full_months=True)
+        
+        if not input_timescale == 'annual':
+            cube = timeseries.convert_to_annual(cube, full_months=True)
             
+        if 'J' in str(cube.units):
+            cube = joules_to_watts(cube)
+
         if include_only and sftlf_cube:
             mask = create_land_ocean_mask(sftlf_cube, cube.shape, include_only)
             cube.data = numpy.ma.asarray(cube.data)
@@ -107,6 +112,24 @@ def get_data(filenames, var, metadata_dict, attributes, sftlf_cube=None, include
         sh_sum = None
 
     return nh_sum, sh_sum, metadata_dict, attributes
+
+
+def joules_to_watts(cube):
+    """Convert data from Joules to Watts.
+
+    1 W = 1 J/s
+
+    The annual timescale data are divided by the number of seconds in a year.
+
+    """ 
+
+    seconds_in_year = 60 * 60 * 24 * 365.0
+    cube.data = cube.data / seconds_in_year
+
+    units = str(cube.units)
+    cube.units = units.replace('J', 'W')
+
+    return cube
 
 
 def create_land_ocean_mask(mask_cube, target_shape, include_only):
@@ -336,7 +359,7 @@ def main(inargs):
     sh_cube_dict = derived_surface_heat_fluxes(sh_cube_dict, 'sh')
 
     # Ocean heat transport / storage
-    nh_cube_dict['ohc'], sh_cube_dict['ohc'], metadata_dict, attributes = get_data(inargs.ohc_files, 'ocean_heat_content', metadata_dict, attributes)
+    nh_cube_dict['ohc-ocean'], sh_cube_dict['ohc-ocean'], metadata_dict, attributes = get_data(inargs.ohc_files, 'ocean_heat_content', metadata_dict, attributes, input_timescale='annual', include_only='ocean', area_cube=areacello_cube)
     ## FIXME: Add hfy analysis
 
     cube_list = create_cube_list(nh_cube_dict, sh_cube_dict, metadata_dict, attributes)
