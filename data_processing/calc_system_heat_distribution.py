@@ -95,9 +95,6 @@ def get_data(filenames, var, metadata_dict, attributes, input_timescale='monthly
         
         if not input_timescale == 'annual':
             cube = timeseries.convert_to_annual(cube, full_months=True)
-            
-        if 'J' in str(cube.units):
-            cube = joules_to_watts(cube)
 
         if include_only and sftlf_cube:
             mask = create_land_ocean_mask(sftlf_cube, cube.shape, include_only)
@@ -120,24 +117,6 @@ def get_data(filenames, var, metadata_dict, attributes, input_timescale='monthly
         sh_sum = None
 
     return nh_sum, sh_sum, metadata_dict, attributes
-
-
-def joules_to_watts(cube):
-    """Convert data from Joules to Watts.
-
-    1 W = 1 J/s
-
-    The annual timescale data are divided by the number of seconds in a year.
-
-    """ 
-
-    seconds_in_year = 60 * 60 * 24 * 365.0
-    cube.data = cube.data / seconds_in_year
-
-    units = str(cube.units)
-    cube.units = units.replace('J', 'W')
-
-    return cube
 
 
 def create_land_ocean_mask(mask_cube, target_shape, include_only):

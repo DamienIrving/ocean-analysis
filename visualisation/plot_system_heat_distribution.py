@@ -37,20 +37,32 @@ except ImportError:
 column_number = {'sh': 0, 'nh': 1}
 
 
-def setup_plot():
+def setup_plot(exclude_ocean=False):
     """Set the plot axes and headings."""
 
     cols = ['Southern Hemisphere', 'Northern Hemisphere']
-    rows = ['TOA / Atmosphere', 'Surface', 'Ocean']
+    rows = ['TOA / Atmosphere', 'Surface']
+
+    if exclude_ocean:
+        height = 6
+        nrows = 2
+    else:
+        rows.append('Ocean')
+        height = 9
+        nrows = 3
 
     fig = plt.figure(figsize=(14, 9))
-    axes1 = fig.add_subplot(3, 2, 1)
-    axes2 = fig.add_subplot(3, 2, 2, sharey=axes1)
-    axes3 = fig.add_subplot(3, 2, 3)
-    axes4 = fig.add_subplot(3, 2, 4, sharey=axes3)
-    axes5 = fig.add_subplot(3, 2, 5)
-    axes6 = fig.add_subplot(3, 2, 6, sharey=axes5)
-    axes = numpy.array([(axes1, axes2), (axes3, axes4), (axes5, axes6)])
+    axes1 = fig.add_subplot(nrows, 2, 1)
+    axes2 = fig.add_subplot(nrows, 2, 2, sharey=axes1)
+    axes3 = fig.add_subplot(nrows, 2, 3)
+    axes4 = fig.add_subplot(nrows, 2, 4, sharey=axes3)
+
+    if exclude_ocean:
+        axes = numpy.array([(axes1, axes2), (axes3, axes4)])
+    else:
+        axes5 = fig.add_subplot(nrows, 2, 5)
+        axes6 = fig.add_subplot(nrows, 2, 6, sharey=axes5)
+        axes = numpy.array([(axes1, axes2), (axes3, axes4), (axes5, axes6)])
 
     pad = 5 # in points
 
@@ -67,12 +79,36 @@ def setup_plot():
     return fig, axes
 
 
-def get_data(infile, var, agg_method, time_constraint):
+def calc_dohc_dt(cube):
+    """Calculate dOHC/dt.
+    
+    This value is comparable to the heat and radiative flux terms.
+    
+    """
+    
+    dohc = numpy.cumsum(cube.data - cube.data[0])
+    dt = numpy.arange(0, 365.25 * len(dohc), 365.25) * 60 * 60 * 24
+    dohc_dt = dohc[1:] / dt[1:]
+    
+    dohc_dt_cube = cube[1:].copy()
+    dohc_dt_cube.data = dohc_dt   # temporary fix: * 60 * 60 * 24 * 365
+    
+    units = str(dohc_dt_cube.units)
+    dohc_dt_cube.units = units.replace('J', 'W')
+    
+    return dohc_dt_cube
+
+
+def get_data(infile, var, agg_method, time_constraint, ohc=False):
     """Read and temporally aggregate the data."""
     
     try:
         with iris.FUTURE.context(cell_datetime_objects=True):
             cube = iris.load_cube(infile, var & time_constraint)
+            
+            if ohc:
+                cube = calc_dohc_dt(cube)
+            
             if agg_method == 'trend':
                 value = timeseries.calc_trend(cube, per_yr=True)
             elif agg_method == 'climatology':
@@ -140,7 +176,7 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
         hfls_var = 'Surface Upward Latent Heat Flux ' + hemisphere + realm + ' sum'
         rlns_var = 'Surface Net Longwave Flux in Air ' + hemisphere +realm + ' sum'
         if realm == '':
-            hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + ' ocean' + ' sum'
+            hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + ' ocean sum'
         else:
             hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + realm + ' sum'
     
@@ -167,19 +203,21 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
 def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
     """Plot ocean data."""
 
-    ohc_var = 'ocean heat content '+hemisphere+' sum'
+    hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + ' ocean sum'
+    ohc_var = 'ocean heat content ' + hemisphere + ' sum'
+    
+    hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint)
+    ohc_value, ohc_color = get_data(infile, ohc_var, agg_method, time_constraint, ohc=True)
 
-    ohc_value, ohc_color = get_data(infile, ohc_var, agg_method, time_constraint)
-
-    values = (ohc_value,)
-    edge_colors = (ohc_color,)
+    values = (hfds_value, ohc_value)
+    edge_colors = (hfds_color, ohc_color)
 
     ind = numpy.arange(len(values))  # the x locations for the groups
     col = column_number[hemisphere] 
     axes[2, col].bar(ind, values, bar_width,
-                     color=['None',],
+                     color=[hfds_color, 'None'],
                      edgecolor=edge_colors,
-                     tick_label=['ohc',],
+                     tick_label=['hfds', 'dOHC/dt'],
                      linewidth=1.0)
 
 
@@ -191,13 +229,14 @@ def main(inargs):
     except AttributeError:
         time_constraint = iris.Constraint()    
 
-    fig, axes = setup_plot()
+    fig, axes = setup_plot(inargs.exclude_ocean)
     bar_width = 0.7
     
     for hemisphere in ['sh', 'nh']:
         plot_atmos(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
         plot_surface(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
-        plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
+        if not inargs.exclude_ocean:
+            plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
 
     fig.tight_layout()
     fig.subplots_adjust(left=0.15, top=0.95)
@@ -229,6 +268,9 @@ author:
                         help="Method used to aggregate over time [default = trend]")
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=('1850-01-01', '2005-12-31'),
                         help="Time period [default = 1850-2005]")
+
+    parser.add_argument("--exclude_ocean", action="store_true", default=False,
+                        help="Leave out the ocean plot [default=False]")
 
     args = parser.parse_args()             
     main(args)
