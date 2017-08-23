@@ -35,7 +35,7 @@ except ImportError:
 # Define functions
 
 column_number = {'sh': 0, 'nh': 1}
-ylabels = {'climatology': 'W', 'trend': '$W \: yr^{-1}$', 'integral': 'J'}
+ylabels = {'climatology': 'W', 'trend': '$W \: yr^{-1}$'}
 
 def setup_plot(exclude_ocean=False):
     """Set the plot axes and headings."""
@@ -82,17 +82,23 @@ def setup_plot(exclude_ocean=False):
 def calc_dohc_dt(cube):
     """Calculate dOHC/dt.
     
-    This value is comparable to the heat and radiative flux terms.
+    This value is comparable to the heat and radiative flux terms
     
     """
+    
+    ### Temporary fix
+    #cube.data = cube.data * 60 * 60 * 24 * 365
+    #units = str(cube.units)
+    #cube.units = units.replace('W', 'J')
+    ###
     
     dohc = numpy.cumsum(cube.data - cube.data[0])
     dt = numpy.arange(0, 365.25 * len(dohc), 365.25) * 60 * 60 * 24
     dohc_dt = dohc[1:] / dt[1:]
     
     dohc_dt_cube = cube[1:].copy()
-    dohc_dt_cube.data = dohc_dt   # temporary fix: * 60 * 60 * 24 * 365
-    
+    dohc_dt_cube.data = dohc_dt   
+        
     units = str(dohc_dt_cube.units)
     dohc_dt_cube.units = units.replace('J', 'W')
     
@@ -113,6 +119,7 @@ def get_data(infile, var, agg_method, time_constraint, ohc=False):
                 value = timeseries.calc_trend(cube, per_yr=True)
             elif agg_method == 'climatology':
                 value = float(cube.collapsed('time', iris.analysis.MEAN).data)
+
         if 'land' in var:
             color = 'green'
         elif 'ocean' in var:
