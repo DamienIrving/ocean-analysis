@@ -35,7 +35,7 @@ except ImportError:
 # Define functions
 
 column_number = {'sh': 0, 'nh': 1}
-
+ylabels = {'climatology': 'W', 'trend': '$W \: yr^{-1}$', 'integral': 'J'}
 
 def setup_plot(exclude_ocean=False):
     """Set the plot axes and headings."""
@@ -51,7 +51,7 @@ def setup_plot(exclude_ocean=False):
         height = 9
         nrows = 3
 
-    fig = plt.figure(figsize=(14, 9))
+    fig = plt.figure(figsize=(14, 10))  # width, height
     axes1 = fig.add_subplot(nrows, 2, 1)
     axes2 = fig.add_subplot(nrows, 2, 2, sharey=axes1)
     axes3 = fig.add_subplot(nrows, 2, 3)
@@ -126,16 +126,14 @@ def get_data(infile, var, agg_method, time_constraint, ohc=False):
     return value, color
         
 
-#def get_title(cube_dict):
-#    """Get the plot title."""
-#
-#    for cube in cube_dict.values():
-#        if cube:
-#            run = 'r%si%sp%s'  %(cube.attributes['realization'], cube.attributes['initialization_method'], cube.attributes['physics_version'])
-#            title = 'Energy budget for %s, %s, %s'  %(cube.attributes['model_id'], cube.attributes['experiment'], run)
-#            break
-#    
-#    return title
+def set_title(infile):
+    """Get the plot title."""
+
+    cube = iris.load(infile)
+    run = 'r%si%sp%s'  %(cube[0].attributes['realization'], cube[0].attributes['initialization_method'], cube[0].attributes['physics_version'])
+    title = 'Energy budget for %s, %s, %s'  %(cube[0].attributes['model_id'], cube[0].attributes['experiment'], run)
+    
+    plt.suptitle(title, size='x-large')
 
     
 def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
@@ -161,6 +159,8 @@ def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint)
                      edgecolor=edge_colors,
                      tick_label=['rsdt', 'rsut', 'rsaa', 'rsns'],
                      linewidth=1.0)
+    if col == 0:
+        axes[0, col].set_ylabel(ylabels[agg_method])
 
 
 def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
@@ -198,6 +198,8 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
                      edgecolor=edge_colors,
                      tick_label=tick_labels,
                      linewidth=1.0)
+    if col == 0:
+        axes[1, col].set_ylabel(ylabels[agg_method])
 
 
 def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
@@ -219,6 +221,8 @@ def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint)
                      edgecolor=edge_colors,
                      tick_label=['hfds', 'dOHC/dt'],
                      linewidth=1.0)
+    if col == 0:
+        axes[2, col].set_ylabel(ylabels[agg_method])
 
 
 def main(inargs):
@@ -238,8 +242,9 @@ def main(inargs):
         if not inargs.exclude_ocean:
             plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
 
-    fig.tight_layout()
-    fig.subplots_adjust(left=0.15, top=0.95)
+    set_title(inargs.infile)
+    fig.tight_layout(rect=[0, 0, 1, 0.93])   # (left, bottom, right, top) 
+    #fig.subplots_adjust(left=0.15, top=0.95)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info={inargs.infile: iris.load(inargs.infile)[0].attributes['history']})
