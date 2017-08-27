@@ -27,6 +27,7 @@ try:
     import general_io as gio
     import spatial_weights
     import convenient_universal as uconv
+    import timeseries
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -103,11 +104,15 @@ def get_depth_text(temperature_cube, min_depth, max_depth):
     return depth_text
 
 
-def get_outfile_name(temperature_file, execute=True):
+def get_outfile_name(temperature_file, annual=False, execute=True):
     """Define the OHC file name using the temperature file name as a template."""
 
     ohc_file = temperature_file.replace('thetao', 'ohc')
     ohc_file = ohc_file.replace('ua6', 'r87/dbi599')
+
+    if annual:
+        ohc_file = ohc_file.replace('/mon/', '/yr/')
+        ohc_file = ohc_file.replace('Omon', 'Oyr')
 
     ohc_file_components = ohc_file.split('/')
     ohc_file_components.pop(-1)
@@ -134,6 +139,9 @@ def main(inargs):
         metadata_dict = {temperature_file: temperature_cube.attributes['history']}
         temperature_atts = temperature_cube.attributes
 
+        if inargs.annual:
+            temperature_cube = timeseries.convert_to_annual(temperature_cube)
+
         if volume_cube:
             metadata_dict[inargs.volume_file] = volume_cube.attributes['history']
             temperature_cube = temperature_cube * volume_cube
@@ -155,7 +163,7 @@ def main(inargs):
 
         ohc_cube = calc_ohc_vertical_integral(temperature_cube, inargs.density, inargs.specific_heat, coord_names, weights=vertical_weights, chunk=inargs.chunk)
         ohc_cube = add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, inargs)
-        ohc_file = get_outfile_name(temperature_file)    
+        ohc_file = get_outfile_name(temperature_file, annual=inargs.annual)    
 
         iris.save(ohc_cube, ohc_file)
         print(ohc_file)
@@ -192,6 +200,9 @@ notes:
                         help="Only include data below this vertical level")
     parser.add_argument("--max_depth", type=float, default=None,
                         help="Only include data above this vertical level")
+
+    parser.add_argument("--annual", action="store_true", default=False,
+                        help="Convert data to annual timescale [default: False]")
 
     parser.add_argument("--density", type=float, default=1023,
                         help="Density of seawater (in kg.m-3). Default of 1023 kg.m-3 from Hobbs2016.")
