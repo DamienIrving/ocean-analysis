@@ -218,7 +218,7 @@ def derived_surface_heat_fluxes(cube_dict, hemisphere):
 def multiply_by_area(cube, var, area_cube):
     """Multiply by cell area."""
 
-    if cube.units == 'W m-2':
+    if 'm-2' in str(cube.units):
         if area_cube:
             area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
         else:
