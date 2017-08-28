@@ -109,6 +109,7 @@ def get_outfile_name(temperature_file, annual=False, execute=True):
 
     ohc_file = temperature_file.replace('thetao', 'ohc')
     ohc_file = ohc_file.replace('ua6', 'r87/dbi599')
+    ohc_file = ohc_file.replace('_legacy', '')
 
     if annual:
         ohc_file = ohc_file.replace('/mon/', '/yr/')
