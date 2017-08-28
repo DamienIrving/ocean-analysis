@@ -235,10 +235,13 @@ def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint)
 def main(inargs):
     """Run the program."""
 
-    try:
-        time_constraint = gio.get_time_constraint(inargs.time)
-    except AttributeError:
-        time_constraint = iris.Constraint()    
+    if inargs.time:
+        try:
+            time_constraint = gio.get_time_constraint(inargs.time)
+        except AttributeError:
+            time_constraint = iris.Constraint()    
+    else:
+        time_constraint = iris.Constraint()
 
     fig, axes = setup_plot(inargs.exclude_ocean)
     bar_width = 0.7
@@ -278,7 +281,7 @@ author:
 
     parser.add_argument("--aggregation", type=str, default='trend', choices=('trend', 'climatology'),
                         help="Method used to aggregate over time [default = trend]")
-    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=('1850-01-01', '2005-12-31'),
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
                         help="Time period [default = 1850-2005]")
 
     parser.add_argument("--exclude_ocean", action="store_true", default=False,
