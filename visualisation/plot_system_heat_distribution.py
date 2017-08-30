@@ -128,8 +128,8 @@ def get_data(infile, var, agg_method, time_constraint, ohc=False):
             color = 'black'
     except iris.exceptions.ConstraintMismatchError:
         value = 0
-        color = '0.5'
-        
+        color = '0.5'   
+
     return value, color
         
 
@@ -158,6 +158,7 @@ def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint)
 
     values = (rsdt_value, rsut_value, rsaa_value, rsns_value)
     edge_colors = (rsdt_color, rsut_color, rsaa_color, rsns_color)
+    line_widths = (1.0, 1.0, 0.3, 1.0)
 
     ind = numpy.arange(len(values))  # the x locations for the groups
     col = column_number[hemisphere] 
@@ -165,7 +166,7 @@ def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint)
                      color=['None', 'None', 'None', edge_colors[-1]],
                      edgecolor=edge_colors,
                      tick_label=['rsdt', 'rsut', 'rsaa', 'rsns'],
-                     linewidth=1.0)
+                     linewidth=line_widths)
     if col == 0:
         axes[0, col].set_ylabel(ylabels[agg_method])
 
@@ -209,25 +210,33 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
         axes[1, col].set_ylabel(ylabels[agg_method])
 
 
-def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
+def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint, infer_ohc=False):
     """Plot ocean data."""
 
     hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + ' ocean sum'
-    ohc_var = 'ocean heat content ' + hemisphere + ' sum'
-    
-    hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint)
-    ohc_value, ohc_color = get_data(infile, ohc_var, agg_method, time_constraint, ohc=True)
+    hfbasin_var = 'Northward Ocean Heat Transport ' + hemisphere + ' ocean sum'
 
-    values = (hfds_value, ohc_value)
-    edge_colors = (hfds_color, ohc_color)
+    hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint)
+    hfbasin_value, hfbasin_color = get_data(infile, hfbasin_var, agg_method, time_constraint)
+    line_widths = [1.0, 1.0, 1.0]
+    if infer_ohc:
+        ohc_value = hfds_value + hfbasin_value
+        ohc_color = 'blue'
+        line_widths[1] = 0.3
+    else:
+        ohc_var = 'ocean heat content ' + hemisphere + ' sum'
+        ohc_value, ohc_color = get_data(infile, ohc_var, agg_method, time_constraint, ohc=True)
+
+    values = (hfds_value, ohc_value, hfbasin_value)
+    edge_colors = (hfds_color, ohc_color, hfbasin_color)
 
     ind = numpy.arange(len(values))  # the x locations for the groups
     col = column_number[hemisphere] 
     axes[2, col].bar(ind, values, bar_width,
-                     color=[hfds_color, 'None'],
+                     color=[hfds_color, 'None', 'None'],
                      edgecolor=edge_colors,
-                     tick_label=['hfds', 'dOHC/dt'],
-                     linewidth=1.0)
+                     tick_label=['hfds', 'dOHC/dt', 'hfbasin'],
+                     linewidth=line_widths)
     if col == 0:
         axes[2, col].set_ylabel(ylabels[agg_method])
 
@@ -250,7 +259,8 @@ def main(inargs):
         plot_atmos(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
         plot_surface(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
         if not inargs.exclude_ocean:
-            plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
+            plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation,
+                       time_constraint, infer_ohc=inargs.infer_ohc)
 
     set_title(inargs.infile)
     fig.tight_layout(rect=[0, 0, 1, 0.93])   # (left, bottom, right, top) 
@@ -286,6 +296,8 @@ author:
 
     parser.add_argument("--exclude_ocean", action="store_true", default=False,
                         help="Leave out the ocean plot [default=False]")
+    parser.add_argument("--infer_ohc", action="store_true", default=False,
+                        help="Infer OHC instead of using the calculated value [default=False]")
 
     args = parser.parse_args()             
     main(args)
