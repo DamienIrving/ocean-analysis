@@ -79,26 +79,29 @@ def setup_plot(exclude_ocean=False):
     return fig, axes
 
 
-def calc_dohc_dt(cube):
+def calc_dohc_dt(ohc_cube):
     """Calculate dOHC/dt.
     
-    This value is comparable to the heat and radiative flux terms
+    This value is comparable to the heat and radiative flux terms.
     
+    Estimate is calculated by taking derivative of fitted polynomial.
+      (This seems to work better than dividing the OHC anomaly 
+      timeseries by dt, which is something that was noted by
+      Nummelin et al (2016))
+
+    polyfit returns [c, b, a] corresponding to y = a + bt + ct^2
+      (the derviative is then dy/dt = b + 2ct)
+
     """
+
+    time_axis = timeseries.convert_to_seconds(ohc_cube.coord('time')).points
     
-    ### Temporary fix
-    #cube.data = cube.data * 60 * 60 * 24 * 365
-    #units = str(cube.units)
-    #cube.units = units.replace('W', 'J')
-    ###
-    
-    dohc = numpy.cumsum(cube.data - cube.data[0])
-    dt = numpy.arange(0, 365.25 * len(dohc), 365.25) * 60 * 60 * 24
-    dohc_dt = dohc[1:] / dt[1:]
-    
-    dohc_dt_cube = cube[1:].copy()
-    dohc_dt_cube.data = dohc_dt   
+    coef_c, coef_b, coef_a = numpy.ma.polyfit(time_axis, ohc_cube.data, 2)
+    dohc_dt_data = coef_b + 2 * coef_c * time_axis
         
+    dohc_dt_cube = ohc_cube.copy()
+    dohc_dt_cube.data = dohc_dt_data
+
     units = str(dohc_dt_cube.units)
     dohc_dt_cube.units = units.replace('J', 'W')
     
