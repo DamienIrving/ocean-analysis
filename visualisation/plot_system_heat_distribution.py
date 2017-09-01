@@ -28,6 +28,7 @@ sys.path.append(modules_dir)
 try:
     import general_io as gio
     import timeseries
+    import convenient_universal as uconv
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -108,13 +109,36 @@ def calc_dohc_dt(ohc_cube):
     return dohc_dt_cube
 
 
-def get_data(infile, var, agg_method, time_constraint, ohc=False):
+def select_control_segment(cube, branch_time, nyears):
+    """Select the right time segment of the control run.
+
+    Assumes annual timescale data (and that the branch times are expressed in months)
+
+    The branch time represents the start of the year, while the first data time mid-year.
+      Hence the adjustment by 182.5
+
+    """
+
+    assert cube.attributes['experiment_id'] == 'piControl'
+    time_values = cube.coord('time').points - 182.5 
+    start_index, error = uconv.find_nearest(time_values, branch_time, index=True)
+
+    cube = cube[start_index : int(start_index + nyears)]
+
+    return cube
+
+
+def get_data(infile, var, agg_method, time_constraint, ohc=False, branch=None):
     """Read and temporally aggregate the data."""
     
     try:
         with iris.FUTURE.context(cell_datetime_objects=True):
             cube = iris.load_cube(infile, var & time_constraint)
-            
+ 
+            if branch:
+                branch_time, nyears = branch
+                cube = select_control_segment(cube, branch_time, nyears)
+                         
             if ohc:
                 cube = calc_dohc_dt(cube)
             
@@ -146,7 +170,7 @@ def set_title(infile):
     plt.suptitle(title, size='x-large')
 
     
-def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
+def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint, branch=None):
     """Plot TOA and atmosphere data."""
 
     rsdt_var = 'TOA Incident Shortwave Radiation '+hemisphere+' sum'
@@ -154,10 +178,10 @@ def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint)
     rsaa_var = 'Atmosphere Absorbed Shortwave Flux '+hemisphere+' sum'
     rsns_var = 'Surface Net Shortwave Flux in Air '+hemisphere+' sum'
 
-    rsdt_value, rsdt_color = get_data(infile, rsdt_var, agg_method, time_constraint)
-    rsut_value, rsut_color = get_data(infile, rsut_var, agg_method, time_constraint)
-    rsaa_value, rsaa_color = get_data(infile, rsaa_var, agg_method, time_constraint)
-    rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint)
+    rsdt_value, rsdt_color = get_data(infile, rsdt_var, agg_method, time_constraint, branch=branch)
+    rsut_value, rsut_color = get_data(infile, rsut_var, agg_method, time_constraint, branch=branch)
+    rsaa_value, rsaa_color = get_data(infile, rsaa_var, agg_method, time_constraint, branch=branch)
+    rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint, branch=branch)
 
     values = (rsdt_value, rsut_value, rsaa_value, rsns_value)
     edge_colors = (rsdt_color, rsut_color, rsaa_color, rsns_color)
@@ -174,7 +198,7 @@ def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint)
         axes[0, col].set_ylabel(ylabels[agg_method])
 
 
-def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constraint):
+def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constraint, branch=None):
     """Plot radiative surface fluxes."""
 
     values = []
@@ -193,11 +217,11 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
         else:
             hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + realm + ' sum'
     
-        rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint)
-        hfss_value, hfss_color = get_data(infile, hfss_var, agg_method, time_constraint)
-        hfls_value, hfls_color = get_data(infile, hfls_var, agg_method, time_constraint)
-        hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint)
-        rlns_value, rlns_color = get_data(infile, rlns_var, agg_method, time_constraint)
+        rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint, branch=branch)
+        hfss_value, hfss_color = get_data(infile, hfss_var, agg_method, time_constraint, branch=branch)
+        hfls_value, hfls_color = get_data(infile, hfls_var, agg_method, time_constraint, branch=branch)
+        hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint, branch=branch)
+        rlns_value, rlns_color = get_data(infile, rlns_var, agg_method, time_constraint, branch=branch)
 
         hfds_inferred_value = rsns_value - hfss_value - hfls_value - rlns_value
 
@@ -223,7 +247,7 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
     return hfds_output
     
 
-def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint, hfds_value):
+def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint, hfds_value, branch=None):
     """Plot ocean data.
 
     hfds value is passed to this function because it might have been derived from surface values
@@ -233,8 +257,8 @@ def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint,
     hfbasin_var = 'Northward Ocean Heat Transport ' + hemisphere + ' ocean sum'
     ohc_var = 'ocean heat content ' + hemisphere + ' sum'
 
-    hfbasin_value, hfbasin_color = get_data(infile, hfbasin_var, agg_method, time_constraint)
-    ohc_value, ohc_color = get_data(infile, ohc_var, agg_method, time_constraint, ohc=True)
+    hfbasin_value, hfbasin_color = get_data(infile, hfbasin_var, agg_method, time_constraint, branch=branch)
+    ohc_value, ohc_color = get_data(infile, ohc_var, agg_method, time_constraint, ohc=True, branch=branch)
 
     values = [hfds_value, ohc_value, hfbasin_value]
     colors = ['None', 'None', 'None']
@@ -280,10 +304,10 @@ def main(inargs):
     bar_width = 0.7
     
     for hemisphere in ['sh', 'nh']:
-        plot_atmos(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
-        hfds_value = plot_surface(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
+        plot_atmos(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, branch=inargs.branch_time)
+        hfds_value = plot_surface(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, branch=inargs.branch_time)
         if not inargs.exclude_ocean:
-            plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, hfds_value)
+            plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, hfds_value, branch=inargs.branch_time)
 
     set_title(inargs.infile)
     fig.tight_layout(rect=[0, 0, 1, 0.93])   # (left, bottom, right, top) 
@@ -319,6 +343,9 @@ author:
 
     parser.add_argument("--exclude_ocean", action="store_true", default=False,
                         help="Leave out the ocean plot [default=False]")
+
+    parser.add_argument("--branch_time", type=float, nargs=2, metavar=('BRANCH_TIME', 'NYEARS'), default=None,
+                        help="For piControl data, specify branch time and number of years of corresponding historical experiment [default = trend]")
 
     args = parser.parse_args()             
     main(args)
