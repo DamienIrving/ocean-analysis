@@ -181,6 +181,8 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
     edge_colors = []
     fill_colors = []
     tick_labels = []
+    line_widths = []
+    ind = []
     for realm in ['', ' ocean', ' land']:
         rsns_var = 'Surface Net Shortwave Flux in Air ' + hemisphere + realm + ' sum'
         hfss_var = 'Surface Upward Sensible Heat Flux ' + hemisphere + realm + ' sum'
@@ -197,48 +199,67 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
         hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint)
         rlns_value, rlns_color = get_data(infile, rlns_var, agg_method, time_constraint)
 
-        values.extend([rsns_value, hfss_value, hfls_value, hfds_value, rlns_value])
-        edge_colors.extend([rsns_color, hfss_color, hfls_color, hfds_color, rlns_color])
-        fill_colors.extend([rsns_color, 'None', 'None', 'None', 'None'])
-        tick_labels.extend(['rsns', 'hfss', 'hfls', 'hfds', 'rlns'])
+        hfds_inferred_value = rsns_value - hfss_value - hfls_value - rlns_value
 
-    ind = numpy.arange(len(values))  # the x locations for the groups
+        if realm == '':
+            hfds_output = hfds_value if hfds_value else hfds_inferred_value
+        
+        values.extend([rsns_value, hfss_value, hfls_value, hfds_value, hfds_inferred_value, rlns_value])
+        edge_colors.extend([rsns_color, hfss_color, hfls_color, hfds_color, hfds_color, rlns_color])
+        fill_colors.extend([rsns_color, 'None', 'None', 'None', 'None', 'None'])
+        tick_labels.extend(['rsns', 'hfss', 'hfls', '', 'hfds', 'rlns'])
+        line_widths.extend([1.0, 1.0, 1.0, 1.0, 0.3, 1.0])
+    
+    ind = [0, 1, 2, 3, 3, 4, 5, 6, 7 ,8, 8, 9, 10, 11, 12, 13, 13, 14]
     col = column_number[hemisphere] 
     axes[1, col].bar(ind, values, bar_width,
                      color=fill_colors,
                      edgecolor=edge_colors,
                      tick_label=tick_labels,
-                     linewidth=1.0)
+                     linewidth=line_widths)
     if col == 0:
         axes[1, col].set_ylabel(ylabels[agg_method])
 
+    return hfds_output
+    
 
-def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint, infer_ohc=False):
-    """Plot ocean data."""
+def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint, hfds_value):
+    """Plot ocean data.
 
-    hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + ' ocean sum'
+    hfds value is passed to this function because it might have been derived from surface values
+
+    """
+
     hfbasin_var = 'Northward Ocean Heat Transport ' + hemisphere + ' ocean sum'
+    ohc_var = 'ocean heat content ' + hemisphere + ' sum'
 
-    hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint)
     hfbasin_value, hfbasin_color = get_data(infile, hfbasin_var, agg_method, time_constraint)
+    ohc_value, ohc_color = get_data(infile, ohc_var, agg_method, time_constraint, ohc=True)
+
+    values = [hfds_value, ohc_value, hfbasin_value]
+    colors = ['None', 'None', 'None']
+    edge_colors = ['blue', ohc_color, hfbasin_color]
     line_widths = [1.0, 1.0, 1.0]
-    if infer_ohc:
-        ohc_value = hfds_value + hfbasin_value
-        ohc_color = 'blue'
-        line_widths[1] = 0.3
+    ind = [0, 1, 2]
+    labels = ['hfds', 'dOHC/dt', 'hfbasin']
+    if hfbasin_value:
+        ohc_inferred_value = hfds_value + hfbasin_value
+        values.insert(2, ohc_inferred_value)
+        colors.insert(2, 'None')
+        edge_colors.insert(2, 'blue')
+        line_widths.insert(2, 0.3)
+        ind.insert(2, 1)
+        labels.insert(2, '')
     else:
-        ohc_var = 'ocean heat content ' + hemisphere + ' sum'
-        ohc_value, ohc_color = get_data(infile, ohc_var, agg_method, time_constraint, ohc=True)
-
-    values = (hfds_value, ohc_value, hfbasin_value)
-    edge_colors = (hfds_color, ohc_color, hfbasin_color)
-
-    ind = numpy.arange(len(values))  # the x locations for the groups
+        hfbasin_inferred = ohc_value - hfds_value
+        values[-1] = hfbasin_inferred
+        line_widths[-1] = 0.3
+        
     col = column_number[hemisphere] 
     axes[2, col].bar(ind, values, bar_width,
-                     color=[hfds_color, 'None', 'None'],
+                     color=colors,
                      edgecolor=edge_colors,
-                     tick_label=['hfds', 'dOHC/dt', 'hfbasin'],
+                     tick_label=labels,
                      linewidth=line_widths)
     if col == 0:
         axes[2, col].set_ylabel(ylabels[agg_method])
@@ -260,10 +281,9 @@ def main(inargs):
     
     for hemisphere in ['sh', 'nh']:
         plot_atmos(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
-        plot_surface(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
+        hfds_value = plot_surface(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint)
         if not inargs.exclude_ocean:
-            plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation,
-                       time_constraint, infer_ohc=inargs.infer_ohc)
+            plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, hfds_value)
 
     set_title(inargs.infile)
     fig.tight_layout(rect=[0, 0, 1, 0.93])   # (left, bottom, right, top) 
@@ -299,8 +319,6 @@ author:
 
     parser.add_argument("--exclude_ocean", action="store_true", default=False,
                         help="Leave out the ocean plot [default=False]")
-    parser.add_argument("--infer_ohc", action="store_true", default=False,
-                        help="Infer OHC instead of using the calculated value [default=False]")
 
     args = parser.parse_args()             
     main(args)
