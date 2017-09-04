@@ -90,15 +90,19 @@ def calc_dohc_dt(ohc_cube):
       timeseries by dt, which is something that was noted by
       Nummelin et al (2016))
 
-    polyfit returns [c, b, a] corresponding to y = a + bt + ct^2
-      (the derviative is then dy/dt = b + 2ct)
+    I've gone with a cubic polynomial, but you get exactly the same
+      end result (i.e. trend in dOHC/dt) using a quadratic, which
+      is what Nummelin did.
+
+    polyfit returns [d, c, b, a] corresponding to y = a + bt + ct^2 + dt^3
+      (the derviative is then dy/dt = b + 2ct + 3dt^2)
 
     """
 
     time_axis = timeseries.convert_to_seconds(ohc_cube.coord('time')).points
     
-    coef_c, coef_b, coef_a = numpy.ma.polyfit(time_axis, ohc_cube.data, 2)
-    dohc_dt_data = coef_b + 2 * coef_c * time_axis
+    coef_d, coef_c, coef_b, coef_a = numpy.ma.polyfit(time_axis, ohc_cube.data, 3)
+    dohc_dt_data = coef_b + (2 * coef_c * time_axis) + (3 * coef_d * time_axis**2)
         
     dohc_dt_cube = ohc_cube.copy()
     dohc_dt_cube.data = dohc_dt_data
@@ -247,7 +251,7 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
     return hfds_output
     
 
-def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint, hfds_value, branch=None):
+def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint, hfds_value, branch=None, infer_ohc=False, infer_hfbasin=False):
     """Plot ocean data.
 
     hfds value is passed to this function because it might have been derived from surface values
@@ -266,7 +270,7 @@ def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint,
     line_widths = [1.0, 1.0, 1.0]
     ind = [0, 1, 2]
     labels = ['hfds', 'dOHC/dt', 'hfbasin']
-    if hfbasin_value:
+    if infer_ohc and hfbasin_value:
         ohc_inferred_value = hfds_value + hfbasin_value
         values.insert(2, ohc_inferred_value)
         colors.insert(2, 'None')
@@ -274,10 +278,15 @@ def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint,
         line_widths.insert(2, 0.3)
         ind.insert(2, 1)
         labels.insert(2, '')
-    else:
-        hfbasin_inferred = ohc_value - hfds_value
-        values[-1] = hfbasin_inferred
-        line_widths[-1] = 0.3
+    
+    if infer_hfbasin:
+        hfbasin_inferred_value = ohc_value - hfds_value        
+        values.insert(-1, hfbasin_inferred_value)
+        colors.insert(-1, 'None')
+        edge_colors.insert(-1, 'blue')
+        line_widths.insert(-1, 0.3)
+        ind.insert(-1, 2)
+        labels.insert(-1, '')
         
     col = column_number[hemisphere] 
     axes[2, col].bar(ind, values, bar_width,
@@ -307,7 +316,8 @@ def main(inargs):
         plot_atmos(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, branch=inargs.branch_time)
         hfds_value = plot_surface(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, branch=inargs.branch_time)
         if not inargs.exclude_ocean:
-            plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, hfds_value, branch=inargs.branch_time)
+            plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, hfds_value, branch=inargs.branch_time,
+                       infer_ohc=inargs.infer_ohc, infer_hfbasin=inargs.infer_hfbasin)
 
     set_title(inargs.infile)
     fig.tight_layout(rect=[0, 0, 1, 0.93])   # (left, bottom, right, top) 
@@ -341,8 +351,14 @@ author:
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
                         help="Time period [default = 1850-2005]")
 
+    parser.add_argument("--infer_ohc", action="store_true", default=False,
+                        help="Infer OHC from hfds and hfbasin [default=False]")
+    parser.add_argument("--infer_hfbasin", action="store_true", default=False,
+                        help="Infer hfbasin from hfds and ohc [default=False]")
+
     parser.add_argument("--exclude_ocean", action="store_true", default=False,
                         help="Leave out the ocean plot [default=False]")
+
 
     parser.add_argument("--branch_time", type=float, nargs=2, metavar=('BRANCH_TIME', 'NYEARS'), default=None,
                         help="For piControl data, specify branch time and number of years of corresponding historical experiment [default = trend]")
