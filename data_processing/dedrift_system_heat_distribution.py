@@ -33,7 +33,7 @@ except ImportError:
 
 # Define functions
 
-def select_segment(control_cube, ploynomial_data, branch_time, nyears):
+def select_segment(control_cube, polynomial_data, branch_time, nyears):
     """Select the right time segment of the control run.
 
     Assumes annual timescale data (and that the branch times are expressed in months)
@@ -64,7 +64,7 @@ def remove_drift(experiment_cube, control_cube, var):
     coef_d, coef_c, coef_b, coef_a = numpy.polyfit(time_axis, control_cube.data, 3)
     control_polynomial = coef_a + (coef_b * time_axis) + (coef_c * time_axis**2) + (coef_d * time_axis**3)
     drift_data = control_polynomial - control_polynomial[0]
-    drift_data = select_segment(drift_data, branch_time, experiment_cube.shape[0])
+    drift_data = select_segment(control_cube, drift_data, branch_time, experiment_cube.shape[0])
 
     new_experiment_cube = experiment_cube.copy()
     new_experiment_cube.data = new_experiment_cube.data - drift_data 
@@ -98,7 +98,7 @@ def main(inargs):
             experiment_index = find_var_index(experiment_cube_list, var)
             control_index = find_var_index(control_cube_list, var)
             new_cube = remove_drift(experiment_cube_list[experiment_index],
-                                    control_cube_list[control_index])
+                                    control_cube_list[control_index], var)
             experiment_cube_list[experiment_index] = new_cube
     
     metadata_dict = {inargs.experiment_file: experiment_cube_list[0].attributes['history'],
