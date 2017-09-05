@@ -33,7 +33,6 @@ except ImportError:
 
 # Define functions
 
-
 def select_segment(control_cube, ploynomial_data, branch_time, nyears):
     """Select the right time segment of the control run.
 
@@ -58,8 +57,6 @@ def remove_drift(experiment_cube, control_cube, var):
     
     """
     
-    pdb.set_trace()
-    
     branch_time = experiment_cube.attributes['branch_time']
 
     time_axis = control_cube.coord('time').points
@@ -74,23 +71,41 @@ def remove_drift(experiment_cube, control_cube, var):
     
     return new_experiment_cube
     
+    
+def var_check(cube, var_long_name):
+    """Check if variable is in cube."""
+    
+    return cube.long_name == var_long_name
+    
+    
+def find_var_index(cube_list, var_long_name):
+    """Find the index of a variable in a cube list."""
+    
+    bool_list = [var_check(cube, var_long_name) for cube in cube_list]
+    
+    return bool_list.index(True)
+
 
 def main(inargs):
     """Run the program."""
 
-    experiment_cube = iris.load(inargs.experiment_file)
-    control_cube = iris.load(inargs.control_file)
-
+    experiment_cube_list = iris.load(inargs.experiment_file)
+    control_cube_list = iris.load(inargs.control_file)
     for hemisphere in ['sh', 'nh']:
         hfbasin_var = 'Northward Ocean Heat Transport ' + hemisphere + ' ocean sum'
         ohc_var = 'ocean heat content ' + hemisphere + ' sum'
+        for var in [hfbasin_var, ohc_var]:
+            experiment_index = find_var_index(experiment_cube_list, var)
+            control_index = find_var_index(control_cube_list, var)
+            new_cube = remove_drift(experiment_cube_list[experiment_index],
+                                    control_cube_list[control_index])
+            experiment_cube_list[experiment_index] = new_cube
     
-        new_hfbasin_cube = remove_drift(experiment_cube.extract(hfbasin_var),
-                                        control_cube.extract(hfbasin_var))
-        new_ohc_cube = remove_drift(experiment_cube.extract(ohc_var),
-                                    control_cube.extract(ohc_var))
-        
-        
+    metadata_dict = {inargs.experiment_file: experiment_cube_list[0].attributes['history'],
+                     inargs.control_file: control_cube_list[0].attributes['history']}
+    for cube in experiment_cube_list:
+        cube.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
+    iris.save(experiment_cube_list, inargs.outfile)
     
 
 if __name__ == '__main__':
@@ -111,8 +126,7 @@ author:
     parser.add_argument("experiment_file", type=str, 
                         help="Input experiment file generated from calc_system_heat_distribution.py")
     parser.add_argument("control_file", type=str, 
-                        help="Input control file generated from calc_system_heat_distribution.py")
-                                           
+                        help="Input control file generated from calc_system_heat_distribution.py")                      
     parser.add_argument("outfile", type=str, help="Output file")                                     
 
     args = parser.parse_args()             
