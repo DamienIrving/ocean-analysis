@@ -1,7 +1,7 @@
 """
 Filename:     dedrift_system_heat_distribution.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Plot the system heat distribution
+Description:  Dedrift the ocean components of the system heat distribution
 
 """
 
@@ -117,7 +117,7 @@ author:
 
 """
 
-    description = 'Plot the system heat distribution'
+    description = 'Dedrift the ocean components of the system heat distribution'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
