@@ -294,9 +294,11 @@ def create_cube_list(nh_cube_dict, sh_cube_dict, metadata_dict, attributes):
 
     equalise_attributes(cube_list)
     iris.util.unify_time_units(cube_list)
+
     for cube in cube_list:
         cube.attributes = attributes
         cube.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
+        cube.data = numpy.array(cube.data)  #removes _FillValue attribute
 
     return cube_list
 
@@ -367,9 +369,8 @@ def main(inargs):
 
     # Ocean heat transport / storage
     nh_cube_dict['ohc'], sh_cube_dict['ohc'], metadata_dict, attributes = get_data(inargs.ohc_files, 'ocean_heat_content', metadata_dict, attributes, input_timescale='annual', area_cube=areacello_cube)
-    
     nh_cube_dict['hfbasin-ocean'], sh_cube_dict['hfbasin-ocean'], metadata_dict, attributes = get_data(inargs.hfbasin_files, 'northward_ocean_heat_transport', metadata_dict, attributes, include_only='ocean')
-
+    
     cube_list = create_cube_list(nh_cube_dict, sh_cube_dict, metadata_dict, attributes)
     gio.create_outdir(inargs.outfile)
     iris.save(cube_list, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
