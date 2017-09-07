@@ -71,13 +71,20 @@ def calc_sum(cube, var, hemisphere, area_cube):
     return sum_cube 
 
 
-def hfbasin_handling(cube, model):
+def hfbasin_handling(cube, var, model):
     """Select global ocean from hfbasin cube."""
 
-    if model == 'CSIRO-Mk3-6-0':
-        cube = cube[:, 2, :]
-    else:
-        cube = cube.extract(iris.Constraint(region='global_ocean'))
+    if var == 'northward_ocean_heat_transport':
+        if model == 'CSIRO-Mk3-6-0':
+            cube = cube[:, 2, :]
+        else:
+            cube = cube.extract(iris.Constraint(region='global_ocean'))
+    elif var == 'ocean_heat_y_transport':
+        cube = cube.collapsed('longitude', iris.analysis.SUM)
+        cube.remove_coord('longitude')
+        cube.standard_name = 'northward_ocean_heat_transport'
+        cube.long_name = 'Northward Ocean Heat Transport'
+        cube.var_name = 'hfbasin'
 
     return cube
 
@@ -112,8 +119,8 @@ def get_data(filenames, var, metadata_dict, attributes, input_timescale='monthly
             cube.data = numpy.ma.asarray(cube.data)
             cube.data.mask = mask
         
-        if var == 'northward_ocean_heat_transport':  
-            cube = hfbasin_handling(cube, attributes['model_id'])   
+        if var in ['northward_ocean_heat_transport', 'ocean_heat_y_transport']:  
+            cube = hfbasin_handling(cube, var, attributes['model_id'])   
             nh_sum = cube.extract(iris.Constraint(latitude=0))
             sh_sum = nh_sum.copy()
             sh_sum.data = sh_sum.data * -1
@@ -369,8 +376,11 @@ def main(inargs):
 
     # Ocean heat transport / storage
     nh_cube_dict['ohc'], sh_cube_dict['ohc'], metadata_dict, attributes = get_data(inargs.ohc_files, 'ocean_heat_content', metadata_dict, attributes, input_timescale='annual', area_cube=areacello_cube)
-    nh_cube_dict['hfbasin-ocean'], sh_cube_dict['hfbasin-ocean'], metadata_dict, attributes = get_data(inargs.hfbasin_files, 'northward_ocean_heat_transport', metadata_dict, attributes, include_only='ocean')
-    
+    if inargs.hfbasin_files:
+        nh_cube_dict['hfbasin-ocean'], sh_cube_dict['hfbasin-ocean'], metadata_dict, attributes = get_data(inargs.hfbasin_files, 'northward_ocean_heat_transport', metadata_dict, attributes, include_only='ocean')
+    elif inargs.hfy_files:
+        nh_cube_dict['hfbasin-ocean'], sh_cube_dict['hfbasin-ocean'], metadata_dict, attributes = get_data(inargs.hfy_files, 'ocean_heat_y_transport', metadata_dict, attributes, include_only='ocean')
+
     cube_list = create_cube_list(nh_cube_dict, sh_cube_dict, metadata_dict, attributes)
     gio.create_outdir(inargs.outfile)
     iris.save(cube_list, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
@@ -426,6 +436,8 @@ author:
                         help="ocean heat content files")
     parser.add_argument("--hfbasin_files", type=str, nargs='*', default=None,
                         help="northward ocean heat transport files")
+    parser.add_argument("--hfy_files", type=str, nargs='*', default=None,
+                        help="ocean heat y transport files")
 
     parser.add_argument("--hfrealm", type=str, choices=('atmos', 'ocean'), required=True,
                         help="specify whether original hfss and hfls data were atmos or ocean")
