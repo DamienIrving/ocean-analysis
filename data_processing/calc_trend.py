@@ -28,6 +28,7 @@ sys.path.append(modules_dir)
 try:
     import general_io as gio
     import timeseries
+    import grids
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -73,6 +74,22 @@ def get_trend_cube(cube, xaxis='time'):
     return trend_cube
 
 
+def lat_tropics(cell):
+    return -30 < cell < 30
+
+
+def subtract_tropics(cube):
+    """Subtract the mean tropics trend."""
+
+    lat_constraint = iris.Constraint(latitude=lat_tropics)
+    tropics_cube = cube.extract(lat_constraint)
+    tropics_mean = tropics_cube.collapsed(['longitude', 'latitude'], iris.analysis.MEAN)
+
+    cube.data = cube.data - tropics_mean.data
+
+    return cube
+
+
 def main(inargs):
     """Run the program."""
 
@@ -97,6 +114,11 @@ def main(inargs):
     atts['history'] = gio.write_metadata(file_info=infile_metadata)
     for cube in cube_list:
         trend_cube = get_trend_cube(cube, xaxis=xaxis)
+        if inargs.regrid:
+            trend_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(trend_cube)
+        if inargs.subtract_tropics:
+            trend_cube = subtract_tropics(trend_cube)             
+
         trend_cube.attributes = atts
 
         out_list.append(trend_cube)
@@ -118,7 +140,7 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("infile", type=str, help="Input ocean maps file")
+    parser.add_argument("infile", type=str, help="Input file")
     parser.add_argument("outfile", type=str, help="Output file name")
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
@@ -126,6 +148,11 @@ author:
 
     parser.add_argument("--xaxis", type=str, nargs=2, metavar=('FILE', 'VARIABLE'), default=None,
                         help="Variable to use for xaxis instead of time")
+
+    parser.add_argument("--subtract_tropics", action="store_true", default=False,
+                        help="Subtract the mean tropics trend from all data points")
+    parser.add_argument("--regrid", action="store_true", default=False,
+                        help="Regrid to a regular lat/lon grid")
 
     args = parser.parse_args()            
     main(args)
