@@ -57,6 +57,10 @@ input_projections = {'PlateCarree': ccrs.PlateCarree(),
 
 output_projections = {'PlateCarree': ccrs.PlateCarree(),
                       'PlateCarree_Dateline': ccrs.PlateCarree(central_longitude=180.0),
+                      'Mollweide_Dateline': ccrs.Mollweide(central_longitude=180.0),
+                      'Mollweide': ccrs.Mollweide(),
+                      'Robinson_Dateline': ccrs.Robinson(central_longitude=180.0),
+                      'Robinson': ccrs.Robinson(),
                       'SouthPolarStereo': ccrs.SouthPolarStereo(),
                       'Orthographic': ccrs.Orthographic(central_longitude=240, central_latitude=-45),
                       'RotatedPole_260E_20N_shift180': ccrs.RotatedPole(260, 20, central_rotated_longitude=180),
@@ -99,7 +103,27 @@ def duplicate_input(in_list, nrows, ncols, in_type):
     return out_list
 
 
-def extract_data(infile_list, output_projection):
+def scale_data(cube, user_input, plot_type):
+    """Scale data according to user input.
+
+    Args:
+      user_input (list): [(scale_factor, user_plot_type), ...]
+
+    """
+
+    scaled = False
+    for input_pair in user_input:
+        scale_factor, user_plot_type = input_pair
+        if user_plot_type == plot_type:
+            assert scaled == False, "Multiple scale factors entered for single plot type"
+            cube.data = cube.data / 10**int(scale_factor)
+            cube.units = '10^%s %s' %(scale_factor, str(cube.units))
+            scaled = True
+
+    return cube
+
+
+def extract_data(infile_list, output_projection, scale_factors):
     """Extract data."""
 
     cube_dict = {} 
@@ -121,10 +145,8 @@ def extract_data(infile_list, output_projection):
         # Read data
         with iris.FUTURE.context(cell_datetime_objects=True):
             new_cube = iris.load_cube(infile, gio.check_iris_var(long_name) & time_constraint & lat_constraint)       
-        try:
+            new_cube = scale_data(new_cube, scale_factors, plot_type)
             new_cube = iris.util.squeeze(new_cube)
-        except AttributeError:
-            pass  # squeeze is not available with older versions of iris
 
         coord_names = [coord.name() for coord in new_cube.coords()]
         if 'time' in coord_names:
@@ -332,7 +354,8 @@ def multiplot(cube_dict, nrows, ncols,
                     colour_cube = cube_dict[(colour_label, plotnum)]
                     cf = plot_colour(colour_cube, ax, colour_type, colourbar_type, 
                                      palette_name, extend, colourbar_tick_list)
-                    units_name = units_name if units_name else colour_cube.units.symbol
+                    units_name = units_name if units_name else str(colour_cube.units)
+                    units_name, exponent = uconv.units_info(units_name)
                     if colourbar_type == 'individual' and not no_colourbar_switch:
                         set_individual_colourbar(colourbar_orientation, cf, units_name, units_size, colourbar_number_size)
                     colour_plot_switch = True
@@ -564,7 +587,7 @@ def set_global_colourbar(orientation, span, cf, fig, units, units_size, number_s
     cbar = plt.colorbar(cf, colorbar_axes, orientation=orientation)
 
     # Label the colour bar and add ticks
-    cbar.set_label(uconv.fix_label(units), fontsize=units_size)
+    cbar.set_label(units, fontsize=units_size)
     cbar.ax.tick_params(labelsize=number_size)
 
 
@@ -573,7 +596,7 @@ def set_individual_colourbar(orientation, cf, units, label_size, number_size):
 
     cbar = plt.colorbar(cf, orientation=orientation)
 
-    cbar.set_label(uconv.fix_label(units), fontsize=label_size)
+    cbar.set_label(units, fontsize=label_size)
     cbar.ax.tick_params(labelsize=number_size)
 
 
@@ -633,7 +656,7 @@ def main(inargs):
                                                "projection")
 
     # Extract data
-    cube_dict, metadata_dict, plot_set, max_layers = extract_data(inargs.infile, inargs.output_projection)
+    cube_dict, metadata_dict, plot_set, max_layers = extract_data(inargs.infile, inargs.output_projection, inargs.scale_factor)
     if inargs.exclude_blanks:
         blanks = get_blanks(inargs.nrows, inargs.ncols, plot_set)
     else:
@@ -728,6 +751,9 @@ example:
                                 TYPE can be uwind, vwind, contour, colour or hatching
                                 PLOTNUM starts at 1, goes top left to bottom right
                                 PROJECTION is PlateCarree for regular lat/lon grid""")
+
+    parser.add_argument("--scale_factor", type=str, nargs=2, action='append', default=[], metavar=('SCALE_FACTOR', 'PLOT_TYPE'),
+                        help='scale factor (i.e. 10^factor) and type of plot it applies to')
 
     # Plot size, spacing, projection etc
     parser.add_argument("--output_projection", type=str, nargs='*', choices=list(output_projections.keys()), default=['PlateCarree_Dateline',],

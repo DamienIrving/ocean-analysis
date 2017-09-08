@@ -400,14 +400,29 @@ def units_info(units):
       e.g. 10^22 J
     """
 
-    index = units.find('^')
-    units = units[:index + 1] + '{' + units[index + 1:]
+    components = units.split()
 
-    index = units.find('J')
-    units = units[:index - 1] + '}' + units[index - 1:]
+    exponent = None
+    pieces = []
+    for component in components:
+        index = component.find('^')
+        if not index == -1:
+            exponent = component[index + 1:]
+            component = component[:index + 1] + '{' + component[index + 1:]
+            component = component + '}'
 
-    tex_units = '$'+units+'$'
-    exponent = tex_units.split('}')[0].split('{')[1]
+        index = component.find('-')
+        if not index == -1:
+            component = component[:index] + '^{' + component[index:]
+            component = component + '}'
+        
+        pieces.append(component)
+
+    tex_units = ''
+    for piece in pieces[:-1]:
+        tex_units = tex_units + piece + ' \;'
+    tex_units = tex_units + ' ' + pieces[-1]            
+    tex_units = '$' + tex_units + '$'
 
     return tex_units, exponent
 
