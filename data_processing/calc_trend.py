@@ -11,7 +11,7 @@ import sys, os, pdb
 import argparse
 import numpy, math
 import iris
-
+from iris.experimental.equalise_cubes import equalise_attributes
 
 # Import my modules
 
@@ -100,8 +100,15 @@ def main(inargs):
         time_constraint = iris.Constraint()
 
     with iris.FUTURE.context(cell_datetime_objects=True):
-        cube_list = iris.load(inargs.infile, time_constraint)
-        infile_metadata = {inargs.infile: cube_list[0].attributes['history']}
+        cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var) & time_constraint)
+        history = cube[0].attributes['history']
+        atts = cube[0].attributes
+        equalise_attributes(cube)
+        iris.util.unify_time_units(cube)
+        cube = cube.concatenate_cube()
+        cube = gio.check_time_units(cube)
+        cube = iris.util.squeeze(cube)
+        infile_metadata = {inargs.infiles[0]: history}
         if inargs.xaxis:
             xfile, xvar = inargs.xaxis
             xaxis = iris.load_cube(xfile, xvar & time_constraint)
@@ -109,22 +116,18 @@ def main(inargs):
         else:
             xaxis = 'time'    
 
-    out_list = iris.cube.CubeList([])
-    atts = cube_list[0].attributes    
+    trend_cube = get_trend_cube(cube, xaxis=xaxis)
+    if inargs.regrid:
+        trend_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(trend_cube)
+    if inargs.subtract_tropics:
+        trend_cube = subtract_tropics(trend_cube)             
+
     atts['history'] = gio.write_metadata(file_info=infile_metadata)
-    for cube in cube_list:
-        trend_cube = get_trend_cube(cube, xaxis=xaxis)
-        if inargs.regrid:
-            trend_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(trend_cube)
-        if inargs.subtract_tropics:
-            trend_cube = subtract_tropics(trend_cube)             
-
-        trend_cube.attributes = atts
-
-        out_list.append(trend_cube)
+    trend_cube.attributes = atts
 
     iris.FUTURE.netcdf_no_unlimited = True
-    iris.save(out_list, inargs.outfile)
+    iris.save(trend_cube, inargs.outfile)
+
 
 if __name__ == '__main__':
 
@@ -140,7 +143,8 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("infile", type=str, help="Input file")
+    parser.add_argument("infiles", type=str, nargs='*', help="Input files")
+    parser.add_argument("var", type=str, help="Variable standard_name")
     parser.add_argument("outfile", type=str, help="Output file name")
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
