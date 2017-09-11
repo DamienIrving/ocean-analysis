@@ -62,16 +62,16 @@ ${DEDRIFTED_OHC_DIR} :
 # Trends
 
 ${OHC_TREND_FILE} : 
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_trend.py ${OHC_FILES} ocean_heat_content $@ --time_bounds 1850-01-01 2005-12-31
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_trend.py ${OHC_FILES} ocean_heat_content $@ --time_bounds 1850-01-01 2005-12-31 --regrid
 
 ${OHC_TREND_WRT_TROPICS_FILE} : 
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_trend.py ${OHC_FILES} ocean_heat_content $@ --time_bounds 1850-01-01 2005-12-31 --subtract_tropics
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_trend.py ${OHC_FILES} ocean_heat_content $@ --time_bounds 1850-01-01 2005-12-31 --subtract_tropics --regrid
 
 ${DEDRIFTED_OHC_TREND_FILE} : 
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_trend.py ${DEDRIFTED_OHC_FILES} ocean_heat_content $@ --time_bounds 1850-01-01 2005-12-31
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_trend.py ${DEDRIFTED_OHC_FILES} ocean_heat_content $@ --time_bounds 1850-01-01 2005-12-31 --regrid
 
 ${DEDRIFTED_OHC_TREND_WRT_TROPICS_FILE} : 
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_trend.py ${DEDRIFTED_OHC_FILES} ocean_heat_content $@ --time_bounds 1850-01-01 2005-12-31 --subtract_tropics
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_trend.py ${DEDRIFTED_OHC_FILES} ocean_heat_content $@ --time_bounds 1850-01-01 2005-12-31 --subtract_tropics --regrid
 
 # Plots
 
@@ -83,7 +83,10 @@ ${DEDRIFTED_OHC_TREND_WRT_TROPICS_FILE} :
 
 ## no-dedrifting, trend wrt tropics
 
-#python plot_map.py 1 2 --infile /g/data/r87/dbi599/DRSv2/CMIP5/CanESM2/historicalMisc/yr/ocean/r1i1p4/ohc/latest/ohc-trend-wrt-tropics_Oyr_CanESM2_historicalMisc_r1i1p4_1850-2005.nc ocean_heat_content none none none colour0 1 --infile /g/data/r87/dbi599/DRSv2/CMIP5/CSIRO-Mk3-6-0/historicalMisc/mon/ocean/r1i1p4/ohc/latest/ohc-trend-wrt-tropics_Omon_CSIRO-Mk3-6-0_historicalMisc_r1i1p4_1850-2005.nc ocean_heat_content none none none colour0 2 PlateCarree  PlateCarree --palette RdBu_r --colourbar_ticks -5 -4 -3 -2 -1 1 2 3 4 5 --extend both --scale_factor 17 colour0 --subplot_headings CanESM2 CSIRO-Mk3-6-0 --title "Trend_in_OHC_wrt_tropics_(historicalAA,_1850-2005)" --output_projection Mollweide_Dateline --ofile /g/data/r87/dbi599/figures/ohc-trend-wrt-tropics_Oyr_ensemble_historicalMisc_r1_1850-2005.png
+#python ../visualisation/plot_map.py 1 4 --infile /g/data/r87/dbi599/DRSv2/CMIP5/CanESM2/historicalMisc/yr/ocean/r1i1p4/ohc/latest/ohc-trend-wrt-tropics_Oyr_CanESM2_historicalMisc_r1i1p4_1850-2005.nc ocean_heat_content none none none colour0 1 PlateCarree --infile /g/data/r87/dbi599/DRSv2/CMIP5/CCSM4/historicalMisc/yr/ocean/r1i1p10/ohc/latest/ohc-trend-wrt-tropics_Oyr_CCSM4_historicalMisc_r1i1p10_1850-2005.nc ocean_heat_content none none none colour0 2 PlateCarree --infile /g/data/r87/dbi599/DRSv2/CMIP5/CSIRO-Mk3-6-0/historicalMisc/yr/ocean/r1i1p4/ohc/latest/ohc-trend-wrt-tropics_Oyr_CSIRO-Mk3-6-0_historicalMisc_r1i1p4_1850-2005.nc ocean_heat_content none none none colour0 3 PlateCarree --infile /g/data/r87/dbi599/DRSv2/CMIP5/FGOALS-g2/historicalMisc/yr/ocean/r2i1p1/ohc/latest/ohc-trend-wrt-tropics_Oyr_FGOALS-g2_historicalMisc_r2i1p1_1850-2005.nc ocean_heat_content none none none colour0 4 PlateCarree  --palette RdBu_r --colourbar_ticks -9.0 -7.5 -6.0 -4.5 -3.0 -1.5 0.0 1.5 3.0 4.5 6.0 7.5 9.0 --colourbar_ticks -0.9 -0.75 -0.6 -0.45 -0.3 -0.15 0.0 0.15 0.3 0.45 0.6 0.75 0.9 --colourbar_ticks -9.0 -7.5 -6.0 -4.5 -3.0 -1.5 0.0 1.5 3.0 4.5 6.0 7.5 9.0 --colourbar_ticks -0.9 -0.75 -0.6 -0.45 -0.3 -0.15 0.0 0.15 0.3 0.45 0.6 0.75 0.9 --extend both --scale_factor 17 colour0 --subplot_headings CanESM2 CCSM4 CSIRO-Mk3-6-0 FGOALS-g2 --title "Trend_in_OHC_wrt_tropics_(historicalAA,_1850-2005)" --ofile /g/data/r87/dbi599/figures/ohc-trend-wrt-tropics_Oyr_ensemble_historicalMisc_r1_1850-2005.png --figure_size 32 8 --colourbar_type individual
+
+#height = 8 * nrows
+#width = 8 * ncols
 
 
 
