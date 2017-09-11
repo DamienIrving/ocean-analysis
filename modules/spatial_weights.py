@@ -192,3 +192,13 @@ def guess_depth_bounds(points, bound_position=0.5):
     return bounds
 
 
+def area_array(cube):
+    """Create a cell area array."""
+
+    if not cube.coord('latitude').has_bounds():
+        cube.coord('latitude').guess_bounds()
+    if not cube.coord('longitude').has_bounds():
+        cube.coord('longitude').guess_bounds()
+    area_weights = iris.analysis.cartography.area_weights(cube)
+
+    return area_weights

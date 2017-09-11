@@ -143,14 +143,25 @@ def main(inargs):
         if inargs.annual:
             temperature_cube = timeseries.convert_to_annual(temperature_cube)
 
+        # Work around because array broadcasting isn't working in version 1.13.0 of Iris
+        coord_names = [coord.name() for coord in temperature_cube.dim_coords]
+        assert coord_names[0] == 'time'
+        assert coord_names[1] == 'depth'
+
         if volume_cube:
             metadata_dict[inargs.volume_file] = volume_cube.attributes['history']
-            temperature_cube = temperature_cube * volume_cube
+            #temperature_cube = temperature_cube * volume_cube   # array broadcasting not working in iris version 1.13.0
+            volume_data = uconv.broadcast_array(volume_cube.data, [1, 3], temperature_cube.shape)
+            temperature_cube.data = temperature_cube.data * volume_data
             vertical_weights = None
         else:
             if area_cube:
                 metadata_dict[inargs.area_file] = area_cube.attributes['history']
-                temperature_cube = temperature_cube * area_cube
+                area_data = uconv.broadcast_array(area_cube.data, [2, 3], temperature_cube.shape)
+            else:
+                area_data = spatial_weights.area_array(temperature_cube)
+                
+            temperature_cube.data = temperature_cube.data * area_data
         
             coord_names = [coord.name() for coord in temperature_cube.dim_coords]
             depth_axis = temperature_cube.coord('depth')
