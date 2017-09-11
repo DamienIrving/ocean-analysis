@@ -12,6 +12,7 @@ import argparse
 import numpy, math
 import iris
 from iris.experimental.equalise_cubes import equalise_attributes
+from decimal import Decimal
 
 # Import my modules
 
@@ -117,8 +118,18 @@ def main(inargs):
             xaxis = 'time'    
 
     trend_cube = get_trend_cube(cube, xaxis=xaxis)
+
     if inargs.regrid:
+        before_sum = trend_cube.data.sum()
+        before_mean = trend_cube.data.mean()
         trend_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(trend_cube)
+        if regrid_status:
+            print('Warning: Data has been regridded')
+            print('Before sum:', '%.2E' % Decimal(before_sum) )
+            print('After sum:', '%.2E' % Decimal(trend_cube.data.sum()) )
+            print('Before mean:', '%.2E' % Decimal(before_mean) )
+            print('After mean:', '%.2E' % Decimal(trend_cube.data.mean()) )
+
     if inargs.subtract_tropics:
         trend_cube = subtract_tropics(trend_cube)             
 
