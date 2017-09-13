@@ -2,7 +2,7 @@
 
 model=CSIRO-Mk3-6-0
 mip=r1i1p1
-experiment=historicalGHG
+experiment=historical
 
 fx_mip=r0i0p0
 fx_experiment=${experiment}
@@ -13,7 +13,7 @@ script_dir=/home/599/dbi599/ocean-analysis/visualisation
 ua6_dir=/g/data/ua6/DRSv2/CMIP5/${model}/${experiment}
 r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}/${experiment}
 
-sftlf_file=${ua6_dir}/fx/atmos/${fx_mip}/sftlf/latest/sftlf_fx_${model}_${fx_experiment}_r0i0p0.nc
+sftlf_file=${ua6_dir}/fx/atmos/${fx_mip}/sftlf/latest/sftlf_fx_${model}_${fx_experiment}_${fx_mip}.nc
 
 outfile=/g/data/r87/dbi599/figures/heat-cycle/atmos-heat-budget-comparison_Oyr_${model}_${experiment}_${mip}_all.png   #_hf-atmos
 rsds_files="--rsds_files ${ua6_dir}/mon/atmos/${mip}/rsds/latest/rsds_Amon_${model}_${experiment}_${mip}_*.nc"
