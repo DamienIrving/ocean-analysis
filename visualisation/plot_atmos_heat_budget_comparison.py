@@ -86,7 +86,7 @@ def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None):
             cube = cube.extract(time_constraint)
 
         cube = timeseries.convert_to_annual(cube, full_months=True)
-
+        cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
         cube = multiply_by_area(cube) 
         
         if sftlf_cube:
@@ -96,6 +96,12 @@ def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None):
 
         zonal_sum = cube.collapsed('longitude', iris.analysis.SUM)
         zonal_sum.remove_coord('longitude')
+
+        grid_spacing = numpy.diff(zonal_sum.coord('latitude').points) 
+        mean_grid_spacing = grid_spacing.mean()
+        assert numpy.abs(grid_spacing - mean_grid_spacing).max() < 0.1, "Grid must be equally spaced" 
+        zonal_sum.data = zonal_sum.data / mean_grid_spacing        
+
     else:
         zonal_sum = None
 
@@ -132,7 +138,7 @@ def infer_hfds(cube_dict):
     return cube_dict
 
 
-def raw_trend_plot(cube_dict, gs, plotnum):
+def raw_trend_plot(cube_dict, gs, plotnum, time_bounds):
     """Plot the trends"""
     
     ax = plt.subplot(gs[plotnum])
@@ -143,13 +149,18 @@ def raw_trend_plot(cube_dict, gs, plotnum):
             trend_cube = calc_trend_cube(cube_dict[var])
             label, color, style = line_characteristics[var]
             iplt.plot(trend_cube, color=color, linestyle=style, label=label)
-
+ 
+    ax.set_xlim(-90, 90)
     ax.legend(ncol=2)
-    ax.set_title('raw trends')    
-    ax.set_ylabel('$W yr^{-1}$')
+    ax.set_ylabel('$W \: lat^{-1} \: yr^{-1}$')
     ax.set_xlabel('latitude')
-    
 
+    start_time, end_time = time_bounds
+    start_year = start_time.split('-')[0]
+    end_year = end_time.split('-')[0]
+    ax.set_title('Trend in zonal sum, %s-%s'  %(start_year, end_year))    
+
+    
 def get_title(cube_dict):
     """Get the plot title."""
 
@@ -215,7 +226,7 @@ def main(inargs):
     # Plot
     fig = plt.figure(figsize=[12, 14])
     gs = gridspec.GridSpec(2, 1)
-    raw_trend_plot(cube_dict, gs, 0)
+    raw_trend_plot(cube_dict, gs, 0, inargs.time)
     #percentage_trend_plot(cube_dict, gs, 1)
         
     title = get_title(cube_dict)
@@ -262,7 +273,7 @@ author:
     parser.add_argument("--hfrealm", type=str, choices=('atmos', 'ocean'), default='atmos',
                         help="specify whether original hfss and hfls data were atmos or ocean")
 
-    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=('1850-01-01', '2005-12-31'),
                         help="Time period [default = entire]")
 
     args = parser.parse_args()             

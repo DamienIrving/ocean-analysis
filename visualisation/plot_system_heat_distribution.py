@@ -257,7 +257,7 @@ def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint,
     hfds value is passed to this function because it might have been derived from surface values
 
     """
-
+    
     hfbasin_var = 'Northward Ocean Heat Transport ' + hemisphere + ' ocean sum'
     ohc_var = 'ocean heat content ' + hemisphere + ' sum'
 
