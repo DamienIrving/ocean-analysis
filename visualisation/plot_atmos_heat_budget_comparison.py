@@ -69,6 +69,17 @@ def create_land_ocean_mask(mask_cube, target_shape, include_only):
     return mask
 
 
+def get_grid_spacing(cube):
+    """Return an array of grid spacings."""
+
+    if not cube.coord('latitude').has_bounds():
+        cube.coord('latitude').guess_bounds()
+
+    spacing = [numpy.diff(bounds)[0] for bounds in cube.coord('latitude').bounds]
+    
+    return numpy.array(spacing)
+
+
 def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None):
     """Read, merge, temporally aggregate and calculate zonal sum."""
     
@@ -97,10 +108,8 @@ def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None):
         zonal_sum = cube.collapsed('longitude', iris.analysis.SUM)
         zonal_sum.remove_coord('longitude')
 
-        grid_spacing = numpy.diff(zonal_sum.coord('latitude').points) 
-        mean_grid_spacing = grid_spacing.mean()
-        assert numpy.abs(grid_spacing - mean_grid_spacing).max() < 0.1, "Grid must be equally spaced" 
-        zonal_sum.data = zonal_sum.data / mean_grid_spacing        
+        grid_spacing = get_grid_spacing(zonal_sum) 
+        zonal_sum.data = zonal_sum.data / grid_spacing        
 
     else:
         zonal_sum = None
