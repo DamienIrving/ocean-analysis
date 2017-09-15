@@ -77,11 +77,17 @@ def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None, re
             cube = iris.util.squeeze(cube)
 
             cube = cube.extract(time_constraint)
+        
+        coord_names = [coord.name() for coord in cube.dim_coords]
+        if 'depth' in coord_names:
+            depth_constraint = iris.Constraint(depth=0)
+            cube = cube.extract(depth_constraint)
 
         cube = timeseries.convert_to_annual(cube, full_months=True)
+
         cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
         cube = multiply_by_area(cube) 
-        
+
         if 'up' in cube.standard_name:
             cube.data = cube.data * -1
 
