@@ -53,7 +53,7 @@ line_characteristics = {'rsds': ('downwelling shortwave', 'orange', 'dashed'),
                         'hfls': ('latent heat flux', 'green', 'dotted'),
                         'hfds': ('heat flux into ocean', 'blue', 'solid'),
                         'hfds-inferred': ('inferred heat flux into ocean', 'blue', 'dashdot'),
-                        'hfsithermds' : ('heat flux from sea ice', 'cyan', 'dashdot')}
+                        'hfsithermds' : ('heat flux from sea ice', 'blue', 'dotted')}
 
 plot_order = ['rsds', 'rsus', 'rlds', 'rlus', 'rns', 'hfss', 'hfls', 'hfds', 'hfds-inferred', 'hfsithermds']
 
@@ -144,7 +144,7 @@ def infer_hfds(cube_dict, inargs):
 
     iris.util.unify_time_units(data_list)
 
-    cube_dict['hfds-inferred'] = cube_dict['rns'] + hfls_data + hfss_data - hfsithermds_data
+    cube_dict['hfds-inferred'] = cube_dict['rns'] + hfls_data + hfss_data + hfsithermds_data
             
     return cube_dict
 
