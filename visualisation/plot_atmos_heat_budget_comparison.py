@@ -51,35 +51,6 @@ line_characteristics = {'rnds': ('net downward radiative flux', 'black', 'solid'
 plot_order = ['rnds', 'hfss', 'hfls', 'hfds', 'hfds-inferred']
 
 
-def create_land_ocean_mask(mask_cube, target_shape, include_only):
-    """Create a land or ocean mask from an sftlf (land surface fraction) file.
-    There is no land when cell value == 0
-    """
-
-    target_ndim = len(target_shape)
-
-    if include_only == 'land':
-        mask_array = numpy.where(mask_cube.data > 50, False, True)
-    elif include_only == 'ocean':
-        mask_array = numpy.where(mask_cube.data < 50, False, True)
-
-    mask = uconv.broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
-    assert mask.shape == target_shape 
-
-    return mask
-
-
-def get_grid_spacing(cube):
-    """Return an array of grid spacings."""
-
-    if not cube.coord('latitude').has_bounds():
-        cube.coord('latitude').guess_bounds()
-
-    spacing = [numpy.diff(bounds)[0] for bounds in cube.coord('latitude').bounds]
-    
-    return numpy.array(spacing)
-
-
 def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None):
     """Read, merge, temporally aggregate and calculate zonal sum."""
     
@@ -101,14 +72,12 @@ def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None):
         cube = multiply_by_area(cube) 
         
         if sftlf_cube:
-            mask = create_land_ocean_mask(sftlf_cube, cube.shape, 'ocean')
-            cube.data = numpy.ma.asarray(cube.data)
-            cube.data.mask = mask
+            cube = uconv.apply_land_ocean_mask(cube, sftlf_cube, 'ocean')
 
         zonal_sum = cube.collapsed('longitude', iris.analysis.SUM)
         zonal_sum.remove_coord('longitude')
 
-        grid_spacing = get_grid_spacing(zonal_sum) 
+        grid_spacing = grids.get_grid_spacing(zonal_sum) 
         zonal_sum.data = zonal_sum.data / grid_spacing        
 
     else:

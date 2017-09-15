@@ -1,10 +1,10 @@
 # Script for running the plot_atmos_heat_budget_comparison.py script
 
 model=CSIRO-Mk3-6-0
-mip=r1i1p1
-experiment=historical
+mip=r1i1p4
+experiment=historicalMisc
 
-fx_mip=r0i0p0
+fx_mip=r0i0p4
 fx_experiment=${experiment}
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python

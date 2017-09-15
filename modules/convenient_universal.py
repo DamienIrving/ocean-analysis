@@ -1,24 +1,25 @@
 """Collection of convenient functions that will work with my anaconda or uvcdat install.
 
 Functions:
-  adjust_lon_range   -- Express longitude values in desired 360 degree interval
-  apply_lon_filter   -- Set values outside of specified longitude range to zero
-  broadcast_array    -- Broadcast an array to a target shape
-  calc_significance  -- Perform significance test
-  coordinate_paris   -- Generate lat/lon pairs
-  create_basin_array -- Create an ocean basin array
-  dict_filter        -- Filter dictionary according to specified keys
-  find_nearest       -- Find the closest array item to value
-  find_duplicates    -- Return list of duplicates in a list
-  fix_label          -- Fix formatting of an axis label taken from the command line
-  get_threshold      -- Turn the user input threshold into a numeric threshold
-  hi_lo              -- Determine the new highest and lowest value.
-  list_kwargs        -- List keyword arguments of a function
-  mask_marginal_seas -- Mask the marginal seas
-  match_dates        -- Take list of dates and match with the corresponding times 
-                        in a detailed time axis
-  single2list        -- Check if item is a list, then convert if not
-  units_info         -- Make the units taken from a file LaTeX math compliant
+  adjust_lon_range      -- Express longitude values in desired 360 degree interval
+  apply_land_ocean_mask -- Apply a land or ocean mask from an sftlf (land surface fraction) file
+  apply_lon_filter      -- Set values outside of specified longitude range to zero
+  broadcast_array       -- Broadcast an array to a target shape
+  calc_significance     -- Perform significance test
+  coordinate_paris      -- Generate lat/lon pairs
+  create_basin_array    -- Create an ocean basin array
+  dict_filter           -- Filter dictionary according to specified keys
+  find_nearest          -- Find the closest array item to value
+  find_duplicates       -- Return list of duplicates in a list
+  fix_label             -- Fix formatting of an axis label taken from the command line
+  get_threshold         -- Turn the user input threshold into a numeric threshold
+  hi_lo                 -- Determine the new highest and lowest value.
+  list_kwargs           -- List keyword arguments of a function
+  mask_marginal_seas    -- Mask the marginal seas
+  match_dates           -- Take list of dates and match with the corresponding times 
+                           in a detailed time axis
+  single2list           -- Check if item is a list, then convert if not
+  units_info            -- Make the units taken from a file LaTeX math compliant
 
 """
 
@@ -56,6 +57,30 @@ def adjust_lon_range(lons, radians=True, start=0.0):
         more_than_end = lons >= end
 
     return lons
+
+
+def apply_land_ocean_mask(data_cube, mask_cube, include_only):
+    """Apply a land or ocean mask from an sftlf (land surface fraction) file.
+
+    There is no land when cell value == 0
+
+    """
+
+    target_shape = data_cube.shape
+    target_ndim = len(target_shape)
+
+    if include_only == 'land':
+        mask_array = numpy.where(mask_cube.data > 50, False, True)
+    elif include_only == 'ocean':
+        mask_array = numpy.where(mask_cube.data < 50, False, True)
+
+    mask = broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
+    assert mask.shape == target_shape 
+
+    data_cube.data = numpy.ma.asarray(data_cube.data)
+    data_cube.data.mask = mask
+
+    return data_cube
 
 
 def apply_lon_filter(data, lon_bounds):

@@ -3,6 +3,7 @@
 Functions:
   curvilinear_to_rectilinear  -- Regrid curvilinear data to a rectilinear 
                                  grid if necessary
+  get_grid_spacing            -- Return an array of grid spacings
   regrid_1D                   -- Regrid data with only one spatial dimension
 
 """
@@ -58,6 +59,17 @@ def _make_grid(lat_values, lon_values):
     new_cube.coord('latitude').guess_bounds()
 
     return new_cube
+
+
+def get_grid_spacing(cube):
+    """Return an array of grid spacings."""
+
+    if not cube.coord('latitude').has_bounds():
+        cube.coord('latitude').guess_bounds()
+
+    spacing = [numpy.diff(bounds)[0] for bounds in cube.coord('latitude').bounds]
+    
+    return numpy.array(spacing)
 
 
 def get_grid_res(horiz_shape):
