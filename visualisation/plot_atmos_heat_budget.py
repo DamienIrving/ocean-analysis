@@ -49,13 +49,13 @@ line_characteristics = {'rsds': ('downwelling shortwave', 'orange', 'dashed'),
                         'rlus': ('upwelling longwave', 'red', 'dotted'),
                         'rlns': ('net longwave', 'red', 'dashdot'),
                         'rns':  ('net radiative flux', 'brown','solid'),
-                        'hfss': ('sensible heat flux', 'blue', 'dashed'),
-                        'hfls': ('latent heat flux', 'blue', 'dotted'),
-                        'hfds': ('heat flux into ocean', 'blue', 'dashdot'),
-                        'hfds-inferred': ('inferred heat flux into ocean', 'blue', 'dashed'),
+                        'hfss': ('sensible heat flux', 'green', 'dashed'),
+                        'hfls': ('latent heat flux', 'green', 'dotted'),
+                        'hfds': ('heat flux into ocean', 'blue', 'solid'),
+                        'hfds-inferred': ('inferred heat flux into ocean', 'blue', 'dashdot'),
                         'hfsithermds' : ('heat flux from sea ice', 'cyan', 'dashdot')}
 
-plot_order = ['rsds', 'rsus', 'rsns', 'rlds', 'rlus', 'rlns', 'rns', 'hfss', 'hfls', 'hfds', 'hfds-inferred', 'hfsithermds']
+plot_order = ['rsds', 'rsus', 'rlds', 'rlus', 'rns', 'hfss', 'hfls', 'hfds', 'hfds-inferred', 'hfsithermds']
 
 
 def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None, realm=None):
@@ -144,7 +144,7 @@ def infer_hfds(cube_dict, inargs):
 
     iris.util.unify_time_units(data_list)
 
-    cube_dict['hfds-inferred'] = cube_dict['rns'] - hfls_data - hfss_data - hfsithermds_data
+    cube_dict['hfds-inferred'] = cube_dict['rns'] + hfls_data + hfss_data - hfsithermds_data
             
     return cube_dict
 
@@ -160,12 +160,13 @@ def climatology_plot(cube_dict, gs, plotnum):
             climatology_cube = cube_dict[var].collapsed('time', iris.analysis.MEAN)
             label, color, style = line_characteristics[var]
             iplt.plot(climatology_cube, label=label, color=color, linestyle=style)
-    ax.legend(ncol=2)
-    ax.set_title('climatology')
+    ax.legend(ncol=2, loc=4)
+    ax.set_xlim(-90, 90)
+    ax.set_title('annual mean zonal sum')
     ax.set_ylabel('$W \: lat^{-1}$')
     
 
-def trend_plot(cube_dict, gs, plotnum):
+def trend_plot(cube_dict, gs, plotnum, time_bounds):
     """Plot the trends"""
     
     ax = plt.subplot(gs[plotnum])
@@ -176,20 +177,28 @@ def trend_plot(cube_dict, gs, plotnum):
             trend_cube = calc_trend_cube(cube_dict[var])
             label, color, style = line_characteristics[var]
             iplt.plot(trend_cube, color=color, linestyle=style)
-    ax.set_title('trends')
+ 
+    start_time, end_time = time_bounds
+    start_year = start_time.split('-')[0]
+    end_year = end_time.split('-')[0]
+    ax.set_title('trend in zonal sum, %s-%s' %(start_year, end_year)) 
+
+    ax.set_xlim(-90, 90)
     ax.set_ylabel('$W \: lat^{-1} \: yr^{-1}$')
     ax.set_xlabel('latitude')
     
 
-def get_title(cube_dict):
+def get_title(cube_dict, realm):
     """Get the plot title."""
 
     for cube in cube_dict.values():
         if cube:
             run = 'r%si%sp%s'  %(cube.attributes['realization'], cube.attributes['initialization_method'], cube.attributes['physics_version'])
-            title = 'Radiation and energy budgets for global ocean surface \n %s, %s, %s'  %(cube.attributes['model_id'], cube.attributes['experiment'], run)
+            title = 'Radiation and energy budgets for global %s surface \n %s, %s, %s'  %(realm, cube.attributes['model_id'], cube.attributes['experiment'], run)
             break
     
+    title = title.replace('other historical forcing', 'historicalAA')
+
     return title
 
 
@@ -256,9 +265,9 @@ def main(inargs):
     fig = plt.figure(figsize=[12, 14])
     gs = gridspec.GridSpec(2, 1)
     climatology_plot(cube_dict, gs, 0)
-    trend_plot(cube_dict, gs, 1)
+    trend_plot(cube_dict, gs, 1, inargs.time)
         
-    title = get_title(cube_dict)
+    title = get_title(cube_dict, inargs.plot_realm)
     plt.suptitle(title)    
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
