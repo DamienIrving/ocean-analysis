@@ -144,7 +144,7 @@ def extract_data(infile_list, output_projection, scale_factors):
 
         # Read data
         with iris.FUTURE.context(cell_datetime_objects=True):
-            new_cube = iris.load_cube(infile, gio.check_iris_var(long_name) & time_constraint & lat_constraint)       
+            new_cube = iris.load_cube(infile, gio.check_iris_var(long_name) & time_constraint & lat_constraint)      
             new_cube = scale_data(new_cube, scale_factors, plot_type)
             new_cube = iris.util.squeeze(new_cube)
 
@@ -436,6 +436,9 @@ def plot_colour(cube, ax,
     x, y, inproj = get_spatial_info(cube)
     cmap = get_palette(palette) if palette else None
     if colour_type == 'smooth':
+        print('data max:', cube.data.max())
+        print('data min:', cube.data.min())
+        print('data median amplitude:', numpy.ma.median(numpy.ma.abs(cube.data)))
         cf = ax.contourf(x, y, cube.data, transform=inproj,  
                          cmap=cmap, levels=ticks, extend=extend)
         #colors is the option where you can give a list of hex strings
