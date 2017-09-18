@@ -91,7 +91,7 @@ def copy_mask(mask_cube, target_shape):
     return mask
 
 
-def get_outfile(infile, outfile_list, fnum, fixed=False, ocean=False):
+def get_outfile(infile, outfile_list, fnum, fixed=False, mask_label=False):
     """Modify the infile to define outfile."""
 
     if outfile_list:
@@ -105,11 +105,9 @@ def get_outfile(infile, outfile_list, fnum, fixed=False, ocean=False):
         if fixed:
             file_dir = file_dir + '/fixed'
 
-        if ocean:
-            file_dir = file_dir.replace('atmos', 'ocean')
-            file_name = file_name.replace('Amon', 'Omon')
+        if mask_label:
             file_name_components = file_name.split('_')
-            file_name_components[0] = file_name_components[0] + '-atmos'
+            file_name_components[0] = file_name_components[0] + '-' + mask_label
             file_name = '_'.join(file_name_components)
  
         outfile = file_dir + '/' + file_name
@@ -142,7 +140,7 @@ def main(inargs):
         outfile_metadata = {infile: data_cube.attributes['history'],}
         data_cube.attributes['history'] = gio.write_metadata(file_info=outfile_metadata)
 
-        outfile = get_outfile(infile, inargs.outfiles, fnum, fixed=inargs.fixed, ocean=inargs.ocean)
+        outfile = get_outfile(infile, inargs.outfiles, fnum, fixed=inargs.fixed, mask_label=inargs.mask_label)
         print('infile:', infile) 
         print('outfile:', outfile)
        
@@ -157,7 +155,7 @@ author:
     Damien Irving, irving.damien@gmail.com
 """
 
-    description='Apply a lat/lon mask to a data file'
+    description='Apply a spatial mask to a data file'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
@@ -172,10 +170,11 @@ author:
     parser.add_argument("--outfiles", type=str, nargs='*', default=None, 
                         help="Custom outfile names (otherwise they are automatically generated)")    
 
+    parser.add_argument("--mask_label", type=str, default=None,
+                        help="Mask label (e.g. land, ocean)")
+
     parser.add_argument("--fixed", action="store_true", default=False,
                         help="Put the output files in a directory labelled fixed")
-    parser.add_argument("--ocean", action="store_true", default=False,
-                        help="Input files are atmos and output ocean")
     parser.add_argument("--dry_run", action="store_true", default=False,
                         help="Print outfile names instead of executing")
 
