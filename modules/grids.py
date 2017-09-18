@@ -104,9 +104,11 @@ def curvilinear_to_rectilinear(cube):
 
     coord_names = [coord.name() for coord in cube.dim_coords]
     aux_coord_names = [coord.name() for coord in cube.aux_coords]
-    
+
     if 'time' in aux_coord_names:
         aux_coord_names.remove('time')
+    if 'depth' in aux_coord_names:
+        aux_coord_names.remove('depth')
 
     if aux_coord_names == ['latitude', 'longitude']:
 
