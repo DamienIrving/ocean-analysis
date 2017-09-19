@@ -104,14 +104,18 @@ def main(inargs):
         time_constraint = iris.Constraint()
 
     with iris.FUTURE.context(cell_datetime_objects=True):
-        cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var) & time_constraint)
+        cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var))
         history = cube[0].attributes['history']
         atts = cube[0].attributes
         equalise_attributes(cube)
         iris.util.unify_time_units(cube)
         cube = cube.concatenate_cube()
+
         cube = gio.check_time_units(cube)
+        cube = cube.extract(time_constraint)
+
         cube = iris.util.squeeze(cube)
+
         infile_metadata = {inargs.infiles[0]: history}
         if inargs.xaxis:
             xfile, xvar = inargs.xaxis
