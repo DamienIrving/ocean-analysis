@@ -16,7 +16,8 @@ fx_ua6_dir=/g/data/ua6/DRSv2/CMIP5/${model}/${fx_experiment}
 fx_r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}/${fx_experiment}
 
 sftlf_file=${fx_ua6_dir}/fx/atmos/${fx_mip}/sftlf/latest/sftlf_fx_${model}_${fx_experiment}_${fx_mip}.nc
-  
+
+# rsds rlus rlds hfss hfls pr evspsbl tas  
 atmos_variables=(rsds rlus rlds hfss hfls pr evspsbl tas)   
 for var in "${atmos_variables[@]}"; do
 
@@ -49,14 +50,16 @@ for var in "${atmos_variables[@]}"; do
 
 done
 
-
-ocean_variables=(tos hfds) 
+# tos hfds sos
+ocean_variables=(tos hfds sos) 
 for var in "${ocean_variables[@]}"; do
 
     if [[ "${var}" == "tos" ]] ; then
         standard_name=sea_surface_temperature
     elif [[ "${var}" == "hfds" ]] ; then
         standard_name=surface_downward_heat_flux_in_sea_water
+    elif [[ "${var}" == "sos" ]] ; then
+        standard_name=sea_surface_salinity
     fi
 
     outdir=${r87_dir}/mon/ocean/${mip}/${var}/latest
