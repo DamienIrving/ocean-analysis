@@ -70,7 +70,10 @@ def get_trend_cube(cube, xaxis='time'):
     trend_cube = cube[0, ::].copy()
     trend_cube.data = trend_data
     trend_cube.remove_coord('time')
-    trend_cube.units = str(cube.units) + trend_unit
+    try:
+        trend_cube.units = str(cube.units) + trend_unit
+    except ValueError:
+        trend_cube.units = trend_unit
 
     return trend_cube
 
