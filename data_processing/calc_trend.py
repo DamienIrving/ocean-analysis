@@ -116,6 +116,9 @@ def main(inargs):
 
         cube = iris.util.squeeze(cube)
 
+        if 'salinity' in inargs.var:
+            cube = gio.salinity_unit_check(cube)
+
         infile_metadata = {inargs.infiles[0]: history}
         if inargs.xaxis:
             xfile, xvar = inargs.xaxis
