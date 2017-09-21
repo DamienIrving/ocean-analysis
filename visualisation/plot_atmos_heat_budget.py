@@ -172,7 +172,7 @@ def climatology_plot(cube_dict, gs, plotnum):
     ax.set_ylabel('$W \: lat^{-1}$')
     
 
-def trend_plot(cube_dict, gs, plotnum, time_bounds):
+def trend_plot(cube_dict, gs, plotnum, time_bounds, guidelines=False):
     """Plot the trends"""
     
     ax = plt.subplot(gs[plotnum])
@@ -188,6 +188,12 @@ def trend_plot(cube_dict, gs, plotnum, time_bounds):
     start_year = start_time.split('-')[0]
     end_year = end_time.split('-')[0]
     ax.set_title('trend in zonal sum, %s-%s' %(start_year, end_year)) 
+
+    if guidelines:
+        ax.axvline(-42, linestyle='dashed', color='0.5', alpha=0.5)
+        ax.axvline(0, linestyle='dashed', color='0.5', alpha=0.5)
+        ax.axvline(42, linestyle='dashed', color='0.5', alpha=0.5)
+        ax.axvline(67, linestyle='dashed', color='0.5', alpha=0.5)
 
     ax.set_xlim(-90, 90)
     ax.set_ylabel('$W \: lat^{-1} \: yr^{-1}$')
@@ -271,7 +277,7 @@ def main(inargs):
     fig = plt.figure(figsize=[12, 14])
     gs = gridspec.GridSpec(2, 1)
     climatology_plot(cube_dict, gs, 0)
-    trend_plot(cube_dict, gs, 1, inargs.time)
+    trend_plot(cube_dict, gs, 1, inargs.time, guidelines=inargs.guidelines)
         
     title = get_title(cube_dict, inargs.plot_realm)
     plt.suptitle(title)    
@@ -324,6 +330,9 @@ author:
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=('1850-01-01', '2005-12-31'),
                         help="Time period [default = entire]")
+
+    parser.add_argument("--guidelines", action="store_true", default=False,
+	                help="Show boundaries of 5 panel budget plots [default=False]")
 
     args = parser.parse_args()             
     main(args)
