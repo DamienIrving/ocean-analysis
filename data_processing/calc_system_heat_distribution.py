@@ -35,13 +35,35 @@ except ImportError:
 
 # Define functions
 
-nh_lat_subset = lambda cell: cell >= 0.0    
-sh_lat_subset = lambda cell: cell <= 0.0    
-hemisphere_constraints = {'nh': iris.Constraint(latitude=nh_lat_subset),
-                          'sh': iris.Constraint(latitude=sh_lat_subset)}
+#region_names = {'nh': ('Northern Hemisphere', 'northern_hemisphere'),
+#                'sh': ('Southern Hemisphere', 'southern_hemisphere'),
+#                'arctic': ('Arctic', 'arctic'),
+#                'nsubpolar': ('Northern Sub Polar', 'northern_sub_polar'),
+#                'ntropics': ('Northern Tropics', 'northern_tropics'),
+#                'stropics': ('Southern Tropics', 'southern_tropics'),
+#                'ssubpolar': ('Southern Sub Polar', 'southern_sub_polar')}
+    
+region_constraints = {'nh': iris.Constraint(latitude=lambda cell: cell >= 0.0),
+                      'sh': iris.Constraint(latitude=lambda cell: cell < 0.0),
+                      'arctic': iris.Constraint(latitude=lambda cell: cell >= 67.0),
+                      'nsubpolar': iris.Constraint(latitude=lambda cell: 42.0 <= cell < 67.0),
+                      'ntropics': iris.Constraint(latitude=lambda cell: 0.0 <= cell < 42.0),
+                      'stropics': iris.Constraint(latitude=lambda cell: -42.0 <= cell < 0.0),
+                      'ssubpolar': iris.Constraint(latitude=lambda cell: cell < -42.0)}
 
-def calc_sum(cube, var, hemisphere, area_cube):
-    """Calculate the hemispheric sum."""
+region_boundaries = {'sh':(-91, 0),
+                     'nh': (0, 91),
+                     'arctic': (67, 91),
+                     'nsubpolar': (42, 67),
+                     'ntropics': (0, 42),
+                     'stropics': (-42, 0),
+                     'ssubpolar': (-91, -42)}
+
+region_list = ['sh', 'nh', 'arctic', 'nsubpolar', 'ntropics', 'stropics', 'ssubpolar']
+
+
+def calc_sum(cube, var, region, area_cube):
+    """Calculate the region sum."""
 
     cube = cube.copy() 
 
@@ -53,14 +75,14 @@ def calc_sum(cube, var, hemisphere, area_cube):
         assert area_cube, "Must give areacello file for non lat/lon grid data"
         print("""processing %s on it's non lat/lon grid""" %(var))
 
-        hemisphere_mask = create_hemisphere_mask(cube.coord('latitude').points, cube.shape, hemisphere)
+        region_mask = create_region_mask(cube.coord('latitude').points, cube.shape, region)
         land_ocean_mask = cube.data.mask
-        complete_mask = hemisphere_mask + land_ocean_mask
+        complete_mask = region_mask + land_ocean_mask
 
         cube.data = numpy.ma.asarray(cube.data)
         cube.data.mask = complete_mask
     else:
-        cube = cube.extract(hemisphere_constraints[hemisphere])
+        cube = cube.extract(region_constraints[region])
     
     cube = multiply_by_area(cube, var, area_cube) # convert W m-2 to W
     coord_names.remove('time')
@@ -89,8 +111,8 @@ def hfbasin_handling(cube, var, model):
     return cube
 
 
-def get_data(filenames, var, metadata_dict, attributes, input_timescale='monthly', 
-             sftlf_cube=None, include_only=None, area_cube=None):
+def get_data(filenames, standard_name, cube_dict, metadata_dict, attributes, 
+             input_timescale='monthly', sftlf_cube=None, include_only=None, area_cube=None):
     """Read, merge, temporally aggregate and calculate hemispheric totals.
 
     Args:
@@ -100,7 +122,7 @@ def get_data(filenames, var, metadata_dict, attributes, input_timescale='monthly
 
     if filenames:
         with iris.FUTURE.context(cell_datetime_objects=True):
-            cube = iris.load(filenames, gio.check_iris_var(var))
+            cube = iris.load(filenames, gio.check_iris_var(standard_name))
             
             metadata_dict[filenames[0]] = cube[0].attributes['history']
             equalise_attributes(cube)
@@ -119,28 +141,25 @@ def get_data(filenames, var, metadata_dict, attributes, input_timescale='monthly
             cube.data = numpy.ma.asarray(cube.data)
             cube.data.mask = mask
         
-        if var in ['northward_ocean_heat_transport', 'ocean_heat_y_transport']:  
-            cube = hfbasin_handling(cube, var, attributes['model_id'])   
-            nh_sum = cube.extract(iris.Constraint(latitude=0))
-            sh_sum = nh_sum.copy()
-            sh_sum.data = sh_sum.data * -1
-        else:
-            nh_sum = calc_sum(cube, var, 'nh', area_cube)
-            sh_sum = calc_sum(cube, var, 'sh', area_cube)
+        for region in region_list:
+        
+            if standard_name in ['northward_ocean_heat_transport', 'ocean_heat_y_transport']:
+                if not region in ['sh', 'ssubpolar']:  
+                    cube = hfbasin_handling(cube, standard_name, attributes['model_id'])   
+                    lat = region_boundaries[region][0]  #southern boundary
+                    target_lat, error = find_nearest(cube.coord('latitude').points, lat, index=False)
+                    region_sum = cube.extract(iris.Constraint(latitude=target_lat))
+            else:
+                region_sum = calc_sum(cube, standard_name, region, area_cube)
+             
+            if standard_name == 'ocean_heat_content':
+                region_sum, var_name = rename_cube(region_sum, region, None, standard_name='ocean_heat_content',
+                                                   long_name='ocean heat content', var_name='ohc')
+            else:
+                region_sum, var_name = rename_cube(region_sum, region, include_only)
+            cube_dict[var_name] = region_sum
 
-        if var == 'ocean_heat_content':
-            rename_cube(nh_sum, 'nh', None, standard_name='ocean_heat_content',
-                        long_name='ocean heat content', var_name='ohc')
-            rename_cube(sh_sum, 'sh', None, standard_name='ocean_heat_content',
-                        long_name='ocean heat content', var_name='ohc')
-        else:
-            rename_cube(nh_sum, 'nh', include_only)
-            rename_cube(sh_sum, 'sh', include_only)
-    else:
-        nh_sum = None
-        sh_sum = None
-
-    return nh_sum, sh_sum, metadata_dict, attributes
+    return cube_dict, metadata_dict, attributes
 
 
 def create_land_ocean_mask(mask_cube, target_shape, include_only):
@@ -163,15 +182,13 @@ def create_land_ocean_mask(mask_cube, target_shape, include_only):
     return mask
 
 
-def create_hemisphere_mask(latitude_array, target_shape, hemisphere):
+def create_region_mask(latitude_array, target_shape, region):
     """Create mask from the latitude auxillary coordinate"""
 
     target_ndim = len(target_shape)
 
-    if hemisphere == 'nh':
-        mask_array = numpy.where(latitude_array >= 0, False, True)
-    elif hemisphere == 'sh':
-        mask_array = numpy.where(latitude_array < 0, False, True)
+    southern_lat, northern_lat = region_boundaries(region)
+    mask_array = numpy.where(southern_lat <= latitude_array < northern_lat, False, True)
 
     mask = uconv.broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
     assert mask.shape == target_shape 
@@ -179,62 +196,57 @@ def create_hemisphere_mask(latitude_array, target_shape, hemisphere):
     return mask
 
 
-def derived_toa_radiation_fluxes(cube_dict, hemisphere):
+def derived_toa_radiation_fluxes(cube_dict):
     """Calculate the net TOA flux."""
 
-    if cube_dict['rsdt'] and cube_dict['rsut']:
-        cube_dict['rsnt'] = cube_dict['rsdt'] - cube_dict['rsut'] 
-        rename_cube(cube_dict['rsnt'], hemisphere, None, 'toa_net_shortwave_flux', 'TOA Net Shortwave Flux', 'rsnt')
-    else:
-        cube_dict['rsnt'] = None
+    for region in region_list:
+        rsnt_var = 'rsnt-%s-sum' %(region)
+        rsdt_var = 'rsdt-%s-sum' %(region)
+        rsut_var = 'rsut-%s-sum' %(region)
+        rsaa_var = 'rsaa-%s-sum' %(region)
+        rsns_var = 'rsns-%s-sum' %(region)
+
+        cube_dict[rsnt_var] = cube_dict[rsdt_var] - cube_dict[rsut_var] 
+        cube_dict[rsnt_var], var_name = rename_cube(cube_dict[rsnt_var], region, None,
+                                                    standard_name='toa_net_shortwave_flux',
+                                                    long_name='TOA Net Shortwave Flux',
+                                                    var_name='rsnt')
     
-    if cube_dict['rsnt'] and cube_dict['rsns']:
-        cube_dict['rsaa'] = cube_dict['rsnt'] - cube_dict['rsns'] 
-        rename_cube(cube_dict['rsaa'], hemisphere, None, 'atmosphere_absorbed_shortwave_flux', 'Atmosphere Absorbed Shortwave Flux', 'rsaa')
+        cube_dict[rsaa_var] = cube_dict[rsnt_var] - cube_dict[rsns_var] 
+        cube_dict[rsaa_var], var_name = rename_cube(cube_dict[rsaa_var], region, None,
+                                                    standard_name='atmosphere_absorbed_shortwave_flux',
+                                                    long_name='Atmosphere Absorbed Shortwave Flux',
+                                                    var_name='rsaa')
 
     return cube_dict
 
 
-def derived_surface_radiation_fluxes(cube_dict, inargs, sftlf_cube, hemisphere):
+def derived_surface_radiation_fluxes(cube_dict, sftlf_cube):
     """Calculate the net surface radiation flux."""
 
-    if inargs.rsds_files and inargs.rsus_files and inargs.rlds_files and inargs.rlus_files:
-        for realm in ['', '-ocean', '-land']:
-            realm_arg = realm[1:] if realm else None
+    for region in region_list:
+        for realm in [None, 'ocean', 'land']: 
+            if realm:
+                realm_insert = '-'+realm
+            else:
+                realm_insert = '' 
+            rsns_var = 'rsns-%s%s-sum' %(region, realm_insert)
+            rsds_var = 'rsds-%s%s-sum' %(region, realm_insert)
+            rsus_var = 'rsus-%s%s-sum' %(region, realm_insert)
+            rlns_var = 'rlds-%s%s-sum' %(region, realm_insert)
+            rlds_var = 'rlds-%s%s-sum' %(region, realm_insert)
+            rlus_var = 'rlus-%s%s-sum' %(region, realm_insert)
+        
+            cube_dict[rsns_var] = cube_dict[rsds_var] - cube_dict[rsus_var]
+            cube_dict[rsns_var], var_name = rename_cube(cube_dict[rsns_var], region, realm,
+                                                        standard_name='surface_net_shortwave_flux_in_air',
+                                                        long_name='Surface Net Shortwave Flux in Air',
+                                                        var_name='rsns')
 
-            cube_dict['rsns'+realm] = cube_dict['rsds'+realm] - cube_dict['rsus'+realm]
-            rename_cube(cube_dict['rsns'+realm], hemisphere, realm_arg, 'surface_net_shortwave_flux_in_air', 'Surface Net Shortwave Flux in Air', 'rsns')
-           
-            cube_dict['rlns'+realm] = cube_dict['rlus'+realm] - cube_dict['rlds'+realm]
-            rename_cube(cube_dict['rlns'+realm], hemisphere, realm_arg, 'surface_net_longwave_flux_in_air', 'Surface Net Longwave Flux in Air', 'rlns')
-    else:
-        for realm in ['', '-ocean', '-land']:
-            cube_dict['rsns'+realm] = None
-            cube_dict['rlns'+realm] = None
-
-    return cube_dict
-
-
-def derived_surface_heat_fluxes(cube_dict, hemisphere):
-    """Calculate the surface heat flux totals."""
-
-    if cube_dict['hfss-ocean'] and cube_dict['hfls-ocean'] and cube_dict['hfds-ocean']:
-        cube_dict['hfts-ocean'] = cube_dict['hfss-ocean'] + cube_dict['hfls-ocean'] + cube_dict['hfds-ocean']
-        rename_cube(cube_dict['hfts-ocean'], hemisphere, 'ocean', 'surface_total_heat_flux', 'Surface Total Heat Flux', 'hfts')
-    else:
-        cube_dict['hfts-ocean'] = None
-
-    if cube_dict['hfss-land'] and cube_dict['hfls-land']:
-        cube_dict['hfts-land'] = cube_dict['hfss-land'] + cube_dict['hfls-land']
-        rename_cube(cube_dict['hfts-land'], hemisphere, 'land', 'surface_total_heat_flux', 'Surface Total Heat Flux', 'hfts')
-    else:
-        cube_dict['hfts-land'] = None
-
-    if cube_dict['hfts-ocean'] and cube_dict['hfts-land']:
-        cube_dict['hfts'] = cube_dict['hfts-ocean'] + cube_dict['hfts-land']
-        rename_cube(cube_dict['hfts'], hemisphere, None, 'surface_total_heat_flux', 'Surface Total Heat Flux', 'hfts')
-    else:
-        cube_dict['hfts'] = None
+            cube_dict[rlns_var] = cube_dict[rlus_var] - cube_dict[rlds_var]
+            cube_dict[rlns_var], var_name = rename_cube(cube_dict[rlns_var], region, realm,
+                                                        standard_name='surface_net_longwave_flux_in_air',
+                                                        long_name='Surface Net Longwave Flux in Air', 'rlns')
 
     return cube_dict
 
@@ -260,10 +272,10 @@ def multiply_by_area(cube, var, area_cube):
     return cube
 
 
-def rename_cube(cube, hemisphere, realm, standard_name=None, long_name=None, var_name=None):
+def rename_cube(cube, region, realm, standard_name=None, long_name=None, var_name=None):
     """Rename a cube according to the specifics of the analysis"""
 
-    assert hemisphere in ['nh', 'sh']
+    assert region in ['nh', 'sh', 'arctic', 'nsubpolar', 'ntropics', 'stropics', 'ssubpolar']
     assert realm in ['ocean', 'land', None]
 
     if not standard_name:
@@ -274,28 +286,27 @@ def rename_cube(cube, hemisphere, realm, standard_name=None, long_name=None, var
         var_name = cube.var_name
 
     if realm:
-        standard_name = '%s_%s_%s_sum' %(standard_name, hemisphere, realm)
-        long_name = '%s %s %s sum' %(long_name, hemisphere, realm)
-        var_name = '%s-%s-%s-sum' %(var_name, hemisphere, realm)
+        standard_name = '%s_%s_%s_sum' %(standard_name, region, realm)
+        long_name = '%s %s %s sum' %(long_name, region, realm)
+        var_name = '%s-%s-%s-sum' %(var_name, region, realm)
     else:
-        standard_name = '%s_%s_sum' %(standard_name, hemisphere)
-        long_name = '%s %s sum' %(long_name, hemisphere)
-        var_name = '%s-%s-sum' %(var_name, hemisphere)
+        standard_name = '%s_%s_sum' %(standard_name, region)
+        long_name = '%s %s sum' %(long_name, region)
+        var_name = '%s-%s-sum' %(var_name, region)
 
     iris.std_names.STD_NAMES[standard_name] = {'canonical_units': cube.units}
     cube.standard_name = standard_name
     cube.long_name = long_name
     cube.var_name = var_name
+    
+    return cube, var_name
 
 
-def create_cube_list(nh_cube_dict, sh_cube_dict, metadata_dict, attributes):
+def create_cube_list(cube_dict, metadata_dict, attributes):
     """Create the cube list for output."""
 
     cube_list = iris.cube.CubeList()
-    for var, cube in nh_cube_dict.items():
-        if cube:
-            cube_list.append(cube)
-    for var, cube in sh_cube_dict.items():
+    for var, cube in cube_dict.items():
         if cube:
             cube_list.append(cube)
 
@@ -319,69 +330,86 @@ def main(inargs):
     else:
         areacello_cube = None
 
-    nh_cube_dict = {}
-    sh_cube_dict = {}
+    cube_dict = {}
     metadata_dict = {}
     attributes = {}
 
     # TOA radiation fluxes
-    nh_cube_dict['rsdt'], sh_cube_dict['rsdt'], metadata_dict, attributes = get_data(inargs.rsdt_files, 'toa_incoming_shortwave_flux', metadata_dict, attributes)
-    nh_cube_dict['rsut'], sh_cube_dict['rsut'], metadata_dict, attributes = get_data(inargs.rsut_files, 'toa_outgoing_shortwave_flux', metadata_dict, attributes)
-    nh_cube_dict['rlut'], sh_cube_dict['rlut'], metadata_dict, attributes = get_data(inargs.rlut_files, 'toa_outgoing_longwave_flux', metadata_dict, attributes)
+    
+    cube_dict, metadata_dict, attributes = get_data(inargs.rsdt_files, 'toa_incoming_shortwave_flux',
+                                                    cube_dict, metadata_dict, attributes)
+    cube_dict, metadata_dict, attributes = get_data(inargs.rsut_files, 'toa_outgoing_shortwave_flux',
+                                                    cube_dict, metadata_dict, attributes)
+    cube_dict, metadata_dict, attributes = get_data(inargs.rlut_files, 'toa_outgoing_longwave_flux',
+                                                    cube_dict, metadata_dict, attributes)
 
     # Surface radiation fluxes
-    for realm in ['', '-ocean', '-land']:
-        realm_arg = realm[1:] if realm else None
-        nh_cube_dict['rsds'+realm], sh_cube_dict['rsds'+realm], metadata_dict, attributes = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air', metadata_dict,
-                                                                                                     attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
-        nh_cube_dict['rsus'+realm], sh_cube_dict['rsus'+realm], metadata_dict, attributes = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air', metadata_dict,
-                                                                                                     attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
-        nh_cube_dict['rlds'+realm], sh_cube_dict['rlds'+realm], metadata_dict, attributes = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air', metadata_dict,
-                                                                                                     attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
-        nh_cube_dict['rlus'+realm], sh_cube_dict['rlus'+realm], metadata_dict, attributes = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air', metadata_dict,
-                                                                                                     attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
-
-    nh_cube_dict = derived_surface_radiation_fluxes(nh_cube_dict, inargs, sftlf_cube, 'nh')
-    sh_cube_dict = derived_surface_radiation_fluxes(sh_cube_dict, inargs, sftlf_cube, 'sh')
-
-    nh_cube_dict = derived_toa_radiation_fluxes(nh_cube_dict, 'nh')
-    sh_cube_dict = derived_toa_radiation_fluxes(sh_cube_dict, 'sh')
+    
+    for realm in [None, 'ocean', 'land']:
+        cube_dict, metadata_dict, attributes = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air',
+                                                        cube_dict, metadata_dict, attributes,
+                                                        sftlf_cube=sftlf_cube, include_only=realm)
+        cube_dict, metadata_dict, attributes = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air',
+                                                        cube_dict, metadata_dict, attributes,
+                                                        sftlf_cube=sftlf_cube, include_only=realm)
+        cube_dict, metadata_dict, attributes = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air',
+                                                        cube_dict, metadata_dict, attributes,
+                                                        sftlf_cube=sftlf_cube, include_only=realm)
+        cube_dict, metadata_dict, attributes = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air',
+                                                        cube_dict, metadata_dict, attributes,
+                                                        sftlf_cube=sftlf_cube, include_only=realm)
 
     # Surface heat fluxes
+    
     if inargs.hfrealm == 'atmos':
         hfss_name = 'surface_upward_sensible_heat_flux'
         hfls_name = 'surface_upward_latent_heat_flux'
-        for realm in ['', '-ocean', '-land']:
-            realm_arg = realm[1:] if realm else None
-            nh_cube_dict['hfss'+realm], sh_cube_dict['hfss'+realm], metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name, metadata_dict, attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
-            nh_cube_dict['hfls'+realm], sh_cube_dict['hfls'+realm], metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name, metadata_dict, attributes, sftlf_cube=sftlf_cube, include_only=realm_arg)
+        for realm in [None, 'ocean', 'land']:
+            cube_dict, metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name,
+                                                            cube_dict, metadata_dict, attributes, 
+                                                            sftlf_cube=sftlf_cube, include_only=realm)
+            cube_dict, metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name,
+                                                            cube_dict, metadata_dict, attributes, 
+                                                            sftlf_cube=sftlf_cube, include_only=realm)
     elif inargs.hfrealm == 'ocean':
         hfss_name = 'surface_downward_sensible_heat_flux'
         hfls_name = 'surface_downward_latent_heat_flux'
-        nh_cube_dict['hfss-ocean'], sh_cube_dict['hfss-ocean'], metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name, metadata_dict, attributes, include_only='ocean', area_cube=areacello_cube)
-        nh_cube_dict['hfls-ocean'], sh_cube_dict['hfls-ocean'], metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name, metadata_dict, attributes, include_only='ocean', area_cube=areacello_cube)
+        cube_dict, metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name,
+                                                        cube_dict, metadata_dict, attributes,
+                                                        include_only='ocean', area_cube=areacello_cube)
+        cube_dict, metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name,
+                                                        region_list, cube_dict, metadata_dict, attributes,
+                                                        include_only='ocean', area_cube=areacello_cube)
 
-    nh_cube_dict['hfds-ocean'], sh_cube_dict['hfds-ocean'], metadata_dict, attributes = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', metadata_dict,
-                                                                                                 attributes, include_only='ocean', area_cube=areacello_cube)
-    nh_cube_dict['hfsithermds-ocean'], sh_cube_dict['hfsithermds-ocean'], metadata_dict, attributes = get_data(inargs.hfsithermds_files,
-                                                                                                              'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
-                                                                                                               metadata_dict, attributes, include_only='ocean', area_cube=areacello_cube)
-
-    ## FIXME: Unify all cubes at once
-    if nh_cube_dict['hfds-ocean']:
-        iris.util.unify_time_units([nh_cube_dict['hfss-ocean'], nh_cube_dict['hfls-ocean'], nh_cube_dict['hfds-ocean']])
-        iris.util.unify_time_units([sh_cube_dict['hfss-ocean'], sh_cube_dict['hfls-ocean'], sh_cube_dict['hfds-ocean']])
-    nh_cube_dict = derived_surface_heat_fluxes(nh_cube_dict, 'nh')
-    sh_cube_dict = derived_surface_heat_fluxes(sh_cube_dict, 'sh')
+    cube_dict, metadata_dict, attributes = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water',
+                                                    cube_dict, metadata_dict, attributes,
+                                                    include_only='ocean', area_cube=areacello_cube)
+    cube_dict, metadata_dict, attributes = get_data(inargs.hfsithermds_files, 'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
+                                                    cube_dict, metadata_dict, attributes,
+                                                    include_only='ocean', area_cube=areacello_cube)
 
     # Ocean heat transport / storage
-    nh_cube_dict['ohc'], sh_cube_dict['ohc'], metadata_dict, attributes = get_data(inargs.ohc_files, 'ocean_heat_content', metadata_dict, attributes, input_timescale='annual', area_cube=areacello_cube)
+    cube_dict, metadata_dict, attributes = get_data(inargs.ohc_files, 'ocean_heat_content',
+                                                    cube_dict, metadata_dict, attributes,
+                                                    input_timescale='annual', area_cube=areacello_cube)
     if inargs.hfbasin_files:
-        nh_cube_dict['hfbasin-ocean'], sh_cube_dict['hfbasin-ocean'], metadata_dict, attributes = get_data(inargs.hfbasin_files, 'northward_ocean_heat_transport', metadata_dict, attributes, include_only='ocean')
+        cube_dict, metadata_dict, attributes = get_data(inargs.hfbasin_files, 'northward_ocean_heat_transport',
+                                                        cube_dict, metadata_dict, attributes,
+                                                        include_only='ocean')
     elif inargs.hfy_files:
-        nh_cube_dict['hfbasin-ocean'], sh_cube_dict['hfbasin-ocean'], metadata_dict, attributes = get_data(inargs.hfy_files, 'ocean_heat_y_transport', metadata_dict, attributes, include_only='ocean')
+        cube_dict, metadata_dict, attributes = get_data(inargs.hfy_files, 'ocean_heat_y_transport',
+                                                        cube_dict, metadata_dict, attributes,
+                                                        include_only='ocean')
 
-    cube_list = create_cube_list(nh_cube_dict, sh_cube_dict, metadata_dict, attributes)
+    # Derived fluxes
+
+    iris.util.unify_time_units(cube_dict.values())
+    cube_dict = derived_surface_radiation_fluxes(cube_dict, sftlf_cube)
+    cube_dict = derived_toa_radiation_fluxes(cube_dict)  
+
+    # Outfile
+
+    cube_list = create_cube_list(cube_dict, metadata_dict, attributes)
     gio.create_outdir(inargs.outfile)
     iris.save(cube_list, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
 
