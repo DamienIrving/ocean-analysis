@@ -35,38 +35,60 @@ except ImportError:
 
 # Define functions
 
-column_number = {'sh': 0, 'nh': 1}
+column_number = {'sh': 0, 'nh': 1,
+                 'ssubpolar': 0, 'stropics': 1, 'ntropics': 2, 'nsubpolar': 3, 'arctic': 4}
+
+region_names = {2: ['sh', 'nh'],
+                5: ['ssubpolar', 'stropics', 'ntropics', 'nsubpolar', 'arctic']}
+
 ylabels = {'climatology': 'W', 'trend': '$W \: yr^{-1}$'}
 
-def setup_plot(exclude_ocean=False):
+def setup_plot(nregions):
     """Set the plot axes and headings."""
 
-    cols = ['Southern Hemisphere', 'Northern Hemisphere']
-    rows = ['TOA / Atmosphere', 'Surface']
+    rows = ['TOA / Atmosphere', 'Surface', 'Ocean']
+    if nregions == 2:
+        cols = ['Southern region', 'Northern region']
+        width = 14
+    elif nregions == 5:
+        cols = ['southern sub-polar', 'southern tropics', 'northern tropics',
+                'northern sub-polar', 'arctic ocean']
+        width = 14    
 
-    if exclude_ocean:
-        height = 6
-        nrows = 2
-    else:
-        rows.append('Ocean')
-        height = 9
-        nrows = 3
+    height = 9
+    fig = plt.figure(figsize=(width, height))
 
-    fig = plt.figure(figsize=(14, 10))  # width, height
-    axes1 = fig.add_subplot(nrows, 2, 1)
-    axes2 = fig.add_subplot(nrows, 2, 2, sharey=axes1)
-    axes3 = fig.add_subplot(nrows, 2, 3)
-    axes4 = fig.add_subplot(nrows, 2, 4, sharey=axes3)
-
-    if exclude_ocean:
-        axes = numpy.array([(axes1, axes2), (axes3, axes4)])
-    else:
-        axes5 = fig.add_subplot(nrows, 2, 5)
-        axes6 = fig.add_subplot(nrows, 2, 6, sharey=axes5)
-        axes = numpy.array([(axes1, axes2), (axes3, axes4), (axes5, axes6)])
+    nrows = 3
+    ncols = len(cols)
+    if nregions == 2:
+        axes11 = fig.add_subplot(nrows, ncols, 1)
+        axes12 = fig.add_subplot(nrows, ncols, 2, sharey=axes11)
+        axes21 = fig.add_subplot(nrows, ncols, 3)
+        axes22 = fig.add_subplot(nrows, ncols, 4, sharey=axes21)
+        axes31 = fig.add_subplot(nrows, ncols, 5)
+        axes32 = fig.add_subplot(nrows, ncols, 6, sharey=axes31)
+        axes = numpy.array([(axes11, axes12), (axes21, axes22), (axes31, axes32)])
+    elif nregions == 5:
+        axes11 = fig.add_subplot(nrows, ncols, 1)
+        axes12 = fig.add_subplot(nrows, ncols, 2, sharey=axes11)
+        axes13 = fig.add_subplot(nrows, ncols, 3, sharey=axes11)
+        axes14 = fig.add_subplot(nrows, ncols, 4, sharey=axes11)
+        axes15 = fig.add_subplot(nrows, ncols, 5, sharey=axes11)
+        axes21 = fig.add_subplot(nrows, ncols, 6)
+        axes22 = fig.add_subplot(nrows, ncols, 7, sharey=axes21)
+        axes23 = fig.add_subplot(nrows, ncols, 8, sharey=axes21)
+        axes24 = fig.add_subplot(nrows, ncols, 9, sharey=axes21)
+        axes25 = fig.add_subplot(nrows, ncols, 10, sharey=axes21)
+        axes31 = fig.add_subplot(nrows, ncols, 11)
+        axes32 = fig.add_subplot(nrows, ncols, 12, sharey=axes31)
+        axes33 = fig.add_subplot(nrows, ncols, 13, sharey=axes31)
+        axes34 = fig.add_subplot(nrows, ncols, 14, sharey=axes31)
+        axes35 = fig.add_subplot(nrows, ncols, 15, sharey=axes31)
+        axes = numpy.array([(axes11, axes12, axes13, axes14, axes15),
+                            (axes21, axes22, axes23, axes24, axes25),
+                            (axes31, axes32, axes33, axes34, axes35)])
 
     pad = 5 # in points
-
     for ax, col in zip(axes[0], cols):
         ax.annotate(col, xy=(0.5, 1), xytext=(0, pad),
                     xycoords='axes fraction', textcoords='offset points',
@@ -174,13 +196,13 @@ def set_title(infile):
     plt.suptitle(title, size='x-large')
 
     
-def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint, branch=None):
+def plot_atmos(axes, infile, region, bar_width, agg_method, time_constraint, branch=None):
     """Plot TOA and atmosphere data."""
 
-    rsdt_var = 'TOA Incident Shortwave Radiation '+hemisphere+' sum'
-    rsut_var = 'TOA Outgoing Shortwave Radiation '+hemisphere+' sum'
-    rsaa_var = 'Atmosphere Absorbed Shortwave Flux '+hemisphere+' sum'
-    rsns_var = 'Surface Net Shortwave Flux in Air '+hemisphere+' sum'
+    rsdt_var = 'TOA Incident Shortwave Radiation '+region+' sum'
+    rsut_var = 'TOA Outgoing Shortwave Radiation '+region+' sum'
+    rsaa_var = 'Atmosphere Absorbed Shortwave Flux '+region+' sum'
+    rsns_var = 'Surface Net Shortwave Flux in Air '+region+' sum'
 
     rsdt_value, rsdt_color = get_data(infile, rsdt_var, agg_method, time_constraint, branch=branch)
     rsut_value, rsut_color = get_data(infile, rsut_var, agg_method, time_constraint, branch=branch)
@@ -192,17 +214,18 @@ def plot_atmos(axes, infile, hemisphere, bar_width, agg_method, time_constraint,
     line_widths = (1.0, 1.0, 0.3, 1.0)
 
     ind = numpy.arange(len(values))  # the x locations for the groups
-    col = column_number[hemisphere] 
+    col = column_number[region] 
     axes[0, col].bar(ind, values, bar_width,
                      color=['None', 'None', 'None', edge_colors[-1]],
                      edgecolor=edge_colors,
                      tick_label=['rsdt', 'rsut', 'rsaa', 'rsns'],
-                     linewidth=line_widths)
+                     linewidth=line_widths,
+                     align='center')
     if col == 0:
         axes[0, col].set_ylabel(ylabels[agg_method])
 
 
-def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constraint, branch=None):
+def plot_surface(axes, infile, region, bar_width, agg_method, time_constraint, branch=None):
     """Plot radiative surface fluxes."""
 
     values = []
@@ -212,14 +235,14 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
     line_widths = []
     ind = []
     for realm in ['', ' ocean', ' land']:
-        rsns_var = 'Surface Net Shortwave Flux in Air ' + hemisphere + realm + ' sum'
-        hfss_var = 'Surface Upward Sensible Heat Flux ' + hemisphere + realm + ' sum'
-        hfls_var = 'Surface Upward Latent Heat Flux ' + hemisphere + realm + ' sum'
-        rlns_var = 'Surface Net Longwave Flux in Air ' + hemisphere +realm + ' sum'
+        rsns_var = 'Surface Net Shortwave Flux in Air ' + region + realm + ' sum'
+        hfss_var = 'Surface Upward Sensible Heat Flux ' + region + realm + ' sum'
+        hfls_var = 'Surface Upward Latent Heat Flux ' + region + realm + ' sum'
+        rlns_var = 'Surface Net Longwave Flux in Air ' + region +realm + ' sum'
         if realm == '':
-            hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + ' ocean sum'
+            hfds_var = 'Downward Heat Flux at Sea Water Surface ' + region + ' ocean sum'
         else:
-            hfds_var = 'Downward Heat Flux at Sea Water Surface ' + hemisphere + realm + ' sum'
+            hfds_var = 'Downward Heat Flux at Sea Water Surface ' + region + realm + ' sum'
     
         rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint, branch=branch)
         hfss_value, hfss_color = get_data(infile, hfss_var, agg_method, time_constraint, branch=branch)
@@ -239,61 +262,95 @@ def plot_surface(axes, infile, hemisphere, bar_width, agg_method, time_constrain
         line_widths.extend([1.0, 1.0, 1.0, 1.0, 0.3, 1.0])
     
     ind = [0, 1, 2, 3, 3, 4, 5, 6, 7 ,8, 8, 9, 10, 11, 12, 13, 13, 14]
-    col = column_number[hemisphere] 
+    col = column_number[region] 
     axes[1, col].bar(ind, values, bar_width,
                      color=fill_colors,
                      edgecolor=edge_colors,
                      tick_label=tick_labels,
-                     linewidth=line_widths)
+                     linewidth=line_widths,
+                     align='center')
     if col == 0:
         axes[1, col].set_ylabel(ylabels[agg_method])
 
     return hfds_output
     
 
-def plot_ocean(axes, infile, hemisphere, bar_width, agg_method, time_constraint, hfds_value, branch=None, infer_ohc=False, infer_hfbasin=False):
-    """Plot ocean data.
-
-    hfds value is passed to this function because it might have been derived from surface values
-
-    """
+def get_ocean_values(infile, agg_method, time_constraint, hfds_values, nregions, branch=None, infer_ohc=False, infer_hfbasin=False):
+    """Get the ocean values"""
     
-    hfbasin_var = 'Northward Ocean Heat Transport ' + hemisphere + ' ocean sum'
-    ohc_var = 'ocean heat content ' + hemisphere + ' sum'
+    ohc_values = {}
+    transport_values = {}
+    ohc_inferred_values = {}
+    for region in region_names[nregions]:
+        ohc_var = 'ocean heat content ' + region + ' sum'
+        ohc_values[region], color = get_data(infile, ohc_var, agg_method, time_constraint, ohc=True, branch=branch)
 
-    hfbasin_value, hfbasin_color = get_data(infile, hfbasin_var, agg_method, time_constraint, branch=branch)
-    ohc_value, ohc_color = get_data(infile, ohc_var, agg_method, time_constraint, ohc=True, branch=branch)
+        transport_data_flag = False
+        for direction in ['in', 'out']:
+            hfbasin_var = 'Northward Ocean Heat Transport ' + region + ' ocean sum ' + direction
+            transport_values[(region, direction)], color = get_data(infile, hfbasin_var, agg_method, time_constraint, branch=branch)
+            if transport_values[(region, direction)]:
+                transport_data_flag = True
+                if direction == 'out':
+                    transport_values[(region, direction)] = -1 * transport_values[(region, direction)]
 
-    values = [hfds_value, ohc_value, hfbasin_value]
-    colors = ['None', 'None', 'None']
-    edge_colors = ['blue', ohc_color, hfbasin_color]
-    line_widths = [1.0, 1.0, 1.0]
-    ind = [0, 1, 2]
-    labels = ['hfds', 'dOHC/dt', 'hfbasin']
-    if infer_ohc and hfbasin_value:
-        ohc_inferred_value = hfds_value + hfbasin_value
-        values.insert(2, ohc_inferred_value)
+        if infer_ohc and transport_data_flag:
+            ohc_inferred_values[region] = hfds_values[region] + transport_values[(region, 'in')] + transport_values[(region, 'out')]
+
+    transport_inferred_values = {}
+    if infer_hfbasin:
+        transport_inferred_values[('ssubpolar', 'out')] = ohc_values['ssubpolar'] - hfds_values['ssubpolar']        
+        transport_inferred_values[('stropics', 'in')] = -1 * transport_inferred_values[('ssubpolar', 'out')]
+        transport_inferred_values[('stropics', 'out')] = ohc_values['stropics'] - hfds_values['stropics'] - transport_inferred_values[('stropics', 'in')]       
+        transport_inferred_values[('ntropics', 'in')] = -1 * transport_inferred_values[('ssubpolar', 'out')]
+        transport_inferred_values[('ntropics', 'out')] = ohc_values['ntropics'] - hfds_values['ntropics'] - transport_inferred_values[('ntropics', 'in')]       
+        transport_inferred_values[('nsubpolar', 'in')] = -1 * transport_inferred_values[('ntropics', 'out')]
+        transport_inferred_values[('nsubpolar', 'out')] = ohc_values['nsubpolar'] - hfds_values['nsubpolar'] - transport_inferred_values[('nsubpolar', 'in')]       
+        transport_inferred_values[('arctic', 'in')] = -1 * transport_inferred_values[('nsubpolar', 'out')]
+
+    return ohc_values, transport_values, ohc_inferred_values, transport_inferred_values
+
+
+def plot_ocean(axes, infile, region, bar_width, ohc_values, transport_values, ohc_inferred_values, transport_inferred_values):
+    """Plot ocean data."""
+    
+    values = [transport_values[(region, 'in')], hfds_values[region], ohc_values[region], transport_values[(region, 'out')]]
+    colors = ['None', 'blue', 'None', 'None']
+    edge_colors = 'blue'
+    line_widths = [1.0, 1.0, 1.0, 1.0]
+    ind = [0, 1, 2, 3]
+    labels = ['hf-in', 'hfds', 'dOHC/dt', 'hf-out']
+    if ohc_inferred_values[region]:
+        values.insert(2, ohc_inferred_values[region])
         colors.insert(2, 'None')
         edge_colors.insert(2, 'blue')
         line_widths.insert(2, 0.3)
         ind.insert(2, 1)
         labels.insert(2, '')
     
-    if infer_hfbasin:
-        hfbasin_inferred_value = ohc_value - hfds_value        
-        values.insert(-1, hfbasin_inferred_value)
+    if transport_inferred_values[(region, 'in')]:
+        values.insert(0, transport_inferred_values[(region, 'in')])
+        colors.insert(0, 'None')
+        edge_colors.insert(0, 'blue')
+        line_widths.insert(0, 0.3)
+        ind.insert(0, 2)
+        labels.insert(0, '')
+        
+    if transport_inferred_values[(region, 'out')]:
+        values.insert(-1, transport_inferred_values[(region, 'out')])
         colors.insert(-1, 'None')
         edge_colors.insert(-1, 'blue')
         line_widths.insert(-1, 0.3)
         ind.insert(-1, 2)
         labels.insert(-1, '')
-        
-    col = column_number[hemisphere] 
+
+    col = column_number[region] 
     axes[2, col].bar(ind, values, bar_width,
                      color=colors,
                      edgecolor=edge_colors,
                      tick_label=labels,
-                     linewidth=line_widths)
+                     linewidth=line_widths,
+                     align='center')
     if col == 0:
         axes[2, col].set_ylabel(ylabels[agg_method])
 
@@ -309,15 +366,19 @@ def main(inargs):
     else:
         time_constraint = iris.Constraint()
 
-    fig, axes = setup_plot(inargs.exclude_ocean)
+    fig, axes = setup_plot(inargs.nregions)
     bar_width = 0.7
     
-    for hemisphere in ['sh', 'nh']:
-        plot_atmos(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, branch=inargs.branch_time)
-        hfds_value = plot_surface(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, branch=inargs.branch_time)
-        if not inargs.exclude_ocean:
-            plot_ocean(axes, inargs.infile, hemisphere, bar_width, inargs.aggregation, time_constraint, hfds_value, branch=inargs.branch_time,
-                       infer_ohc=inargs.infer_ohc, infer_hfbasin=inargs.infer_hfbasin)
+    hfds_values = {}
+    for region in region_names[inargs.nregions]:
+        plot_atmos(axes, inargs.infile, region, bar_width, inargs.aggregation, time_constraint, branch=inargs.branch_time)
+        hfds_values[region] = plot_surface(axes, inargs.infile, region, bar_width, inargs.aggregation, time_constraint, branch=inargs.branch_time)
+    
+    ohc_values, transport_values, ohc_inferred_values, transport_inferred_values = get_ocean_values(inargs.infile, inargs.aggregation, time_constraint,
+                                                                                                    hfds_values, inargs.nregions, branch=inargs.branch_time, 
+                                                                                                    infer_ohc=inargs.infer_ohc, infer_hfbasin=inargs.infer_hfbasin)
+    for region in region_names[inargs.nregions]:
+        plot_ocean(axes, region, bar_width, ohc_values, transport_values, ohc_inferred_values, transport_inferred_values)
 
     set_title(inargs.infile)
     fig.tight_layout(rect=[0, 0, 1, 0.93])   # (left, bottom, right, top) 
@@ -356,9 +417,8 @@ author:
     parser.add_argument("--infer_hfbasin", action="store_true", default=False,
                         help="Infer hfbasin from hfds and ohc [default=False]")
 
-    parser.add_argument("--exclude_ocean", action="store_true", default=False,
-                        help="Leave out the ocean plot [default=False]")
-
+    parser.add_argument("--nregions", type=int, choices=(2, 5), default=2,
+                        help="Number of regions to split the globe into [default=2]")
 
     parser.add_argument("--branch_time", type=float, nargs=2, metavar=('BRANCH_TIME', 'NYEARS'), default=None,
                         help="For piControl data, specify branch time and number of years of corresponding historical experiment [default = trend]")
