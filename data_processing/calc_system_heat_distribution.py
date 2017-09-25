@@ -111,9 +111,51 @@ def hfbasin_handling(cube, var, model):
     return cube
 
 
+def load_data(filenames, standard_name, metadata_dict, input_timescale):
+    """Basic data loading and temporal smoothing"""
+
+    with iris.FUTURE.context(cell_datetime_objects=True):
+        cube = iris.load(filenames, gio.check_iris_var(standard_name))
+            
+        metadata_dict[filenames[0]] = cube[0].attributes['history']
+        equalise_attributes(cube)
+        iris.util.unify_time_units(cube)
+        cube = cube.concatenate_cube()
+        cube = gio.check_time_units(cube)
+        cube = iris.util.squeeze(cube)
+            
+    attributes = cube.attributes                   
+
+    if not input_timescale == 'annual':
+        cube = timeseries.convert_to_annual(cube, full_months=True)
+
+    return cube, metadata_dict, attributes
+
+
+def get_transport_data(filenames, standard_name, cube_dict, metadata_dict, attributes, input_timescale='monthly'):
+    """Read in ocean heat transport data."""
+    
+    assert standard_name in ['northward_ocean_heat_transport', 'ocean_heat_y_transport']
+
+    if filenames:
+        cube, metadata_dict, attributes = load_data(filenames, standard_name, metadata_dict, input_timescale) 
+        for region in region_list:
+            zonal_cube = hfbasin_handling(cube.copy(), standard_name, attributes['model_id'])   
+            for index, lat in enumerate(region_boundaries[region]):
+                if abs(lat) < 90:
+                    direction = 'in' if index == 0 else 'out'
+                    target_lat, error = uconv.find_nearest(zonal_cube.coord('latitude').points, lat, index=False)
+                    region_sum = zonal_cube.extract(iris.Constraint(latitude=target_lat))
+                    region_sum, var_name = rename_cube(region_sum, region, 'ocean', direction=direction)
+
+                    cube_dict[var_name] = region_sum
+
+    return cube_dict, metadata_dict, attributes
+
+
 def get_data(filenames, standard_name, cube_dict, metadata_dict, attributes, 
              input_timescale='monthly', sftlf_cube=None, include_only=None, area_cube=None):
-    """Read, merge, temporally aggregate and calculate hemispheric totals.
+    """Read, merge, temporally aggregate and calculate regional totals.
 
     Args:
       include_only (str): 'ocean' or 'land'
@@ -121,20 +163,7 @@ def get_data(filenames, standard_name, cube_dict, metadata_dict, attributes,
     """
 
     if filenames:
-        with iris.FUTURE.context(cell_datetime_objects=True):
-            cube = iris.load(filenames, gio.check_iris_var(standard_name))
-            
-            metadata_dict[filenames[0]] = cube[0].attributes['history']
-            equalise_attributes(cube)
-            iris.util.unify_time_units(cube)
-            cube = cube.concatenate_cube()
-            cube = gio.check_time_units(cube)
-            cube = iris.util.squeeze(cube)
-            
-        attributes = cube.attributes                   
-
-        if not input_timescale == 'annual':
-            cube = timeseries.convert_to_annual(cube, full_months=True)
+        cube, metadata_dict, attributes = load_data(filenames, standard_name, metadata_dict, input_timescale)        
 
         if include_only and sftlf_cube:
             mask = create_land_ocean_mask(sftlf_cube, cube.shape, include_only)
@@ -142,18 +171,7 @@ def get_data(filenames, standard_name, cube_dict, metadata_dict, attributes,
             cube.data.mask = mask
         
         for region in region_list:
-
-            if standard_name in ['northward_ocean_heat_transport', 'ocean_heat_y_transport']:
-                if not region in ['sh', 'ssubpolar']:  
-                    cube = hfbasin_handling(cube, standard_name, attributes['model_id'])   
-                    lat = region_boundaries[region][0]  #southern boundary
-                    target_lat, error = find_nearest(cube.coord('latitude').points, lat, index=False)
-                    region_sum = cube.extract(iris.Constraint(latitude=target_lat))
-                else:
-                    break
-            else:
-                region_sum = calc_sum(cube, standard_name, region, area_cube)
-             
+            region_sum = calc_sum(cube.copy(), standard_name, region, area_cube)
             if standard_name == 'ocean_heat_content':
                 region_sum, var_name = rename_cube(region_sum, region, None, standard_name='ocean_heat_content',
                                                    long_name='ocean heat content', var_name='ohc')
@@ -275,7 +293,7 @@ def multiply_by_area(cube, var, area_cube):
     return cube
 
 
-def rename_cube(cube, region, realm, standard_name=None, long_name=None, var_name=None):
+def rename_cube(cube, region, realm, standard_name=None, long_name=None, var_name=None, direction=None):
     """Rename a cube according to the specifics of the analysis"""
 
     assert region in ['nh', 'sh', 'arctic', 'nsubpolar', 'ntropics', 'stropics', 'ssubpolar']
@@ -296,6 +314,12 @@ def rename_cube(cube, region, realm, standard_name=None, long_name=None, var_nam
         standard_name = '%s_%s_sum' %(standard_name, region)
         long_name = '%s %s sum' %(long_name, region)
         var_name = '%s-%s-sum' %(var_name, region)
+
+    if direction:
+        assert direction in ['in', 'out']
+        standard_name = standard_name + '_' + direction
+        long_name = long_name + ' ' + direction
+        var_name = var_name + '-' + direction
 
     iris.std_names.STD_NAMES[standard_name] = {'canonical_units': cube.units}
     cube.standard_name = standard_name
@@ -396,13 +420,11 @@ def main(inargs):
                                                     cube_dict, metadata_dict, attributes,
                                                     input_timescale='annual', area_cube=areacello_cube)
     if inargs.hfbasin_files:
-        cube_dict, metadata_dict, attributes = get_data(inargs.hfbasin_files, 'northward_ocean_heat_transport',
-                                                        cube_dict, metadata_dict, attributes,
-                                                        include_only='ocean')
+        cube_dict, metadata_dict, attributes = get_transport_data(inargs.hfbasin_files, 'northward_ocean_heat_transport',
+                                                                  cube_dict, metadata_dict, attributes)
     elif inargs.hfy_files:
-        cube_dict, metadata_dict, attributes = get_data(inargs.hfy_files, 'ocean_heat_y_transport',
-                                                        cube_dict, metadata_dict, attributes,
-                                                        include_only='ocean')
+        cube_dict, metadata_dict, attributes = get_transport_data(inargs.hfy_files, 'ocean_heat_y_transport',
+                                                                  cube_dict, metadata_dict, attributes)
 
     # Derived fluxes
 
