@@ -142,13 +142,15 @@ def get_data(filenames, standard_name, cube_dict, metadata_dict, attributes,
             cube.data.mask = mask
         
         for region in region_list:
-        
+
             if standard_name in ['northward_ocean_heat_transport', 'ocean_heat_y_transport']:
                 if not region in ['sh', 'ssubpolar']:  
                     cube = hfbasin_handling(cube, standard_name, attributes['model_id'])   
                     lat = region_boundaries[region][0]  #southern boundary
                     target_lat, error = find_nearest(cube.coord('latitude').points, lat, index=False)
                     region_sum = cube.extract(iris.Constraint(latitude=target_lat))
+                else:
+                    break
             else:
                 region_sum = calc_sum(cube, standard_name, region, area_cube)
              
@@ -246,7 +248,8 @@ def derived_surface_radiation_fluxes(cube_dict, sftlf_cube):
             cube_dict[rlns_var] = cube_dict[rlus_var] - cube_dict[rlds_var]
             cube_dict[rlns_var], var_name = rename_cube(cube_dict[rlns_var], region, realm,
                                                         standard_name='surface_net_longwave_flux_in_air',
-                                                        long_name='Surface Net Longwave Flux in Air', 'rlns')
+                                                        long_name='Surface Net Longwave Flux in Air',
+                                                        var_name='rlns')
 
     return cube_dict
 
