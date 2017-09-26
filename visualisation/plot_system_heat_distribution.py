@@ -48,7 +48,7 @@ def setup_plot(nregions):
 
     rows = ['TOA / Atmosphere', 'Surface', 'Ocean']
     if nregions == 2:
-        cols = ['Southern region', 'Northern region']
+        cols = ['Southern Hemisphere', 'Northern Hemisphere']
         width = 14
     elif nregions == 5:
         cols = ['southern sub-polar', 'southern tropics', 'northern tropics',
@@ -299,50 +299,75 @@ def get_ocean_values(infile, agg_method, time_constraint, hfds_values, nregions,
 
     transport_inferred_values = {}
     if infer_hfbasin:
-        transport_inferred_values[('ssubpolar', 'out')] = ohc_values['ssubpolar'] - hfds_values['ssubpolar']        
-        transport_inferred_values[('stropics', 'in')] = -1 * transport_inferred_values[('ssubpolar', 'out')]
-        transport_inferred_values[('stropics', 'out')] = ohc_values['stropics'] - hfds_values['stropics'] - transport_inferred_values[('stropics', 'in')]       
-        transport_inferred_values[('ntropics', 'in')] = -1 * transport_inferred_values[('ssubpolar', 'out')]
-        transport_inferred_values[('ntropics', 'out')] = ohc_values['ntropics'] - hfds_values['ntropics'] - transport_inferred_values[('ntropics', 'in')]       
-        transport_inferred_values[('nsubpolar', 'in')] = -1 * transport_inferred_values[('ntropics', 'out')]
-        transport_inferred_values[('nsubpolar', 'out')] = ohc_values['nsubpolar'] - hfds_values['nsubpolar'] - transport_inferred_values[('nsubpolar', 'in')]       
-        transport_inferred_values[('arctic', 'in')] = -1 * transport_inferred_values[('nsubpolar', 'out')]
+        if nregions == 2:
+            transport_inferred_values[('nh', 'in')] = ohc_values['nh'] - hfds_values['nh']
+            transport_inferred_values[('sh', 'out')] = ohc_values['sh'] - hfds_values['sh']
+        elif nregions == 5:
+            transport_inferred_values[('ssubpolar', 'out')] = ohc_values['ssubpolar'] - hfds_values['ssubpolar']        
+            transport_inferred_values[('stropics', 'in')] = -1 * transport_inferred_values[('ssubpolar', 'out')]
+            transport_inferred_values[('stropics', 'out')] = ohc_values['stropics'] - hfds_values['stropics'] - transport_inferred_values[('stropics', 'in')]       
+            transport_inferred_values[('ntropics', 'in')] = -1 * transport_inferred_values[('ssubpolar', 'out')]
+            transport_inferred_values[('ntropics', 'out')] = ohc_values['ntropics'] - hfds_values['ntropics'] - transport_inferred_values[('ntropics', 'in')]       
+            transport_inferred_values[('nsubpolar', 'in')] = -1 * transport_inferred_values[('ntropics', 'out')]
+            transport_inferred_values[('nsubpolar', 'out')] = ohc_values['nsubpolar'] - hfds_values['nsubpolar'] - transport_inferred_values[('nsubpolar', 'in')]       
+            transport_inferred_values[('arctic', 'in')] = -1 * transport_inferred_values[('nsubpolar', 'out')]
 
     return ohc_values, transport_values, ohc_inferred_values, transport_inferred_values
 
 
-def plot_ocean(axes, infile, region, bar_width, ohc_values, transport_values, ohc_inferred_values, transport_inferred_values):
+def plot_ocean(axes, region, bar_width, agg_method, hfds_values, ohc_values, transport_values, ohc_inferred_values, transport_inferred_values):
     """Plot ocean data."""
-    
+
+    left_regions = ['sh', 'ssubpolar']
+    right_regions = ['nh', 'arctic']
+
     values = [transport_values[(region, 'in')], hfds_values[region], ohc_values[region], transport_values[(region, 'out')]]
     colors = ['None', 'blue', 'None', 'None']
     edge_colors = 'blue'
     line_widths = [1.0, 1.0, 1.0, 1.0]
     ind = [0, 1, 2, 3]
     labels = ['hf-in', 'hfds', 'dOHC/dt', 'hf-out']
-    if ohc_inferred_values[region]:
-        values.insert(2, ohc_inferred_values[region])
-        colors.insert(2, 'None')
-        edge_colors.insert(2, 'blue')
-        line_widths.insert(2, 0.3)
-        ind.insert(2, 1)
-        labels.insert(2, '')
-    
-    if transport_inferred_values[(region, 'in')]:
+
+    if region in left_regions:
+        values = [hfds_values[region], ohc_values[region], transport_values[(region, 'out')]]
+        colors = colors[1:]
+        line_widths = line_widths[1:]
+        ind = [0, 1, 2]
+        labels = labels[1:]
+    elif region in right_regions:
+        values = [transport_values[(region, 'in')], hfds_values[region], ohc_values[region]]
+        colors = colors[:-1]
+        line_widths = line_widths[:-1]
+        ind = [0, 1, 2]
+        labels = labels[:-1]
+
+    try:
+        ohc_index = labels.index('dOHC/dt')
+        values.insert(ohc_index, ohc_inferred_values[region])
+        colors.insert(ohc_index, 'None')
+        line_widths.insert(ohc_index, 0.3)
+        ind.insert(ohc_index, ind[ohc_index])
+        labels.insert(ohc_index, '')
+    except KeyError:
+        pass    
+
+    try:
         values.insert(0, transport_inferred_values[(region, 'in')])
         colors.insert(0, 'None')
-        edge_colors.insert(0, 'blue')
         line_widths.insert(0, 0.3)
-        ind.insert(0, 2)
+        ind.insert(0, ind[0])
         labels.insert(0, '')
-        
-    if transport_inferred_values[(region, 'out')]:
+    except KeyError:
+        pass    
+    
+    try:
         values.insert(-1, transport_inferred_values[(region, 'out')])
         colors.insert(-1, 'None')
-        edge_colors.insert(-1, 'blue')
         line_widths.insert(-1, 0.3)
-        ind.insert(-1, 2)
+        ind.insert(-1, ind[-1])
         labels.insert(-1, '')
+    except KeyError:
+        pass
 
     col = column_number[region] 
     axes[2, col].bar(ind, values, bar_width,
@@ -378,11 +403,10 @@ def main(inargs):
                                                                                                     hfds_values, inargs.nregions, branch=inargs.branch_time, 
                                                                                                     infer_ohc=inargs.infer_ohc, infer_hfbasin=inargs.infer_hfbasin)
     for region in region_names[inargs.nregions]:
-        plot_ocean(axes, region, bar_width, ohc_values, transport_values, ohc_inferred_values, transport_inferred_values)
+        plot_ocean(axes, region, bar_width, inargs.aggregation, hfds_values, ohc_values, transport_values, ohc_inferred_values, transport_inferred_values)
 
     set_title(inargs.infile)
     fig.tight_layout(rect=[0, 0, 1, 0.93])   # (left, bottom, right, top) 
-    #fig.subplots_adjust(left=0.15, top=0.95)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info={inargs.infile: iris.load(inargs.infile)[0].attributes['history']})
