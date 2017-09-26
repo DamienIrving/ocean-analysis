@@ -256,7 +256,7 @@ def plot_surface(axes, infile, region, bar_width, agg_method, time_constraint, b
         hfls_value, hfls_color = get_data(infile, hfls_var, agg_method, time_constraint, branch=branch)
         hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint, branch=branch)
 
-        hfds_inferred_value = rsns_value - hfss_value - hfls_value - rlns_value
+        hfds_inferred_value = rns_value - hfss_value - hfls_value
 
         if realm == '':
             hfds_output = hfds_value if hfds_value else hfds_inferred_value
