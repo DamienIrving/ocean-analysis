@@ -53,7 +53,7 @@ def setup_plot(nregions):
     elif nregions == 5:
         cols = ['southern sub-polar', 'southern tropics', 'northern tropics',
                 'northern sub-polar', 'arctic ocean']
-        width = 14    
+        width = 30  
 
     height = 9
     fig = plt.figure(figsize=(width, height))
@@ -202,23 +202,23 @@ def plot_atmos(axes, infile, region, bar_width, agg_method, time_constraint, bra
     rsdt_var = 'TOA Incident Shortwave Radiation '+region+' sum'
     rsut_var = 'TOA Outgoing Shortwave Radiation '+region+' sum'
     rsaa_var = 'Atmosphere Absorbed Shortwave Flux '+region+' sum'
-    rsns_var = 'Surface Net Shortwave Flux in Air '+region+' sum'
+    rlut_var = 'TOA Outgoing Longwave Radiation '+region+' sum'
 
     rsdt_value, rsdt_color = get_data(infile, rsdt_var, agg_method, time_constraint, branch=branch)
     rsut_value, rsut_color = get_data(infile, rsut_var, agg_method, time_constraint, branch=branch)
     rsaa_value, rsaa_color = get_data(infile, rsaa_var, agg_method, time_constraint, branch=branch)
-    rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint, branch=branch)
+    rlut_value, rlut_color = get_data(infile, rlut_var, agg_method, time_constraint, branch=branch)
 
-    values = (rsdt_value, rsut_value, rsaa_value, rsns_value)
-    edge_colors = (rsdt_color, rsut_color, rsaa_color, rsns_color)
+    values = (rsdt_value, rsut_value, rsaa_value, rlut_value)
+    edge_colors = (rsdt_color, rsut_color, rsaa_color, rlut_color)
     line_widths = (1.0, 1.0, 0.3, 1.0)
 
     ind = numpy.arange(len(values))  # the x locations for the groups
     col = column_number[region] 
     axes[0, col].bar(ind, values, bar_width,
-                     color=['None', 'None', 'None', edge_colors[-1]],
+                     color=['None', 'None', 'None', 'None'],
                      edgecolor=edge_colors,
-                     tick_label=['rsdt', 'rsut', 'rsaa', 'rsns'],
+                     tick_label=['rsdt', 'rsut', 'rsaa', 'rlut'],
                      linewidth=line_widths,
                      align='center')
     if col == 0:
@@ -235,33 +235,39 @@ def plot_surface(axes, infile, region, bar_width, agg_method, time_constraint, b
     line_widths = []
     ind = []
     for realm in ['', ' ocean', ' land']:
-        rsns_var = 'Surface Net Shortwave Flux in Air ' + region + realm + ' sum'
+        rsds_var = 'Surface Downwelling Shortwave Flux in Air ' + region + realm + ' sum'
+        rsus_var = 'Surface Upwelling Shortwave Flux in Air ' + region + realm + ' sum'
+        rlds_var = 'Surface Downwelling Longwave Flux in Air ' + region + realm + ' sum'
+        rlus_var = 'Surface Upwelling Longwave Flux in Air ' + region + realm + ' sum'
+        rns_var = 'Surface Net Flux in Air ' + region + realm + ' sum'
         hfss_var = 'Surface Upward Sensible Heat Flux ' + region + realm + ' sum'
         hfls_var = 'Surface Upward Latent Heat Flux ' + region + realm + ' sum'
-        rlns_var = 'Surface Net Longwave Flux in Air ' + region +realm + ' sum'
         if realm == '':
             hfds_var = 'Downward Heat Flux at Sea Water Surface ' + region + ' ocean sum'
         else:
             hfds_var = 'Downward Heat Flux at Sea Water Surface ' + region + realm + ' sum'
     
-        rsns_value, rsns_color = get_data(infile, rsns_var, agg_method, time_constraint, branch=branch)
+        rsds_value, rsds_color = get_data(infile, rsds_var, agg_method, time_constraint, branch=branch)
+        rsus_value, rsus_color = get_data(infile, rsus_var, agg_method, time_constraint, branch=branch)
+        rlds_value, rlds_color = get_data(infile, rlds_var, agg_method, time_constraint, branch=branch)
+        rlus_value, rlus_color = get_data(infile, rlus_var, agg_method, time_constraint, branch=branch)
+        rns_value, rns_color = get_data(infile, rns_var, agg_method, time_constraint, branch=branch)
         hfss_value, hfss_color = get_data(infile, hfss_var, agg_method, time_constraint, branch=branch)
         hfls_value, hfls_color = get_data(infile, hfls_var, agg_method, time_constraint, branch=branch)
         hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint, branch=branch)
-        rlns_value, rlns_color = get_data(infile, rlns_var, agg_method, time_constraint, branch=branch)
 
         hfds_inferred_value = rsns_value - hfss_value - hfls_value - rlns_value
 
         if realm == '':
             hfds_output = hfds_value if hfds_value else hfds_inferred_value
         
-        values.extend([rsns_value, hfss_value, hfls_value, hfds_value, hfds_inferred_value, rlns_value])
-        edge_colors.extend([rsns_color, hfss_color, hfls_color, hfds_color, hfds_color, rlns_color])
-        fill_colors.extend([rsns_color, 'None', 'None', 'None', 'None', 'None'])
-        tick_labels.extend(['rsns', 'hfss', 'hfls', '', 'hfds', 'rlns'])
-        line_widths.extend([1.0, 1.0, 1.0, 1.0, 0.3, 1.0])
+        values.extend([rsds_value, rsus_value, rlds_value, rlus_value, rns_value, hfss_value, hfls_value, hfds_value, hfds_inferred_value])
+        edge_colors.extend([rsds_color, rsus_color, rlds_color, rlus_color, rns_color, hfss_color, hfls_color, hfds_color, hfds_color])
+        fill_colors.extend(['None', 'None', 'None', 'None', rns_color, 'None', 'None', 'None', 'None'])
+        tick_labels.extend(['rsds', 'rsus', 'rlds', 'rlus', 'rns', 'hfss', 'hfls', '', 'hfds'])
+        line_widths.extend([1.0 ,1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.3])
     
-    ind = [0, 1, 2, 3, 3, 4, 5, 6, 7 ,8, 8, 9, 10, 11, 12, 13, 13, 14]
+    ind = [0, 1, 2, 3, 4, 5, 6, 7, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15, 16, 17, 18, 19, 20, 21, 22, 23, 23]
     col = column_number[region] 
     axes[1, col].bar(ind, values, bar_width,
                      color=fill_colors,
@@ -322,7 +328,7 @@ def plot_ocean(axes, region, bar_width, agg_method, hfds_values, ohc_values, tra
     right_regions = ['nh', 'arctic']
 
     values = [transport_values[(region, 'in')], hfds_values[region], ohc_values[region], transport_values[(region, 'out')]]
-    colors = ['None', 'blue', 'None', 'None']
+    colors = ['None', 'None', 'None', 'None']
     edge_colors = 'blue'
     line_widths = [1.0, 1.0, 1.0, 1.0]
     ind = [0, 1, 2, 3]
