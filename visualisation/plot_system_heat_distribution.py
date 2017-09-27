@@ -49,13 +49,14 @@ def setup_plot(nregions):
     rows = ['TOA / Atmosphere', 'Surface', 'Ocean']
     if nregions == 2:
         cols = ['Southern Hemisphere', 'Northern Hemisphere']
-        width = 14
+        height = 12
+        width = 20
     elif nregions == 5:
         cols = ['southern sub-polar', 'southern tropics', 'northern tropics',
                 'northern sub-polar', 'arctic ocean']
-        width = 30  
+        height = 15
+        width = 55  
 
-    height = 9
     fig = plt.figure(figsize=(width, height))
 
     nrows = 3
@@ -235,11 +236,11 @@ def plot_surface(axes, infile, region, bar_width, agg_method, time_constraint, b
     line_widths = []
     ind = []
     for realm in ['', ' ocean', ' land']:
-        rsds_var = 'Surface Downwelling Shortwave Flux in Air ' + region + realm + ' sum'
-        rsus_var = 'Surface Upwelling Shortwave Flux in Air ' + region + realm + ' sum'
-        rlds_var = 'Surface Downwelling Longwave Flux in Air ' + region + realm + ' sum'
-        rlus_var = 'Surface Upwelling Longwave Flux in Air ' + region + realm + ' sum'
-        rns_var = 'Surface Net Flux in Air ' + region + realm + ' sum'
+        rsds_var = 'Surface Downwelling Shortwave Radiation ' + region + realm + ' sum'
+        rsus_var = 'Surface Upwelling Shortwave Radiation ' + region + realm + ' sum'
+        rlds_var = 'Surface Downwelling Longwave Radiation ' + region + realm + ' sum'
+        rlus_var = 'Surface Upwelling Longwave Radiation ' + region + realm + ' sum'
+        rnds_var = 'Surface Downwelling Net Radiation ' + region + realm + ' sum'
         hfss_var = 'Surface Upward Sensible Heat Flux ' + region + realm + ' sum'
         hfls_var = 'Surface Upward Latent Heat Flux ' + region + realm + ' sum'
         if realm == '':
@@ -249,22 +250,23 @@ def plot_surface(axes, infile, region, bar_width, agg_method, time_constraint, b
     
         rsds_value, rsds_color = get_data(infile, rsds_var, agg_method, time_constraint, branch=branch)
         rsus_value, rsus_color = get_data(infile, rsus_var, agg_method, time_constraint, branch=branch)
+        pdb.set_trace()
         rlds_value, rlds_color = get_data(infile, rlds_var, agg_method, time_constraint, branch=branch)
         rlus_value, rlus_color = get_data(infile, rlus_var, agg_method, time_constraint, branch=branch)
-        rns_value, rns_color = get_data(infile, rns_var, agg_method, time_constraint, branch=branch)
+        rnds_value, rnds_color = get_data(infile, rnds_var, agg_method, time_constraint, branch=branch)
         hfss_value, hfss_color = get_data(infile, hfss_var, agg_method, time_constraint, branch=branch)
         hfls_value, hfls_color = get_data(infile, hfls_var, agg_method, time_constraint, branch=branch)
         hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint, branch=branch)
 
-        hfds_inferred_value = rns_value - hfss_value - hfls_value
+        hfds_inferred_value = rnds_value - hfss_value - hfls_value
 
         if realm == '':
             hfds_output = hfds_value if hfds_value else hfds_inferred_value
         
-        values.extend([rsds_value, rsus_value, rlds_value, rlus_value, rns_value, hfss_value, hfls_value, hfds_value, hfds_inferred_value])
-        edge_colors.extend([rsds_color, rsus_color, rlds_color, rlus_color, rns_color, hfss_color, hfls_color, hfds_color, hfds_color])
-        fill_colors.extend(['None', 'None', 'None', 'None', rns_color, 'None', 'None', 'None', 'None'])
-        tick_labels.extend(['rsds', 'rsus', 'rlds', 'rlus', 'rns', 'hfss', 'hfls', '', 'hfds'])
+        values.extend([rsds_value, rsus_value, rlds_value, rlus_value, rnds_value, hfss_value, hfls_value, hfds_value, hfds_inferred_value])
+        edge_colors.extend([rsds_color, rsus_color, rlds_color, rlus_color, rnds_color, hfss_color, hfls_color, hfds_color, hfds_color])
+        fill_colors.extend(['None', 'None', 'None', 'None', rnds_color, 'None', 'None', 'None', 'None'])
+        tick_labels.extend(['rsds', 'rsus', 'rlds', 'rlus', 'rnds', 'hfss', 'hfls', '', 'hfds'])
         line_widths.extend([1.0 ,1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.3])
     
     ind = [0, 1, 2, 3, 4, 5, 6, 7, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15, 16, 17, 18, 19, 20, 21, 22, 23, 23]

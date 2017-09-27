@@ -250,31 +250,31 @@ def derived_surface_radiation_fluxes(cube_dict, sftlf_cube):
                 realm_insert = '-'+realm
             else:
                 realm_insert = '' 
-            rns_var = 'rns-%s%s-sum' %(region, realm_insert)
+            rnds_var = 'rnds-%s%s-sum' %(region, realm_insert)
             rsns_var = 'rsns-%s%s-sum' %(region, realm_insert)
             rsds_var = 'rsds-%s%s-sum' %(region, realm_insert)
             rsus_var = 'rsus-%s%s-sum' %(region, realm_insert)
-            rlns_var = 'rlds-%s%s-sum' %(region, realm_insert)
+            rlns_var = 'rlns-%s%s-sum' %(region, realm_insert)
             rlds_var = 'rlds-%s%s-sum' %(region, realm_insert)
             rlus_var = 'rlus-%s%s-sum' %(region, realm_insert)
         
             cube_dict[rsns_var] = cube_dict[rsds_var] - cube_dict[rsus_var]
             cube_dict[rsns_var], var_name = rename_cube(cube_dict[rsns_var], region, realm,
                                                         standard_name='surface_net_shortwave_flux_in_air',
-                                                        long_name='Surface Net Shortwave Flux in Air',
+                                                        long_name='Surface Downwelling Net Shortwave Radiation',
                                                         var_name='rsns')
 
             cube_dict[rlns_var] = cube_dict[rlus_var] - cube_dict[rlds_var]
             cube_dict[rlns_var], var_name = rename_cube(cube_dict[rlns_var], region, realm,
                                                         standard_name='surface_net_longwave_flux_in_air',
-                                                        long_name='Surface Net Longwave Flux in Air',
+                                                        long_name='Surface Upwelling Net Longwave Radiation',
                                                         var_name='rlns')
             
-            cube_dict[rns_var] = cube_dict[rsds_var] - cube_dict[rlus_var]
-            cube_dict[rns_var], var_name = rename_cube(cube_dict[rns_var], region, realm,
+            cube_dict[rnds_var] = cube_dict[rsns_var] - cube_dict[rlns_var]
+            cube_dict[rnds_var], var_name = rename_cube(cube_dict[rnds_var], region, realm,
                                                         standard_name='surface_net_flux_in_air',
-                                                        long_name='Surface Net Flux in Air',
-                                                        var_name='rns')
+                                                        long_name='Surface Downwelling Net Radiation',
+                                                        var_name='rnds')
 
     return cube_dict
 
