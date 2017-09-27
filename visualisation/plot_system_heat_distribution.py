@@ -250,7 +250,6 @@ def plot_surface(axes, infile, region, bar_width, agg_method, time_constraint, b
     
         rsds_value, rsds_color = get_data(infile, rsds_var, agg_method, time_constraint, branch=branch)
         rsus_value, rsus_color = get_data(infile, rsus_var, agg_method, time_constraint, branch=branch)
-        pdb.set_trace()
         rlds_value, rlds_color = get_data(infile, rlds_var, agg_method, time_constraint, branch=branch)
         rlus_value, rlus_color = get_data(infile, rlus_var, agg_method, time_constraint, branch=branch)
         rnds_value, rnds_color = get_data(infile, rnds_var, agg_method, time_constraint, branch=branch)
