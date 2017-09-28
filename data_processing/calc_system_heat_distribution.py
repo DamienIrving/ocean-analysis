@@ -43,7 +43,8 @@ except ImportError:
 #                'stropics': ('Southern Tropics', 'southern_tropics'),
 #                'ssubpolar': ('Southern Sub Polar', 'southern_sub_polar')}
     
-region_constraints = {'nh': iris.Constraint(latitude=lambda cell: cell >= 0.0),
+region_constraints = {'globe': iris.Constraint(),
+                      'nh': iris.Constraint(latitude=lambda cell: cell >= 0.0),
                       'sh': iris.Constraint(latitude=lambda cell: cell < 0.0),
                       'arctic': iris.Constraint(latitude=lambda cell: cell >= 67.0),
                       'nsubpolar': iris.Constraint(latitude=lambda cell: 42.0 <= cell < 67.0),
@@ -59,7 +60,7 @@ region_boundaries = {'sh':(-91, 0),
                      'stropics': (-42, 0),
                      'ssubpolar': (-91, -42)}
 
-region_list = ['sh', 'nh', 'arctic', 'nsubpolar', 'ntropics', 'stropics', 'ssubpolar']
+region_list = ['globe', 'sh', 'nh', 'arctic', 'nsubpolar', 'ntropics', 'stropics', 'ssubpolar']
 
 
 def calc_sum(cube, var, region, area_cube):
@@ -139,7 +140,7 @@ def get_transport_data(filenames, standard_name, cube_dict, metadata_dict, attri
 
     if filenames:
         cube, metadata_dict, attributes = load_data(filenames, standard_name, metadata_dict, input_timescale) 
-        for region in region_list:
+        for region in region_list[1:]:
             zonal_cube = hfbasin_handling(cube.copy(), standard_name, attributes['model_id'])   
             for index, lat in enumerate(region_boundaries[region]):
                 if abs(lat) < 90:
@@ -303,7 +304,7 @@ def multiply_by_area(cube, var, area_cube):
 def rename_cube(cube, region, realm, standard_name=None, long_name=None, var_name=None, direction=None):
     """Rename a cube according to the specifics of the analysis"""
 
-    assert region in ['nh', 'sh', 'arctic', 'nsubpolar', 'ntropics', 'stropics', 'ssubpolar']
+    assert region in ['globe', 'nh', 'sh', 'arctic', 'nsubpolar', 'ntropics', 'stropics', 'ssubpolar']
     assert realm in ['ocean', 'land', None]
 
     if not standard_name:
