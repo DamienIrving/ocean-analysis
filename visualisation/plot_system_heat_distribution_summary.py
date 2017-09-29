@@ -35,9 +35,6 @@ except ImportError:
 
 # Define functions
 
-# '$W \: yr^{-1}$'
-
-
 def get_data(infile, var, agg_method, time_constraint, ohc=False, branch=None):
     """Read and temporally aggregate the data."""
     
@@ -52,21 +49,37 @@ def set_title(infile):
     """Get the plot title."""
 
     cube = iris.load(infile)
-    title = 'Summary energy budget for %s, %s, %s'  %(cube[0].attributes['model_id'])
+    title = '%s trends, divided by global net radiative surface flux'  %(cube[0].attributes['model_id'])
     
-    plt.suptitle(title, size='x-large')
+    plt.suptitle(title, size='large')
 
 
-def get_scale_factor(infile)
+def get_scale_factor(infile):
     """Get the scaling factor."""
 
     cube = iris.load_cube(infile, 'Surface Downwelling Net Radiation globe sum')
     trend = timeseries.calc_trend(cube, per_yr=True)
+    history = cube.attributes['history']
+    model = cube.attributes['model_id']
 
-    return trend
+    return trend, history, model
 
 
-def get_regional_trends(infile, variable, scale_factor)
+def plot_data(ax, variable, aa_data, ghg_data):
+    """Plot the data."""
+
+    xvals = [0, 1, 2, 3, 4]
+    labels = ['', 'ssubpolar', 'stropics', 'ntropics', 'nsubpolar', 'arctic']
+    ax.plot(xvals, aa_data, 'o-', color='blue', label='AA')
+    ax.plot(xvals, ghg_data, 'o-', color='red', label='GHG')
+    ax.set_xticklabels(labels)
+    ax.set_ylabel('$W \: yr^{-1}$')
+    ax.margins(0.1)
+    ax.legend()
+    ax.set_title(variable)
+
+
+def get_regional_trends(infile, variable, scale_factor):
     """Calculate regional trends for a given variable"""
 
     trend_values = []
@@ -90,24 +103,30 @@ def main(inargs):
         time_constraint = iris.Constraint()
 
     width=20
-    height=10
+    height=5
     fig = plt.figure(figsize=(width, height))
-    axes1 = fig.add_subplot(1, 3, 1)
-    axes2 = fig.add_subplot(1, 3, 2)
-    axes3 = fig.add_subplot(1, 3, 3)
+    ax1 = fig.add_subplot(1, 3, 1)
+    ax2 = fig.add_subplot(1, 3, 2)
+    ax3 = fig.add_subplot(1, 3, 3)
+    axes_list = [ax1, ax2, ax3]
 
-    ghg_rnds_globe_trend = get_scale_factor(inargs.ghg_file)
-    aa_rnds_globe_trend = get_scale_factor(inargs.aa_file)
+    ghg_rnds_globe_trend, ghg_history, model = get_scale_factor(inargs.ghg_file)
+    aa_rnds_globe_trend, aa_history, model = get_scale_factor(inargs.aa_file)
     print('Trend in global rnds, GHG / AA:', ghg_rnds_globe_trend / aa_rnds_globe_trend)    
 
     variables = ['Surface Upwelling Longwave Radiation', 'Surface Upward Latent Heat Flux', 'Downward Heat Flux at Sea Water Surface']
-    for var in varibales:
-        
+    for ax, var in zip(axes_list, variables):
+        ghg_trend = get_regional_trends(inargs.ghg_file, var, ghg_rnds_globe_trend)
+        aa_trend = get_regional_trends(inargs.aa_file, var, aa_rnds_globe_trend)
+        plot_data(ax, var, aa_trend, ghg_trend)
 
-    set_title(inargs.infile)
+    title = '%s trends, divided by global net radiative surface flux'  %(model)
+    plt.suptitle(title, size='large')
+    plt.subplots_adjust(top=0.85)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info={inargs.infile: iris.load(inargs.infile)[0].attributes['history']})
+    gio.write_metadata(inargs.outfile, file_info={inargs.ghg_file: ghg_history,
+                                                  inargs.aa_file: aa_history})
 
 
 if __name__ == '__main__':
