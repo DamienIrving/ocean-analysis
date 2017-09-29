@@ -65,18 +65,20 @@ def get_scale_factor(infile):
     return trend, history, model
 
 
-def plot_data(ax, variable, aa_trends_dict, ghg_trends_dict, aa_files, ghg_files):
+def plot_data(ax, variable, aa_trends_dict, ghg_trends_dict, hist_trends_dict, aa_files, ghg_files, hist_files):
     """Plot the data."""
 
     xvals = [0, 1, 2, 3, 4]
     labels = ['', 'ssubpolar', 'stropics', 'ntropics', 'nsubpolar', 'arctic']
 
     first = True
-    for aa_file, ghg_file in zip(aa_files, ghg_files):
+    for aa_file, ghg_file, hist_file in zip(aa_files, ghg_files, hist_files):
         aa_label = 'AA' if first else None
         ghg_label = 'GHG' if first else None
+        hist_label = 'historical' if first else None
         ax.plot(xvals, aa_trends_dict[(variable, aa_file)], 'o-', color='blue', label=aa_label)
         ax.plot(xvals, ghg_trends_dict[(variable, ghg_file)], 'o-', color='red', label=ghg_label)
+        ax.plot(xvals, hist_trends_dict[(variable, hist_file)], 'o-', color='green', label=hist_label)
         first = False
 
     ax.set_xticklabels(labels)
@@ -109,30 +111,36 @@ def main(inargs):
     else:
         time_constraint = iris.Constraint()
 
-    width=20
-    height=5
+    width=14
+    height=10
     fig = plt.figure(figsize=(width, height))
-    ax1 = fig.add_subplot(1, 3, 1)
-    ax2 = fig.add_subplot(1, 3, 2)
-    ax3 = fig.add_subplot(1, 3, 3)
-    axes_list = [ax1, ax2, ax3]
+    ax1 = fig.add_subplot(2, 2, 1)
+    ax2 = fig.add_subplot(2, 2, 2)
+    ax3 = fig.add_subplot(2, 2, 3)
+    ax4 = fig.add_subplot(2, 2, 4)
+    axes_list = [ax1, ax2, ax3, ax4]
 
     assert len(inargs.ghg_files) == len(inargs.aa_files)
+    assert len(inargs.hist_files) == len(inargs.aa_files)
 
-    variables = ['Surface Upwelling Longwave Radiation', 'Surface Upward Latent Heat Flux', 'Downward Heat Flux at Sea Water Surface']
+    variables = ['Surface Downwelling Net Radiation', 'Surface Upwelling Longwave Radiation', 'Surface Upward Latent Heat Flux', 'Downward Heat Flux at Sea Water Surface']
     ghg_trends_dict = {}
     aa_trends_dict = {}
-    for ghg_file, aa_file in zip(inargs.ghg_files, inargs.aa_files):
+    hist_trends_dict = {}
+    for ghg_file, aa_file, hist_file in zip(inargs.ghg_files, inargs.aa_files, inargs.hist_files):
         ghg_rnds_globe_trend, ghg_history, model = get_scale_factor(ghg_file)
         aa_rnds_globe_trend, aa_history, model = get_scale_factor(aa_file)
-        print('Trend in global rnds, GHG / AA:', ghg_rnds_globe_trend / aa_rnds_globe_trend)    
+        hist_rnds_globe_trend, hist_history, model = get_scale_factor(hist_file)
+        print('Trend in global rnds, GHG / AA:', ghg_rnds_globe_trend / aa_rnds_globe_trend)
+        print('Trend in global rnds, hist / AA:', hist_rnds_globe_trend / aa_rnds_globe_trend)    
 
         for var in variables:
             ghg_trends_dict[(var, ghg_file)] = get_regional_trends(ghg_file, var, ghg_rnds_globe_trend)
             aa_trends_dict[(var, aa_file)] = get_regional_trends(aa_file, var, aa_rnds_globe_trend)
+            hist_trends_dict[(var, hist_file)] = get_regional_trends(hist_file, var, hist_rnds_globe_trend)
 
     for ax, var in zip(axes_list, variables):
-        plot_data(ax, var, aa_trends_dict, ghg_trends_dict, inargs.aa_files, inargs.ghg_files)
+        plot_data(ax, var, aa_trends_dict, ghg_trends_dict, hist_trends_dict, inargs.aa_files, inargs.ghg_files, inargs.hist_files)
 
     title = '%s trends, divided by global net radiative surface flux'  %(model)
     plt.suptitle(title, size='large')
@@ -140,7 +148,8 @@ def main(inargs):
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info={ghg_file: ghg_history,
-                                                  aa_file: aa_history})
+                                                  aa_file: aa_history,
+                                                  hist_file: hist_history})
 
 
 if __name__ == '__main__':
@@ -163,7 +172,9 @@ author:
     parser.add_argument("--ghg_files", type=str, nargs='*', default=None, 
                         help="Input historicalGHG energy budget file generated from calc_system_heat_distribution.py")      
     parser.add_argument("--aa_files", type=str, nargs='*', default=None,
-                        help="Input historicalAA energy budget file generated from calc_system_heat_distribution.py")                                  
+                        help="Input historicalAA energy budget file generated from calc_system_heat_distribution.py")
+    parser.add_argument("--hist_files", type=str, nargs='*', default=None,
+                        help="Input historical energy budget file generated from calc_system_heat_distribution.py")                                    
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
                         help="Time period [default = 1850-2005]")
