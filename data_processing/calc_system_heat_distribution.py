@@ -276,6 +276,16 @@ def derived_surface_radiation_fluxes(cube_dict, sftlf_cube):
                                                         standard_name='surface_net_flux_in_air',
                                                         long_name='Surface Downwelling Net Radiation',
                                                         var_name='rnds')
+            if not realm == 'land':
+                hfss_var = 'hfss-%s%s-sum' %(region, realm_insert)
+                hfls_var = 'hfls-%s%s-sum' %(region, realm_insert)
+                hfds_inferred_var = 'hfds-inferred-%s%s-sum' %(region, realm_insert)
+                cube_dict[hfds_inferred_var] = cube_dict[rnds_var] - cube_dict[hfss_var] - cube_dict[hfls_var]
+                cube_dict[hfds_inferred_var], var_name = rename_cube(cube_dict[hfds_inferred_var], region, realm,
+                                                         standard_name='inferred_surface_downward_heat_flux_in_sea_water',
+                                                         long_name='Inferred Downward Heat Flux at Sea Water Surface',
+                                                         var_name='hfds-inferred')
+
 
     return cube_dict
 
@@ -424,6 +434,7 @@ def main(inargs):
                                                     include_only='ocean', area_cube=areacello_cube)
 
     # Ocean heat transport / storage
+
     cube_dict, metadata_dict, attributes = get_data(inargs.ohc_files, 'ocean_heat_content',
                                                     cube_dict, metadata_dict, attributes,
                                                     input_timescale='annual', area_cube=areacello_cube)

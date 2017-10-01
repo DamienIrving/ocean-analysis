@@ -124,6 +124,8 @@ def main(inargs):
     assert len(inargs.hist_files) == len(inargs.aa_files)
 
     variables = ['Surface Downwelling Net Radiation', 'Surface Upwelling Longwave Radiation', 'Surface Upward Latent Heat Flux', 'Downward Heat Flux at Sea Water Surface']
+    if inargs.infer_hfds:
+        variables[-1] = 'Inferred Downward Heat Flux at Sea Water Surface'
     ghg_trends_dict = {}
     aa_trends_dict = {}
     hist_trends_dict = {}
@@ -178,6 +180,8 @@ author:
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
                         help="Time period [default = 1850-2005]")
+    parser.add_argument("--infer_hfds", action="store_true", default=False,
+                        help="Use inferred hfds data")
 
     args = parser.parse_args()             
     main(args)

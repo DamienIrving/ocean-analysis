@@ -245,8 +245,10 @@ def plot_surface(axes, infile, region, bar_width, agg_method, time_constraint, b
         hfls_var = 'Surface Upward Latent Heat Flux ' + region + realm + ' sum'
         if realm == '':
             hfds_var = 'Downward Heat Flux at Sea Water Surface ' + region + ' ocean sum'
+            hfds_inferred_var = 'Inferred Downward Heat Flux at Sea Water Surface ' + region + ' ocean sum'
         else:
             hfds_var = 'Downward Heat Flux at Sea Water Surface ' + region + realm + ' sum'
+            hfds_inferred_var = 'Inferred Downward Heat Flux at Sea Water Surface ' + region + realm + ' sum'
     
         rsds_value, rsds_color = get_data(infile, rsds_var, agg_method, time_constraint, branch=branch)
         rsus_value, rsus_color = get_data(infile, rsus_var, agg_method, time_constraint, branch=branch)
@@ -256,8 +258,7 @@ def plot_surface(axes, infile, region, bar_width, agg_method, time_constraint, b
         hfss_value, hfss_color = get_data(infile, hfss_var, agg_method, time_constraint, branch=branch)
         hfls_value, hfls_color = get_data(infile, hfls_var, agg_method, time_constraint, branch=branch)
         hfds_value, hfds_color = get_data(infile, hfds_var, agg_method, time_constraint, branch=branch)
-
-        hfds_inferred_value = rnds_value - hfss_value - hfls_value
+        hfds_inferred_value, hfds_inferred_color = get_data(infile, hfds_inferred_var, agg_method, time_constraint, branch=branch)
 
         if realm == '':
             hfds_output = hfds_value if hfds_value else hfds_inferred_value
@@ -405,7 +406,7 @@ def main(inargs):
     for region in region_names[inargs.nregions]:
         plot_atmos(axes, inargs.infile, region, bar_width, inargs.aggregation, time_constraint, branch=inargs.branch_time)
         hfds_values[region] = plot_surface(axes, inargs.infile, region, bar_width, inargs.aggregation, time_constraint, branch=inargs.branch_time)
-    
+
     ohc_values, transport_values, ohc_inferred_values, transport_inferred_values = get_ocean_values(inargs.infile, inargs.aggregation, time_constraint,
                                                                                                     hfds_values, inargs.nregions, branch=inargs.branch_time, 
                                                                                                     infer_ohc=inargs.infer_ohc, infer_hfbasin=inargs.infer_hfbasin)
