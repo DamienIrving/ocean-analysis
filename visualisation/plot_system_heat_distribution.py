@@ -11,6 +11,7 @@ import sys, os, pdb
 import argparse
 import numpy
 import iris
+iris.FUTURE.netcdf_promote = True
 import matplotlib.pyplot as plt
 import seaborn
 

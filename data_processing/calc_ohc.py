@@ -11,6 +11,7 @@ import sys, os, pdb
 import argparse
 import numpy
 import iris
+iris.FUTURE.netcdf_promote = True
 
 # Import my modules
 
@@ -206,7 +207,7 @@ notes:
     parser.add_argument("--area_file", type=str, default=None,
                         help="Cell area file (used to make output units W instead of W m-2)")
     parser.add_argument("--volume_file", type=str, default=None,
-                        help="Cell vole file (used to make output units W instead of W m-2)")
+                        help="Cell volume file (used to make output units W instead of W m-2)")
 
     parser.add_argument("--min_depth", type=float, default=None,
                         help="Only include data below this vertical level")
