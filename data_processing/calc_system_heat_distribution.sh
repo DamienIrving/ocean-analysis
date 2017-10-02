@@ -11,14 +11,14 @@
 #      /g/data/r87/dbi599/DRSv2/CMIP5/CSIRO-Mk3-6-0/historicalMisc/yr/all/r1i1p4/energy-budget/latest/energy-budget-trends_yr_CSIRO-Mk3-6-0_historicalMisc_r1i1p4_1850-2005.png 
 #      --aggregation trend --time 1850-01-01 2005-12-31 --infer_ohc --infer_hfbasin  # --branch_time  29200 156
 
-execute=false
-model=CanESM2
+execute=true
+model=CCSM4
 
-experiment=historicalMisc
-mip=r1i1p4
+experiment=historical
+mip=r1i1p1
 
 fx_mip=r0i0p0
-fx_experiment=historicalMisc
+fx_experiment=historical
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/data_processing
@@ -30,12 +30,14 @@ r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}
 # Calculate OHC
 
 thetao_files=${ua6_dir}/${experiment}/mon/ocean/${mip}/thetao/latest/thetao_Omon_${model}_${experiment}_${mip}_*.nc
+volume_file="--volume_file ${ua6_dir}/${fx_experiment}/fx/ocean/${fx_mip}/volcello/latest/volcello_fx_${model}_${fx_experiment}_${fx_mip}.nc"
 
-ohc_command="${python} ${script_dir}/calc_ohc.py ${thetao_files} sea_water_potential_temperature --annual"
+ohc_command="${python} ${script_dir}/calc_ohc.py ${thetao_files} sea_water_potential_temperature --annual ${volume_file}"
+# --volume_file --area_file
 echo ${ohc_command}
-if [[ ${execute} == true ]] ; then
-    ${ohc_command}
-fi
+#if [[ ${execute} == true ]] ; then
+#    ${ohc_command}
+#fi
 
 # Calculate system heat distribution
 
@@ -43,6 +45,7 @@ energy_dir=${r87_dir}/${experiment}/yr/all/${mip}/energy-budget/latest
 energy_file=${energy_dir}/energy-budget_yr_${model}_${experiment}_${mip}_all.nc
 
 sftlf_file=${ua6_dir}/${fx_experiment}/fx/atmos/${fx_mip}/sftlf/latest/sftlf_fx_${model}_${fx_experiment}_${fx_mip}.nc
+areacello_file="--areacello_file ${ua6_dir}/${fx_experiment}/fx/ocean/${fx_mip}/areacello/latest/areacello_fx_${model}_${fx_experiment}_${fx_mip}.nc"
 
 rsdt_files="--rsdt_files ${ua6_dir}/${experiment}/mon/atmos/${mip}/rsdt/latest/rsdt_Amon_${model}_${experiment}_${mip}_*.nc"
 rsut_files="--rsut_files ${ua6_dir}/${experiment}/mon/atmos/${mip}/rsut/latest/rsut_Amon_${model}_${experiment}_${mip}_*.nc"
@@ -61,8 +64,8 @@ hfy_files="--hfy_files ${ua6_dir}/${experiment}/mon/ocean/${mip}/hfy/latest/hfy_
 ohc_files="--ohc_files ${r87_dir}/${experiment}/yr/ocean/${mip}/ohc/latest/ohc_Oyr_${model}_${experiment}_${mip}_*.nc"
 
 
-command="${python} ${script_dir}/calc_system_heat_distribution.py ${sftlf_file} ${energy_file} ${rsdt_files} ${rsut_files} ${rlut_files} ${rsds_files} ${rsus_files} ${rlds_files} ${rlus_files} ${hfss_files} ${hfls_files} --hfrealm atmos ${ohc_files}"
-# ${hfbasin_files} ${hfy_files} ${hfds_files}
+command="${python} ${script_dir}/calc_system_heat_distribution.py ${sftlf_file} ${energy_file} ${rsdt_files} ${rsut_files} ${rlut_files} ${rsds_files} ${rsus_files} ${rlds_files} ${rlus_files} ${hfss_files} ${hfls_files} --hfrealm atmos ${ohc_files} ${hfds_files} ${areacello_file}"
+# ${hfbasin_files} ${hfy_files} ${hfds_files} ${areacello_file}
 
 echo ${command}
 if [[ ${execute} == true ]] ; then

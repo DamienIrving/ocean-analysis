@@ -11,6 +11,7 @@ import sys, os, pdb
 import argparse
 import numpy
 import iris
+iris.FUTURE.netcdf_promote = True
 from iris.experimental.equalise_cubes import equalise_attributes
 
 
@@ -72,9 +73,9 @@ def calc_sum(cube, var, region, area_cube):
     assert 'time' in coord_names
     assert len(coord_names) == 3
     aux_coord_names = [coord.name() for coord in cube.aux_coords]
-    if aux_coord_names == ['latitude', 'longitude']:
+    if aux_coord_names == ['latitude', 'longitude'] and not region == 'globe':
         assert area_cube, "Must give areacello file for non lat/lon grid data"
-        print("""processing %s on it's non lat/lon grid""" %(var))
+        print("""processing %s on its non-lat/lon grid""" %(var))
 
         region_mask = create_region_mask(cube.coord('latitude').points, cube.shape, region)
         land_ocean_mask = cube.data.mask
@@ -208,8 +209,8 @@ def create_region_mask(latitude_array, target_shape, region):
 
     target_ndim = len(target_shape)
 
-    southern_lat, northern_lat = region_boundaries(region)
-    mask_array = numpy.where(southern_lat <= latitude_array < northern_lat, False, True)
+    southern_lat, northern_lat = region_boundaries[region]
+    mask_array = numpy.where((latitude_array >= southern_lat) & (latitude_array < northern_lat), False, True)
 
     mask = uconv.broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
     assert mask.shape == target_shape 
