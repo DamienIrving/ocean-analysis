@@ -11,6 +11,7 @@ import sys, os, pdb
 import argparse
 import numpy
 import iris
+iris.FUTURE.netcdf_promote = True
 import matplotlib.pyplot as plt
 import seaborn
 
@@ -59,10 +60,8 @@ def get_scale_factor(infile):
 
     cube = iris.load_cube(infile, 'Surface Downwelling Net Radiation globe sum')
     trend = timeseries.calc_trend(cube, per_yr=True)
-    history = cube.attributes['history']
-    model = cube.attributes['model_id']
 
-    return trend, history, model
+    return trend
 
 
 def plot_data(ax, variable, aa_trends_dict, ghg_trends_dict, hist_trends_dict, aa_files, ghg_files, hist_files):
@@ -88,16 +87,19 @@ def plot_data(ax, variable, aa_trends_dict, ghg_trends_dict, hist_trends_dict, a
     ax.set_title(variable)
 
 
-def get_regional_trends(infile, variable, scale_factor):
+def get_regional_trends(infile, variable):
     """Calculate regional trends for a given variable"""
 
     trend_values = []
     for region in ['ssubpolar', 'stropics', 'ntropics', 'nsubpolar', 'arctic']:
         full_var = '%s %s ocean sum'  %(variable, region)
         cube = iris.load_cube(infile, full_var)
-        trend_values.append(timeseries.calc_trend(cube, per_yr=True) / scale_factor)
+        trend_values.append(timeseries.calc_trend(cube, per_yr=True))
 
-    return trend_values
+    history = cube.attributes['history']
+    model = cube.attributes['model_id']
+
+    return trend_values, history, model
 
     
 def main(inargs):
@@ -130,23 +132,17 @@ def main(inargs):
     aa_trends_dict = {}
     hist_trends_dict = {}
     for ghg_file, aa_file, hist_file in zip(inargs.ghg_files, inargs.aa_files, inargs.hist_files):
-        ghg_rnds_globe_trend, ghg_history, model = get_scale_factor(ghg_file)
-        aa_rnds_globe_trend, aa_history, model = get_scale_factor(aa_file)
-        hist_rnds_globe_trend, hist_history, model = get_scale_factor(hist_file)
-        print('Trend in global rnds, GHG / AA:', ghg_rnds_globe_trend / aa_rnds_globe_trend)
-        print('Trend in global rnds, hist / AA:', hist_rnds_globe_trend / aa_rnds_globe_trend)    
-
         for var in variables:
-            ghg_trends_dict[(var, ghg_file)] = get_regional_trends(ghg_file, var, ghg_rnds_globe_trend)
-            aa_trends_dict[(var, aa_file)] = get_regional_trends(aa_file, var, aa_rnds_globe_trend)
-            hist_trends_dict[(var, hist_file)] = get_regional_trends(hist_file, var, hist_rnds_globe_trend)
+            ghg_trends_dict[(var, ghg_file)], ghg_history, model = get_regional_trends(ghg_file, var)
+            aa_trends_dict[(var, aa_file)], aa_history, model = get_regional_trends(aa_file, var)
+            hist_trends_dict[(var, hist_file)], hist_history, model = get_regional_trends(hist_file, var)
 
     for ax, var in zip(axes_list, variables):
         plot_data(ax, var, aa_trends_dict, ghg_trends_dict, hist_trends_dict, inargs.aa_files, inargs.ghg_files, inargs.hist_files)
 
-    title = '%s trends, divided by global net radiative surface flux'  %(model)
+    title = '%s trends'  %(model)
     plt.suptitle(title, size='large')
-    plt.subplots_adjust(top=0.85)
+    plt.subplots_adjust(top=0.90)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info={ghg_file: ghg_history,
