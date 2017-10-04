@@ -36,11 +36,13 @@ except ImportError:
 
 # Define functions
 
-experiment_colors = {'historical': 'black',
+experiment_colors = {'historical': 'orange',
                      'historicalGHG': 'red',
                      'historicalAA': 'blue',
-                     'rcp85': 'orange',
-                     'rcp26': 'green'}
+                     'rcp26': '#16DB65',
+                     'rcp45': '#058C42',
+                     'rcp60': '#04471C',
+                     'rcp85': '#0D2818'}
 
 
 def get_data(infile, var, agg_method, time_constraint, ohc=False, branch=None):
@@ -151,6 +153,7 @@ def main(inargs):
     trends_dict = {}
     for infile in inargs.infiles:
         for var in variables:
+            print(infile, var)
             trend, history, model, experiment, run = get_regional_trends(infile, var, time_constraints)
             trends_dict[(var, experiment, run)] = trend
 
