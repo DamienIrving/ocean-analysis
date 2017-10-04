@@ -36,6 +36,13 @@ except ImportError:
 
 # Define functions
 
+experiment_colors = {'historical': 'black',
+                     'historicalGHG': 'red',
+                     'historicalAA': 'blue',
+                     'rcp85': 'orange',
+                     'rcp26': 'green'}
+
+
 def get_data(infile, var, agg_method, time_constraint, ohc=False, branch=None):
     """Read and temporally aggregate the data."""
     
@@ -64,22 +71,18 @@ def get_scale_factor(infile):
     return trend
 
 
-def plot_data(ax, variable, aa_trends_dict, ghg_trends_dict, hist_trends_dict, aa_files, ghg_files, hist_files):
+def plot_data(ax, variable, trends_dict):
     """Plot the data."""
 
     xvals = [0, 1, 2, 3, 4]
     labels = ['', 'ssubpolar', 'stropics', 'ntropics', 'nsubpolar', 'arctic']
 
-    first = True
-    for aa_file, ghg_file, hist_file in zip(aa_files, ghg_files, hist_files):
-        aa_label = 'AA' if first else None
-        ghg_label = 'GHG' if first else None
-        hist_label = 'historical' if first else None
-        ax.plot(xvals, aa_trends_dict[(variable, aa_file)], 'o-', color='blue', label=aa_label)
-        ax.plot(xvals, ghg_trends_dict[(variable, ghg_file)], 'o-', color='red', label=ghg_label)
-        ax.plot(xvals, hist_trends_dict[(variable, hist_file)], 'o-', color='green', label=hist_label)
-        first = False
-
+    for key, value in trends_dict.items():
+        var, experiment, run = key
+        if var == variable:
+            label = experiment if run == 'r1' else None
+            ax.plot(xvals, trends_dict[key], 'o-', color=experiment_colors[experiment], label=label)
+ 
     ax.set_xticklabels(labels)
     ax.set_ylabel('$W \: yr^{-1}$')
     ax.margins(0.1)
@@ -87,31 +90,51 @@ def plot_data(ax, variable, aa_trends_dict, ghg_trends_dict, hist_trends_dict, a
     ax.set_title(variable)
 
 
-def get_regional_trends(infile, variable):
+def get_regional_trends(infile, variable, time_constraints):
     """Calculate regional trends for a given variable"""
+
+    if 'rcp' in infile:
+        time_constraint = time_constraints['rcp']
+    else:
+        time_constraint = time_constraints['historical']
 
     trend_values = []
     for region in ['ssubpolar', 'stropics', 'ntropics', 'nsubpolar', 'arctic']:
         full_var = '%s %s ocean sum'  %(variable, region)
-        cube = iris.load_cube(infile, full_var)
+        with iris.FUTURE.context(cell_datetime_objects=True):
+            cube = iris.load_cube(infile, full_var & time_constraint)
         trend_values.append(timeseries.calc_trend(cube, per_yr=True))
 
     history = cube.attributes['history']
     model = cube.attributes['model_id']
+    experiment = cube.attributes['experiment_id']
+    if experiment == 'historicalMisc':
+        experiment = 'historicalAA'
+    run = 'r' + str(cube.attributes['realization'])
 
-    return trend_values, history, model
+    return trend_values, history, model, experiment, run
+
+
+def get_time_constraint(time_bounds):
+    """Get the iris time constraint for given time bounds."""
+
+    if time_bounds:
+        try:
+            time_constraint = gio.get_time_constraint(time_bounds)
+        except AttributeError:
+            time_constraint = iris.Constraint()    
+    else:
+        time_constraint = iris.Constraint()
+
+    return time_constraint
 
     
 def main(inargs):
     """Run the program."""
 
-    if inargs.time:
-        try:
-            time_constraint = gio.get_time_constraint(inargs.time)
-        except AttributeError:
-            time_constraint = iris.Constraint()    
-    else:
-        time_constraint = iris.Constraint()
+    time_constraints = {}
+    time_constraints['historical'] = get_time_constraint(inargs.hist_time)
+    time_constraints['rcp'] = get_time_constraint(inargs.rcp_time)
 
     width=14
     height=10
@@ -122,32 +145,24 @@ def main(inargs):
     ax4 = fig.add_subplot(2, 2, 4)
     axes_list = [ax1, ax2, ax3, ax4]
 
-    assert len(inargs.ghg_files) == len(inargs.aa_files)
-    assert len(inargs.hist_files) == len(inargs.aa_files)
-
     variables = ['Surface Downwelling Net Radiation', 'Surface Upwelling Longwave Radiation', 'Surface Upward Latent Heat Flux', 'Downward Heat Flux at Sea Water Surface']
     if inargs.infer_hfds:
         variables[-1] = 'Inferred Downward Heat Flux at Sea Water Surface'
-    ghg_trends_dict = {}
-    aa_trends_dict = {}
-    hist_trends_dict = {}
-    for ghg_file, aa_file, hist_file in zip(inargs.ghg_files, inargs.aa_files, inargs.hist_files):
+    trends_dict = {}
+    for infile in inargs.infiles:
         for var in variables:
-            ghg_trends_dict[(var, ghg_file)], ghg_history, model = get_regional_trends(ghg_file, var)
-            aa_trends_dict[(var, aa_file)], aa_history, model = get_regional_trends(aa_file, var)
-            hist_trends_dict[(var, hist_file)], hist_history, model = get_regional_trends(hist_file, var)
+            trend, history, model, experiment, run = get_regional_trends(infile, var, time_constraints)
+            trends_dict[(var, experiment, run)] = trend
 
     for ax, var in zip(axes_list, variables):
-        plot_data(ax, var, aa_trends_dict, ghg_trends_dict, hist_trends_dict, inargs.aa_files, inargs.ghg_files, inargs.hist_files)
+        plot_data(ax, var, trends_dict)
 
     title = '%s trends'  %(model)
     plt.suptitle(title, size='large')
     plt.subplots_adjust(top=0.90)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info={ghg_file: ghg_history,
-                                                  aa_file: aa_history,
-                                                  hist_file: hist_history})
+    gio.write_metadata(inargs.outfile, file_info={inargs.infiles[-1]: history})
 
 
 if __name__ == '__main__':
@@ -164,18 +179,15 @@ author:
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-                                                                   
+               
+    parser.add_argument("infiles", type=str, nargs='*', 
+                        help="Input energy budget files generated from calc_system_heat_distribution.py")                                                    
     parser.add_argument("outfile", type=str, help="Output file")  
-  
-    parser.add_argument("--ghg_files", type=str, nargs='*', default=None, 
-                        help="Input historicalGHG energy budget file generated from calc_system_heat_distribution.py")      
-    parser.add_argument("--aa_files", type=str, nargs='*', default=None,
-                        help="Input historicalAA energy budget file generated from calc_system_heat_distribution.py")
-    parser.add_argument("--hist_files", type=str, nargs='*', default=None,
-                        help="Input historical energy budget file generated from calc_system_heat_distribution.py")                                    
 
-    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
-                        help="Time period [default = 1850-2005]")
+    parser.add_argument("--hist_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
+                        help="Time period [default = = all]")
+    parser.add_argument("--rcp_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
+                        help="Time period [default = all]")
     parser.add_argument("--infer_hfds", action="store_true", default=False,
                         help="Use inferred hfds data")
 
