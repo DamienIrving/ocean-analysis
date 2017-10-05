@@ -44,17 +44,7 @@ experiment_colors = {'historical': 'orange',
                      'rcp60': '#04471C',
                      'rcp85': '#0D2818'}
 
-
-def get_data(infile, var, agg_method, time_constraint, ohc=False, branch=None):
-    """Read and temporally aggregate the data."""
-    
-    with iris.FUTURE.context(cell_datetime_objects=True):
-        cube = iris.load_cube(infile, var & time_constraint)
-        value = timeseries.calc_trend(cube, per_yr=True)
-           
-    return value
         
-
 def set_title(infile):
     """Get the plot title."""
 
@@ -188,7 +178,7 @@ author:
     parser.add_argument("outfile", type=str, help="Output file")  
 
     parser.add_argument("--hist_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
-                        help="Time period [default = = all]")
+                        help="Time period [default = all]")
     parser.add_argument("--rcp_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
                         help="Time period [default = all]")
     parser.add_argument("--infer_hfds", action="store_true", default=False,
