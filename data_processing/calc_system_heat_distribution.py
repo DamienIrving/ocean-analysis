@@ -367,6 +367,27 @@ def create_cube_list(cube_dict, metadata_dict, attributes):
     return cube_list
 
 
+def time_axis_check(cube_dict):
+    """Some time axes can be so close to equal they just should be."""
+
+    comparison_time_axis = cube_dict['rsds-sh-sum'].coord('time')
+    
+    for key, value in cube_dict.items():
+        cube_time_axis = value.coord('time')
+        if cube_time_axis == comparison_time_axis:
+            continue
+        else:
+            print('fixing time axis for %s' %(key))
+            assert comparison_time_axis.shape == cube_time_axis.shape
+            diff_array = numpy.abs(comparison_time_axis.points - cube_time_axis.points)
+            assert numpy.max(diff_array) < 1.0
+            value.coord('time').points = comparison_time_axis.points
+            value.coord('time').bounds = comparison_time_axis.bounds
+            cube_dict[key] = value
+
+    return cube_dict
+            
+
 def main(inargs):
     """Run the program."""
 
@@ -451,6 +472,8 @@ def main(inargs):
     iris.util.unify_time_units(cube_dict.values())
     cube_dict = derived_surface_radiation_fluxes(cube_dict, sftlf_cube)
     cube_dict = derived_toa_radiation_fluxes(cube_dict)  
+
+    cube_dict = time_axis_check(cube_dict)
 
     # Outfile
 
