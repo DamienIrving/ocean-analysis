@@ -35,14 +35,6 @@ except ImportError:
 
 
 # Define functions
-
-#region_names = {'nh': ('Northern Hemisphere', 'northern_hemisphere'),
-#                'sh': ('Southern Hemisphere', 'southern_hemisphere'),
-#                'arctic': ('Arctic', 'arctic'),
-#                'nsubpolar': ('Northern Sub Polar', 'northern_sub_polar'),
-#                'ntropics': ('Northern Tropics', 'northern_tropics'),
-#                'stropics': ('Southern Tropics', 'southern_tropics'),
-#                'ssubpolar': ('Southern Sub Polar', 'southern_sub_polar')}
     
 region_constraints = {'globe': iris.Constraint(),
                       'nh': iris.Constraint(latitude=lambda cell: cell >= 0.0),
@@ -113,7 +105,7 @@ def hfbasin_handling(cube, var, model):
     return cube
 
 
-def load_data(filenames, standard_name, metadata_dict, input_timescale):
+def load_data(filenames, standard_name, time_constraint, metadata_dict, input_timescale):
     """Basic data loading and temporal smoothing"""
 
     with iris.FUTURE.context(cell_datetime_objects=True):
@@ -124,6 +116,7 @@ def load_data(filenames, standard_name, metadata_dict, input_timescale):
         iris.util.unify_time_units(cube)
         cube = cube.concatenate_cube()
         cube = gio.check_time_units(cube)
+        cube = cube.extract(time_constraint)
         cube = iris.util.squeeze(cube)
             
     attributes = cube.attributes                   
@@ -155,7 +148,7 @@ def get_transport_data(filenames, standard_name, cube_dict, metadata_dict, attri
     return cube_dict, metadata_dict, attributes
 
 
-def get_data(filenames, standard_name, cube_dict, metadata_dict, attributes, 
+def get_data(filenames, standard_name, cube_dict, time_constraint, metadata_dict, attributes, 
              input_timescale='monthly', sftlf_cube=None, include_only=None, area_cube=None):
     """Read, merge, temporally aggregate and calculate regional totals.
 
@@ -165,7 +158,7 @@ def get_data(filenames, standard_name, cube_dict, metadata_dict, attributes,
     """
 
     if filenames:
-        cube, metadata_dict, attributes = load_data(filenames, standard_name, metadata_dict, input_timescale)        
+        cube, metadata_dict, attributes = load_data(filenames, standard_name, time_constraint, metadata_dict, input_timescale)        
 
         if include_only and sftlf_cube:
             mask = create_land_ocean_mask(sftlf_cube, cube.shape, include_only)
@@ -391,6 +384,11 @@ def time_axis_check(cube_dict):
 def main(inargs):
     """Run the program."""
 
+    try:
+        time_constraint = gio.get_time_constraint(inargs.time)
+    except AttributeError:
+        time_constraint = iris.Constraint()
+
     sftlf_cube = iris.load_cube(inargs.sftlf_file, 'land_area_fraction')
     if inargs.areacello_file:
         areacello_cube = iris.load_cube(inargs.areacello_file, 'cell_area')
@@ -404,26 +402,26 @@ def main(inargs):
     # TOA radiation fluxes
     
     cube_dict, metadata_dict, attributes = get_data(inargs.rsdt_files, 'toa_incoming_shortwave_flux',
-                                                    cube_dict, metadata_dict, attributes)
+                                                    cube_dict, time_constraint, metadata_dict, attributes)
     cube_dict, metadata_dict, attributes = get_data(inargs.rsut_files, 'toa_outgoing_shortwave_flux',
-                                                    cube_dict, metadata_dict, attributes)
+                                                    cube_dict, time_constraint, metadata_dict, attributes)
     cube_dict, metadata_dict, attributes = get_data(inargs.rlut_files, 'toa_outgoing_longwave_flux',
-                                                    cube_dict, metadata_dict, attributes)
+                                                    cube_dict, time_constraint, metadata_dict, attributes)
 
     # Surface radiation fluxes
     
     for realm in [None, 'ocean', 'land']:
         cube_dict, metadata_dict, attributes = get_data(inargs.rsds_files, 'surface_downwelling_shortwave_flux_in_air',
-                                                        cube_dict, metadata_dict, attributes,
+                                                        cube_dict, time_constraint, metadata_dict, attributes,
                                                         sftlf_cube=sftlf_cube, include_only=realm)
         cube_dict, metadata_dict, attributes = get_data(inargs.rsus_files, 'surface_upwelling_shortwave_flux_in_air',
-                                                        cube_dict, metadata_dict, attributes,
+                                                        cube_dict, time_constraint, metadata_dict, attributes,
                                                         sftlf_cube=sftlf_cube, include_only=realm)
         cube_dict, metadata_dict, attributes = get_data(inargs.rlds_files, 'surface_downwelling_longwave_flux_in_air',
-                                                        cube_dict, metadata_dict, attributes,
+                                                        cube_dict, time_constraint, metadata_dict, attributes,
                                                         sftlf_cube=sftlf_cube, include_only=realm)
         cube_dict, metadata_dict, attributes = get_data(inargs.rlus_files, 'surface_upwelling_longwave_flux_in_air',
-                                                        cube_dict, metadata_dict, attributes,
+                                                        cube_dict, time_constraint, metadata_dict, attributes,
                                                         sftlf_cube=sftlf_cube, include_only=realm)
 
     # Surface heat fluxes
@@ -433,39 +431,39 @@ def main(inargs):
         hfls_name = 'surface_upward_latent_heat_flux'
         for realm in [None, 'ocean', 'land']:
             cube_dict, metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name,
-                                                            cube_dict, metadata_dict, attributes, 
+                                                            cube_dict, time_constraint, metadata_dict, attributes, 
                                                             sftlf_cube=sftlf_cube, include_only=realm)
             cube_dict, metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name,
-                                                            cube_dict, metadata_dict, attributes, 
+                                                            cube_dict, time_constraint, metadata_dict, attributes, 
                                                             sftlf_cube=sftlf_cube, include_only=realm)
     elif inargs.hfrealm == 'ocean':
         hfss_name = 'surface_downward_sensible_heat_flux'
         hfls_name = 'surface_downward_latent_heat_flux'
         cube_dict, metadata_dict, attributes = get_data(inargs.hfss_files, hfss_name,
-                                                        cube_dict, metadata_dict, attributes,
+                                                        cube_dict, time_constraint, metadata_dict, attributes,
                                                         include_only='ocean', area_cube=areacello_cube)
         cube_dict, metadata_dict, attributes = get_data(inargs.hfls_files, hfls_name,
-                                                        region_list, cube_dict, metadata_dict, attributes,
+                                                        cube_dict, time_constraint, metadata_dict, attributes,
                                                         include_only='ocean', area_cube=areacello_cube)
 
     cube_dict, metadata_dict, attributes = get_data(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water',
-                                                    cube_dict, metadata_dict, attributes,
+                                                    cube_dict, time_constraint, metadata_dict, attributes,
                                                     include_only='ocean', area_cube=areacello_cube)
     cube_dict, metadata_dict, attributes = get_data(inargs.hfsithermds_files, 'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
-                                                    cube_dict, metadata_dict, attributes,
+                                                    cube_dict, time_constraint, metadata_dict, attributes,
                                                     include_only='ocean', area_cube=areacello_cube)
 
     # Ocean heat transport / storage
 
     cube_dict, metadata_dict, attributes = get_data(inargs.ohc_files, 'ocean_heat_content',
-                                                    cube_dict, metadata_dict, attributes,
+                                                    cube_dict, time_constraint, metadata_dict, attributes,
                                                     input_timescale='annual', area_cube=areacello_cube)
     if inargs.hfbasin_files:
         cube_dict, metadata_dict, attributes = get_transport_data(inargs.hfbasin_files, 'northward_ocean_heat_transport',
-                                                                  cube_dict, metadata_dict, attributes)
+                                                                  cube_dict, time_constraint, metadata_dict, attributes)
     elif inargs.hfy_files:
         cube_dict, metadata_dict, attributes = get_transport_data(inargs.hfy_files, 'ocean_heat_y_transport',
-                                                                  cube_dict, metadata_dict, attributes)
+                                                                  cube_dict, time_constraint, metadata_dict, attributes)
 
     # Derived fluxes
 
@@ -538,8 +536,8 @@ author:
     parser.add_argument("--hfrealm", type=str, choices=('atmos', 'ocean'), required=True,
                         help="specify whether original hfss and hfls data were atmos or ocean")
 
-    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=('1850-01-01', '2005-12-31'),
-                        help="Time period [default = entire]")
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
+                        help="Time period (e.g. 1850-01-01 2005-12-31) [default = entire]")
 
     args = parser.parse_args()             
     main(args)
