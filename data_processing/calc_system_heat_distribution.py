@@ -127,13 +127,14 @@ def load_data(filenames, standard_name, time_constraint, metadata_dict, input_ti
     return cube, metadata_dict, attributes
 
 
-def get_transport_data(filenames, standard_name, cube_dict, metadata_dict, attributes, input_timescale='monthly'):
+def get_transport_data(filenames, standard_name, cube_dict, time_constraint, metadata_dict, attributes,
+                       input_timescale='monthly'):
     """Read in ocean heat transport data."""
     
     assert standard_name in ['northward_ocean_heat_transport', 'ocean_heat_y_transport']
 
     if filenames:
-        cube, metadata_dict, attributes = load_data(filenames, standard_name, metadata_dict, input_timescale) 
+        cube, metadata_dict, attributes = load_data(filenames, standard_name, time_constraint, metadata_dict, input_timescale) 
         for region in region_list[1:]:
             zonal_cube = hfbasin_handling(cube.copy(), standard_name, attributes['model_id'])   
             for index, lat in enumerate(region_boundaries[region]):
