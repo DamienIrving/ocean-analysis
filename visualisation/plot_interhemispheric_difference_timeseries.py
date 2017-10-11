@@ -111,8 +111,8 @@ def get_diff(infile, variable, region, realm, time_constraints):
     else:
         time_constraint = time_constraints['historical']
 
-    svar =  '%s s%s%s sum' %(variable, region, get_realm_label(realm, variable))
-    nvar =  '%s n%s%s sum' %(variable, region, get_realm_label(realm, variable)) 
+    svar =  '%s s%s%s mean' %(variable, region, get_realm_label(realm, variable))
+    nvar =  '%s n%s%s mean' %(variable, region, get_realm_label(realm, variable)) 
 
     with iris.FUTURE.context(cell_datetime_objects=True):
         s_cube = iris.load_cube(infile, svar & time_constraint)

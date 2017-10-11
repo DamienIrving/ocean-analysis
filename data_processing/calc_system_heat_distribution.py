@@ -56,11 +56,13 @@ region_boundaries = {'sh':(-91, 0),
 region_list = ['globe', 'sh', 'nh', 'arctic', 'nsubpolar', 'ntropics', 'stropics', 'ssubpolar']
 
 
-def calc_sum(cube, var, region, area_cube):
+def calc_aggregate(cube, var, region, area_cube, aggregation='sum'):
     """Calculate the region sum."""
 
+    assert aggregation in ['sum', 'mean']
     cube = cube.copy() 
 
+    # Select region
     coord_names = [coord.name() for coord in cube.dim_coords]
     assert 'time' in coord_names
     assert len(coord_names) == 3
@@ -78,13 +80,17 @@ def calc_sum(cube, var, region, area_cube):
     else:
         cube = cube.extract(region_constraints[region])
     
-    cube = multiply_by_area(cube, var, area_cube) # convert W m-2 to W
+    # Calculate aggregate
     coord_names.remove('time')
-    sum_cube = cube.collapsed(coord_names, iris.analysis.SUM)
-    sum_cube.remove_coord(coord_names[0])
-    sum_cube.remove_coord(coord_names[1])
+    if aggregation == 'sum':
+        cube = multiply_by_area(cube, var, area_cube) # convert W m-2 to W
+        out_cube = cube.collapsed(coord_names, iris.analysis.SUM)
+    else:
+        out_cube = cube.collapsed(coord_names, iris.analysis.MEAN)
+    out_cube.remove_coord(coord_names[0])
+    out_cube.remove_coord(coord_names[1])
 
-    return sum_cube 
+    return out_cube 
 
 
 def hfbasin_handling(cube, var, model):
@@ -142,7 +148,7 @@ def get_transport_data(filenames, standard_name, cube_dict, time_constraint, met
                     direction = 'in' if index == 0 else 'out'
                     target_lat, error = uconv.find_nearest(zonal_cube.coord('latitude').points, lat, index=False)
                     region_sum = zonal_cube.extract(iris.Constraint(latitude=target_lat))
-                    region_sum, var_name = rename_cube(region_sum, region, 'ocean', direction=direction)
+                    region_sum, var_name = rename_cube(region_sum, region, 'ocean', 'sum', direction=direction)
 
                     cube_dict[var_name] = region_sum
 
@@ -167,12 +173,19 @@ def get_data(filenames, standard_name, cube_dict, time_constraint, metadata_dict
             cube.data.mask = mask
         
         for region in region_list:
-            region_sum = calc_sum(cube.copy(), standard_name, region, area_cube)
+            region_sum = calc_aggregate(cube.copy(), standard_name, region, area_cube, aggregation='sum')
             if standard_name == 'ocean_heat_content':
-                region_sum, var_name = rename_cube(region_sum, region, None, standard_name='ocean_heat_content',
+                region_sum, var_name = rename_cube(region_sum, region, None, 'sum', standard_name='ocean_heat_content',
                                                    long_name='ocean heat content', var_name='ohc')
             else:
-                region_sum, var_name = rename_cube(region_sum, region, include_only)
+                region_sum, var_name = rename_cube(region_sum, region, include_only, 'sum')
+                
+            region_mean = calc_aggregate(cube.copy(), standard_name, region, area_cube, aggregation='mean')
+            if standard_name == 'ocean_heat_content':
+                region_mean, var_name = rename_cube(region_mean, region, None, 'mean', standard_name='ocean_heat_content',
+                                                    long_name='ocean heat content', var_name='ohc')
+            else:
+                region_mean, var_name = rename_cube(region_mean, region, include_only, 'mean')
             cube_dict[var_name] = region_sum
 
     return cube_dict, metadata_dict, attributes
@@ -216,23 +229,24 @@ def derived_toa_radiation_fluxes(cube_dict):
     """Calculate the net TOA flux."""
 
     for region in region_list:
-        rsnt_var = 'rsnt-%s-sum' %(region)
-        rsdt_var = 'rsdt-%s-sum' %(region)
-        rsut_var = 'rsut-%s-sum' %(region)
-        rsaa_var = 'rsaa-%s-sum' %(region)
-        rsns_var = 'rsns-%s-sum' %(region)
+        for agg in ['sum', 'mean']:
+            rsnt_var = 'rsnt-%s-%s' %(region, agg)
+            rsdt_var = 'rsdt-%s-%s' %(region, agg)
+            rsut_var = 'rsut-%s-%s' %(region, agg)
+            rsaa_var = 'rsaa-%s-%s' %(region, agg)
+            rsns_var = 'rsns-%s-%s' %(region, agg)
 
-        cube_dict[rsnt_var] = cube_dict[rsdt_var] - cube_dict[rsut_var] 
-        cube_dict[rsnt_var], var_name = rename_cube(cube_dict[rsnt_var], region, None,
-                                                    standard_name='toa_net_shortwave_flux',
-                                                    long_name='TOA Net Shortwave Flux',
-                                                    var_name='rsnt')
+            cube_dict[rsnt_var] = cube_dict[rsdt_var] - cube_dict[rsut_var] 
+            cube_dict[rsnt_var], var_name = rename_cube(cube_dict[rsnt_var], region, None, agg,
+                                                        standard_name='toa_net_shortwave_flux',
+                                                        long_name='TOA Net Shortwave Flux',
+                                                        var_name='rsnt')
     
-        cube_dict[rsaa_var] = cube_dict[rsnt_var] - cube_dict[rsns_var] 
-        cube_dict[rsaa_var], var_name = rename_cube(cube_dict[rsaa_var], region, None,
-                                                    standard_name='atmosphere_absorbed_shortwave_flux',
-                                                    long_name='Atmosphere Absorbed Shortwave Flux',
-                                                    var_name='rsaa')
+            cube_dict[rsaa_var] = cube_dict[rsnt_var] - cube_dict[rsns_var] 
+            cube_dict[rsaa_var], var_name = rename_cube(cube_dict[rsaa_var], region, None, agg,
+                                                        standard_name='atmosphere_absorbed_shortwave_flux',
+                                                        long_name='Atmosphere Absorbed Shortwave Flux',
+                                                        var_name='rsaa')
 
     return cube_dict
 
@@ -242,44 +256,45 @@ def derived_surface_radiation_fluxes(cube_dict, sftlf_cube):
 
     for region in region_list:
         for realm in [None, 'ocean', 'land']: 
-            if realm:
-                realm_insert = '-'+realm
-            else:
-                realm_insert = '' 
-            rnds_var = 'rnds-%s%s-sum' %(region, realm_insert)
-            rsns_var = 'rsns-%s%s-sum' %(region, realm_insert)
-            rsds_var = 'rsds-%s%s-sum' %(region, realm_insert)
-            rsus_var = 'rsus-%s%s-sum' %(region, realm_insert)
-            rlns_var = 'rlns-%s%s-sum' %(region, realm_insert)
-            rlds_var = 'rlds-%s%s-sum' %(region, realm_insert)
-            rlus_var = 'rlus-%s%s-sum' %(region, realm_insert)
-        
-            cube_dict[rsns_var] = cube_dict[rsds_var] - cube_dict[rsus_var]
-            cube_dict[rsns_var], var_name = rename_cube(cube_dict[rsns_var], region, realm,
-                                                        standard_name='surface_net_shortwave_flux_in_air',
-                                                        long_name='Surface Downwelling Net Shortwave Radiation',
-                                                        var_name='rsns')
+            for agg in ['sum', 'mean']:
+                if realm:
+                    realm_insert = '-'+realm
+                else:
+                    realm_insert = '' 
+                rnds_var = 'rnds-%s%s-%s' %(region, realm_insert, agg)
+                rsns_var = 'rsns-%s%s-%s' %(region, realm_insert, agg)
+                rsds_var = 'rsds-%s%s-%s' %(region, realm_insert, agg)
+                rsus_var = 'rsus-%s%s-%s' %(region, realm_insert, agg)
+                rlns_var = 'rlns-%s%s-%s' %(region, realm_insert, agg)
+                rlds_var = 'rlds-%s%s-%s' %(region, realm_insert, agg)
+                rlus_var = 'rlus-%s%s-%s' %(region, realm_insert, agg)
+    
+                cube_dict[rsns_var] = cube_dict[rsds_var] - cube_dict[rsus_var]
+                cube_dict[rsns_var], var_name = rename_cube(cube_dict[rsns_var], region, realm, agg,
+                                                            standard_name='surface_net_shortwave_flux_in_air',
+                                                            long_name='Surface Downwelling Net Shortwave Radiation',
+                                                            var_name='rsns')
 
-            cube_dict[rlns_var] = cube_dict[rlus_var] - cube_dict[rlds_var]
-            cube_dict[rlns_var], var_name = rename_cube(cube_dict[rlns_var], region, realm,
-                                                        standard_name='surface_net_longwave_flux_in_air',
-                                                        long_name='Surface Upwelling Net Longwave Radiation',
-                                                        var_name='rlns')
-            
-            cube_dict[rnds_var] = cube_dict[rsns_var] - cube_dict[rlns_var]
-            cube_dict[rnds_var], var_name = rename_cube(cube_dict[rnds_var], region, realm,
-                                                        standard_name='surface_net_flux_in_air',
-                                                        long_name='Surface Downwelling Net Radiation',
-                                                        var_name='rnds')
-            if not realm == 'land':
-                hfss_var = 'hfss-%s%s-sum' %(region, realm_insert)
-                hfls_var = 'hfls-%s%s-sum' %(region, realm_insert)
-                hfds_inferred_var = 'hfds-inferred-%s%s-sum' %(region, realm_insert)
-                cube_dict[hfds_inferred_var] = cube_dict[rnds_var] - cube_dict[hfss_var] - cube_dict[hfls_var]
-                cube_dict[hfds_inferred_var], var_name = rename_cube(cube_dict[hfds_inferred_var], region, realm,
-                                                         standard_name='inferred_surface_downward_heat_flux_in_sea_water',
-                                                         long_name='Inferred Downward Heat Flux at Sea Water Surface',
-                                                         var_name='hfds-inferred')
+                cube_dict[rlns_var] = cube_dict[rlus_var] - cube_dict[rlds_var]
+                cube_dict[rlns_var], var_name = rename_cube(cube_dict[rlns_var], region, realm, agg,
+                                                            standard_name='surface_net_longwave_flux_in_air',
+                                                            long_name='Surface Upwelling Net Longwave Radiation',
+                                                            var_name='rlns')
+        
+                cube_dict[rnds_var] = cube_dict[rsns_var] - cube_dict[rlns_var]
+                cube_dict[rnds_var], var_name = rename_cube(cube_dict[rnds_var], region, realm, agg,
+                                                            standard_name='surface_net_flux_in_air',
+                                                            long_name='Surface Downwelling Net Radiation',
+                                                            var_name='rnds')
+                if not realm == 'land':
+                    hfss_var = 'hfss-%s%s-%s' %(region, realm_insert, agg)
+                    hfls_var = 'hfls-%s%s-%s' %(region, realm_insert, agg)
+                    hfds_inferred_var = 'hfds-inferred-%s%s-%s' %(region, realm_insert, agg)
+                    cube_dict[hfds_inferred_var] = cube_dict[rnds_var] - cube_dict[hfss_var] - cube_dict[hfls_var]
+                    cube_dict[hfds_inferred_var], var_name = rename_cube(cube_dict[hfds_inferred_var], region, realm, agg,
+                                                             standard_name='inferred_surface_downward_heat_flux_in_sea_water',
+                                                             long_name='Inferred Downward Heat Flux at Sea Water Surface',
+                                                             var_name='hfds-inferred')
 
 
     return cube_dict
@@ -306,11 +321,12 @@ def multiply_by_area(cube, var, area_cube):
     return cube
 
 
-def rename_cube(cube, region, realm, standard_name=None, long_name=None, var_name=None, direction=None):
+def rename_cube(cube, region, realm, aggregation, standard_name=None, long_name=None, var_name=None, direction=None):
     """Rename a cube according to the specifics of the analysis"""
 
     assert region in ['globe', 'nh', 'sh', 'arctic', 'nsubpolar', 'ntropics', 'stropics', 'ssubpolar']
     assert realm in ['ocean', 'land', None]
+    assert aggregation in ['sum', 'mean']
 
     if not standard_name:
         standard_name = cube.standard_name
@@ -320,13 +336,13 @@ def rename_cube(cube, region, realm, standard_name=None, long_name=None, var_nam
         var_name = cube.var_name
 
     if realm:
-        standard_name = '%s_%s_%s_sum' %(standard_name, region, realm)
-        long_name = '%s %s %s sum' %(long_name, region, realm)
-        var_name = '%s-%s-%s-sum' %(var_name, region, realm)
+        standard_name = '%s_%s_%s_%s' %(standard_name, region, realm, aggregation)
+        long_name = '%s %s %s %s' %(long_name, region, realm, aggregation)
+        var_name = '%s-%s-%s-%s' %(var_name, region, realm, aggregation)
     else:
-        standard_name = '%s_%s_sum' %(standard_name, region)
-        long_name = '%s %s sum' %(long_name, region)
-        var_name = '%s-%s-sum' %(var_name, region)
+        standard_name = '%s_%s_%s' %(standard_name, region, aggregation)
+        long_name = '%s %s %s' %(long_name, region, aggregation)
+        var_name = '%s-%s-%s' %(var_name, region, aggregation)
 
     if direction:
         assert direction in ['in', 'out']
