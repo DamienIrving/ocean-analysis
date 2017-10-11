@@ -55,7 +55,7 @@ def set_title(infile):
     plt.suptitle(title, size='large')
 
 
-def plot_data(ax, variable, region, runmean, diff_dict):
+def plot_data(diff_dict, ax, variable, region, realm, runmean):
     """Plot the data."""
 
     plt.sca(ax)
@@ -65,21 +65,45 @@ def plot_data(ax, variable, region, runmean, diff_dict):
         except KeyError:
             continue
         
+        iplt.plot(cube, label=experiment, color=experiment_colors[experiment])
         if runmean:   
-            cube = cube.rolling_window('time', iris.analysis.MEAN, runmean)   
-
-        iplt.plot(cube, label=experiment, color=experiment_colors[experiment])   
+            smooth_cube = cube.rolling_window('time', iris.analysis.MEAN, runmean)   
+            iplt.plot(smooth_cube, color=experiment_colors[experiment], linewidth=2)   
            
     title = 'Annual Mean %s' %(variable)
     ax.set_title(title)
     ax.legend()
     ax.set_xlabel('year')
 
-    ylabel = 'south - north'
+    ylabel = 'northern %s - south %s, over %s'  %(region, region, get_realm_title(realm))
     ax.set_ylabel(ylabel)
 
 
-def get_diff(infile, variable, region, time_constraints):
+def get_realm_label(realm, var):
+    """Insert a space in the realm name."""
+
+    if 'Downward Heat Flux at Sea Water Surface' in var:
+        realm_label = ' ocean'
+    elif realm == 'all':
+        realm_label = ''
+    else:
+        realm_label = ' ' + realm
+       
+    return realm_label
+   
+   
+def get_realm_title(realm):
+    """Realm name for plot title."""
+    
+    if realm == 'all':
+        realm_title = 'land & ocean'
+    else:
+        realm_title = realm
+        
+    return realm_title
+        
+
+def get_diff(infile, variable, region, realm, time_constraints):
     """Calculate interhemispheric difference for a given variable"""
 
     if 'rcp' in infile:
@@ -87,15 +111,13 @@ def get_diff(infile, variable, region, time_constraints):
     else:
         time_constraint = time_constraints['historical']
 
-    assert region in ['tropics', 'h']
-    #assert realm in ['land', 'ocean', '']
-    svar =  '%s s%s ocean sum' %(variable, region)
-    nvar =  '%s n%s ocean sum' %(variable, region) 
+    svar =  '%s s%s%s sum' %(variable, region, get_realm_label(realm, variable))
+    nvar =  '%s n%s%s sum' %(variable, region, get_realm_label(realm, variable)) 
 
     with iris.FUTURE.context(cell_datetime_objects=True):
         s_cube = iris.load_cube(infile, svar & time_constraint)
         n_cube = iris.load_cube(infile, nvar & time_constraint)
-    diff_cube = s_cube - n_cube
+    diff_cube = n_cube - s_cube
 
     history = s_cube.attributes['history']
     model = s_cube.attributes['model_id']
@@ -120,6 +142,16 @@ def get_time_constraint(time_bounds):
 
     return time_constraint
 
+
+def get_dict(input_list, variable_list):
+    """Create region or realm dictionary from argparse input."""
+    
+    out_dict = {}
+    for input, variable in zip(input_list, variable_list):
+        out_dict[variable] = input
+    
+    return out_dict
+    
     
 def main(inargs):
     """Run the program."""
@@ -128,14 +160,19 @@ def main(inargs):
     time_constraints['historical'] = get_time_constraint(inargs.hist_time)
     time_constraints['rcp'] = get_time_constraint(inargs.rcp_time)
 
-    variables = ['Surface Downwelling Net Radiation', 'Surface Upwelling Longwave Radiation', 'Surface Upward Latent Heat Flux', 'Downward Heat Flux at Sea Water Surface']
+    variables = ['Surface Downwelling Net Radiation', 'Surface Upwelling Longwave Radiation',
+                 'Surface Upward Latent Heat Flux', 'Downward Heat Flux at Sea Water Surface']
+    region_dict = get_dict(inargs.regions, variables)
+    realm_dict = get_dict(inargs.realms, variables)
+
     if inargs.infer_hfds:
         variables[-1] = 'Inferred Downward Heat Flux at Sea Water Surface'
     diff_dict = {}
     for infile in inargs.energy_infiles:
         for var in variables:
             print(infile, var)
-            diff_cube, history, model, experiment, run = get_diff(infile, var, inargs.region, time_constraints)
+            diff_cube, history, model, experiment, run = get_diff(infile, var, region_dict[var],
+                                                                  realm_dict[var], time_constraints)
             diff_dict[(var, experiment)] = diff_cube
 
     width=16
@@ -146,10 +183,11 @@ def main(inargs):
     ax3 = fig.add_subplot(2, 2, 3)
     ax4 = fig.add_subplot(2, 2, 4)
     axes_list = [ax1, ax2, ax3, ax4]
+    plotnum = 0
     for ax, var in zip(axes_list, variables):
-        plot_data(ax, var, inargs.region, inargs.runmean, diff_dict)
+        plot_data(diff_dict, ax, var, region_dict[var], realm_dict[var], inargs.runmean)
 
-    title = '%s interhemispheric difference (region = %s)'  %(model, inargs.region)
+    title = '%s interhemispheric difference'  %(model)
     plt.suptitle(title, size='large')
     plt.subplots_adjust(top=0.90)
 
@@ -176,8 +214,12 @@ author:
                         help="Input energy budget files generated from calc_system_heat_distribution.py")                                                    
     parser.add_argument("outfile", type=str, help="Output file")  
 
-    parser.add_argument("--region", type=str, choices=('tropics', 'h'), default='tropics',
-                        help="Region used for comparison [default = tropics]")
+    parser.add_argument("--regions", type=str, nargs=4, choices=('tropics', 'h'),
+                        default=('h', 'h', 'tropics', 'tropics'),
+                        help="Region used for rnds, rlus, hfls & hfds respectively")
+    parser.add_argument("--realms", type=str, nargs=4, choices=('ocean', 'land', 'all'),
+                        default=('all', 'all', 'ocean', 'ocean'),
+                        help="Realms used for rnds, rlus, hfls & hfds respectively")
 
     parser.add_argument("--runmean", type=int, default=None,
                         help="Window for running mean [default = None]")
