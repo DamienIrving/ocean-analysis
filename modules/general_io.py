@@ -257,19 +257,23 @@ def get_subset_kwargs(namespace):
 def get_time_constraint(time_list):
     """Get the time constraint used for reading an iris cube."""
     
-    start_date, end_date = time_list
+    if time_list:
 
-    date_pattern = '([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})'
-    assert re.search(date_pattern, start_date)
-    assert re.search(date_pattern, end_date)
+        start_date, end_date = time_list
 
-    if (start_date == end_date):
-        year, month, day = start_date.split('-')    
-        time_constraint = iris.Constraint(time=iris.time.PartialDateTime(year=int(year), month=int(month), day=int(day)))
-    else:  
-        start_year, start_month, start_day = start_date.split('-') 
-        end_year, end_month, end_day = end_date.split('-')
-        time_constraint = iris.Constraint(time=lambda t: iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)) <= t.point <= iris.time.PartialDateTime(year=int(end_year), month=int(end_month), day=int(end_day)))
+        date_pattern = '([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})'
+        assert re.search(date_pattern, start_date)
+        assert re.search(date_pattern, end_date)
+
+        if (start_date == end_date):
+            year, month, day = start_date.split('-')    
+            time_constraint = iris.Constraint(time=iris.time.PartialDateTime(year=int(year), month=int(month), day=int(day)))
+        else:  
+            start_year, start_month, start_day = start_date.split('-') 
+            end_year, end_month, end_day = end_date.split('-')
+            time_constraint = iris.Constraint(time=lambda t: iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)) <= t.point <= iris.time.PartialDateTime(year=int(end_year), month=int(end_month), day=int(end_day)))
+    else:
+        time_constraint = iris.Constraint()
 
     return time_constraint
 
