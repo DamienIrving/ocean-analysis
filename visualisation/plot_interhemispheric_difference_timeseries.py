@@ -64,7 +64,7 @@ def plot_data(diff_dict, ax, variable, region, realm, runmean):
             cube = diff_dict[(variable, experiment)]
         except KeyError:
             continue
-        
+
         iplt.plot(cube, label=experiment, color=experiment_colors[experiment])
         if runmean:   
             smooth_cube = cube.rolling_window('time', iris.analysis.MEAN, runmean)   
@@ -75,7 +75,7 @@ def plot_data(diff_dict, ax, variable, region, realm, runmean):
     ax.legend()
     ax.set_xlabel('year')
 
-    ylabel = 'northern %s - south %s, over %s'  %(region, region, get_realm_title(realm))
+    ylabel = 'n%s mean - s%s mean, over %s (%s)'  %(region, region, get_realm_title(realm), str(cube.units))
     ax.set_ylabel(ylabel)
 
 

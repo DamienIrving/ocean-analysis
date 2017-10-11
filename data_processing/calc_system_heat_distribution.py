@@ -179,14 +179,15 @@ def get_data(filenames, standard_name, cube_dict, time_constraint, metadata_dict
                                                    long_name='ocean heat content', var_name='ohc')
             else:
                 region_sum, var_name = rename_cube(region_sum, region, include_only, 'sum')
-                
+            cube_dict[var_name] = region_sum
+
             region_mean = calc_aggregate(cube.copy(), standard_name, region, area_cube, aggregation='mean')
             if standard_name == 'ocean_heat_content':
                 region_mean, var_name = rename_cube(region_mean, region, None, 'mean', standard_name='ocean_heat_content',
                                                     long_name='ocean heat content', var_name='ohc')
             else:
                 region_mean, var_name = rename_cube(region_mean, region, include_only, 'mean')
-            cube_dict[var_name] = region_sum
+            cube_dict[var_name] = region_mean
 
     return cube_dict, metadata_dict, attributes
 
@@ -401,10 +402,7 @@ def time_axis_check(cube_dict):
 def main(inargs):
     """Run the program."""
 
-    try:
-        time_constraint = gio.get_time_constraint(inargs.time)
-    except AttributeError:
-        time_constraint = iris.Constraint()
+    time_constraint = gio.get_time_constraint(inargs.time)
 
     sftlf_cube = iris.load_cube(inargs.sftlf_file, 'land_area_fraction')
     if inargs.areacello_file:
