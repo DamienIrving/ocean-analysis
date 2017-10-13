@@ -49,22 +49,25 @@ basin_index = {'pacific': 0,
                'globe': 2}
 
 
-def plot_total(ax, tropics_metric):
+def plot_total(ax, tropics_metric, experiment):
     """Plot total STC metric."""
     
     plt.sca(ax)
     
-    iplt.plot(tropics_metric)
+    iplt.plot(tropics_metric, label=experiment,
+              color=experiment_colors[experiment])
+    plt.legend()
  
 
-def plot_diff(ax, nmetric, smetric):
+def plot_diff(ax, nmetric, smetric, filenum):
     """Plot interhemispheric difference."""
     
     plt.sca(ax)
     
     iplt.plot(nmetric, color='red', label='NH')
     iplt.plot(-1 * smetric, color='blue', label='SH')
-    plt.legend()
+    if filenum == 0:
+        plt.legend()
 
 
 def calc_metrics(sh_cube, nh_cube):
@@ -92,6 +95,7 @@ def load_data(infile, basin):
     cube = iris.load_cube(infile, 'ocean_meridional_overturning_mass_streamfunction')
     cube = cube[:, basin_index[basin], : ,:]
     cube = timeseries.convert_to_annual(cube)
+    experiment = cube.attributes['experiment_id']
     
     depth_constraint = iris.Constraint(depth= lambda cell: cell <= 250)
     sh_constraint = iris.Constraint(latitude=lambda cell: -30.0 <= cell < 0.0)
@@ -100,7 +104,7 @@ def load_data(infile, basin):
     sh_cube = cube.extract(depth_constraint & sh_constraint)
     nh_cube = cube.extract(depth_constraint & nh_constraint)
     
-    return sh_cube, nh_cube
+    return sh_cube, nh_cube, experiment
 
     
 def main(inargs):
@@ -115,11 +119,11 @@ def main(inargs):
     fig = plt.figure(figsize=(width, height))
     ax1 = fig.add_subplot(2, 1, 1)
     ax2 = fig.add_subplot(2, 1, 2)
-    for infile in inargs.infiles:
-        sh_cube, nh_cube = load_data(infile, inargs.basin)
+    for filenum, infile in enumerate(inargs.infiles):
+        sh_cube, nh_cube, experiment = load_data(infile, inargs.basin)
         tropics_metric, sh_metric, nh_metric = calc_metrics(sh_cube, nh_cube)
-        plot_total(ax1, tropics_metric)
-        plot_diff(ax2, nh_metric, sh_metric)
+        plot_total(ax1, tropics_metric, experiment)
+        plot_diff(ax2, nh_metric, sh_metric, filenum)
 
     title = '%s'  %(sh_cube.attributes['model_id'])
     plt.suptitle(title, size='large')
