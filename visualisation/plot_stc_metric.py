@@ -44,12 +44,12 @@ experiment_colors = {'historical': 'orange',
                      'rcp60': '#04471C',
                      'rcp85': '#0D2818'}
 
-basin_index = {'pacific': 0,
-               'atlantic': 1,
+basin_index = {'pacific': 1,
+               'atlantic': 0,
                'globe': 2}
 
 
-def plot_total(ax, tropics_metric, experiment):
+def plot_total(ax, tropics_metric, experiment, basin):
     """Plot total STC metric."""
     
     plt.sca(ax)
@@ -57,6 +57,7 @@ def plot_total(ax, tropics_metric, experiment):
     iplt.plot(tropics_metric, label=experiment,
               color=experiment_colors[experiment])
     plt.legend()
+    plt.title(basin)
  
 
 def plot_diff(ax, nmetric, smetric, filenum):
@@ -97,7 +98,7 @@ def load_data(infile, basin):
     cube = timeseries.convert_to_annual(cube)
     experiment = cube.attributes['experiment_id']
     
-    depth_constraint = iris.Constraint(depth= lambda cell: cell <= 250)
+    depth_constraint = iris.Constraint(depth=lambda cell: cell <= 250)
     sh_constraint = iris.Constraint(latitude=lambda cell: -30.0 <= cell < 0.0)
     nh_constraint = iris.Constraint(latitude=lambda cell: 0.0 < cell <= 30.0)
 
@@ -114,16 +115,22 @@ def main(inargs):
     time_constraints['historical'] = gio.get_time_constraint(inargs.hist_time)
     time_constraints['rcp'] = gio.get_time_constraint(inargs.rcp_time)
 
-    width=10
+    width=25
     height=15
     fig = plt.figure(figsize=(width, height))
-    ax1 = fig.add_subplot(2, 1, 1)
-    ax2 = fig.add_subplot(2, 1, 2)
+    ax_dict = {}
+    ax_dict[('total', 'atlantic')] = fig.add_subplot(2, 3, 1)
+    ax_dict[('diff', 'atlantic')] = fig.add_subplot(2, 3, 4)
+    ax_dict[('total', 'pacific')] = fig.add_subplot(2, 3, 2)
+    ax_dict[('diff', 'pacific')] = fig.add_subplot(2, 3, 5)
+    ax_dict[('total', 'globe')] = fig.add_subplot(2, 3, 3)
+    ax_dict[('diff', 'globe')] = fig.add_subplot(2, 3, 6)
     for filenum, infile in enumerate(inargs.infiles):
-        sh_cube, nh_cube, experiment = load_data(infile, inargs.basin)
-        tropics_metric, sh_metric, nh_metric = calc_metrics(sh_cube, nh_cube)
-        plot_total(ax1, tropics_metric, experiment)
-        plot_diff(ax2, nh_metric, sh_metric, filenum)
+        for basin in ['atlantic', 'pacific', 'globe']:
+            sh_cube, nh_cube, experiment = load_data(infile, basin)
+            tropics_metric, sh_metric, nh_metric = calc_metrics(sh_cube, nh_cube)
+            plot_total(ax_dict[('total', basin)], tropics_metric, experiment, basin)
+            plot_diff(ax_dict[('diff', basin)], nh_metric, sh_metric, filenum)
 
     title = '%s'  %(sh_cube.attributes['model_id'])
     plt.suptitle(title, size='large')
@@ -151,9 +158,6 @@ author:
     parser.add_argument("infiles", type=str, nargs='*', 
                         help="Input msftmyz files")                                                    
     parser.add_argument("outfile", type=str, help="Output file")  
-
-    parser.add_argument("--basin", type=str, choices=('atlantic', 'pacific', 'globe'), default='globe',
-                        help="Ocean basin")
 
     parser.add_argument("--hist_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
                         help="Time period [default = all]")
