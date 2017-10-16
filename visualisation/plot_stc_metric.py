@@ -57,18 +57,23 @@ def plot_total(ax, tropics_metric, experiment, basin):
     iplt.plot(tropics_metric, label=experiment,
               color=experiment_colors[experiment])
     plt.legend()
-    plt.title(basin)
+    plt.ylabel(str(tropics_metric.units))
+    plt.title('Total STC overturning, %s' %(basin.title()))
  
 
-def plot_diff(ax, nmetric, smetric, filenum):
+def plot_diff(ax, nmetric, smetric, filenum, basin):
     """Plot interhemispheric difference."""
     
     plt.sca(ax)
     
-    iplt.plot(nmetric, color='red', label='NH')
+    if not basin == 'atlantic':
+        iplt.plot(nmetric, color='red', label='NH')
     iplt.plot(-1 * smetric, color='blue', label='SH')
     if filenum == 0:
         plt.legend()
+    plt.ylabel(str(smetric.units))
+    plt.xlabel('Year')
+    plt.title('Hemispheric breakdown, %s' %(basin.title()))
 
 
 def calc_metrics(sh_cube, nh_cube):
@@ -119,20 +124,19 @@ def main(inargs):
     height=15
     fig = plt.figure(figsize=(width, height))
     ax_dict = {}
-    ax_dict[('total', 'atlantic')] = fig.add_subplot(2, 3, 1)
-    ax_dict[('diff', 'atlantic')] = fig.add_subplot(2, 3, 4)
-    ax_dict[('total', 'pacific')] = fig.add_subplot(2, 3, 2)
-    ax_dict[('diff', 'pacific')] = fig.add_subplot(2, 3, 5)
-    ax_dict[('total', 'globe')] = fig.add_subplot(2, 3, 3)
-    ax_dict[('diff', 'globe')] = fig.add_subplot(2, 3, 6)
+    #ax_dict[('total', 'atlantic')] = fig.add_subplot(2, 2, 1)
+    ax_dict[('diff', 'atlantic')] = fig.add_subplot(2, 2, 3)
+    ax_dict[('total', 'pacific')] = fig.add_subplot(2, 2, 2)
+    ax_dict[('diff', 'pacific')] = fig.add_subplot(2, 2, 4)
     for filenum, infile in enumerate(inargs.infiles):
-        for basin in ['atlantic', 'pacific', 'globe']:
+        for basin in ['atlantic', 'pacific']:
             sh_cube, nh_cube, experiment = load_data(infile, basin)
             tropics_metric, sh_metric, nh_metric = calc_metrics(sh_cube, nh_cube)
-            plot_total(ax_dict[('total', basin)], tropics_metric, experiment, basin)
-            plot_diff(ax_dict[('diff', basin)], nh_metric, sh_metric, filenum)
+            if not basin == 'atlantic':
+                plot_total(ax_dict[('total', basin)], tropics_metric, experiment, basin)
+            plot_diff(ax_dict[('diff', basin)], nh_metric, sh_metric, filenum, basin)
 
-    title = '%s'  %(sh_cube.attributes['model_id'])
+    title = 'Annual Mean Meridional Overturning Mass Streamfunction, %s'  %(sh_cube.attributes['model_id'])
     plt.suptitle(title, size='large')
 #    plt.subplots_adjust(top=0.90)
 
