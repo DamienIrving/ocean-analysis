@@ -47,33 +47,39 @@ experiment_colors = {'historical': 'orange',
 basin_index = {'pacific': 1,
                'atlantic': 0,
                'globe': 2}
-
-
-def plot_total(ax, tropics_metric, experiment, basin):
-    """Plot total STC metric."""
-    
-    plt.sca(ax)
-    
-    iplt.plot(tropics_metric, label=experiment,
-              color=experiment_colors[experiment])
-    plt.legend()
-    plt.ylabel(str(tropics_metric.units))
-    plt.title('Total STC overturning, %s' %(basin.title()))
  
 
-def plot_diff(ax, nmetric, smetric, filenum, basin):
-    """Plot interhemispheric difference."""
+def plot_hemispheres(ax, nmetric, smetric, experiment, basin):
+    """Plot interhemispheric comparison."""
     
     plt.sca(ax)
-    
+
+    iplt.plot(smetric * -1, label=experiment + ', SH',
+              color=experiment_colors[experiment], linestyle='--')
     if not basin == 'atlantic':
-        iplt.plot(nmetric, color='red', label='NH')
-    iplt.plot(-1 * smetric, color='blue', label='SH')
-    if filenum == 0:
-        plt.legend()
-    plt.ylabel(str(smetric.units))
+        iplt.plot(nmetric, label=experiment + ', NH',
+                  color=experiment_colors[experiment], linestyle='-')
+
+    plt.legend()
+    plt.ylabel(str(nmetric.units))
     plt.xlabel('Year')
-    plt.title('Hemispheric breakdown, %s' %(basin.title()))
+    plt.title(basin.title() + ' hemispheric values')
+
+
+def plot_comparison(ax, nmetric, smetric, experiment, basin):
+    """Plot interhemispheric comparison."""
+    
+    plt.sca(ax)
+
+    data = nmetric / (-1 * smetric)
+    ylabel = 'NH / SH'
+
+    iplt.plot(data, label=experiment, color=experiment_colors[experiment])
+
+    plt.legend()
+    plt.ylabel(ylabel)
+    plt.xlabel('Year')
+    plt.title(basin.title() + ' hemisphere comparison')
 
 
 def calc_metrics(sh_cube, nh_cube):
@@ -89,10 +95,8 @@ def calc_metrics(sh_cube, nh_cube):
     
     nh_metric = nh_cube.collapsed(['depth', 'latitude'], iris.analysis.SUM, weights=vert_extents)
     sh_metric = sh_cube.collapsed(['depth', 'latitude'], iris.analysis.SUM, weights=vert_extents)
-    
-    tropics_metric = nh_metric - sh_metric
 
-    return tropics_metric, sh_metric, nh_metric
+    return sh_metric, nh_metric
     
 
 def load_data(infile, basin):
@@ -102,6 +106,8 @@ def load_data(infile, basin):
     cube = cube[:, basin_index[basin], : ,:]
     cube = timeseries.convert_to_annual(cube)
     experiment = cube.attributes['experiment_id']
+    if experiment == 'historicalMisc':
+        experiment = 'historicalAA'
     
     depth_constraint = iris.Constraint(depth=lambda cell: cell <= 250)
     sh_constraint = iris.Constraint(latitude=lambda cell: -30.0 <= cell < 0.0)
@@ -120,28 +126,30 @@ def main(inargs):
     time_constraints['historical'] = gio.get_time_constraint(inargs.hist_time)
     time_constraints['rcp'] = gio.get_time_constraint(inargs.rcp_time)
 
-    width=25
-    height=15
+    width=10
+    height=20
     fig = plt.figure(figsize=(width, height))
     ax_dict = {}
-    #ax_dict[('total', 'atlantic')] = fig.add_subplot(2, 2, 1)
-    ax_dict[('diff', 'atlantic')] = fig.add_subplot(2, 2, 3)
-    ax_dict[('total', 'pacific')] = fig.add_subplot(2, 2, 2)
-    ax_dict[('diff', 'pacific')] = fig.add_subplot(2, 2, 4)
+    ax1 = fig.add_subplot(3, 1, 1)
+    ax2 = fig.add_subplot(3, 1, 2)
+    ax3 = fig.add_subplot(3, 1, 3)
     for filenum, infile in enumerate(inargs.infiles):
-        for basin in ['atlantic', 'pacific']:
-            sh_cube, nh_cube, experiment = load_data(infile, basin)
-            tropics_metric, sh_metric, nh_metric = calc_metrics(sh_cube, nh_cube)
-            if not basin == 'atlantic':
-                plot_total(ax_dict[('total', basin)], tropics_metric, experiment, basin)
-            plot_diff(ax_dict[('diff', basin)], nh_metric, sh_metric, filenum, basin)
+        spacific_cube, npacific_cube, experiment = load_data(infile, 'pacific')
+        satlantic_cube, natlantic_cube, experiment = load_data(infile, 'atlantic')
+ 
+        spacific_metric, npacific_metric = calc_metrics(spacific_cube, npacific_cube)
+        satlantic_metric, natlantic_metric = calc_metrics(satlantic_cube, natlantic_cube)
 
-    title = 'Annual Mean Meridional Overturning Mass Streamfunction, %s'  %(sh_cube.attributes['model_id'])
+        plot_hemispheres(ax1, npacific_metric, spacific_metric, experiment, 'pacific')
+        plot_comparison(ax2, npacific_metric, spacific_metric, experiment, 'pacific')
+        plot_hemispheres(ax3, natlantic_metric, satlantic_metric, experiment, 'atlantic')
+
+    title = 'Annual Mean Meridional Overturning Mass Streamfunction, %s'  %(spacific_cube.attributes['model_id'])
     plt.suptitle(title, size='large')
 #    plt.subplots_adjust(top=0.90)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info={inargs.infiles[-1]: sh_cube.attributes['history']})
+    gio.write_metadata(inargs.outfile, file_info={inargs.infiles[-1]: spacific_cube.attributes['history']})
 
 
 if __name__ == '__main__':
