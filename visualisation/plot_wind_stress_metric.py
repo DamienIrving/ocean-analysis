@@ -56,7 +56,9 @@ def load_data(infile, basin_cube, basin_name):
     cube = iris.load_cube(infile, 'surface_downward_x_stress')
     cube = timeseries.convert_to_annual(cube)
     experiment = cube.attributes['experiment_id']
-    
+    if experiment == 'historicalMisc':
+        experiment = 'historicalAA'    
+
     if not basin_name == 'globe':
         if basin_cube:
             ndim = cube.ndim
@@ -83,17 +85,23 @@ def load_data(infile, basin_cube, basin_name):
     return sh_mean, nh_mean, scrit_mean, ncrit_mean, experiment
 
 
-def plot_data(ax, sh_cube, nh_cube, experiment, previous_experiments, basin, crit=False):
+def plot_data(ax, sh_cube, nh_cube, experiment, previous_experiments, basin, crit=False, plot_type='comparison'):
     """Plot the various wind stress metrics."""
 
     plt.sca(ax)
     
-    iplt.plot(nh_cube, color=experiment_colors[experiment], label=experiment+', NH')
-    iplt.plot(sh_cube, color=experiment_colors[experiment], label=experiment+', SH', linestyle='--')
+    if plot_type == 'comparison':
+        data = nh_cube / sh_cube
+        iplt.plot(data, color=experiment_colors[experiment], label=experiment)
+        ylabel = 'NH / SH'
+    else:
+        iplt.plot(nh_cube, color=experiment_colors[experiment], label=experiment+', NH')
+        iplt.plot(sh_cube, color=experiment_colors[experiment], label=experiment+', SH', linestyle='--')
+        ylabel = str(nh_cube.units)
 
     if not experiment in previous_experiments:
         plt.legend(ncol=2)
-    plt.ylabel(str(nh_cube.units))
+    plt.ylabel(ylabel)
     plt.xlabel('Year')
 
     if crit:
@@ -130,8 +138,10 @@ def main(inargs):
     for filenum, infile in enumerate(inargs.infiles):
         for basin in ['atlantic', 'pacific', 'globe']:
             sh_mean, nh_mean, scrit_mean, ncrit_mean, experiment = load_data(infile, basin_cube, basin)
-            plot_data(ax_dict[('tropics', basin)], sh_mean, nh_mean, experiment, previous_experiments, basin, crit=False)
-            plot_data(ax_dict[('critical', basin)], scrit_mean, ncrit_mean, experiment, previous_experiments, basin, crit=True)
+            plot_data(ax_dict[('tropics', basin)], sh_mean, nh_mean, experiment, previous_experiments, basin,
+                      crit=False, plot_type=inargs.plot_type)
+            plot_data(ax_dict[('critical', basin)], scrit_mean, ncrit_mean, experiment, previous_experiments, basin,
+                      crit=True, plot_type=inargs.plot_type)
         previous_experiments.append(experiment)
 
     title = 'Annual Mean Surface Downward X Stress, %s'  %(sh_mean.attributes['model_id'])
@@ -163,6 +173,8 @@ author:
 
     parser.add_argument("--basin_file", type=str, default=None, 
                         help="Input basin file")
+    parser.add_argument("--plot_type", type=str, choices=('hemisphere', 'comparison'), default='comparison', 
+                        help="Type of data to plot")
 
     parser.add_argument("--hist_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
                         help="Time period [default = all]")
