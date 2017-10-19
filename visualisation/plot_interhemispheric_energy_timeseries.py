@@ -1,7 +1,7 @@
 """
-Filename:     plot_interhemispheric_difference_timeseries.py
+Filename:     plot_interhemispheric_energy_timeseries.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Plot the interhemispheric difference timeseries for various variables
+Description:  Plot the interhemispheric timeseries for various energy budget terms
 
 """
 
@@ -243,7 +243,7 @@ author:
 
 """
 
-    description = 'Plot a summary of the system heat distribution'
+    description = 'Plot the interhemispheric timeseries for various energy budget terms'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
