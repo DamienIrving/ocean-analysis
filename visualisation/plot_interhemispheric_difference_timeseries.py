@@ -55,8 +55,36 @@ def set_title(infile):
     plt.suptitle(title, size='large')
 
 
-def plot_data(diff_dict, ax, variable, region, realm, runmean, operator, units):
-    """Plot the data."""
+def plot_hemispheres(n_dict, s_dict, ax, variable, region, realm, runmean, units):
+    """Plot the hemisphere data."""
+
+    plt.sca(ax)
+    for experiment in experiment_colors.keys():
+        try:
+            n_cube = n_dict[(experiment, variable, region, realm)]
+            s_cube = s_dict[(experiment, variable, region, realm)]
+        except KeyError:
+            continue
+
+        iplt.plot(n_cube, label=experiment + ', NH', color=experiment_colors[experiment])
+        iplt.plot(s_cube, label=experiment + ', SH', color=experiment_colors[experiment], linestyle='--')
+        if runmean:   
+            n_smooth_cube = n_cube.rolling_window('time', iris.analysis.MEAN, runmean)  
+            s_smooth_cube = s_cube.rolling_window('time', iris.analysis.MEAN, runmean)  
+            iplt.plot(n_smooth_cube, color=experiment_colors[experiment], linewidth=2)  
+            iplt.plot(s_smooth_cube, color=experiment_colors[experiment], linewidth=2, linestyle='--')  
+           
+    title = 'Annual Mean %s' %(variable)
+    ax.set_title(title)
+    ax.legend()
+    ax.set_xlabel('year')
+
+    ylabel = '%s (%s over %s)'  %(units, region, get_realm_title(realm))
+    ax.set_ylabel(ylabel)
+
+
+def plot_comparison(diff_dict, ax, variable, region, realm, runmean, operator, units):
+    """Plot the comparison data."""
 
     plt.sca(ax)
     for experiment in experiment_colors.keys():
@@ -135,7 +163,7 @@ def get_diff(infile, variable, region, realm, time_constraints, operator):
         experiment = 'historicalAA'
     run = 'r' + str(s_cube.attributes['realization'])
 
-    return diff_cube, history, model, experiment, run, orig_units
+    return diff_cube, n_cube, s_cube, history, model, experiment, run, orig_units
 
 
 def get_time_constraint(time_bounds):
@@ -165,14 +193,17 @@ def main(inargs):
     if inargs.infer_hfds:
         variables[-1] = 'Inferred Downward Heat Flux at Sea Water Surface'
     diff_dict = {}
+    s_dict = {}
+    n_dict = {}
     plot_details_list = []
     for infile in inargs.energy_infiles:
         for plotnum, var in enumerate(variables):
             region = inargs.regions[plotnum]
             realm = inargs.realms[plotnum]
-            diff_operator = inargs.diff_operator[plotnum]
-            diff_cube, history, model, experiment, run, orig_units = get_diff(infile, var, region, realm, time_constraints, diff_operator)
+            diff_cube, n_cube, s_cube, history, model, experiment, run, orig_units = get_diff(infile, var, region, realm, time_constraints, inargs.operator)
             diff_dict[(experiment, var, region, realm)] = diff_cube
+            n_dict[(experiment, var, region, realm)] = n_cube
+            s_dict[(experiment, var, region, realm)] = s_cube
             plot_ref = (var, region, realm)
             if not plot_ref in plot_details_list:
                 plot_details_list.append(plot_ref)
@@ -188,7 +219,11 @@ def main(inargs):
     plotnum = 0
     for ax, plot_details in zip(axes_list, plot_details_list):
         var, region, realm = plot_details
-        plot_data(diff_dict, ax, var, region, realm, inargs.runmean, inargs.diff_operator[plotnum], orig_units)
+        plot_type = inargs.plot_type[plotnum]
+        if plot_type == 'comparison':
+            plot_comparison(diff_dict, ax, var, region, realm, inargs.runmean, inargs.operator, orig_units)
+        else:
+            plot_hemispheres(n_dict, s_dict, ax, var, region, realm, inargs.runmean, orig_units)
         plotnum = plotnum + 1
 
     title = '%s interhemispheric difference'  %(model)
@@ -224,9 +259,12 @@ author:
     parser.add_argument("--realms", type=str, nargs=4, choices=('ocean', 'land', 'all'),
                         default=('all', 'ocean', 'ocean', 'ocean'),
                         help="Realms used for rnds, hfls, hfds & hfds respectively")
-    parser.add_argument("--diff_operator", type=str, choices=('subtract', 'divide'),
-                        default=('divide', 'divide', 'subtract', 'subtract'),
+    parser.add_argument("--plot_type", type=str, nargs=4, choices=('hemisphere', 'comparison'),
+                        default=('comparison', 'comparison', 'hemisphere', 'hemisphere'),
                         help="Difference operator used for rnds, hfls, hfds & hfds respectively")
+
+    parser.add_argument("--operator", type=str, choices=('subtract', 'divide'), default='divide', 
+                        help="Operator to use for comparison plots")
 
     parser.add_argument("--runmean", type=int, default=None,
                         help="Window for running mean [default = None]")
