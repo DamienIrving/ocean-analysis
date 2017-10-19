@@ -55,7 +55,7 @@ def set_title(infile):
     plt.suptitle(title, size='large')
 
 
-def plot_data(diff_dict, ax, variable, region, realm, runmean):
+def plot_data(diff_dict, ax, variable, region, realm, runmean, operator, units):
     """Plot the data."""
 
     plt.sca(ax)
@@ -75,7 +75,10 @@ def plot_data(diff_dict, ax, variable, region, realm, runmean):
     ax.legend()
     ax.set_xlabel('year')
 
-    ylabel = 'n%s mean - s%s mean, over %s (%s)'  %(region, region, get_realm_title(realm), str(cube.units))
+    if operator == 'subtract':
+        ylabel = 'n%s mean - s%s mean, over %s (%s)'  %(region, region, get_realm_title(realm), units)
+    else:
+        ylabel = 'n%s mean / s%s mean, over %s (%%; orig %s)'  %(region, region, get_realm_title(realm), units)
     ax.set_ylabel(ylabel)
 
 
@@ -103,7 +106,7 @@ def get_realm_title(realm):
     return realm_title
         
 
-def get_diff(infile, variable, region, realm, time_constraints):
+def get_diff(infile, variable, region, realm, time_constraints, operator):
     """Calculate interhemispheric difference for a given variable"""
 
     if 'rcp' in infile:
@@ -117,7 +120,13 @@ def get_diff(infile, variable, region, realm, time_constraints):
     with iris.FUTURE.context(cell_datetime_objects=True):
         s_cube = iris.load_cube(infile, svar & time_constraint)
         n_cube = iris.load_cube(infile, nvar & time_constraint)
-    diff_cube = n_cube - s_cube
+
+    orig_units = str(n_cube.units)
+
+    if operator == 'subtract':
+        diff_cube = n_cube - s_cube
+    else:
+        diff_cube = n_cube / s_cube
 
     history = s_cube.attributes['history']
     model = s_cube.attributes['model_id']
@@ -126,7 +135,7 @@ def get_diff(infile, variable, region, realm, time_constraints):
         experiment = 'historicalAA'
     run = 'r' + str(s_cube.attributes['realization'])
 
-    return diff_cube, history, model, experiment, run
+    return diff_cube, history, model, experiment, run, orig_units
 
 
 def get_time_constraint(time_bounds):
@@ -161,7 +170,8 @@ def main(inargs):
         for plotnum, var in enumerate(variables):
             region = inargs.regions[plotnum]
             realm = inargs.realms[plotnum]
-            diff_cube, history, model, experiment, run = get_diff(infile, var, region, realm, time_constraints)
+            diff_operator = inargs.diff_operator[plotnum]
+            diff_cube, history, model, experiment, run, orig_units = get_diff(infile, var, region, realm, time_constraints, diff_operator)
             diff_dict[(experiment, var, region, realm)] = diff_cube
             plot_ref = (var, region, realm)
             if not plot_ref in plot_details_list:
@@ -178,7 +188,8 @@ def main(inargs):
     plotnum = 0
     for ax, plot_details in zip(axes_list, plot_details_list):
         var, region, realm = plot_details
-        plot_data(diff_dict, ax, var, region, realm, inargs.runmean)
+        plot_data(diff_dict, ax, var, region, realm, inargs.runmean, inargs.diff_operator[plotnum], orig_units)
+        plotnum = plotnum + 1
 
     title = '%s interhemispheric difference'  %(model)
     plt.suptitle(title, size='large')
@@ -213,6 +224,9 @@ author:
     parser.add_argument("--realms", type=str, nargs=4, choices=('ocean', 'land', 'all'),
                         default=('all', 'ocean', 'ocean', 'ocean'),
                         help="Realms used for rnds, hfls, hfds & hfds respectively")
+    parser.add_argument("--diff_operator", type=str, choices=('subtract', 'divide'),
+                        default=('divide', 'divide', 'subtract', 'subtract'),
+                        help="Difference operator used for rnds, hfls, hfds & hfds respectively")
 
     parser.add_argument("--runmean", type=int, default=None,
                         help="Window for running mean [default = None]")
