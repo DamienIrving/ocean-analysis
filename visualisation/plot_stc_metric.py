@@ -84,17 +84,20 @@ def plot_comparison(ax, nmetric, smetric, experiment, basin):
 
 def calc_metrics(sh_cube, nh_cube):
     """Calculate the metrics."""
-    
+
     dim_coord_names = [coord.name() for coord in sh_cube.dim_coords]
-    vert_extents = spatial_weights.calc_vertical_weights_1D(sh_cube.coord('depth'),
-                                                            dim_coord_names,
-                                                            sh_cube.shape)
+    nh_vert_extents = spatial_weights.calc_vertical_weights_1D(nh_cube.coord('depth'),
+                                                               dim_coord_names,
+                                                               nh_cube.shape)
+    sh_vert_extents = spatial_weights.calc_vertical_weights_1D(sh_cube.coord('depth'),
+                                                              dim_coord_names,
+                                                              sh_cube.shape)
     
     nh_cube.data = numpy.where(nh_cube.data > 0, nh_cube.data, 0)
     sh_cube.data = numpy.where(sh_cube.data < 0, sh_cube.data, 0)
     
-    nh_metric = nh_cube.collapsed(['depth', 'latitude'], iris.analysis.SUM, weights=vert_extents)
-    sh_metric = sh_cube.collapsed(['depth', 'latitude'], iris.analysis.SUM, weights=vert_extents)
+    nh_metric = nh_cube.collapsed(['depth', 'latitude'], iris.analysis.SUM, weights=nh_vert_extents)
+    sh_metric = sh_cube.collapsed(['depth', 'latitude'], iris.analysis.SUM, weights=sh_vert_extents)
 
     return sh_metric, nh_metric
     
