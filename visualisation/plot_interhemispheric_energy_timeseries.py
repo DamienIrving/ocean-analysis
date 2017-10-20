@@ -191,6 +191,7 @@ def main(inargs):
                  'Downward Heat Flux at Sea Water Surface', 'Downward Heat Flux at Sea Water Surface']
 
     if inargs.infer_hfds:
+        variables[-2] = 'Inferred Downward Heat Flux at Sea Water Surface'
         variables[-1] = 'Inferred Downward Heat Flux at Sea Water Surface'
     diff_dict = {}
     s_dict = {}

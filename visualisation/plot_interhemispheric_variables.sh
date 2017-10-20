@@ -25,13 +25,15 @@ rcp85_energy_file=${r87_dir}/rcp85/yr/all/r1i1p1/energy-budget/latest/energy-bud
 hist_energy_outfile=/g/data/r87/dbi599/figures/energy-budget/energy-budget-interhemispheric-comparison_yr_${model}_historical_r1i1p1_all.png
 rcp_energy_outfile=/g/data/r87/dbi599/figures/energy-budget/energy-budget-interhemispheric-comparison_yr_${model}_historical-rcp_r1i1p1_all.png
 
-hist_energy_command="${python} ${vis_dir}/plot_interhemispheric_energy_timeseries.py ${hist_energy_file} ${aa_energy_file} ${ghg_energy_file} ${hist_energy_outfile}"
+hist_energy_command="${python} ${vis_dir}/plot_interhemispheric_energy_timeseries.py ${hist_energy_file} ${aa_energy_file} ${ghg_energy_file} ${hist_energy_outfile} --infer_hfds"
+# --infer_hfds
 echo ${hist_energy_command}
 if [[ ${execute} == true ]] ; then
     ${hist_energy_command}
 fi
 
-rcp_energy_command="${python} ${vis_dir}/plot_interhemispheric_energy_timeseries.py ${hist_energy_file} ${aa_energy_file} ${ghg_energy_file} ${rcp85_energy_file} ${rcp_energy_outfile}"
+rcp_energy_command="${python} ${vis_dir}/plot_interhemispheric_energy_timeseries.py ${hist_energy_file} ${aa_energy_file} ${ghg_energy_file} ${rcp85_energy_file} ${rcp_energy_outfile} --infer_hfds"
+# --infer_hfds
 echo ${rcp_energy_command}
 if [[ ${execute} == true ]] ; then
     ${rcp_energy_command}
