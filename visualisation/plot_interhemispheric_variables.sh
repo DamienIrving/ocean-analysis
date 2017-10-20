@@ -3,7 +3,7 @@
 # Might have to calculate energy bugdet terms first: calc_system_heat_distribution.sh
 #
 
-execute=false
+execute=true
 model=CanESM2
 
 aa_physics=p4
@@ -44,10 +44,12 @@ ghg_msftmyz_file=${ua6_dir}/historicalGHG/mon/ocean/r1i1p1/msftmyz/latest/msftmy
 aa_msftmyz_file=${ua6_dir}/historicalMisc/mon/ocean/r1i1${aa_physics}/msftmyz/latest/msftmyz_Omon_${model}_historicalMisc_r1i1${aa_physics}_*.nc
 rcp85_msftmyz_file=${ua6_dir}/rcp85/mon/ocean/r1i1p1/msftmyz/latest/msftmyz_Omon_${model}_rcp85_r1i1p1_*.nc
 
-spatial_msftmyz_outfile=${r87_dir}/historical/mon/ocean/r1i1p1/msftmyz/latest/msftmyz-clim_Omon_${model}_historical_r1i1p1_all.png
+spatial_msftmyz_outdir=${r87_dir}/historical/mon/ocean/r1i1p1/msftmyz/latest/
+spatial_msftmyz_outfile=${spatial_msftmyz_outdir}/msftmyz-clim_Omon_${model}_historical_r1i1p1_all.png
 spatial_msftmyz_command="${python} ${vis_dir}/plot_stc_spatial.py ${hist_msftmyz_file} ${spatial_msftmyz_outfile}"
 echo ${spatial_msftmyz_command}
 if [[ ${execute} == true ]] ; then
+    mkdir -p ${spatial_msftmyz_outdir}
     ${spatial_msftmyz_command}
 fi
 
