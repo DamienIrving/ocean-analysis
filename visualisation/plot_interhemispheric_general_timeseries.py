@@ -63,32 +63,42 @@ def get_area_weights(cube, area_file, lat_constraint):
     return area_weights
 
 
-def get_data(infile, variable, nh_lat_constraint, sh_lat_constraint, time_constraint, area_file):
-    """Read the input data"""
-
+def calc_mean(infiles, variable, lat_constraint, time_constraint, area_file):
+    """Load the infiles and calculate the hemispheric mean values."""
+    
     with iris.FUTURE.context(cell_datetime_objects=True):
-        nh_cube = iris.load_cube(infile, variable & nh_lat_constraint & time_constraint)
-        sh_cube = iris.load_cube(infile, variable & sh_lat_constraint & time_constraint)
+        cube = iris.load(infiles, variable & lat_constraint & time_constraint)
+ 
+        equalise_attributes(cube)
+        cube = cube.concatenate_cube()
 
-        nh_cube = timeseries.convert_to_annual(nh_cube)
-        sh_cube = timeseries.convert_to_annual(sh_cube)
+        cube = timeseries.convert_to_annual(nh_cube)
 
-    orig_units = str(nh_cube.units)
+    orig_units = str(cube.units)
+    orig_atts = cube.attributes
 
-    nh_area_weights = get_area_weights(nh_cube, area_file, nh_lat_constraint)
-    sh_area_weights = get_area_weights(sh_cube, area_file, sh_lat_constraint)
+    area_weights = get_area_weights(cube, area_file, lat_constraint)
+    mean = cube.collapsed(['longitude', 'latitude'], iris.analysis.MEAN, weights=area_weights)
 
-    nh_mean = nh_cube.collapsed(['longitude', 'latitude'], iris.analysis.MEAN, weights=nh_area_weights)
-    sh_mean = sh_cube.collapsed(['longitude', 'latitude'], iris.analysis.MEAN, weights=sh_area_weights)
+    return mean, orig_units, orig_atts
+                
+
+def get_data(infiles, variable, nh_lat_constraint, sh_lat_constraint, time_constraint, area_file):
+    """Read and process the input data"""
+
+    nh_mean, orig_units, orig_atts = calc_mean(infiles, variable, nh_lat_constraint,
+                                               time_constraint, area_file)
+    sh_mean, orig_units, orig_atts = calc_mean(infiles, variable, sh_lat_constraint,
+                                               time_constraint, area_file)
 
     comparison_cube = nh_mean / sh_mean
 
-    history = sh_cube.attributes['history']
-    model = sh_cube.attributes['model_id']
-    experiment = sh_cube.attributes['experiment_id']
+    history = orig_atts['history']
+    model = orig_atts['model_id']
+    experiment = orig_atts['experiment_id']
     if experiment == 'historicalMisc':
         experiment = 'historicalAA'
-    run = 'r' + str(sh_cube.attributes['realization'])
+    run = 'r' + str(orig_atts['realization'])
 
     return comparison_cube, history, model, experiment, run, orig_units
     
@@ -106,8 +116,8 @@ def main(inargs):
 
     data_dict = {}
     plot_details_list = []
-    for infile in inargs.infiles:
-        cube, history, model, experiment, run, orig_units = get_data(infile, inargs.variable, nh_constraint, sh_constraint,
+    for infiles in inargs.experiment_files:
+        cube, history, model, experiment, run, orig_units = get_data(infiles, inargs.variable, nh_constraint, sh_constraint,
                                                                      time_constraint, inargs.area_file)
         iplt.plot(cube, label=experiment, color=experiment_colors[experiment])
 
@@ -137,10 +147,12 @@ author:
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-               
-    parser.add_argument("infiles", type=str, nargs='*', help="Input files")   
+                
     parser.add_argument("variable", type=str, help="Input variable")                                                 
     parser.add_argument("outfile", type=str, help="Output file")  
+
+    parser.add_argument("--experiment_files", type=str, action='append', default=[],
+                        help="Input files for a given experiment")
 
     parser.add_argument("--area_file", type=str, default=None, 
                         help="Input cell area file")
