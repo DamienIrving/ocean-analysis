@@ -12,6 +12,7 @@ import argparse
 import numpy
 import iris
 import iris.plot as iplt
+from iris.experimental.equalise_cubes import equalise_attributes
 iris.FUTURE.netcdf_promote = True
 import matplotlib.pyplot as plt
 import seaborn
@@ -47,6 +48,17 @@ experiment_colors = {'historical': 'orange',
                      'rcp85': '#0D2818'}
 
 
+history = []
+
+def save_history(cube, field, filename):
+    """Save the history attribute when reading the data.
+    (This is required because the history attribute differs between input files 
+      and is therefore deleted upon equilising attributes)  
+    """ 
+
+    history.append(cube.attributes['history'])
+
+
 def get_area_weights(cube, area_file, lat_constraint):
     """Get area weights for averaging"""
 
@@ -67,12 +79,12 @@ def calc_mean(infiles, variable, lat_constraint, time_constraint, area_file):
     """Load the infiles and calculate the hemispheric mean values."""
     
     with iris.FUTURE.context(cell_datetime_objects=True):
-        cube = iris.load(infiles, variable & lat_constraint & time_constraint)
+        cube = iris.load(infiles, variable & lat_constraint & time_constraint, callback=save_history)
  
         equalise_attributes(cube)
         cube = cube.concatenate_cube()
 
-        cube = timeseries.convert_to_annual(nh_cube)
+        cube = timeseries.convert_to_annual(cube)
 
     orig_units = str(cube.units)
     orig_atts = cube.attributes
@@ -93,14 +105,12 @@ def get_data(infiles, variable, nh_lat_constraint, sh_lat_constraint, time_const
 
     comparison_cube = nh_mean / sh_mean
 
-    history = orig_atts['history']
     model = orig_atts['model_id']
     experiment = orig_atts['experiment_id']
     if experiment == 'historicalMisc':
         experiment = 'historicalAA'
-    run = 'r' + str(orig_atts['realization'])
 
-    return comparison_cube, history, model, experiment, run, orig_units
+    return comparison_cube, model, experiment, orig_units
     
     
 def main(inargs):
@@ -117,7 +127,7 @@ def main(inargs):
     data_dict = {}
     plot_details_list = []
     for infiles in inargs.experiment_files:
-        cube, history, model, experiment, run, orig_units = get_data(infiles, inargs.variable, nh_constraint, sh_constraint,
+        cube, model, experiment, orig_units = get_data(infiles, inargs.variable, nh_constraint, sh_constraint,
                                                                      time_constraint, inargs.area_file)
         iplt.plot(cube, label=experiment, color=experiment_colors[experiment])
 
@@ -130,7 +140,7 @@ def main(inargs):
     #plt.subplots_adjust(top=0.90)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info={inargs.infiles[-1]: history})
+    gio.write_metadata(inargs.outfile, file_info={inargs.experiment_files[0][0]: history[0]})
 
 
 if __name__ == '__main__':
@@ -151,7 +161,7 @@ author:
     parser.add_argument("variable", type=str, help="Input variable")                                                 
     parser.add_argument("outfile", type=str, help="Output file")  
 
-    parser.add_argument("--experiment_files", type=str, action='append', default=[],
+    parser.add_argument("--experiment_files", type=str, action='append', nargs='*', required=True,
                         help="Input files for a given experiment")
 
     parser.add_argument("--area_file", type=str, default=None, 

@@ -11,7 +11,7 @@
 # $ scp dbi599@raijin.nci.org.au:/g/data/r87/dbi599/figures/tas-interhemispheric/tas_Amon_*_historical-rcp_r1i1p1_* .
 # $ scp dbi599@raijin.nci.org.au:/g/data/r87/dbi599/figures/pr-interhemispheric/pr_Amon_*_historical-rcp_r1i1p1_* .
 
-execute=true
+execute=false
 model=FGOALS-g2
 
 aa_physics=p1
@@ -91,13 +91,13 @@ fi
 
 # Surface temperature
 
-hist_tas_file=${ua6_dir}/historical/mon/atmos/r1i1p1/tas/latest/tas_Amon_${model}_historical_r1i1p1_*.nc
-ghg_tas_file=${ua6_dir}/historicalGHG/mon/atmos/r1i1p1/tas/latest/tas_Amon_${model}_historicalGHG_r1i1p1_*.nc
-aa_tas_file=${ua6_dir}/historicalMisc/mon/atmos/${aa_run}i1${aa_physics}/tas/latest/tas_Amon_${model}_historicalMisc_${aa_run}i1${aa_physics}_*.nc
-rcp85_tas_file=${ua6_dir}/rcp85/mon/atmos/r1i1p1/tas/latest/tas_Amon_${model}_rcp85_r1i1p1_*.nc
+hist_tas_files="--experiment_files ${ua6_dir}/historical/mon/atmos/r1i1p1/tas/latest/tas_Amon_${model}_historical_r1i1p1_*.nc"
+ghg_tas_files="--experiment_files ${ua6_dir}/historicalGHG/mon/atmos/r1i1p1/tas/latest/tas_Amon_${model}_historicalGHG_r1i1p1_*.nc"
+aa_tas_files="--experiment_files ${ua6_dir}/historicalMisc/mon/atmos/${aa_run}i1${aa_physics}/tas/latest/tas_Amon_${model}_historicalMisc_${aa_run}i1${aa_physics}_*.nc"
+rcp85_tas_files="--experiment_files ${ua6_dir}/rcp85/mon/atmos/r1i1p1/tas/latest/tas_Amon_${model}_rcp85_r1i1p1_*.nc"
 
 tas_outfile=/g/data/r87/dbi599/figures/tas-interhemispheric/tas_Amon_${model}_historical-rcp_r1i1p1_1850-2100.png
-tas_command="${python} ${vis_dir}/plot_interhemispheric_general_timeseries.py ${hist_tas_file} ${ghg_tas_file} ${aa_tas_file} ${rcp85_tas_file} air_temperature ${tas_outfile}"
+tas_command="${python} ${vis_dir}/plot_interhemispheric_general_timeseries.py air_temperature ${tas_outfile} ${hist_tas_files} ${ghg_tas_files} ${aa_tas_files} ${rcp85_tas_files}"
 echo ${tas_command}
 if [[ ${execute} == true ]] ; then
     ${tas_command}
@@ -106,13 +106,13 @@ fi
 
 # ITCZ
 
-hist_pr_file=${ua6_dir}/historical/mon/atmos/r1i1p1/pr/latest/pr_Amon_${model}_historical_r1i1p1_*.nc
-ghg_pr_file=${ua6_dir}/historicalGHG/mon/atmos/r1i1p1/pr/latest/pr_Amon_${model}_historicalGHG_r1i1p1_*.nc
-aa_pr_file=${ua6_dir}/historicalMisc/mon/atmos/${aa_run}i1${aa_physics}/pr/latest/pr_Amon_${model}_historicalMisc_${aa_run}i1${aa_physics}_*.nc
-rcp85_pr_file=${ua6_dir}/rcp85/mon/atmos/r1i1p1/pr/latest/pr_Amon_${model}_rcp85_r1i1p1_*.nc
+hist_pr_files="--experiment_files ${ua6_dir}/historical/mon/atmos/r1i1p1/pr/latest/pr_Amon_${model}_historical_r1i1p1_*.nc"
+ghg_pr_files="--experiment_files ${ua6_dir}/historicalGHG/mon/atmos/r1i1p1/pr/latest/pr_Amon_${model}_historicalGHG_r1i1p1_*.nc"
+aa_pr_files="--experiment_files ${ua6_dir}/historicalMisc/mon/atmos/${aa_run}i1${aa_physics}/pr/latest/pr_Amon_${model}_historicalMisc_${aa_run}i1${aa_physics}_*.nc"
+rcp85_pr_files="--experiment_files ${ua6_dir}/rcp85/mon/atmos/r1i1p1/pr/latest/pr_Amon_${model}_rcp85_r1i1p1_*.nc"
 
 pr_outfile=/g/data/r87/dbi599/figures/pr-interhemispheric/pr_Amon_${model}_historical-rcp_r1i1p1_1850-2100.png
-pr_command="${python} ${vis_dir}/plot_interhemispheric_general_timeseries.py ${hist_pr_file} ${ghg_pr_file} ${aa_pr_file} ${rcp85_pr_file} precipitation_flux ${pr_outfile} --nh_lat_bounds 0 20 --sh_lat_bounds -20 0"
+pr_command="${python} ${vis_dir}/plot_interhemispheric_general_timeseries.py precipitation_flux ${pr_outfile} ${hist_pr_files} ${ghg_pr_files} ${aa_pr_files} ${rcp85_pr_files} --nh_lat_bounds 0 20 --sh_lat_bounds -20 0"
 echo ${pr_command}
 if [[ ${execute} == true ]] ; then
     ${pr_command}
