@@ -116,7 +116,8 @@ def load_data(filenames, standard_name, time_constraint, metadata_dict, input_ti
 
     with iris.FUTURE.context(cell_datetime_objects=True):
         cube = iris.load(filenames, gio.check_iris_var(standard_name))
-            
+        assert cube, "files do not exist: %s" %(filenames[0])        
+    
         metadata_dict[filenames[0]] = cube[0].attributes['history']
         equalise_attributes(cube)
         iris.util.unify_time_units(cube)
