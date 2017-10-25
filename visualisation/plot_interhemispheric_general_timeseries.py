@@ -83,6 +83,7 @@ def calc_mean(infiles, variable, lat_constraint, time_constraint, area_file):
  
         equalise_attributes(cube)
         cube = cube.concatenate_cube()
+        cube = gio.check_time_units(cube)
 
         cube = timeseries.convert_to_annual(cube)
 
