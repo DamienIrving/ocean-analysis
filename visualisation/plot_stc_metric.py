@@ -12,6 +12,7 @@ import argparse
 import numpy
 import iris
 import iris.plot as iplt
+from iris.experimental.equalise_cubes import equalise_attributes
 import matplotlib.pyplot as plt
 import seaborn
 
@@ -47,7 +48,17 @@ experiment_colors = {'historical': 'orange',
 basin_index = {'pacific': 1,
                'atlantic': 0,
                'globe': 2}
- 
+
+history = []
+
+def save_history(cube, field, filename):
+    """Save the history attribute when reading the data.
+    (This is required because the history attribute differs between input files 
+      and is therefore deleted upon equilising attributes)  
+    """ 
+
+    history.append(cube.attributes['history']) 
+
 
 def plot_hemispheres(ax, nmetric, smetric, experiment, basin):
     """Plot interhemispheric comparison."""
@@ -105,9 +116,15 @@ def calc_metrics(sh_cube, nh_cube):
 def load_data(infile, basin):
     """Load, temporally aggregate and spatially slice input data"""
     
-    cube = iris.load_cube(infile, 'ocean_meridional_overturning_mass_streamfunction')
-    cube = cube[:, basin_index[basin], : ,:]
-    cube = timeseries.convert_to_annual(cube)
+    with iris.FUTURE.context(cell_datetime_objects=True):
+        cube = iris.load(infile, 'ocean_meridional_overturning_mass_streamfunction', callback=save_history)
+        equalise_attributes(cube)
+        cube = cube.concatenate_cube()
+        cube = gio.check_time_units(cube)
+
+        cube = cube[:, basin_index[basin], : ,:]
+        cube = timeseries.convert_to_annual(cube)
+
     experiment = cube.attributes['experiment_id']
     if experiment == 'historicalMisc':
         experiment = 'historicalAA'
@@ -136,9 +153,9 @@ def main(inargs):
     ax1 = fig.add_subplot(3, 1, 1)
     ax2 = fig.add_subplot(3, 1, 2)
     ax3 = fig.add_subplot(3, 1, 3)
-    for filenum, infile in enumerate(inargs.infiles):
-        spacific_cube, npacific_cube, experiment = load_data(infile, 'pacific')
-        satlantic_cube, natlantic_cube, experiment = load_data(infile, 'atlantic')
+    for infiles in inargs.experiment_files:
+        spacific_cube, npacific_cube, experiment = load_data(infiles, 'pacific')
+        satlantic_cube, natlantic_cube, experiment = load_data(infiles, 'atlantic')
  
         spacific_metric, npacific_metric = calc_metrics(spacific_cube, npacific_cube)
         satlantic_metric, natlantic_metric = calc_metrics(satlantic_cube, natlantic_cube)
@@ -152,7 +169,7 @@ def main(inargs):
 #    plt.subplots_adjust(top=0.90)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info={inargs.infiles[-1]: spacific_cube.attributes['history']})
+    gio.write_metadata(inargs.outfile, file_info={inargs.experiment_files[0][0]: history[0]})
 
 
 if __name__ == '__main__':
@@ -169,10 +186,10 @@ author:
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-               
-    parser.add_argument("infiles", type=str, nargs='*', 
-                        help="Input msftmyz files")                                                    
+                                                            
     parser.add_argument("outfile", type=str, help="Output file")  
+    parser.add_argument("--experiment_files", type=str, action='append', nargs='*', required=True, 
+                        help="Input msftmyz files for a given experiment")
 
     parser.add_argument("--hist_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
                         help="Time period [default = all]")

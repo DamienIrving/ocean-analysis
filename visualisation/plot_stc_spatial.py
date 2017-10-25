@@ -12,6 +12,7 @@ import argparse
 import numpy
 import iris
 import iris.plot as iplt
+from iris.experimental.equalise_cubes import equalise_attributes
 import matplotlib.pyplot as plt
 
 # Import my modules
@@ -39,12 +40,29 @@ basin_index = {'pacific': 1,
                'globe': 2}
     
 
-def load_data(infile, basin):
+history = []
+
+def save_history(cube, field, filename):
+    """Save the history attribute when reading the data.
+    (This is required because the history attribute differs between input files 
+      and is therefore deleted upon equilising attributes)  
+    """ 
+
+    history.append(cube.attributes['history'])
+
+
+def load_data(infiles, basin):
     """Load, temporally aggregate and spatially slice input data"""
     
-    cube = iris.load_cube(infile, 'ocean_meridional_overturning_mass_streamfunction')
-    cube = cube[:, basin_index[basin], : ,:]
-    cube = timeseries.convert_to_annual(cube)
+    with iris.FUTURE.context(cell_datetime_objects=True):
+        cube = iris.load(infiles, 'ocean_meridional_overturning_mass_streamfunction', callback=save_history)
+        equalise_attributes(cube)
+        cube = cube.concatenate_cube()
+        cube = gio.check_time_units(cube)
+
+        cube = cube[:, basin_index[basin], : ,:]
+        cube = timeseries.convert_to_annual(cube)
+
     experiment = cube.attributes['experiment_id']
     
     depth_constraint = iris.Constraint(depth=lambda cell: cell <= 250)
@@ -89,7 +107,7 @@ def main(inargs):
     ax_dict['pacific'] = fig.add_subplot(1, 3, 2)
     ax_dict['globe'] = fig.add_subplot(1, 3, 3)
     for basin in ['atlantic', 'pacific', 'globe']:
-        cube, experiment = load_data(inargs.infile, basin)
+        cube, experiment = load_data(inargs.infiles, basin)
         plot_data(ax_dict[basin], cube, basin)
 
     title = 'Meridional Overturning Mass Streamfunction, Annual Climatology, %s (%s)'  %(cube.attributes['model_id'], experiment)
@@ -97,7 +115,7 @@ def main(inargs):
 #    plt.subplots_adjust(top=0.90)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info={inargs.infile: cube.attributes['history']})
+    gio.write_metadata(inargs.outfile, file_info={inargs.infiles[0]: history[0]})
 
 
 if __name__ == '__main__':
@@ -115,7 +133,7 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
                
-    parser.add_argument("infile", type=str, help="Input msftmyz file")                                                    
+    parser.add_argument("infiles", type=str, nargs='*', help="Input msftmyz files (for a single model/run/experiment)")                                                    
     parser.add_argument("outfile", type=str, help="Output file")  
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
