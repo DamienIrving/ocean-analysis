@@ -116,26 +116,29 @@ def calc_metrics(sh_cube, nh_cube):
 def load_data(infile, basin):
     """Load, temporally aggregate and spatially slice input data"""
     
-    with iris.FUTURE.context(cell_datetime_objects=True):
-        cube = iris.load(infile, 'ocean_meridional_overturning_mass_streamfunction', callback=save_history)
-        equalise_attributes(cube)
-        cube = cube.concatenate_cube()
-        cube = gio.check_time_units(cube)
+    try:
+        with iris.FUTURE.context(cell_datetime_objects=True):
+            cube = iris.load(infile, 'ocean_meridional_overturning_mass_streamfunction', callback=save_history)
+            equalise_attributes(cube)
+            cube = cube.concatenate_cube()
+            cube = gio.check_time_units(cube)
 
-        cube = cube[:, basin_index[basin], : ,:]
-        cube = timeseries.convert_to_annual(cube)
+            cube = cube[:, basin_index[basin], : ,:]
+            cube = timeseries.convert_to_annual(cube)
 
-    experiment = cube.attributes['experiment_id']
-    if experiment == 'historicalMisc':
-        experiment = 'historicalAA'
+        experiment = cube.attributes['experiment_id']
+        if experiment == 'historicalMisc':
+            experiment = 'historicalAA'
     
-    depth_constraint = iris.Constraint(depth=lambda cell: cell <= 250)
-    sh_constraint = iris.Constraint(latitude=lambda cell: -30.0 <= cell < 0.0)
-    nh_constraint = iris.Constraint(latitude=lambda cell: 0.0 < cell <= 30.0)
+        depth_constraint = iris.Constraint(depth=lambda cell: cell <= 250)
+        sh_constraint = iris.Constraint(latitude=lambda cell: -30.0 <= cell < 0.0)
+        nh_constraint = iris.Constraint(latitude=lambda cell: 0.0 < cell <= 30.0)
 
-    sh_cube = cube.extract(depth_constraint & sh_constraint)
-    nh_cube = cube.extract(depth_constraint & nh_constraint)
-    
+        sh_cube = cube.extract(depth_constraint & sh_constraint)
+        nh_cube = cube.extract(depth_constraint & nh_constraint)
+    except OSError:
+        sh_cube = nh_cube = experiment = None
+
     return sh_cube, nh_cube, experiment
 
     
@@ -153,23 +156,25 @@ def main(inargs):
     ax1 = fig.add_subplot(3, 1, 1)
     ax2 = fig.add_subplot(3, 1, 2)
     ax3 = fig.add_subplot(3, 1, 3)
+    valid_files = []
     for infiles in inargs.experiment_files:
         spacific_cube, npacific_cube, experiment = load_data(infiles, 'pacific')
         satlantic_cube, natlantic_cube, experiment = load_data(infiles, 'atlantic')
- 
-        spacific_metric, npacific_metric = calc_metrics(spacific_cube, npacific_cube)
-        satlantic_metric, natlantic_metric = calc_metrics(satlantic_cube, natlantic_cube)
+        if experiment:
+            spacific_metric, npacific_metric = calc_metrics(spacific_cube, npacific_cube)
+            satlantic_metric, natlantic_metric = calc_metrics(satlantic_cube, natlantic_cube)
+            plot_hemispheres(ax1, npacific_metric, spacific_metric, experiment, 'pacific')
+            plot_comparison(ax2, npacific_metric, spacific_metric, experiment, 'pacific')
+            plot_hemispheres(ax3, natlantic_metric, satlantic_metric, experiment, 'atlantic')
+            model = spacific_cube.attributes['model_id']
+            valid_files.append(infiles)
 
-        plot_hemispheres(ax1, npacific_metric, spacific_metric, experiment, 'pacific')
-        plot_comparison(ax2, npacific_metric, spacific_metric, experiment, 'pacific')
-        plot_hemispheres(ax3, natlantic_metric, satlantic_metric, experiment, 'atlantic')
-
-    title = 'Annual Mean Meridional Overturning Mass Streamfunction, %s'  %(spacific_cube.attributes['model_id'])
+    title = 'Annual Mean Meridional Overturning Mass Streamfunction, %s'  %(model)
     plt.suptitle(title, size='large')
 #    plt.subplots_adjust(top=0.90)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info={inargs.experiment_files[0][0]: history[0]})
+    gio.write_metadata(inargs.outfile, file_info={valid_files[0][0]: history[0]})
 
 
 if __name__ == '__main__':
