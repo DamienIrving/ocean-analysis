@@ -29,6 +29,7 @@ try:
     import general_io as gio
     import convenient_universal as uconv
     import spatial_weights
+    import timeseries
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -55,6 +56,7 @@ def calc_mean(infiles, variable, lat_constraint):
         equalise_attributes(cube)
         cube = cube.concatenate_cube()
         cube = gio.check_time_units(cube)
+        cube = timeseries.convert_to_annual(cube) 
 
     area_weights = spatial_weights.area_array(cube)
     mean = cube.collapsed(['longitude', 'latitude'], iris.analysis.MEAN, weights=area_weights)
