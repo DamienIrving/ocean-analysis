@@ -54,6 +54,7 @@ def calc_mean(infiles, variable, lat_constraint):
         cube = iris.load(infiles, variable & lat_constraint, callback=save_history)
 
         equalise_attributes(cube)
+        iris.util.unify_time_units(cube)
         cube = cube.concatenate_cube()
         cube = gio.check_time_units(cube)
         cube = timeseries.convert_to_annual(cube) 
