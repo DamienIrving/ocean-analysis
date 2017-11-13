@@ -32,6 +32,8 @@ for run in "${runs[@]}"; do
         agg=mean
         outname=`echo ${data_file} | rev | cut -d / -f 1 | rev | sed s/tas_/tas-global-mean_/`
         outname=`echo ${outname} | sed s/mon/yr/g`
+        outname=`echo ${outname} | rev | cut -d _ -f 2- | rev`
+        outname=${outname}_all.nc
         out_file=${outdir}/${outname}
         command="${python} /home/599/dbi599/ocean-analysis/data_processing/calc_global_metric.py ${data_file} ${standard_name} ${agg} ${out_file} --smoothing annual"
         echo ${command}
@@ -40,6 +42,8 @@ for run in "${runs[@]}"; do
     elif [[ "${metric}" == "tas-ita" ]] ; then
         outname=`echo ${data_file} | rev | cut -d / -f 1 | rev | sed s/tas_/tas-ita_/`
         outname=`echo ${outname} | sed s/mon/yr/g`
+        outname=`echo ${outname} | rev | cut -d _ -f 2- | rev`
+        outname=${outname}_all.nc
         out_file=${outdir}/${outname}
         command="${python} /home/599/dbi599/ocean-analysis/data_processing/calc_interhemispheric_metric.py ${data_file} ${standard_name} ${out_file}"
         echo ${command}
