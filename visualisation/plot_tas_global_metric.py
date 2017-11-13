@@ -52,7 +52,13 @@ def get_file_info(infile):
         experiment = 'historicalAA'
     assert experiment in ['historical', 'historicalGHG', 'historicalAA']
 
-    return experiment, model
+    if metric == 'tas-ita':
+        metric_name = 'interhemispheric surface temperature asymmetry'
+    elif metric == 'tas-global-mean':
+        metric_name = 'global mean surface temperature'
+
+    return experiment, model, metric_name
+
 
 def sort_list(old_list):
     """Sort a list alphabetically"""
@@ -95,7 +101,7 @@ def main(inargs):
     models = []
     for infile in inargs.infiles:
         cube = iris.load_cube(infile)
-        experiment, model = get_file_info(infile)
+        experiment, model, metric_name = get_file_info(infile)
         trend_dict[(model, experiment)] = timeseries.calc_trend(cube, per_yr=True)
         models.append(model)
         
@@ -113,7 +119,7 @@ def main(inargs):
     rects4 = ax.bar(ind + 3 * width, hist_data, width, color='green')
 
     ax.set_ylabel('$K yr^{-1}$')
-    ax.set_title('Trend in global mean surface temperature, 1850-2005')
+    ax.set_title('Trend in %s, 1850-2005' %(metric_name))
     ax.set_xticks(ind + 1.5 * width)
     ax.set_xticklabels(models)
     ax.legend((rects1[0], rects2[0], rects3[0], rects4[0]), ('historicalGHG', 'historicalAA', 'GHG + AA', 'historical'), loc=1)
@@ -140,6 +146,6 @@ note:
 
     parser.add_argument("infiles", type=str, nargs='*', help="Input file names")
     parser.add_argument("outfile", type=str, help="Output file name")
-    
+
     args = parser.parse_args()            
     main(args)
