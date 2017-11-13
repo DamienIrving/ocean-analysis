@@ -97,12 +97,15 @@ def order_data(trend_dict, models):
 def main(inargs):
     """Run the program."""
 
+    time_constraint = gio.get_time_constraint(inargs.time)
+
     trend_dict = {}
     models = []
     for infile in inargs.infiles:
-        cube = iris.load_cube(infile)
-        experiment, model, metric_name = get_file_info(infile)
-        trend_dict[(model, experiment)] = timeseries.calc_trend(cube, per_yr=True)
+        with iris.FUTURE.context(cell_datetime_objects=True):
+            cube = iris.load_cube(infile, 'air_temperature' & time_constraint)
+            experiment, model, metric_name = get_file_info(infile)
+            trend_dict[(model, experiment)] = timeseries.calc_trend(cube, per_yr=True)
         models.append(model)
         
     models = sort_list(models)    
@@ -119,7 +122,11 @@ def main(inargs):
     rects4 = ax.bar(ind + 3 * width, hist_data, width, color='green')
 
     ax.set_ylabel('$K yr^{-1}$')
-    ax.set_title('Trend in %s, 1850-2005' %(metric_name))
+    
+    start_year = inargs.time[0].split('-')[0]
+    end_year = inargs.time[1].split('-')[0]
+    ax.set_title('Trend in %s, %s-%s' %(metric_name, start_year, end_year))
+
     ax.set_xticks(ind + 1.5 * width)
     ax.set_xticklabels(models)
     ax.legend((rects1[0], rects2[0], rects3[0], rects4[0]), ('historicalGHG', 'historicalAA', 'GHG + AA', 'historical'), loc=1)
@@ -146,6 +153,10 @@ note:
 
     parser.add_argument("infiles", type=str, nargs='*', help="Input file names")
     parser.add_argument("outfile", type=str, help="Output file name")
+
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), 
+                        default=('1861-01-01', '2005-12-31'),
+                        help="Time period [default = entire]")
 
     args = parser.parse_args()            
     main(args)
