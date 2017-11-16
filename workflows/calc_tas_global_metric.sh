@@ -4,7 +4,7 @@
 
 function usage {
     echo "USAGE: bash $0 model metric datadir experiment runs"
-    echo "   e.g. bash $0 CSIRO-Mk3-6-0 tas-global-mean historical r1i1p1 r1i1p2 r1i1p3"
+    echo "   e.g. bash $0 CSIRO-Mk3-6-0 tas-global-mean ua6 historical r1i1p1 r1i1p2 r1i1p3"
     echo "   metric choices: tas-global-mean  tas-ita "
     exit 1
 }
