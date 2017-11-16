@@ -90,7 +90,7 @@ def wind_stress_metrics(xdata, ydata, hemisphere, direction):
     return location, magnitude
 
 
-def create_outcubes(metric_dict, atts, units, time_coord):
+def create_outcubes(metric_dict, atts, units_dict, time_coord):
     """Create an iris cube for each metric."""
    
     cube_list = []
@@ -99,12 +99,12 @@ def create_outcubes(metric_dict, atts, units, time_coord):
         standard_name = '%s_%s_%s' %(hemisphere, direction, metric)
         long_name = '%s %s %s' %(hemisphere, direction, metric)
         var_name = '%s_%s_%s' %(hemisphere, direction, metric[0:3])
-        iris.std_names.STD_NAMES[standard_name] = {'canonical_units': units}
+        iris.std_names.STD_NAMES[standard_name] = {'canonical_units': units_dict[metric]}
         metric_cube = iris.cube.Cube(data,
                                      standard_name=standard_name,
                                      long_name=long_name,
                                      var_name=var_name,
-                                     units=units,
+                                     units=units_dict[metric],
                                      attributes=atts,
                                      dim_coords_and_dims=[(time_coord, 0)],
                                      )
@@ -139,7 +139,7 @@ def main(inargs):
     # Calculate metrics
     xdata = cube.coord('latitude').points
     xnew = numpy.linspace(xdata[0], xdata[-1], num=1000, endpoint=True)
-    
+
     hemispheres = ['sh', 'nh']
     directions = ['easterly', 'westerly']
     
@@ -160,7 +160,8 @@ def main(inargs):
     atts = cube.attributes
     infile_history = {inargs.infiles[0]: history[0]}
     atts['history'] = gio.write_metadata(file_info=infile_history)
-    cube_list = create_outcubes(metric_dict, cube.attributes, cube.units, cube.coord('time'))
+    units_dict = {'magnitude': cube.units, 'location': cube.coord('latitude').units}
+    cube_list = create_outcubes(metric_dict, cube.attributes, units_dict, cube.coord('time'))
 
     iris.save(cube_list, inargs.outfile)
 
