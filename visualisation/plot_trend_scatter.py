@@ -44,6 +44,9 @@ def get_run_details(cube):
     """Get the model, experiment and mip details for a given cube."""
 
     model = cube.attributes['model_id']
+    if model == 'FGOALS_g2':
+        model = 'FGOALS-g2'
+
     experiment = cube.attributes['experiment_id']
     
     realization = cube.attributes['realization']
@@ -52,7 +55,7 @@ def get_run_details(cube):
     
     rip = 'r%si%sp%s' %(realization, initialization, physics)
 
-    return model, experiment, rip
+    return model, experiment, rip, int(physics)
 
 
 def set_axis_labels(inargs, xunits, yunits):
@@ -74,34 +77,66 @@ def set_axis_labels(inargs, xunits, yunits):
     return xlabel, ylabel
 
 
+def get_colors(infiles):
+    """Define a color for each model"""
+
+    combos = []
+    for infile in infiles:
+        filename = infile.split('/')[-1]
+        model = filename.split('_')[2]
+        rip = filename.split('_')[4]
+        assert rip[0] == 'r'
+        physics = int(rip.split('p')[-1])
+
+        combos.append((model, physics)) 
+    
+    ncombos = len(set(combos))
+    cm = plt.get_cmap('nipy_spectral')
+    colors = [cm(1. * i / ncombos) for i in range(ncombos)]
+    color_dict = {}
+    count = 0
+    for combo in combos:
+        if not combo in color_dict.keys():
+            color_dict[combo] = colors[count]
+            count = count + 1
+
+    return color_dict
+
+
 def main(inargs):
     """Run the program."""
 
     assert len(inargs.xfiles) == len(inargs.yfiles)
 
     time_constraint = gio.get_time_constraint(inargs.time)
-    fig = plt.figure()
+    fig, ax = plt.subplots()
+    color_dict = get_colors(inargs.xfiles)
     for xfile, yfile in zip(inargs.xfiles, inargs.yfiles):
         with iris.FUTURE.context(cell_datetime_objects=True):
             xcube = iris.load_cube(xfile, gio.check_iris_var(inargs.xvar) & time_constraint)
             ycube = iris.load_cube(yfile, gio.check_iris_var(inargs.yvar) & time_constraint)
 
         assert get_run_details(xcube) == get_run_details(ycube)
-        model, experiment, rip = get_run_details(xcube)
+        model, experiment, rip, physics = get_run_details(xcube)
 
         xtrend = timeseries.calc_trend(xcube, per_yr=True)
         ytrend = timeseries.calc_trend(ycube, per_yr=True) 
 
         label = '%s, %s' %(model, rip)
-        plt.plot(xtrend, ytrend, 'o', label=label)
+        plt.plot(xtrend, ytrend, 'o', label=label, color=color_dict[(model, physics)])
 
     title = '%s trend, %s-%s' %(experiment, inargs.time[0][0:4], inargs.time[1][0:4])
     plt.title(title)
     xlabel, ylabel = set_axis_labels(inargs, xcube.units, ycube.units)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.legend()
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
     plt.savefig(inargs.outfile, bbox_inches='tight')
+
 
 if __name__ == '__main__':
 
