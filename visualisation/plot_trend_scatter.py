@@ -137,6 +137,10 @@ def main(inargs):
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
 
+    metadata_dict = {xfile: xcube.attributes['history'],
+                     yfile: ycube.attributes['history']}
+    gio.write_metadata(inargs.outfile, file_info=metadata_dict)
+
 
 if __name__ == '__main__':
 
