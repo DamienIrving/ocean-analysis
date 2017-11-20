@@ -112,7 +112,6 @@ def main(inargs):
     fig, ax = plt.subplots()
     color_dict = get_colors(inargs.xfiles)
     
-    primary_experiment = None
     legend_models = []
     for xfile, yfile in zip(inargs.xfiles, inargs.yfiles):
         with iris.FUTURE.context(cell_datetime_objects=True):
@@ -122,13 +121,10 @@ def main(inargs):
         assert get_run_details(xcube) == get_run_details(ycube)
         model, experiment, rip, physics = get_run_details(xcube)
 
-        if not primary_experiment:
-            primary_experiment = experiment
-
         xtrend = timeseries.calc_trend(xcube, per_yr=True)
         ytrend = timeseries.calc_trend(ycube, per_yr=True) 
 
-        if (experiment == primary_experiment) and (model not in legend_models):
+        if model not in legend_models:
             label = model
             legend_models.append(model)
         else:
