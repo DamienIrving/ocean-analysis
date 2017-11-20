@@ -40,6 +40,9 @@ except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
 
+markers = {'historicalGHG': 'o', 'historicalMisc': 's'}
+
+
 def get_run_details(cube):
     """Get the model, experiment and mip details for a given cube."""
 
@@ -80,24 +83,21 @@ def set_axis_labels(inargs, xunits, yunits):
 def get_colors(infiles):
     """Define a color for each model"""
 
-    combos = []
+    models = []
     for infile in infiles:
         filename = infile.split('/')[-1]
         model = filename.split('_')[2]
-        rip = filename.split('_')[4]
-        assert rip[0] == 'r'
-        physics = int(rip.split('p')[-1])
 
-        combos.append((model, physics)) 
+        models.append(model) 
     
-    ncombos = len(set(combos))
+    nmodels = len(set(models))
     cm = plt.get_cmap('nipy_spectral')
-    colors = [cm(1. * i / ncombos) for i in range(ncombos)]
+    colors = [cm(1. * i / nmodels) for i in range(nmodels)]
     color_dict = {}
     count = 0
-    for combo in combos:
-        if not combo in color_dict.keys():
-            color_dict[combo] = colors[count]
+    for model in models:
+        if not model in color_dict.keys():
+            color_dict[model] = colors[count]
             count = count + 1
 
     return color_dict
@@ -111,6 +111,8 @@ def main(inargs):
     time_constraint = gio.get_time_constraint(inargs.time)
     fig, ax = plt.subplots()
     color_dict = get_colors(inargs.xfiles)
+    
+    primary_experiment = None
     for xfile, yfile in zip(inargs.xfiles, inargs.yfiles):
         with iris.FUTURE.context(cell_datetime_objects=True):
             xcube = iris.load_cube(xfile, gio.check_iris_var(inargs.xvar) & time_constraint)
@@ -119,17 +121,25 @@ def main(inargs):
         assert get_run_details(xcube) == get_run_details(ycube)
         model, experiment, rip, physics = get_run_details(xcube)
 
+        if not primary_experiment:
+            primary_experiment = experiment
+
         xtrend = timeseries.calc_trend(xcube, per_yr=True)
         ytrend = timeseries.calc_trend(ycube, per_yr=True) 
 
-        label = '%s, %s' %(model, rip)
-        plt.plot(xtrend, ytrend, 'o', label=label, color=color_dict[(model, physics)])
+        if experiment == primary_experiment:
+            label = '%s, %s' %(model, rip)
+        else:
+            label = None
+        plt.plot(xtrend, ytrend, markers[experiment], label=label, color=color_dict[model])
 
-    title = '%s trend, %s-%s' %(experiment, inargs.time[0][0:4], inargs.time[1][0:4])
+    title = 'linear trend, %s-%s' %(inargs.time[0][0:4], inargs.time[1][0:4])
     plt.title(title)
     xlabel, ylabel = set_axis_labels(inargs, xcube.units, ycube.units)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+    plt.axhline(y=0, color='0.5', linestyle='--')
+    plt.axvline(x=0, color='0.5', linestyle='--')
 
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
