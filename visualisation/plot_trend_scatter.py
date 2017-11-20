@@ -113,6 +113,7 @@ def main(inargs):
     color_dict = get_colors(inargs.xfiles)
     
     primary_experiment = None
+    legend_models = []
     for xfile, yfile in zip(inargs.xfiles, inargs.yfiles):
         with iris.FUTURE.context(cell_datetime_objects=True):
             xcube = iris.load_cube(xfile, gio.check_iris_var(inargs.xvar) & time_constraint)
@@ -127,8 +128,9 @@ def main(inargs):
         xtrend = timeseries.calc_trend(xcube, per_yr=True)
         ytrend = timeseries.calc_trend(ycube, per_yr=True) 
 
-        if experiment == primary_experiment:
-            label = '%s, %s' %(model, rip)
+        if (experiment == primary_experiment) and (model not in legend_models):
+            label = model
+            legend_models.append(model)
         else:
             label = None
         plt.plot(xtrend, ytrend, markers[experiment], label=label, color=color_dict[model])
