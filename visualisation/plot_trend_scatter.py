@@ -103,6 +103,15 @@ def get_colors(infiles):
     return color_dict
 
 
+def check_sign(trend_data, var):
+    """Check the sign of the trend"""
+
+    if 'easterly_magnitude' in var:
+        trend_data = trend_data * -1
+
+    return trend_data
+    
+
 def main(inargs):
     """Run the program."""
 
@@ -123,6 +132,9 @@ def main(inargs):
 
         xtrend = timeseries.calc_trend(xcube, per_yr=True)
         ytrend = timeseries.calc_trend(ycube, per_yr=True) 
+
+        xtrend = check_sign(xtrend, inargs.xvar)
+        ytrend = check_sign(ytrend, inargs.yvar)
 
         if model not in legend_models:
             label = model
