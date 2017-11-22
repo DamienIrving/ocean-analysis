@@ -112,6 +112,18 @@ def check_sign(trend_data, var):
     return trend_data
     
 
+def plot_line_of_best_fit(xcoords, ycoords):
+    """Plot a line of best fit"""
+
+    xcoords = numpy.array(xcoords)
+    ycoords = numpy.array(ycoords)
+
+    p = numpy.polyfit(xcoords, ycoords, 1)
+
+    xpoints = numpy.linspace(xcoords.min(), xcoords.max(), 100)
+    plt.plot(xpoints, p[0]*xpoints+p[1], '0.5', linewidth=0.3)
+
+
 def main(inargs):
     """Run the program."""
 
@@ -119,9 +131,13 @@ def main(inargs):
 
     time_constraint = gio.get_time_constraint(inargs.time)
     fig, ax = plt.subplots()
+    plt.axhline(y=0, color='0.5', linestyle='--')
+    plt.axvline(x=0, color='0.5', linestyle='--')
     color_dict = get_colors(inargs.xfiles)
     
     legend_models = []
+    xtrends = {'historicalGHG': [], 'historicalMisc': []}
+    ytrends = {'historicalGHG': [], 'historicalMisc': []}
     for xfile, yfile in zip(inargs.xfiles, inargs.yfiles):
         with iris.FUTURE.context(cell_datetime_objects=True):
             xcube = iris.load_cube(xfile, gio.check_iris_var(inargs.xvar) & time_constraint)
@@ -142,14 +158,19 @@ def main(inargs):
         else:
             label = None
         plt.plot(xtrend, ytrend, markers[experiment], label=label, color=color_dict[model])
+        xtrends[experiment].append(xtrend)
+        ytrends[experiment].append(ytrend)
 
+    if inargs.trend_line:
+        for experiment in ['historicalGHG', 'historicalMisc']:
+            if xtrends[experiment]:
+                plot_line_of_best_fit(xtrends[experiment], ytrends[experiment])
+        
     title = 'linear trend, %s-%s' %(inargs.time[0][0:4], inargs.time[1][0:4])
     plt.title(title)
     xlabel, ylabel = set_axis_labels(inargs, xcube.units, ycube.units)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.axhline(y=0, color='0.5', linestyle='--')
-    plt.axvline(x=0, color='0.5', linestyle='--')
 
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
@@ -192,6 +213,9 @@ author:
                         help="Override the default x axis label")
     parser.add_argument("--ylabel", type=str, default=None,
                         help="Override the default y axis label")
+
+    parser.add_argument("--trend_line", action="store_true", default=False,
+                        help="Switch for a linear line of best fit [default: False]")
 
     args = parser.parse_args()            
 
