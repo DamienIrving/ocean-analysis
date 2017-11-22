@@ -161,7 +161,7 @@ def main(inargs):
         xtrends[experiment].append(xtrend)
         ytrends[experiment].append(ytrend)
 
-    if inargs.trend_line:
+    if inargs.best_fit:
         for experiment in ['historicalGHG', 'historicalMisc']:
             if xtrends[experiment]:
                 plot_line_of_best_fit(xtrends[experiment], ytrends[experiment])
@@ -214,7 +214,7 @@ author:
     parser.add_argument("--ylabel", type=str, default=None,
                         help="Override the default y axis label")
 
-    parser.add_argument("--trend_line", action="store_true", default=False,
+    parser.add_argument("--best_fit", action="store_true", default=False,
                         help="Switch for a linear line of best fit [default: False]")
 
     args = parser.parse_args()            
