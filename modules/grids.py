@@ -99,7 +99,7 @@ def get_grid_res(horiz_shape):
     return new_res
 
 
-def curvilinear_to_rectilinear(cube):
+def curvilinear_to_rectilinear(cube, target_grid_cube=None):
     """Regrid curvilinear data to a rectilinear grid if necessary."""
 
     coord_names = [coord.name() for coord in cube.dim_coords]
@@ -112,12 +112,11 @@ def curvilinear_to_rectilinear(cube):
 
     if aux_coord_names == ['latitude', 'longitude']:
 
-        grid_res = get_grid_res(cube.coord('latitude').shape)
-
-        # Create target grid
-        lats = numpy.arange(-90, 90.01, grid_res)
-        lons = numpy.arange(0, 360, grid_res)
-        target_grid_cube = _make_grid(lats, lons)
+        if not target_grid_cube:
+            grid_res = get_grid_res(cube.coord('latitude').shape)
+            lats = numpy.arange(-90, 90.01, grid_res)
+            lons = numpy.arange(0, 360, grid_res)
+            target_grid_cube = _make_grid(lats, lons)
 
         # Interate over slices (experimental regridder only works on 2D slices)
         cube, coord_names = _check_coord_names(cube, coord_names)

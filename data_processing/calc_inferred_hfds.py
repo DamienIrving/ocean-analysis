@@ -52,27 +52,31 @@ def add_metadata(hfds_cube, hfss_atts, inargs):
     return hfds_cube
 
 
-def get_data(filename, var):
+def get_data(filename, var, target_grid=None):
     """Read data.
     
     Positive is defined as down.
     
     """
     
-    with iris.FUTURE.context(cell_datetime_objects=True):
-        cube = iris.load_cube(filename, gio.check_iris_var(var))
-        cube = gio.check_time_units(cube)
-        cube = iris.util.squeeze(cube)
+    if filename:
+        with iris.FUTURE.context(cell_datetime_objects=True):
+            cube = iris.load_cube(filename, gio.check_iris_var(var))
+            cube = gio.check_time_units(cube)
+            cube = iris.util.squeeze(cube)
 
-        cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
+            if target_grid:
+                cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube, target_grid_cube=target_grid)
 
-        coord_names = [coord.name() for coord in cube.dim_coords]
-        if 'depth' in coord_names:
-            depth_constraint = iris.Constraint(depth=0)
-            cube = cube.extract(depth_constraint)
+            coord_names = [coord.name() for coord in cube.dim_coords]
+            if 'depth' in coord_names:
+                depth_constraint = iris.Constraint(depth=0)
+                cube = cube.extract(depth_constraint)
 
-        if 'up' in cube.standard_name:
-            cube.data = cube.data * -1
+            if 'up' in cube.standard_name:
+                cube.data = cube.data * -1
+    else:
+        cube = None
 
     return cube
 
@@ -96,23 +100,22 @@ def derived_radiation_fluxes(cube_dict, inargs):
     return cube_dict
 
 
-def infer_hfds(cube_dict, sftlf_cube, inargs):
+def infer_hfds(cube_dict, sftlf_cube, target_grid, inargs):
     """Infer the downward heat flux into ocean."""
     
-    hfls_data = grids.regrid_1D(cube_dict['hfls'], cube_dict['rns'], 'latitude', clear_units=False)
-    hfss_data = grids.regrid_1D(cube_dict['hfss'], cube_dict['rns'], 'latitude', clear_units=False)
-    data_list = [hfls_data, hfss_data, cube_dict['rns']]
+    data_list = [cube_dict['hfls'], cube_dict['hfss'], cube_dict['rns']]
     if inargs.hfsithermds_files:
-         hfsithermds_data = grids.regrid_1D(cube_dict['hfsithermds'], cube_dict['rns'], 'latitude', clear_units=False)
-         data_list.append(hfsithermds_data)
+         hfsithermds_cube = cube_dict['hfsithermds'].regrid(target_grid, iris.analysis.Linear())
+         data_list.append(hfsithermds_cube)
     else:
-         hfsithermds_data = 0.0
+         hfsithermds_cube = 0.0
 
     iris.util.unify_time_units(data_list)
 
-    cube_dict['hfds-inferred'] = cube_dict['rns'] + hfls_data + hfss_data + hfsithermds_data
+    cube_dict['hfds-inferred'] = cube_dict['rns'] + cube_dict['hfls'] + cube_dict['hfss'] + hfsithermds_cube
     cube_dict['hfds-inferred'] = uconv.apply_land_ocean_mask(cube_dict['hfds-inferred'], sftlf_cube, 'ocean')
-            
+    cube_dict['hfds-inferred'] = add_metadata(cube_dict['hfds-inferred'], cube_dict['hfss'].attributes, inargs)    
+        
     return cube_dict
 
 
@@ -135,8 +138,8 @@ def get_outfile_name(rsds_file):
     rsds_components = rsds_file.split('/')
 
     rsds_filename = rsds_components[-1]  
-    rsds_file_components.pop(-1)
-    rsds_dir = "/".join(rsds_file_components)
+    rsds_components.pop(-1)
+    rsds_dir = "/".join(rsds_components)
 
     hfds_filename = rsds_filename.replace('rsds', 'hfds-inferred')
     hfds_filename = hfds_filename.replace('Amon', 'Omon')
@@ -168,11 +171,14 @@ def main(inargs):
  
         cube_dict['hfss'] = get_data(inargs.hfss_files, 'surface_upward_sensible_heat_flux')
         cube_dict['hfls'] = get_data(inargs.hfls_files, 'surface_upward_latent_heat_flux')
-        cube_dict['hfsithermds'] = get_data(inargs.hfsithermds_files, 'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics')                           
-        cube_dict = infer_hfds(cube_dict, sftlf_cube, inargs)
 
-        hfds_file = get_outfile_name(inargs.rsds_files[fnum])
-        pdb.set_trace()    
+        rsds_slice = next(cube_dict['rsds'].slices(['latitude', 'longitude']))
+        cube_dict['hfsithermds'] = get_data(inargs.hfsithermds_files,
+                                            'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
+                                            target_grid=rsds_slice)                          
+        cube_dict = infer_hfds(cube_dict, sftlf_cube, rsds_slice, inargs)
+
+        hfds_file = get_outfile_name(inargs.rsds_files[fnum])  
         iris.save(cube_dict['hfds-inferred'], hfds_file)
 
 
