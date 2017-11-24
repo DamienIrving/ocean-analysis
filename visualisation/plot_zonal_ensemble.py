@@ -85,6 +85,17 @@ def get_ylabel(cube, inargs):
     return ylabel
 
 
+def get_line_width(realization, model):
+    """Get the line width"""
+
+    if model == 'FGOALS-g2':
+        lw = 2.0
+    else:
+        lw = 2.0 if realization == 1 else 0.5
+
+    return lw
+
+
 def main(inargs):
     """Run the program."""
     
@@ -117,7 +128,7 @@ def main(inargs):
             label = None
 
         realization = cube.attributes['realization']
-        lw = 2.0 if realization == 1 else 0.5
+        lw = get_line_width(realization, model)
         iplt.plot(agg_cube, label=label, color=color_dict[model], linewidth=lw)
 
     title = '%s, %s-%s' %(plot_name, inargs.time[0][0:4], inargs.time[1][0:4])
