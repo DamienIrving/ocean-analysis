@@ -11,6 +11,7 @@ import sys, os, pdb
 import argparse
 import numpy
 import iris
+from iris.experimental.equalise_cubes import equalise_attributes
 
 # Import my modules
 
@@ -167,15 +168,18 @@ def main(inargs):
         cube_dict['rsus'] = get_data(inargs.rsus_files[fnum], 'surface_upwelling_shortwave_flux_in_air')
         cube_dict['rlds'] = get_data(inargs.rlds_files[fnum], 'surface_downwelling_longwave_flux_in_air')
         cube_dict['rlus'] = get_data(inargs.rlus_files[fnum], 'surface_upwelling_longwave_flux_in_air')
-        cube_dict = derived_radiation_fluxes(cube_dict, inargs)
  
-        cube_dict['hfss'] = get_data(inargs.hfss_files, 'surface_upward_sensible_heat_flux')
-        cube_dict['hfls'] = get_data(inargs.hfls_files, 'surface_upward_latent_heat_flux')
+        cube_dict['hfss'] = get_data(inargs.hfss_files[fnum], 'surface_upward_sensible_heat_flux')
+        cube_dict['hfls'] = get_data(inargs.hfls_files[fnum], 'surface_upward_latent_heat_flux')
 
         rsds_slice = next(cube_dict['rsds'].slices(['latitude', 'longitude']))
-        cube_dict['hfsithermds'] = get_data(inargs.hfsithermds_files,
-                                            'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
-                                            target_grid=rsds_slice)                          
+        if inargs.hfsithermds_files:
+            cube_dict['hfsithermds'] = get_data(inargs.hfsithermds_files[fnum],
+                                                'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
+                                                target_grid=rsds_slice)                          
+        
+        #equalise_attributes(cube_dict.values())
+        cube_dict = derived_radiation_fluxes(cube_dict, inargs)  
         cube_dict = infer_hfds(cube_dict, sftlf_cube, rsds_slice, inargs)
 
         hfds_file = get_outfile_name(inargs.rsds_files[fnum])  
