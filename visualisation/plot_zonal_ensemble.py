@@ -116,7 +116,9 @@ def main(inargs):
         else:
             label = None
 
-        iplt.plot(agg_cube, label=label, color=color_dict[model])
+        realization = cube.attributes['realization']
+        lw = 2.0 if realization == 1 else 0.5
+        iplt.plot(agg_cube, label=label, color=color_dict[model], linewidth=lw)
 
     title = '%s, %s-%s' %(plot_name, inargs.time[0][0:4], inargs.time[1][0:4])
     plt.title(title)
