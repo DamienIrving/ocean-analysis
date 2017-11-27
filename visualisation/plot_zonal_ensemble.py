@@ -9,6 +9,7 @@ Description:  Plot zonal mean for an ensemble of models
 
 import sys, os, pdb
 import argparse
+from itertools import groupby
 import numpy
 import iris
 import iris.plot as iplt
@@ -91,33 +92,22 @@ def get_line_width(realization, model):
     if model == 'FGOALS-g2':
         lw = 2.0
     else:
-        lw = 2.0 if realization == 1 else 0.5
+        lw = 2.0 if realization == 'r1' else 0.5
 
     return lw
 
 
-def plot_individual():
-    """ """
+def plot_individual(data_dict, color_dict):
+    """Plot the individual model data"""
 
-    if model not in legend_models:
-        label = model
-            legend_models.append(model)
+    for key, cube in data_dict.items():
+        model, physics, realization = key
+        if (realization == 'r1') or (model == 'FGOALS-g2'):
+            label = model + ', ' + physics
         else:
             label = None
-
         lw = get_line_width(realization, model)
-        iplt.plot(agg_cube, label=label, color=color_dict[model], linewidth=lw)
-
-    title = '%s, %s-%s' %(plot_name, inargs.time[0][0:4], inargs.time[1][0:4])
-    plt.title(title)
-    plt.xlim(-90, 90)
-    ylabel = get_ylabel(cube, inargs)
-    plt.ylabel(ylabel)
-    plt.xlabel('latitude')
-
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        iplt.plot(cube, label=label, color=color_dict[model], linewidth=lw)
 
 
 def group_runs(data_dict):
@@ -133,14 +123,14 @@ def group_runs(data_dict):
     for key, group in groupby(info, lambda x: x[0:2]):
         family_list.append(key)
 
-    return family_list
+    return model_list, family_list
     
 
 def main(inargs):
     """Run the program."""
     
     time_constraint = gio.get_time_constraint(inargs.time)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=[14, 7])
     plt.axhline(y=0, color='0.5', linestyle='--')
     color_dict = get_colors(inargs.infiles)
     
@@ -168,7 +158,18 @@ def main(inargs):
 
     model_list, family_list = group_runs(data_dict)
 
-    plot_individual(data_dict)
+    plot_individual(data_dict, color_dict)
+
+    title = '%s, %s-%s' %(plot_name, inargs.time[0][0:4], inargs.time[1][0:4])
+    plt.title(title)
+    plt.xlim(-90, 90)
+    ylabel = get_ylabel(cube, inargs)
+    plt.ylabel(ylabel)
+    plt.xlabel('latitude')
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info={infile: cube.attributes['history']})
