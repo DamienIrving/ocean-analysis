@@ -96,6 +96,46 @@ def get_line_width(realization, model):
     return lw
 
 
+def plot_individual():
+    """ """
+
+    if model not in legend_models:
+        label = model
+            legend_models.append(model)
+        else:
+            label = None
+
+        lw = get_line_width(realization, model)
+        iplt.plot(agg_cube, label=label, color=color_dict[model], linewidth=lw)
+
+    title = '%s, %s-%s' %(plot_name, inargs.time[0][0:4], inargs.time[1][0:4])
+    plt.title(title)
+    plt.xlim(-90, 90)
+    ylabel = get_ylabel(cube, inargs)
+    plt.ylabel(ylabel)
+    plt.xlabel('latitude')
+
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+
+def group_runs(data_dict):
+    """Create model and model/physics groups"""
+
+    info = data_dict.keys()
+
+    model_list = []
+    for key, group in groupby(info, lambda x: x[0]):
+        model_list.append(key)
+
+    family_list = []
+    for key, group in groupby(info, lambda x: x[0:2]):
+        family_list.append(key)
+
+    return family_list
+    
+
 def main(inargs):
     """Run the program."""
     
@@ -104,7 +144,7 @@ def main(inargs):
     plt.axhline(y=0, color='0.5', linestyle='--')
     color_dict = get_colors(inargs.infiles)
     
-    legend_models = []
+    data_dict = {}
     for infile in inargs.infiles:
         with iris.FUTURE.context(cell_datetime_objects=True):
             cube = iris.load_cube(infile, gio.check_iris_var(inargs.var) & time_constraint)
@@ -121,26 +161,14 @@ def main(inargs):
             plot_name = 'climatology'
 
         model = cube.attributes['model_id']
-        if model not in legend_models:
-            label = model
-            legend_models.append(model)
-        else:
-            label = None
+        realization = 'r' + str(cube.attributes['realization'])
+        physics = 'p' + str(cube.attributes['physics_version'])
 
-        realization = cube.attributes['realization']
-        lw = get_line_width(realization, model)
-        iplt.plot(agg_cube, label=label, color=color_dict[model], linewidth=lw)
+        data_dict[(model, physics, realization)] = agg_cube
 
-    title = '%s, %s-%s' %(plot_name, inargs.time[0][0:4], inargs.time[1][0:4])
-    plt.title(title)
-    plt.xlim(-90, 90)
-    ylabel = get_ylabel(cube, inargs)
-    plt.ylabel(ylabel)
-    plt.xlabel('latitude')
+    model_list, family_list = group_runs(data_dict)
 
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plot_individual(data_dict)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info={infile: cube.attributes['history']})
