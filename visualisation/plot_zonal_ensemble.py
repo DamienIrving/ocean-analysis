@@ -10,8 +10,10 @@ Description:  Plot zonal mean for an ensemble of models
 import sys, os, pdb
 import argparse
 from itertools import groupby
+from  more_itertools import unique_everseen
 import numpy
 import iris
+from iris.experimental.equalise_cubes import equalise_attributes
 import iris.plot as iplt
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
@@ -39,6 +41,23 @@ except ImportError:
 
 # Define functions
 
+def make_zonal_grid():
+    """Make a dummy cube with desired grid."""
+    
+    lat_values = numpy.arange(-90, 91.5, 1.5)   
+    latitude = iris.coords.DimCoord(lat_values,
+                                    standard_name='latitude',
+                                    units='degrees_north',
+                                    coord_system=iris.coord_systems.GeogCS(iris.fileformats.pp.EARTH_RADIUS))
+
+    dummy_data = numpy.zeros((len(lat_values)))
+    new_cube = iris.cube.Cube(dummy_data, dim_coords_and_dims=[(latitude, 0),])
+
+    new_cube.coord('latitude').guess_bounds()
+
+    return new_cube
+
+
 def calc_trend_cube(cube):
     """Calculate trend and put into appropriate cube."""
     
@@ -50,25 +69,17 @@ def calc_trend_cube(cube):
     return new_cube
 
 
-def get_colors(infiles):
-    """Define a color for each model"""
+def get_colors(family_list):
+    """Define a color for each model/physics combo"""
 
-    models = []
-    for infile in infiles:
-        filename = infile.split('/')[-1]
-        model = filename.split('_')[2]
-
-        models.append(model) 
-    
-    nmodels = len(set(models))
+    nfamilies = len(family_list)
     cm = plt.get_cmap('nipy_spectral')
-    colors = [cm(1. * i / nmodels) for i in range(nmodels)]
+    colors = [cm(1. * i / (nfamilies + 1)) for i in range(nfamilies + 1)]
     color_dict = {}
-    count = 0
-    for model in models:
-        if not model in color_dict.keys():
-            color_dict[model] = colors[count]
-            count = count + 1
+    count = 1  # skips the first color, which is black
+    for family in family_list:
+        color_dict[family] = colors[count]
+        count = count + 1
 
     return color_dict
 
@@ -106,34 +117,49 @@ def plot_individual(data_dict, color_dict):
             label = model + ', ' + physics
         else:
             label = None
-        lw = get_line_width(realization, model)
-        iplt.plot(cube, label=label, color=color_dict[model], linewidth=lw)
+        lw = 0.5   #get_line_width(realization, model)
+        iplt.plot(cube, label=label, color=color_dict[(model, physics)], linewidth=lw)
+
+
+def plot_ensmean(data_dict):
+    """Plot the ensemble mean"""
+
+    target_grid = make_zonal_grid()
+    regridded_cube_list = iris.cube.CubeList([])
+    count = 0
+    for key, cube in data_dict.items():
+        regridded_cube = grids.regrid_1D(cube, target_grid, 'latitude')
+        new_aux_coord = iris.coords.AuxCoord(count, long_name='ensemble_member', units='no_unit')
+        regridded_cube.add_aux_coord(new_aux_coord)
+        regridded_cube.cell_methods = None
+        regridded_cube_list.append(regridded_cube)
+        count = count + 1
+
+    equalise_attributes(regridded_cube_list)
+    ensemble_cube = regridded_cube_list.merge_cube()
+   
+    ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
+    iplt.plot(ensemble_mean, label='ensemble mean', color='black', linewidth=2.0)
 
 
 def group_runs(data_dict):
-    """Create model and model/physics groups"""
+    """Find unique model/physics groups"""
 
-    info = data_dict.keys()
+    all_info = data_dict.keys()
 
-    model_list = []
-    for key, group in groupby(info, lambda x: x[0]):
-        model_list.append(key)
+    model_physics_list = []
+    for key, group in groupby(all_info, lambda x: x[0:2]):
+        model_physics_list.append(key)
 
-    family_list = []
-    for key, group in groupby(info, lambda x: x[0:2]):
-        family_list.append(key)
+    family_list = list(unique_everseen(model_physics_list))
 
-    return model_list, family_list
+    return family_list
     
 
 def main(inargs):
     """Run the program."""
     
     time_constraint = gio.get_time_constraint(inargs.time)
-    fig, ax = plt.subplots(figsize=[14, 7])
-    plt.axhline(y=0, color='0.5', linestyle='--')
-    color_dict = get_colors(inargs.infiles)
-    
     data_dict = {}
     for infile in inargs.infiles:
         with iris.FUTURE.context(cell_datetime_objects=True):
@@ -156,9 +182,14 @@ def main(inargs):
 
         data_dict[(model, physics, realization)] = agg_cube
 
-    model_list, family_list = group_runs(data_dict)
+    model_family_list = group_runs(data_dict)
+    color_dict = get_colors(model_family_list)
+
+    fig, ax = plt.subplots(figsize=[14, 7])
+    plt.axhline(y=0, color='0.5', linestyle='--')
 
     plot_individual(data_dict, color_dict)
+    plot_ensmean(data_dict)
 
     title = '%s, %s-%s' %(plot_name, inargs.time[0][0:4], inargs.time[1][0:4])
     plt.title(title)
