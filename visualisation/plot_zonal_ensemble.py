@@ -121,25 +121,33 @@ def plot_individual(data_dict, color_dict):
         iplt.plot(cube, label=label, color=color_dict[(model, physics)], linewidth=lw)
 
 
-def plot_ensmean(data_dict):
-    """Plot the ensemble mean"""
+def plot_ensmean(data_dict, single_run=False):
+    """Plot the ensemble mean.
+
+    If single_run is true, the ensemble is calculated using
+      only the first run from each model/physics family.
+
+    """
 
     target_grid = make_zonal_grid()
     regridded_cube_list = iris.cube.CubeList([])
     count = 0
     for key, cube in data_dict.items():
-        regridded_cube = grids.regrid_1D(cube, target_grid, 'latitude')
-        new_aux_coord = iris.coords.AuxCoord(count, long_name='ensemble_member', units='no_unit')
-        regridded_cube.add_aux_coord(new_aux_coord)
-        regridded_cube.cell_methods = None
-        regridded_cube_list.append(regridded_cube)
-        count = count + 1
+        model, physics, realization = key
+        if not single_run or ((realization == 'r1') or (model == 'FGOALS-g2')):
+            regridded_cube = grids.regrid_1D(cube, target_grid, 'latitude')
+            new_aux_coord = iris.coords.AuxCoord(count, long_name='ensemble_member', units='no_unit')
+            regridded_cube.add_aux_coord(new_aux_coord)
+            regridded_cube.cell_methods = None
+            regridded_cube_list.append(regridded_cube)
+            count = count + 1
 
     equalise_attributes(regridded_cube_list)
     ensemble_cube = regridded_cube_list.merge_cube()
    
+    ensemble_label = 'ensemble mean (r1)' if single_run else 'ensemble mean (all runs)'
     ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
-    iplt.plot(ensemble_mean, label='ensemble mean', color='black', linewidth=2.0)
+    iplt.plot(ensemble_mean, label=ensemble_label, color='black', linewidth=2.0)
 
 
 def group_runs(data_dict):
@@ -186,17 +194,20 @@ def main(inargs):
     color_dict = get_colors(model_family_list)
 
     fig, ax = plt.subplots(figsize=[14, 7])
-    plt.axhline(y=0, color='0.5', linestyle='--')
-
+   
     plot_individual(data_dict, color_dict)
-    plot_ensmean(data_dict)
+    plot_ensmean(data_dict, single_run=inargs.single_run)
 
-    title = '%s, %s-%s' %(plot_name, inargs.time[0][0:4], inargs.time[1][0:4])
+    experiment = cube.attributes['experiment_id']
+    experiment = 'historicalAA' if experiment == "historicalMisc" else experiment 
+    title = '%s, %s-%s (%s experiment)' %(plot_name, inargs.time[0][0:4], inargs.time[1][0:4], experiment)
     plt.title(title)
     plt.xlim(-90, 90)
     ylabel = get_ylabel(cube, inargs)
     plt.ylabel(ylabel)
     plt.xlabel('latitude')
+    plt.xticks(numpy.arange(-75, 90, 15))
+    plt.axhline(y=0, color='0.5', linestyle='--')
 
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
@@ -230,6 +241,8 @@ author:
                         help="Time period [default = entire]")
     parser.add_argument("--perlat", action="store_true", default=False,
                         help="Scale per latitude [default=False]")
+    parser.add_argument("--single_run", action="store_true", default=False,
+                        help="Only use run 1 in the ensemble mean [default=False]")
 
     args = parser.parse_args()             
     main(args)
