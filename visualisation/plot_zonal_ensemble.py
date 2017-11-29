@@ -263,7 +263,7 @@ def main(inargs):
     plt.title(title)
     plt.xticks(numpy.arange(-75, 90, 15))
     plt.xlim(inargs.xlim[0], inargs.xlim[1])
-    if not inargs.xlim == [-90, 90]:
+    if not inargs.xlim == (-90, 90):
         correct_y_lim(ax, ensemble_mean)
 
     plt.ylabel(ylabel)
