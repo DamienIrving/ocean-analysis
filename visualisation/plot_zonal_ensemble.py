@@ -41,6 +41,10 @@ except ImportError:
 
 # Define functions
 
+experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
+                     'historicalAA': 'blue', 'GHG + AA': 'purple'}
+
+
 def make_zonal_grid():
     """Make a dummy cube with desired grid."""
     
@@ -121,7 +125,7 @@ def plot_individual(data_dict, color_dict):
         iplt.plot(cube, label=label, color=color_dict[(model, physics)], linewidth=lw)
 
 
-def plot_ensmean(data_dict, time_period, ntimes, single_run=False):
+def plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments, single_run=False):
     """Plot the ensemble mean.
 
     If single_run is true, the ensemble is calculated using
@@ -145,23 +149,24 @@ def plot_ensmean(data_dict, time_period, ntimes, single_run=False):
     equalise_attributes(regridded_cube_list)
     ensemble_cube = regridded_cube_list.merge_cube()
    
-    label, color = get_ensemble_label_color(time_period, ntimes, single_run)
+    label, color = get_ensemble_label_color(time_period, ntimes, experiment, nexperiments, single_run)
     ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
     iplt.plot(ensemble_mean, label=label, color=color, linewidth=2.0)
 
     return ensemble_mean
 
 
-def get_ensemble_label_color(time_period, ntimes, single_run):
+def get_ensemble_label_color(time_period, ntimes, experiment, nexperiments, single_run):
     """Get the line label and color."""
-
-    ensemble_colors = ['blue', 'red', 'green']
 
     label = 'ensemble mean (r1)' if single_run else 'ensemble mean (all runs)'
     color = 'black' 
     if ntimes > 1:
         label = '%s, %s-%s' %(label, time_period[0][0:4], time_period[1][0:4]) 
         color=None
+    elif nexperiments > 1:
+        label = label + ', ' + experiment
+        color = experiment_colors[experiment]
 
     return label, color
 
@@ -180,11 +185,11 @@ def group_runs(data_dict):
     return family_list
 
 
-def read_data(inargs, time_constraint):
+def read_data(inargs, infiles, time_constraint):
     """Read data."""
 
     data_dict = {}
-    for infile in inargs.infiles:
+    for infile in infiles:
         with iris.FUTURE.context(cell_datetime_objects=True):
             cube = iris.load_cube(infile, gio.check_iris_var(inargs.var) & time_constraint)
         
@@ -206,22 +211,25 @@ def read_data(inargs, time_constraint):
 
         data_dict[(model, physics, realization)] = agg_cube
     
-    experiment = cube.attributes['experiment_id']    
+    experiment = cube.attributes['experiment_id']
+    experiment = 'historicalAA' if experiment == "historicalMisc" else experiment    
     ylabel = get_ylabel(cube, inargs)
     metadata_dict = {infile: cube.attributes['history']}
     
     return data_dict, plot_name, experiment, ylabel, metadata_dict
 
 
-def get_title(plot_name, time_list, experiment):
+def get_title(plot_name, time_list, experiment, nexperiments):
     """Get the plot title"""
 
-    experiment_text = 'historicalAA' if experiment == "historicalMisc" else experiment 
     ntimes = len(time_list) 
     if ntimes == 1:
-        title = '%s, %s-%s (%s experiment)' %(plot_name, time_list[0][0][0:4], time_list[0][1][0:4], experiment_text)
+        title = '%s, %s-%s' %(plot_name, time_list[0][0][0:4], time_list[0][1][0:4])
     else:
-        title = '%s,%s experiment' %(plot_name, experiment_text)
+        title = plot_name
+
+    if nexperiments == 1:
+        title = title + ', ' + experiment
 
     return title
 
@@ -247,19 +255,22 @@ def main(inargs):
     """Run the program."""
     
     fig, ax = plt.subplots(figsize=[14, 7])
-    ntimes = len(inargs.time) 
-    for time_period in inargs.time:
-        time_constraint = gio.get_time_constraint(time_period)
-        data_dict, plot_name, experiment, ylabel, metadata_dict = read_data(inargs, time_constraint)
+    ntimes = len(inargs.time)
+    nexperiments = len(inargs.infiles)
+    for infiles in inargs.infiles: 
+        for time_period in inargs.time:
+            time_constraint = gio.get_time_constraint(time_period)
+            data_dict, plot_name, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_constraint)
     
-        model_family_list = group_runs(data_dict)
-        color_dict = get_colors(model_family_list)
+            model_family_list = group_runs(data_dict)
+            color_dict = get_colors(model_family_list)
 
-        if ntimes == 1:
-            plot_individual(data_dict, color_dict)
-        ensemble_mean = plot_ensmean(data_dict, time_period, ntimes, single_run=inargs.single_run)
+            if (ntimes == 1) and (nexperiments == 1):
+                plot_individual(data_dict, color_dict)
+            ensemble_mean = plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments,
+                                         single_run=inargs.single_run)
 
-    title = get_title(plot_name, inargs.time, experiment)
+    title = get_title(plot_name, inargs.time, experiment, nexperiments)
     plt.title(title)
     plt.xticks(numpy.arange(-75, 90, 15))
     plt.xlim(inargs.xlim[0], inargs.xlim[1])
@@ -293,11 +304,12 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("infiles", type=str, nargs='*', help="Input files")
     parser.add_argument("var", type=str, help="Variable")
     parser.add_argument("time_agg", type=str, choices=('trend', 'climatology'), help="Temporal aggregation")
     parser.add_argument("outfile", type=str, help="Output file")                                     
     
+    parser.add_argument("--infiles", type=str, action='append', nargs='*', help="Input files for a given experiment")
+
     parser.add_argument("--time", type=str, action='append', nargs=2, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
     parser.add_argument("--perlat", action="store_true", default=False,
