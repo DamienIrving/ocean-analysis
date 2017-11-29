@@ -85,33 +85,37 @@ def get_data(filename, var, target_grid=None):
 def derived_radiation_fluxes(cube_dict, inargs):
     """Calculate the net shortwave, longwave and total radiation flux."""
 
-    if inargs.rsds_files and inargs.rsus_files:
-        cube_dict['rsns'] = cube_dict['rsds'] + cube_dict['rsus']   # net shortwave flux
-    else:
-        cube_dict['rsns'] = None
-    
-    if inargs.rlds_files and inargs.rlus_files:
-        cube_dict['rlns'] = cube_dict['rlds'] + cube_dict['rlus']   # net longwave flux
-    else:
-        cube_dict['rlns'] = None
+    cube_dict['rsns'] = cube_dict['rsds'] + cube_dict['rsus']   # net shortwave flux
+    cube_dict['rlns'] = cube_dict['rlds'] + cube_dict['rlus']   # net longwave flux
 
-    if inargs.rsds_files and inargs.rsus_files and inargs.rlds_files and inargs.rlus_files:
-        cube_dict['rns'] = cube_dict['rsns'] + cube_dict['rlns']
+    cube_dict['rns'] = cube_dict['rsns'] + cube_dict['rlns']
 
     return cube_dict
 
 
+def equalise_time_axes(cube_dict):
+    """Make all the time axes the same."""
+
+    iris.util.unify_time_units(cube_dict.values())
+    reference_cube = list(cube_dict.values())[0]
+    new_data_dict = {}
+    for key, cube in cube_dict.items():
+        assert len(cube.coord('time').points) == len(reference_cube.coord('time').points)
+        cube.coord('time').points = reference_cube.coord('time').points
+        cube.coord('time').bounds = reference_cube.coord('time').bounds
+        new_data_dict[key] = cube
+    
+    return new_data_dict
+    
+
 def infer_hfds(cube_dict, sftlf_cube, target_grid, inargs):
     """Infer the downward heat flux into ocean."""
     
-    data_list = [cube_dict['hfls'], cube_dict['hfss'], cube_dict['rns']]
     if inargs.hfsithermds_files:
          hfsithermds_cube = cube_dict['hfsithermds'].regrid(target_grid, iris.analysis.Linear())
          data_list.append(hfsithermds_cube)
     else:
          hfsithermds_cube = 0.0
-
-    iris.util.unify_time_units(data_list)
 
     cube_dict['hfds-inferred'] = cube_dict['rns'] + cube_dict['hfls'] + cube_dict['hfss'] + hfsithermds_cube
     cube_dict['hfds-inferred'] = uconv.apply_land_ocean_mask(cube_dict['hfds-inferred'], sftlf_cube, 'ocean')
@@ -161,9 +165,9 @@ def main(inargs):
 
     sftlf_cube = iris.load_cube(inargs.sftlf_file, 'land_area_fraction')
 
-    cube_dict = {}
     nfiles = check_inputs(inargs)
     for fnum in range(nfiles):
+        cube_dict = {}
         cube_dict['rsds'] = get_data(inargs.rsds_files[fnum], 'surface_downwelling_shortwave_flux_in_air')
         cube_dict['rsus'] = get_data(inargs.rsus_files[fnum], 'surface_upwelling_shortwave_flux_in_air')
         cube_dict['rlds'] = get_data(inargs.rlds_files[fnum], 'surface_downwelling_longwave_flux_in_air')
@@ -178,7 +182,7 @@ def main(inargs):
                                                 'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
                                                 target_grid=rsds_slice)                          
         
-        #equalise_attributes(cube_dict.values())
+        cube_dict = equalise_time_axes(cube_dict)
         cube_dict = derived_radiation_fluxes(cube_dict, inargs)  
         cube_dict = infer_hfds(cube_dict, sftlf_cube, rsds_slice, inargs)
 
