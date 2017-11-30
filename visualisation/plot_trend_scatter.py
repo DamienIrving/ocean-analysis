@@ -40,7 +40,7 @@ except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
 
-markers = {'historicalGHG': 'o', 'historicalMisc': 's'}
+markers = {'historicalGHG': 'o', 'historicalMisc': 's', 'historical': '^'}
 
 
 def get_run_details(cube):
@@ -90,6 +90,7 @@ def get_colors(infiles):
 
         models.append(model) 
     
+    models = sorted(models)
     nmodels = len(set(models))
     cm = plt.get_cmap('nipy_spectral')
     colors = [cm(1. * i / nmodels) for i in range(nmodels)]
@@ -136,8 +137,8 @@ def main(inargs):
     color_dict = get_colors(inargs.xfiles)
     
     legend_models = []
-    xtrends = {'historicalGHG': [], 'historicalMisc': []}
-    ytrends = {'historicalGHG': [], 'historicalMisc': []}
+    xtrends = {'historicalGHG': [], 'historicalMisc': [], 'historical': []}
+    ytrends = {'historicalGHG': [], 'historicalMisc': [], 'historical': []}
     for xfile, yfile in zip(inargs.xfiles, inargs.yfiles):
         with iris.FUTURE.context(cell_datetime_objects=True):
             xcube = iris.load_cube(xfile, gio.check_iris_var(inargs.xvar) & time_constraint)
@@ -162,7 +163,7 @@ def main(inargs):
         ytrends[experiment].append(ytrend)
 
     if inargs.best_fit:
-        for experiment in ['historicalGHG', 'historicalMisc']:
+        for experiment in ['historicalGHG', 'historicalMisc', 'historical']:
             if xtrends[experiment]:
                 plot_line_of_best_fit(xtrends[experiment], ytrends[experiment])
         
@@ -172,9 +173,11 @@ def main(inargs):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
+    handles, labels = ax.get_legend_handles_labels()
+    labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
 
