@@ -2,9 +2,9 @@
 
 # Script for running the calc_wind_stress_metric.py script
 
-model=CCSM4
-rip=r4i1p1
-experiment=historicalGHG
+model=GFDL-ESM2M
+rips=(r1i1p1)
+experiment=historical
 
 fx_rip=r0i0p0
 fx_experiment=historical
@@ -17,6 +17,8 @@ r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}/${experiment}
 fx_ua6_dir=/g/data/ua6/DRSv2/CMIP5/${model}/${fx_experiment}
 fx_r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}/${fx_experiment}
 
+for rip in "${rips[@]}"; do
+
 sftlf_file=${fx_ua6_dir}/fx/atmos/${fx_rip}/sftlf/latest/sftlf_fx_${model}_${fx_experiment}_${fx_rip}.nc
 outdir=${r87_dir}/yr/atmos/${rip}/tauu/latest
 outfile=${outdir}/tauu-metrics_Ayr_${model}_${experiment}_${rip}_all.nc
@@ -28,4 +30,5 @@ echo ${command}
 ${command}
 echo ${outfile}
 
+done
 
