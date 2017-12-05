@@ -310,7 +310,7 @@ author:
     
     parser.add_argument("--infiles", type=str, action='append', nargs='*', help="Input files for a given experiment")
 
-    parser.add_argument("--time", type=str, action='append', nargs=2, metavar=('START_DATE', 'END_DATE'),
+    parser.add_argument("--time", type=str, action='append', required=True, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
     parser.add_argument("--perlat", action="store_true", default=False,
                         help="Scale per latitude [default=False]")
