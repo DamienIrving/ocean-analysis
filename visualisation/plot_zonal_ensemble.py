@@ -44,6 +44,9 @@ except ImportError:
 experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
                      'historicalAA': 'blue', 'GHG + AA': 'purple'}
 
+var_names = {'precipitation_flux': 'precipitation',
+             'water_evaporation_flux': 'evaporation',
+             'surface_downward_heat_flux_in_sea_water': 'surface downward heat flux'}
 
 def make_zonal_grid():
     """Make a dummy cube with desired grid."""
@@ -91,7 +94,10 @@ def get_colors(family_list):
 def get_ylabel(cube, inargs):
     """get the y axis label"""
 
-    ylabel = '$%s' %(str(cube.units))
+    if str(cube.units) == 'kg m-2 s-1':
+        ylabel = '$kg \: m^{-2} \: s^{-1}' 
+    else:
+        ylabel = '$%s' %(str(cube.units))
     if inargs.perlat:
         ylabel = ylabel + ' \: lat^{-1}'
     if inargs.time_agg == 'trend':
@@ -219,12 +225,13 @@ def read_data(inargs, infiles, time_constraint):
     return data_dict, plot_name, experiment, ylabel, metadata_dict
 
 
-def get_title(plot_name, time_list, experiment, nexperiments):
+def get_title(plot_name, standard_name, time_list, experiment, nexperiments):
     """Get the plot title"""
 
     ntimes = len(time_list) 
     if ntimes == 1:
-        title = '%s, %s-%s' %(plot_name, time_list[0][0][0:4], time_list[0][1][0:4])
+        title = '%s %s, %s-%s' %(var_names[standard_name], plot_name,
+                                 time_list[0][0][0:4], time_list[0][1][0:4])
     else:
         title = plot_name
 
@@ -270,7 +277,7 @@ def main(inargs):
             ensemble_mean = plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments,
                                          single_run=inargs.single_run)
 
-    title = get_title(plot_name, inargs.time, experiment, nexperiments)
+    title = get_title(plot_name, inargs.var, inargs.time, experiment, nexperiments)
     plt.title(title)
     plt.xticks(numpy.arange(-75, 90, 15))
     plt.xlim(inargs.xlim[0], inargs.xlim[1])
