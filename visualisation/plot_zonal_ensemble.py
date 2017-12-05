@@ -46,7 +46,9 @@ experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
 
 var_names = {'precipitation_flux': 'precipitation',
              'water_evaporation_flux': 'evaporation',
-             'surface_downward_heat_flux_in_sea_water': 'surface downward heat flux'}
+             'surface_downward_heat_flux_in_sea_water': 'surface downward heat flux',
+             'precipitation_minus_evaporation_flux': 'P-E'}
+
 
 def make_zonal_grid():
     """Make a dummy cube with desired grid."""
