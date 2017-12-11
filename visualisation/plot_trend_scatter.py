@@ -74,7 +74,10 @@ def set_axis_labels(inargs, xunits, yunits):
     if inargs.ylabel:
         yname = inargs.ylabel.replace('_', ' ')
     else:
-        yname = inargs.yvar.replace('_', ' ')
+        yname = inargs.yvar[0].replace('_', ' ')
+
+    if str(yunits) == 'kg m-2 s-1':
+        yunits = '$kg \: m^{-2} \: s^{-1}$'
     ylabel = '%s (%s/yr)' %(yname, yunits)
 
     return xlabel, ylabel
@@ -125,6 +128,26 @@ def plot_line_of_best_fit(xcoords, ycoords):
     plt.plot(xpoints, p[0]*xpoints+p[1], '0.5', linewidth=0.3)
 
 
+def load_data(infile, var_list, time_constraint):
+    """Load the data"""
+
+    trend_list = []
+    for var in var_list:
+        cube = iris.load_cube(infile, gio.check_iris_var(var) & time_constraint)
+        model, experiment, rip, physics = get_run_details(cube)
+        trend = timeseries.calc_trend(cube, per_yr=True)
+        trend = check_sign(trend, var)
+        trend_list.append(trend)
+
+    if len(trend_list) == 2:
+        print('dividing y vars')
+        out_trend = trend_list[0] / trend_list[1]
+    else:
+        out_trend = trend_list[0]
+
+    return out_trend, cube, model, experiment, rip
+
+
 def main(inargs):
     """Run the program."""
 
@@ -132,7 +155,7 @@ def main(inargs):
 
     time_constraint = gio.get_time_constraint(inargs.time)
     fig, ax = plt.subplots()
-    plt.axhline(y=0, color='0.5', linestyle='--')
+    plt.axhline(y=inargs.hline, color='0.5', linestyle='--')
     plt.axvline(x=0, color='0.5', linestyle='--')
     color_dict = get_colors(inargs.xfiles)
     
@@ -141,26 +164,19 @@ def main(inargs):
     ytrends = {'historicalGHG': [], 'historicalMisc': [], 'historical': []}
     for xfile, yfile in zip(inargs.xfiles, inargs.yfiles):
         with iris.FUTURE.context(cell_datetime_objects=True):
-            xcube = iris.load_cube(xfile, gio.check_iris_var(inargs.xvar) & time_constraint)
-            ycube = iris.load_cube(yfile, gio.check_iris_var(inargs.yvar) & time_constraint)
+            ytrend, ycube, ymodel, yexperiment, yrip = load_data(yfile, inargs.yvar, time_constraint)
+            xtrend, xcube, xmodel, xexperiment, xrip = load_data(xfile, [inargs.xvar], time_constraint)
 
-        assert get_run_details(xcube) == get_run_details(ycube)
-        model, experiment, rip, physics = get_run_details(xcube)
+        assert (xmodel, xexperiment, xrip) == (ymodel, yexperiment, yrip)
 
-        xtrend = timeseries.calc_trend(xcube, per_yr=True)
-        ytrend = timeseries.calc_trend(ycube, per_yr=True) 
-
-        xtrend = check_sign(xtrend, inargs.xvar)
-        ytrend = check_sign(ytrend, inargs.yvar)
-
-        if model not in legend_models:
-            label = model
-            legend_models.append(model)
+        if xmodel not in legend_models:
+            label = xmodel
+            legend_models.append(xmodel)
         else:
             label = None
-        plt.plot(xtrend, ytrend, markers[experiment], label=label, color=color_dict[model])
-        xtrends[experiment].append(xtrend)
-        ytrends[experiment].append(ytrend)
+        plt.plot(xtrend, ytrend, markers[xexperiment], label=label, color=color_dict[xmodel])
+        xtrends[xexperiment].append(xtrend)
+        ytrends[xexperiment].append(ytrend)
 
     if inargs.best_fit:
         for experiment in ['historicalGHG', 'historicalMisc', 'historical']:
@@ -200,8 +216,8 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
+    parser.add_argument("yvar", type=str, nargs='*', help="Dependent variable/s standard_name")
     parser.add_argument("xvar", type=str, help="Independent variable standard_name")
-    parser.add_argument("yvar", type=str, help="Dependent variable standard_name")
     parser.add_argument("outfile", type=str, help="Output file name")
 
     parser.add_argument("--xfiles", type=str, nargs='*', required=True, 
@@ -216,6 +232,9 @@ author:
                         help="Override the default x axis label")
     parser.add_argument("--ylabel", type=str, default=None,
                         help="Override the default y axis label")
+
+    parser.add_argument("--hline", type=float, default=0.0,
+                        help="Plot a horizontal guideline [default: line at y=0]")
 
     parser.add_argument("--best_fit", action="store_true", default=False,
                         help="Switch for a linear line of best fit [default: False]")
