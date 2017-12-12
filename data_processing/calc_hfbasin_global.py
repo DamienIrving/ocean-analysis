@@ -146,7 +146,7 @@ def main(inargs):
 
     # Attributes
     standard_name = 'northward_ocean_heat_transport'
-     var_name = 'hfbasin'
+    var_name = 'hfbasin'
 
     zonal_cube.standard_name = standard_name
     zonal_cube.long_name = standard_name.replace('_', ' ')
