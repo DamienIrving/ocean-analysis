@@ -47,7 +47,8 @@ experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
 var_names = {'precipitation_flux': 'precipitation',
              'water_evaporation_flux': 'evaporation',
              'surface_downward_heat_flux_in_sea_water': 'surface downward heat flux',
-             'precipitation_minus_evaporation_flux': 'P-E'}
+             'precipitation_minus_evaporation_flux': 'P-E',
+             'northward_ocean_heat_transport': 'northward ocean heat transport'}
 
 
 def make_zonal_grid():
@@ -124,8 +125,14 @@ def plot_individual(data_dict, color_dict):
     """Plot the individual model data"""
 
     for key, cube in data_dict.items():
-        model, physics, realization = key
-        if (realization == 'r1') or (model == 'FGOALS-g2'):
+        if len(key) == 3:
+            model, physics, realization = key
+            extra_label = None
+        else:
+            model, physics, realization, extra_label = key
+        if extra_label:
+            label = model + ', ' + physics + ', ' + extra_label
+        elif (realization == 'r1') or (model == 'FGOALS-g2'):
             label = model + ', ' + physics
         else:
             label = None
@@ -193,11 +200,13 @@ def group_runs(data_dict):
     return family_list
 
 
-def read_data(inargs, infiles, time_constraint):
+def read_data(inargs, infiles, time_constraint, extra_labels):
     """Read data."""
 
     data_dict = {}
+    file_count = 0
     for infile in infiles:
+        extra_label = extra_labels[file_count] if extra_labels else False
         with iris.FUTURE.context(cell_datetime_objects=True):
             cube = iris.load_cube(infile, gio.check_iris_var(inargs.var) & time_constraint)
         
@@ -217,8 +226,12 @@ def read_data(inargs, infiles, time_constraint):
         realization = 'r' + str(cube.attributes['realization'])
         physics = 'p' + str(cube.attributes['physics_version'])
 
-        data_dict[(model, physics, realization)] = agg_cube
-    
+        if extra_label:        
+            key = (model, physics, realization, extra_label)
+        else:
+            key = (model, physics, realization)
+        data_dict[key] = agg_cube
+        file_count = file_count + 1
     experiment = cube.attributes['experiment_id']
     experiment = 'historicalAA' if experiment == "historicalMisc" else experiment    
     ylabel = get_ylabel(cube, inargs)
@@ -266,18 +279,19 @@ def main(inargs):
     fig, ax = plt.subplots(figsize=[14, 7])
     ntimes = len(inargs.time)
     nexperiments = len(inargs.infiles)
-    for infiles in inargs.infiles: 
+    for infiles in inargs.infiles:
         for time_period in inargs.time:
             time_constraint = gio.get_time_constraint(time_period)
-            data_dict, plot_name, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_constraint)
+            data_dict, plot_name, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_constraint, inargs.extra_labels)
     
             model_family_list = group_runs(data_dict)
             color_dict = get_colors(model_family_list)
 
             if (ntimes == 1) and (nexperiments == 1):
                 plot_individual(data_dict, color_dict)
-            ensemble_mean = plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments,
-                                         single_run=inargs.single_run)
+            if inargs.ensmean:
+                ensemble_mean = plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments,
+                                             single_run=inargs.single_run)
 
     title = get_title(plot_name, inargs.var, inargs.time, experiment, nexperiments)
     plt.title(title)
@@ -319,12 +333,17 @@ author:
     
     parser.add_argument("--infiles", type=str, action='append', nargs='*', help="Input files for a given experiment")
 
+    parser.add_argument("--extra_labels", type=str, nargs='*', default=None,
+                        help="Extra label to distinguish the input files")
+
     parser.add_argument("--time", type=str, action='append', required=True, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
     parser.add_argument("--perlat", action="store_true", default=False,
                         help="Scale per latitude [default=False]")
     parser.add_argument("--single_run", action="store_true", default=False,
                         help="Only use run 1 in the ensemble mean [default=False]")
+    parser.add_argument("--ensmean", action="store_true", default=False,
+                        help="Plot an ensemble mean curve [default=False]")
 
     parser.add_argument("--xlim", type=float, nargs=2, metavar=('SOUTHERN_LIMIT', 'NORTHERN LIMIT'), default=(-90, 90),
                         help="x-axis limits [default = entire]")
