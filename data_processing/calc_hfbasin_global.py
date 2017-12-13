@@ -145,6 +145,11 @@ def main(inargs):
         zonal_cube.remove_coord(x_axis_name)
 
     # Attributes
+    try:
+        zonal_cube.remove_coord('region')
+    except iris.exceptions.CoordinateNotFoundError:
+        pass
+
     standard_name = 'northward_ocean_heat_transport'
     var_name = 'hfbasin'
 
