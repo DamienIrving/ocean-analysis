@@ -158,6 +158,7 @@ def plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments, singl
             new_aux_coord = iris.coords.AuxCoord(count, long_name='ensemble_member', units='no_unit')
             regridded_cube.add_aux_coord(new_aux_coord)
             regridded_cube.cell_methods = None
+            regridded_cube.data = regridded_cube.data.astype(numpy.float64)
             regridded_cube_list.append(regridded_cube)
             count = count + 1
 
