@@ -140,7 +140,8 @@ def plot_individual(data_dict, color_dict):
         iplt.plot(cube, label=label, color=color_dict[(model, physics)], linewidth=lw)
 
 
-def plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments, single_run=False):
+def plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments,
+                 single_run=False, linestyle='-'):
     """Plot the ensemble mean.
 
     If single_run is true, the ensemble is calculated using
@@ -167,7 +168,7 @@ def plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments, singl
    
     label, color = get_ensemble_label_color(time_period, ntimes, experiment, nexperiments, single_run)
     ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
-    iplt.plot(ensemble_mean, label=label, color=color, linewidth=2.0)
+    iplt.plot(ensemble_mean, label=label, color=color, linestyle=linestyle, linewidth=2.0)
 
     return ensemble_mean
 
@@ -215,14 +216,11 @@ def read_data(inargs, infiles, time_constraint, extra_labels):
             grid_spacing = grids.get_grid_spacing(cube) 
             cube.data = cube.data / grid_spacing
  
-        if inargs.time_agg == 'trend':
-            agg_cube = calc_trend_cube(cube)
-            plot_name = 'linear trend'
-        elif inargs.time_agg == 'climatology':
-            agg_cube = cube.collapsed('time', iris.analysis.MEAN)
-            agg_cube.remove_coord('time')
-            plot_name = 'climatology'
-
+        trend_cube = calc_trend_cube(cube.copy())
+        
+        clim_cube = cube.collapsed('time', iris.analysis.MEAN)
+        clim_cube.remove_coord('time')
+ 
         model = cube.attributes['model_id']
         realization = 'r' + str(cube.attributes['realization'])
         physics = 'p' + str(cube.attributes['physics_version'])
@@ -231,14 +229,15 @@ def read_data(inargs, infiles, time_constraint, extra_labels):
             key = (model, physics, realization, extra_label)
         else:
             key = (model, physics, realization)
-        data_dict[key] = agg_cube
+        trend_dict[key] = trend_cube
+        clim_dict[key] = clim_cube
         file_count = file_count + 1
     experiment = cube.attributes['experiment_id']
     experiment = 'historicalAA' if experiment == "historicalMisc" else experiment    
     ylabel = get_ylabel(cube, inargs)
     metadata_dict = {infile: cube.attributes['history']}
     
-    return data_dict, plot_name, experiment, ylabel, metadata_dict
+    return trend_dict, clim_dict, experiment, ylabel, metadata_dict
 
 
 def get_title(plot_name, standard_name, time_list, experiment, nexperiments):
@@ -283,18 +282,29 @@ def main(inargs):
     for infiles in inargs.infiles:
         for time_period in inargs.time:
             time_constraint = gio.get_time_constraint(time_period)
-            data_dict, plot_name, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_constraint, inargs.extra_labels)
+            trend_dict, clim_dict, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_constraint, inargs.extra_labels)
     
             model_family_list = group_runs(data_dict)
             color_dict = get_colors(model_family_list)
 
+            if inargs.time_agg == 'trend':
+                target_dict = trend_dict
+            else:
+                target_dict = clim_dict
+
             if (ntimes == 1) and (nexperiments == 1):
-                plot_individual(data_dict, color_dict)
+                plot_individual(target_dict, color_dict)
             if inargs.ensmean:
-                ensemble_mean = plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments,
+                ensemble_mean = plot_ensmean(target_dict, time_period, ntimes, experiment, nexperiments,
                                              single_run=inargs.single_run)
 
-    title = get_title(plot_name, inargs.var, inargs.time, experiment, nexperiments)
+            if inargs.clim and ((len(inargs.infiles) == 1) or (experiment == 'historical'):
+                ax2 = ax.twinx()
+                plot_ensmean(clim_dict, time_period, ntimes, experiment, nexperiments,
+                             single_run=inargs.single_run, linestyle='--')
+                plt.sca(ax)
+
+    title = get_title(inargs.time_agg, inargs.var, inargs.time, experiment, nexperiments)
     plt.title(title)
     plt.xticks(numpy.arange(-75, 90, 15))
     plt.xlim(inargs.xlim[0], inargs.xlim[1])
@@ -345,6 +355,8 @@ author:
                         help="Only use run 1 in the ensemble mean [default=False]")
     parser.add_argument("--ensmean", action="store_true", default=False,
                         help="Plot an ensemble mean curve [default=False]")
+    parser.add_argument("--clim", action="store_true", default=False,
+                        help="Plot a climatology curve behind the trend curve [default=False]")
 
     parser.add_argument("--xlim", type=float, nargs=2, metavar=('SOUTHERN_LIMIT', 'NORTHERN LIMIT'), default=(-90, 90),
                         help="x-axis limits [default = entire]")
