@@ -94,7 +94,7 @@ def get_colors(family_list):
     return color_dict
 
 
-def get_ylabel(cube, inargs):
+def get_ylabel(cube, time_agg, inargs):
     """get the y axis label"""
 
     if str(cube.units) == 'kg m-2 s-1':
@@ -103,9 +103,9 @@ def get_ylabel(cube, inargs):
         ylabel = '$%s' %(str(cube.units))
     if inargs.perlat:
         ylabel = ylabel + ' \: lat^{-1}'
-    if inargs.time_agg == 'trend':
+    if time_agg == 'trend':
         ylabel = ylabel + ' \: yr^{-1}'
-    ylabel = ylabel + '$'
+    ylabel = time_agg + ' (' + ylabel + '$)'
 
     return ylabel
 
@@ -205,7 +205,8 @@ def group_runs(data_dict):
 def read_data(inargs, infiles, time_constraint, extra_labels):
     """Read data."""
 
-    data_dict = {}
+    clim_dict = {}
+    trend_dict = {}
     file_count = 0
     for infile in infiles:
         extra_label = extra_labels[file_count] if extra_labels else False
@@ -234,19 +235,22 @@ def read_data(inargs, infiles, time_constraint, extra_labels):
         file_count = file_count + 1
     experiment = cube.attributes['experiment_id']
     experiment = 'historicalAA' if experiment == "historicalMisc" else experiment    
-    ylabel = get_ylabel(cube, inargs)
+    trend_ylabel = get_ylabel(cube, 'trend', inargs)
+    clim_ylabel = get_ylabel(cube, 'climatology', inargs)
+
     metadata_dict = {infile: cube.attributes['history']}
     
-    return trend_dict, clim_dict, experiment, ylabel, metadata_dict
+    return trend_dict, clim_dict, experiment, trend_ylabel, clim_ylabel, metadata_dict
 
 
-def get_title(plot_name, standard_name, time_list, experiment, nexperiments):
+def get_title(standard_name, time_list, experiment, nexperiments):
     """Get the plot title"""
 
     ntimes = len(time_list) 
     if ntimes == 1:
-        title = '%s %s, %s-%s' %(var_names[standard_name], plot_name,
-                                 time_list[0][0][0:4], time_list[0][1][0:4])
+        title = '%s, %s-%s' %(var_names[standard_name],
+                                 time_list[0][0][0:4],
+                                 time_list[0][1][0:4])
     else:
         title = plot_name
 
@@ -273,6 +277,34 @@ def correct_y_lim(ax, data_cube):
    plt.ylim( y_data[i].min(), y_data[i].max() ) 
 
 
+def align_yaxis(ax1, v1, ax2, v2):
+    """adjust ax2 ylimit so that v2 in ax2 is aligned to v1 in ax1
+
+    from: https://stackoverflow.com/questions/26752464/matplotlib-two-y-axis-scales-how-to-align-gridlines
+    """
+
+    _, y1 = ax1.transData.transform((0, v1))
+    _, y2 = ax2.transData.transform((0, v2))
+    adjust_yaxis(ax2, (y1 - y2) / 2, v2)
+    adjust_yaxis(ax1, (y2 - y1) / 2, v1)
+
+
+def adjust_yaxis(ax, ydif, v):
+    """shift axis ax by ydiff, maintaining point v at the same location"""
+
+    inv = ax.transData.inverted()
+    _, dy = inv.transform((0, 0)) - inv.transform((0, ydif))
+    miny, maxy = ax.get_ylim()
+    miny, maxy = miny - v, maxy - v
+    if -miny > maxy or (-miny == maxy and dy > 0):
+        nminy = miny
+        nmaxy = miny*(maxy + dy) / (miny + dy)
+    else:
+        nmaxy = maxy
+        nminy = maxy * (miny + dy) / (maxy + dy)
+    ax.set_ylim(nminy + v, nmaxy + v)
+
+
 def main(inargs):
     """Run the program."""
     
@@ -282,15 +314,17 @@ def main(inargs):
     for infiles in inargs.infiles:
         for time_period in inargs.time:
             time_constraint = gio.get_time_constraint(time_period)
-            trend_dict, clim_dict, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_constraint, inargs.extra_labels)
+            trend_dict, clim_dict, experiment, trend_ylabel, clim_ylabel, metadata_dict = read_data(inargs, infiles, time_constraint, inargs.extra_labels)
     
-            model_family_list = group_runs(data_dict)
+            model_family_list = group_runs(trend_dict)
             color_dict = get_colors(model_family_list)
 
             if inargs.time_agg == 'trend':
                 target_dict = trend_dict
+                target_ylabel = trend_ylabel
             else:
                 target_dict = clim_dict
+                target_ylabel = clim_ylabel
 
             if (ntimes == 1) and (nexperiments == 1):
                 plot_individual(target_dict, color_dict)
@@ -298,26 +332,36 @@ def main(inargs):
                 ensemble_mean = plot_ensmean(target_dict, time_period, ntimes, experiment, nexperiments,
                                              single_run=inargs.single_run)
 
-            if inargs.clim and ((len(inargs.infiles) == 1) or (experiment == 'historical'):
+            if inargs.clim and ((len(inargs.infiles) == 1) or (experiment == 'historical')):
                 ax2 = ax.twinx()
                 plot_ensmean(clim_dict, time_period, ntimes, experiment, nexperiments,
                              single_run=inargs.single_run, linestyle='--')
                 plt.sca(ax)
 
-    title = get_title(inargs.time_agg, inargs.var, inargs.time, experiment, nexperiments)
+    title = get_title(inargs.var, inargs.time, experiment, nexperiments)
     plt.title(title)
     plt.xticks(numpy.arange(-75, 90, 15))
     plt.xlim(inargs.xlim[0], inargs.xlim[1])
     if not inargs.xlim == (-90, 90):
         correct_y_lim(ax, ensemble_mean)
 
-    plt.ylabel(ylabel)
-    plt.xlabel('latitude')
+    if inargs.clim:
+        align_yaxis(ax, 0, ax2, 0)
+        ax2.grid(None)
+        ax2.set_ylabel(clim_ylabel)
+        
+    ax.set_ylabel(target_ylabel)
+    ax.set_xlabel('latitude')
     plt.axhline(y=0, color='0.5', linestyle='--')
 
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    if inargs.clim:
+        ax2.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        legend_x_pos = 1.1
+    else:
+        legend_x_pos = 1.0
+    ax.legend(loc='center left', bbox_to_anchor=(legend_x_pos, 0.5))
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
