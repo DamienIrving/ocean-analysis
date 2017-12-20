@@ -141,7 +141,7 @@ def plot_individual(data_dict, color_dict):
 
 
 def plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments,
-                 single_run=False, linestyle='-'):
+                 single_run=False, linestyle='-', linewidth=2.0):
     """Plot the ensemble mean.
 
     If single_run is true, the ensemble is calculated using
@@ -168,7 +168,7 @@ def plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments,
    
     label, color = get_ensemble_label_color(time_period, ntimes, experiment, nexperiments, single_run)
     ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
-    iplt.plot(ensemble_mean, label=label, color=color, linestyle=linestyle, linewidth=2.0)
+    iplt.plot(ensemble_mean, label=label, color=color, linestyle=linestyle, linewidth=linewidth)
 
     return ensemble_mean
 
@@ -335,7 +335,7 @@ def main(inargs):
             if inargs.clim and ((len(inargs.infiles) == 1) or (experiment == 'historical')):
                 ax2 = ax.twinx()
                 plot_ensmean(clim_dict, time_period, ntimes, experiment, nexperiments,
-                             single_run=inargs.single_run, linestyle='--')
+                             single_run=inargs.single_run, linestyle='--', linewidth=1.0)
                 plt.sca(ax)
 
     title = get_title(inargs.var, inargs.time, experiment, nexperiments)
