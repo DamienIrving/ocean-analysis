@@ -277,32 +277,26 @@ def correct_y_lim(ax, data_cube):
    plt.ylim( y_data[i].min(), y_data[i].max() ) 
 
 
-def align_yaxis(ax1, v1, ax2, v2):
-    """adjust ax2 ylimit so that v2 in ax2 is aligned to v1 in ax1
+def align_yaxis(ax1, ax2):
+    """Align zeros of the two axes, zooming them out by same ratio
 
-    from: https://stackoverflow.com/questions/26752464/matplotlib-two-y-axis-scales-how-to-align-gridlines
+    Taken from: https://stackoverflow.com/questions/10481990/matplotlib-axis-with-two-scales-shared-origin
+
     """
+    axes = (ax1, ax2)
+    extrema = [ax.get_ylim() for ax in axes]
+    tops = [extr[1] / (extr[1] - extr[0]) for extr in extrema]
+    # Ensure that plots (intervals) are ordered bottom to top:
+    if tops[0] > tops[1]:
+        axes, extrema, tops = [list(reversed(l)) for l in (axes, extrema, tops)]
 
-    _, y1 = ax1.transData.transform((0, v1))
-    _, y2 = ax2.transData.transform((0, v2))
-    adjust_yaxis(ax2, (y1 - y2) / 2, v2)
-    adjust_yaxis(ax1, (y2 - y1) / 2, v1)
+    # How much would the plot overflow if we kept current zoom levels?
+    tot_span = tops[1] + 1 - tops[0]
 
-
-def adjust_yaxis(ax, ydif, v):
-    """shift axis ax by ydiff, maintaining point v at the same location"""
-
-    inv = ax.transData.inverted()
-    _, dy = inv.transform((0, 0)) - inv.transform((0, ydif))
-    miny, maxy = ax.get_ylim()
-    miny, maxy = miny - v, maxy - v
-    if -miny > maxy or (-miny == maxy and dy > 0):
-        nminy = miny
-        nmaxy = miny*(maxy + dy) / (miny + dy)
-    else:
-        nmaxy = maxy
-        nminy = maxy * (miny + dy) / (maxy + dy)
-    ax.set_ylim(nminy + v, nmaxy + v)
+    b_new_t = extrema[0][0] + tot_span * (extrema[0][1] - extrema[0][0])
+    t_new_b = extrema[1][1] - tot_span * (extrema[1][1] - extrema[1][0])
+    axes[0].set_ylim(extrema[0][0], b_new_t)
+    axes[1].set_ylim(t_new_b, extrema[1][1])
 
 
 def main(inargs):
@@ -346,7 +340,7 @@ def main(inargs):
         correct_y_lim(ax, ensemble_mean)
 
     if inargs.clim:
-        align_yaxis(ax, 0, ax2, 0)
+        align_yaxis(ax, ax2)
         ax2.grid(None)
         ax2.set_ylabel(clim_ylabel)
         
@@ -354,14 +348,17 @@ def main(inargs):
     ax.set_xlabel('latitude')
     plt.axhline(y=0, color='0.5', linestyle='--')
 
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    if inargs.clim:
-        ax2.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-        legend_x_pos = 1.1
+    if inargs.legloc:
+        ax.legend(loc=inargs.legloc)
     else:
-        legend_x_pos = 1.0
-    ax.legend(loc='center left', bbox_to_anchor=(legend_x_pos, 0.5))
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        if inargs.clim:
+            ax2.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+            legend_x_pos = 1.1
+        else:
+            legend_x_pos = 1.0
+        ax.legend(loc='center left', bbox_to_anchor=(legend_x_pos, 0.5))
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
@@ -401,6 +398,8 @@ author:
                         help="Plot an ensemble mean curve [default=False]")
     parser.add_argument("--clim", action="store_true", default=False,
                         help="Plot a climatology curve behind the trend curve [default=False]")
+    parser.add_argument("--legloc", type=int, default=None,
+                        help="Legend location [default = off plot]")
 
     parser.add_argument("--xlim", type=float, nargs=2, metavar=('SOUTHERN_LIMIT', 'NORTHERN LIMIT'), default=(-90, 90),
                         help="x-axis limits [default = entire]")
