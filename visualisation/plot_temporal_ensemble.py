@@ -112,6 +112,7 @@ def equalise_time_axes(cube_list):
         cube.coord('time').points = reference_cube.coord('time').points
         cube.coord('time').bounds = reference_cube.coord('time').bounds
         cube.coord('time').units = reference_cube.coord('time').units
+        cube.coord('time').attributes = reference_cube.coord('time').attributes
         new_cube_list.append(cube)
     
     return new_cube_list
