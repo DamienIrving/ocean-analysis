@@ -180,7 +180,21 @@ def read_data(inargs, infiles, time_constraint):
     file_count = 0
     for infile in infiles:
         with iris.FUTURE.context(cell_datetime_objects=True):
-            cube = iris.load_cube(infile, gio.check_iris_var(inargs.var) & time_constraint)
+            try:
+                cube = iris.load_cube(infile, gio.check_iris_var(inargs.var) & time_constraint)
+            except iris.exceptions.ConstraintMismatchError:
+                print('using inferred value for', infile)
+                cube = iris.load_cube(infile, gio.check_iris_var('Inferred_' + inargs.var) & time_constraint)
+                cube.long_name = inargs.var.replace('_', ' ')
+                cube.var_name = cube.var_name.replace('-inferred', '')
+        
+        cube.cell_methods = ()
+        for aux_coord in ['latitude', 'longitude']:
+            try:
+                cube.remove_coord(aux_coord)
+            except iris.exceptions.CoordinateNotFoundError:
+                pass
+
         new_aux_coord = iris.coords.AuxCoord(file_count, long_name='ensemble_member', units='no_unit')
         cube.add_aux_coord(new_aux_coord)
          
@@ -203,7 +217,7 @@ def read_data(inargs, infiles, time_constraint):
 def get_title(standard_name, experiment, nexperiments):
     """Get the plot title"""
 
-    title = standard_name #var_names[standard_name]
+    title = standard_name.replace('_', ' ') #var_names[standard_name]
 
     if nexperiments == 1:
         title = title + ', ' + experiment
