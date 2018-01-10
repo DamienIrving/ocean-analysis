@@ -262,11 +262,11 @@ def multiplot(cube_dict, nrows, ncols,
               contour_width=1.5,
               #flow
               flow_type='quiver',
+              flow_colour=['0.8'],
               regrid_shape=40,
               thin_quivers=None,
               streamline_palette='YlGnBu',
               streamline_magnitude=False,
-              streamline_colour='0.8',
               streamline_bounds=None,
               #hatching
               hatch_bounds=(0.0, 0.05),
@@ -380,7 +380,7 @@ def multiplot(cube_dict, nrows, ncols,
                               regrid_shape=regrid_shape,
                               thin_quivers=thin_quivers,
                               palette=streamline_palette,
-                              colour=streamline_colour, 
+                              colour=flow_colour[layer], 
                               plot_magnitude=streamline_magnitude, 
                               colour_bounds=streamline_bounds)
                 except KeyError:
@@ -493,7 +493,7 @@ def plot_flow(x, y, u, v, ax, flow_type, regrid_shape=40,
                       u[::thin_quivers, ::thin_quivers], v[::thin_quivers, ::thin_quivers],
                       transform=ccrs.PlateCarree()) 
         else:    
-            ax.quiver(x, y, u, v, transform=ccrs.PlateCarree(), regrid_shape=regrid_shape)
+            ax.quiver(x, y, u, v, transform=ccrs.PlateCarree(), regrid_shape=regrid_shape, color=colour)
             #regrid_shape seems to problematic for a simple PlateCarree plot (i.e. no transform) 
 
 
@@ -712,11 +712,11 @@ def main(inargs):
               contour_width=inargs.contour_width,
               #flow
               flow_type=inargs.flow_type,
+              flow_colour=inargs.flow_colour,
               regrid_shape=inargs.regrid_shape,
               thin_quivers=inargs.thin_quivers,
               streamline_palette=inargs.streamline_palette,
               streamline_magnitude=inargs.streamline_magnitude,
-              streamline_colour=inargs.streamline_colour,
               streamline_bounds=inargs.streamline_bounds,
               #hatching
               hatch_bounds=inargs.hatch_bounds,
@@ -881,8 +881,8 @@ example:
                         help="switch for coloring the streamlines according to their magnitude")
     parser.add_argument("--streamline_palette", type=str, default='YlGnBu',
                         help="streamline colour palette (for magnitude plot)")
-    parser.add_argument("--streamline_colour", type=str, default='0.8',
-                        help="streamline colour (for non-magnitude plot)")
+    parser.add_argument("--flow_colour", type=str, nargs='*', default=['0.8'],
+                        help="flow colour (for quivers or single color streamlines")
     parser.add_argument("--streamline_bounds", type=float, nargs=2, metavar=('MIN', 'MAX'), default=None,
                         help="min and max for streamline colours [default = auto]")
 
