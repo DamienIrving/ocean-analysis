@@ -47,35 +47,31 @@ def calc_linear_trend(data, xaxis):
         return numpy.polynomial.polynomial.polyfit(xaxis, data, 1)[-1]
 
 
-def get_trend_cube(cube, xaxis='time'):
-    """Get the trend data.
+def get_agg_cube(cube, agg):
+    """Get the temporally aggregated data.
 
     Args:
       cube (iris.cube.Cube)
-      xaxis (iris.cube.Cube)
+      agg (str)
 
     """
 
     coord_names = [coord.name() for coord in cube.dim_coords]
     assert coord_names[0] == 'time'
 
-    if xaxis == 'time':
+    if agg == 'trend':
         trend_data = timeseries.calc_trend(cube, per_yr=True)
-        trend_unit = ' yr-1'
-    else:
-        trend_data = numpy.ma.apply_along_axis(calc_linear_trend, 0, cube.data, xaxis.data)
-        trend_data = numpy.ma.masked_values(trend_data, cube.data.fill_value)
-        trend_unit = ' '+str(xaxis.units)+'-1'
+        agg_cube = cube[0, ::].copy()
+        agg_cube.data = trend_data
+        try:
+            agg_cube.units = str(cube.units) + ' yr-1'
+        except ValueError:
+            agg_cube.units = 'yr-1'
+    elif agg == 'clim':
+        agg_cube = cube.collapsed('time', iris.analysis.MEAN)    
+    agg_cube.remove_coord('time')
 
-    trend_cube = cube[0, ::].copy()
-    trend_cube.data = trend_data
-    trend_cube.remove_coord('time')
-    try:
-        trend_cube.units = str(cube.units) + trend_unit
-    except ValueError:
-        trend_cube.units = trend_unit
-
-    return trend_cube
+    return agg_cube
 
 
 def lat_tropics(cell):
@@ -120,34 +116,28 @@ def main(inargs):
             cube = gio.salinity_unit_check(cube)
 
         infile_metadata = {inargs.infiles[0]: history}
-        if inargs.xaxis:
-            xfile, xvar = inargs.xaxis
-            xaxis = iris.load_cube(xfile, xvar & time_constraint)
-            infile_metadata[xfile] = xaxis.attributes['history']
-        else:
-            xaxis = 'time'    
 
-    trend_cube = get_trend_cube(cube, xaxis=xaxis)
+    agg_cube = get_agg_cube(cube, inargs.aggregation)
 
     if inargs.regrid:
-        before_sum = trend_cube.data.sum()
-        before_mean = trend_cube.data.mean()
-        trend_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(trend_cube)
+        before_sum = agg_cube.data.sum()
+        before_mean = agg_cube.data.mean()
+        agg_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(agg_cube)
         if regrid_status:
             print('Warning: Data has been regridded')
             print('Before sum:', '%.2E' % Decimal(before_sum) )
-            print('After sum:', '%.2E' % Decimal(trend_cube.data.sum()) )
+            print('After sum:', '%.2E' % Decimal(agg_cube.data.sum()) )
             print('Before mean:', '%.2E' % Decimal(before_mean) )
-            print('After mean:', '%.2E' % Decimal(trend_cube.data.mean()) )
+            print('After mean:', '%.2E' % Decimal(agg_cube.data.mean()) )
 
     if inargs.subtract_tropics:
-        trend_cube = subtract_tropics(trend_cube)             
+        agg_cube = subtract_tropics(agg_cube)             
 
     atts['history'] = gio.write_metadata(file_info=infile_metadata)
-    trend_cube.attributes = atts
+    agg_cube.attributes = atts
 
     iris.FUTURE.netcdf_no_unlimited = True
-    iris.save(trend_cube, inargs.outfile)
+    iris.save(agg_cube, inargs.outfile)
 
 
 if __name__ == '__main__':
@@ -158,7 +148,7 @@ author:
     
 """
 
-    description='Calculate the linear trend at each grid point'
+    description='Calculate the temporal aggregate (linear trend or climatology) at each grid point'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
@@ -166,13 +156,11 @@ author:
 
     parser.add_argument("infiles", type=str, nargs='*', help="Input files")
     parser.add_argument("var", type=str, help="Variable standard_name")
+    parser.add_argument("aggregation", type=str, choices=('trend', 'clim'), help="Method for temporal aggregation")
     parser.add_argument("outfile", type=str, help="Output file name")
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
-
-    parser.add_argument("--xaxis", type=str, nargs=2, metavar=('FILE', 'VARIABLE'), default=None,
-                        help="Variable to use for xaxis instead of time")
 
     parser.add_argument("--subtract_tropics", action="store_true", default=False,
                         help="Subtract the mean tropics trend from all data points")
