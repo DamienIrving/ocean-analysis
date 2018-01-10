@@ -262,6 +262,7 @@ def multiplot(cube_dict, nrows, ncols,
               contour_width=1.5,
               #flow
               flow_type='quiver',
+              regrid_shape=40,
               thin_quivers=None,
               streamline_palette='YlGnBu',
               streamline_magnitude=False,
@@ -376,6 +377,7 @@ def multiplot(cube_dict, nrows, ncols,
                     u = u_cube.data
                     v = v_cube.data
                     plot_flow(x, y, u, v, ax, flow_type,
+                              regrid_shape=regrid_shape,
                               thin_quivers=thin_quivers,
                               palette=streamline_palette,
                               colour=streamline_colour, 
@@ -461,10 +463,14 @@ def plot_contour(cube, ax, levels, labels_switch,
         plt.clabel(contour_plot, fmt='%.1f')
 
     
-def plot_flow(x, y, u, v, ax, flow_type,
+def plot_flow(x, y, u, v, ax, flow_type, regrid_shape=40,
               thin_quivers=None, palette='YlGnBu', colour='0.8', 
               plot_magnitude=False, colour_bounds=None):
     """Plot quivers or streamlines."""
+
+    if type(u) == numpy.ma.core.MaskedArray:
+        u = u.filled(0)
+        v = v.filled(0)
 
     assert flow_type in ['streamlines', 'quivers']
 
@@ -487,7 +493,7 @@ def plot_flow(x, y, u, v, ax, flow_type,
                       u[::thin_quivers, ::thin_quivers], v[::thin_quivers, ::thin_quivers],
                       transform=ccrs.PlateCarree()) 
         else:    
-            ax.quiver(x, y, u, v, transform=ccrs.PlateCarree(), regrid_shape=40)
+            ax.quiver(x, y, u, v, transform=ccrs.PlateCarree(), regrid_shape=regrid_shape)
             #regrid_shape seems to problematic for a simple PlateCarree plot (i.e. no transform) 
 
 
@@ -706,6 +712,7 @@ def main(inargs):
               contour_width=inargs.contour_width,
               #flow
               flow_type=inargs.flow_type,
+              regrid_shape=inargs.regrid_shape,
               thin_quivers=inargs.thin_quivers,
               streamline_palette=inargs.streamline_palette,
               streamline_magnitude=inargs.streamline_magnitude,
@@ -866,6 +873,8 @@ example:
     # Flow
     parser.add_argument("--flow_type", type=str, default='quivers', choices=('quivers', 'streamlines'),
                         help="what to do with the uwind and vwind data [default=quiver]")
+    parser.add_argument("--regrid_shape", type=int, default=40,
+                        help="grid spacing between quivers [default=40]")
     parser.add_argument("--thin_quivers", type=int, default=None,
                         help="thin out the quivers by this factor")
     parser.add_argument("--streamline_magnitude", action="store_true", default=False,
