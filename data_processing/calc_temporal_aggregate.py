@@ -1,7 +1,7 @@
 """
-Filename:     calc_trend.py
+Filename:     calc_temporal_aggregate.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Calculate the linear trend
+Description:  Calculate the linear trend or climatology
 
 """
 
@@ -30,6 +30,7 @@ try:
     import general_io as gio
     import timeseries
     import grids
+    import convenient_universal as uconv
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -117,6 +118,9 @@ def main(inargs):
 
         infile_metadata = {inargs.infiles[0]: history}
 
+    if inargs.annual:
+        cube = timeseries.convert_to_annual(cube, full_months=True)
+
     agg_cube = get_agg_cube(cube, inargs.aggregation)
 
     if inargs.regrid:
@@ -132,6 +136,10 @@ def main(inargs):
 
     if inargs.subtract_tropics:
         agg_cube = subtract_tropics(agg_cube)             
+
+    if inargs.land_mask:
+        sftlf_cube = iris.load_cube(inargs.land_mask, 'land_area_fraction')
+        agg_cube = uconv.apply_land_ocean_mask(agg_cube, sftlf_cube, 'ocean')
 
     atts['history'] = gio.write_metadata(file_info=infile_metadata)
     agg_cube.attributes = atts
@@ -166,6 +174,12 @@ author:
                         help="Subtract the mean tropics trend from all data points")
     parser.add_argument("--regrid", action="store_true", default=False,
                         help="Regrid to a regular lat/lon grid")
+
+    parser.add_argument("--land_mask", type=str, default=None,
+                        help="Name of sftlf file to use for land mask")
+
+    parser.add_argument("--annual", action="store_true", default=False,
+                        help="Convert data to annual mean before calculating aggregate [default=False]")
 
     args = parser.parse_args()            
     main(args)
