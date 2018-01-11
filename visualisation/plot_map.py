@@ -265,6 +265,7 @@ def multiplot(cube_dict, nrows, ncols,
               flow_colour=['0.8'],
               regrid_shape=40,
               thin_quivers=None,
+              quiver_length=[1.0],
               streamline_palette='YlGnBu',
               streamline_magnitude=False,
               streamline_bounds=None,
@@ -293,6 +294,7 @@ def multiplot(cube_dict, nrows, ncols,
     region = duplicate_input(region, nrows, ncols, "region")
     palette = duplicate_input(palette, nrows, ncols, "palette")
     units = duplicate_input(units, nrows, ncols, "units")
+    quiver_length = duplicate_input(quiver_length, nrows, ncols, "quiver_length")
     no_colourbar = duplicate_input(no_colourbar, nrows, ncols, "no colourbar switch")
     no_colourbar = list(map(eval, no_colourbar))
     if colourbar_ticks:
@@ -312,6 +314,7 @@ def multiplot(cube_dict, nrows, ncols,
             out_region_name = region[plotnum - 1]
             palette_name = palette[plotnum - 1]
             units_name = units[plotnum - 1]
+            quiver_length_val = quiver_length[plotnum - 1]
             no_colourbar_switch = no_colourbar[plotnum - 1]
 
             if colourbar_ticks:
@@ -371,14 +374,15 @@ def multiplot(cube_dict, nrows, ncols,
                 try:
                     u_cube = cube_dict[(uwind_label, plotnum)]
                     v_cube = cube_dict[(vwind_label, plotnum)]
-                    
+
                     x = u_cube.coords('longitude')[0].points
                     y = u_cube.coords('latitude')[0].points
                     u = u_cube.data
                     v = v_cube.data
-                    plot_flow(x, y, u, v, ax, flow_type,
+                    plot_flow(x, y, u, v, ax, flow_type, u_cube.units,
                               regrid_shape=regrid_shape,
                               thin_quivers=thin_quivers,
+                              quiver_length=quiver_length_val,
                               palette=streamline_palette,
                               colour=flow_colour[layer], 
                               plot_magnitude=streamline_magnitude, 
@@ -463,8 +467,8 @@ def plot_contour(cube, ax, levels, labels_switch,
         plt.clabel(contour_plot, fmt='%.1f')
 
     
-def plot_flow(x, y, u, v, ax, flow_type, regrid_shape=40,
-              thin_quivers=None, palette='YlGnBu', colour='0.8', 
+def plot_flow(x, y, u, v, ax, flow_type, units, regrid_shape=40,
+              thin_quivers=None, quiver_length=1.0, palette='YlGnBu', colour='0.8', 
               plot_magnitude=False, colour_bounds=None):
     """Plot quivers or streamlines."""
 
@@ -489,12 +493,15 @@ def plot_flow(x, y, u, v, ax, flow_type, regrid_shape=40,
         ax.streamplot(x, y, u, v, transform=ccrs.PlateCarree(), color=colour)
     elif flow_type == 'quivers':
         if thin_quivers:
-            ax.quiver(x[::thin_quivers], y[::thin_quivers],
-                      u[::thin_quivers, ::thin_quivers], v[::thin_quivers, ::thin_quivers],
-                      transform=ccrs.PlateCarree()) 
+            qplot = ax.quiver(x[::thin_quivers], y[::thin_quivers],
+                              u[::thin_quivers, ::thin_quivers], v[::thin_quivers, ::thin_quivers],
+                              transform=ccrs.PlateCarree()) 
         else:    
-            ax.quiver(x, y, u, v, transform=ccrs.PlateCarree(), regrid_shape=regrid_shape, color=colour)
+            qplot = ax.quiver(x, y, u, v, transform=ccrs.PlateCarree(), regrid_shape=regrid_shape, color=colour)
             #regrid_shape seems to problematic for a simple PlateCarree plot (i.e. no transform) 
+
+    label = str(quiver_length) + ' ' + str(units)
+    ax.quiverkey(qplot, 0.95, 1.02, quiver_length, label, labelpos='W')
 
 
 def plot_hatching(cube, ax, hatch_bounds, hatch_styles):
@@ -715,6 +722,7 @@ def main(inargs):
               flow_colour=inargs.flow_colour,
               regrid_shape=inargs.regrid_shape,
               thin_quivers=inargs.thin_quivers,
+              quiver_length=inargs.quiver_length,
               streamline_palette=inargs.streamline_palette,
               streamline_magnitude=inargs.streamline_magnitude,
               streamline_bounds=inargs.streamline_bounds,
@@ -877,6 +885,8 @@ example:
                         help="grid spacing between quivers [default=40]")
     parser.add_argument("--thin_quivers", type=int, default=None,
                         help="thin out the quivers by this factor")
+    parser.add_argument("--quiver_length", type=float, nargs='*', default=[1.0],
+                        help="quiver length for legend/key in each plot")
     parser.add_argument("--streamline_magnitude", action="store_true", default=False,
                         help="switch for coloring the streamlines according to their magnitude")
     parser.add_argument("--streamline_palette", type=str, default='YlGnBu',
