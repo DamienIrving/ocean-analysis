@@ -469,8 +469,8 @@ def plot_flow(x, y, u, v, ax, flow_type, regrid_shape=40,
     """Plot quivers or streamlines."""
 
     if type(u) == numpy.ma.core.MaskedArray:
-        u = u.filled(0)
-        v = v.filled(0)
+        u = u.filled(numpy.nan)
+        v = v.filled(numpy.nan)
 
     assert flow_type in ['streamlines', 'quivers']
 
