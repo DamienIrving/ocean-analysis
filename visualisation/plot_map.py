@@ -881,8 +881,8 @@ example:
                         help="switch for coloring the streamlines according to their magnitude")
     parser.add_argument("--streamline_palette", type=str, default='YlGnBu',
                         help="streamline colour palette (for magnitude plot)")
-    parser.add_argument("--flow_colour", type=str, nargs='*', default=['0.8'],
-                        help="flow colour (for quivers or single color streamlines")
+    parser.add_argument("--flow_colour", type=str, nargs='*', default=['black'],
+                        help="""flow colour (for quivers or single color streamlines) - can use '0.8' """)
     parser.add_argument("--streamline_bounds", type=float, nargs=2, metavar=('MIN', 'MAX'), default=None,
                         help="min and max for streamline colours [default = auto]")
 
