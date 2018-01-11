@@ -31,6 +31,7 @@ try:
     import timeseries
     import grids
     import convenient_universal as uconv
+    import spatial_weights
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -91,6 +92,25 @@ def subtract_tropics(cube):
     return cube
 
 
+def vertical_mean(cube):
+    """Calculate the vertical mean"""
+
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    depth_axis = cube.coord('depth')
+
+    assert depth_axis.units in ['m', 'dbar'], "Unrecognised depth axis units"
+    if depth_axis.units == 'm':
+        weights = spatial_weights.calc_vertical_weights_1D(depth_axis, coord_names, cube.shape)
+    elif depth_axis.units == 'dbar':
+        assert coord_names == ['time', 'depth', 'latitude', 'longitude'], "2D weights will not work for curvilinear grid"
+        weights = spatial_weights.calc_vertical_weights_2D(depth_axis, cube.coord('latitude'), coord_names, cube.shape)
+
+    cube = cube.collapsed('depth', iris.analysis.MEAN, weights=weights)
+    cube.remove_coord('depth')
+
+    return cube
+
+
 def main(inargs):
     """Run the program."""
 
@@ -100,8 +120,10 @@ def main(inargs):
     except AttributeError:
         time_constraint = iris.Constraint()
 
+    depth_constraint = gio.iris_vertical_constraint(inargs.min_depth, inargs.max_depth)
+
     with iris.FUTURE.context(cell_datetime_objects=True):
-        cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var))
+        cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var) & depth_constraint)
         history = cube[0].attributes['history']
         atts = cube[0].attributes
         equalise_attributes(cube)
@@ -120,6 +142,9 @@ def main(inargs):
 
     if inargs.annual:
         cube = timeseries.convert_to_annual(cube, full_months=True)
+
+    if inargs.min_depth or inargs.max_depth:
+        cube = vertical_mean(cube)
 
     agg_cube = get_agg_cube(cube, inargs.aggregation)
 
@@ -169,6 +194,11 @@ author:
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
+
+    parser.add_argument("--min_depth", type=float, default=None,
+                        help="Only include data below this vertical level")
+    parser.add_argument("--max_depth", type=float, default=None,
+                        help="Only include data above this vertical level")
 
     parser.add_argument("--subtract_tropics", action="store_true", default=False,
                         help="Subtract the mean tropics trend from all data points")
