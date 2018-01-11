@@ -70,9 +70,9 @@ def apply_land_ocean_mask(data_cube, mask_cube, include_only):
     target_ndim = len(target_shape)
 
     if include_only == 'land':
-        mask_array = numpy.where(mask_cube.data > 50, False, True)
+        mask_array = numpy.where(mask_cube.data > 0.1, False, True)
     elif include_only == 'ocean':
-        mask_array = numpy.where(mask_cube.data < 50, False, True)
+        mask_array = numpy.where(mask_cube.data < 0.1, False, True)
 
     mask = broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
     assert mask.shape == target_shape 
