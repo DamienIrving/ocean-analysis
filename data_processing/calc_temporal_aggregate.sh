@@ -1,7 +1,7 @@
 
 model=CSIRO-Mk3-6-0
-experiment=historicalGHG
-rip=r1i1p1
+experiment=historicalMisc
+rip=r1i1p4
 
 agg=trend
 # trend clim
@@ -24,7 +24,7 @@ elif [[ "${var}" == 'tauv' ]] ; then
     direction='northward'
 fi
 
-command="${python} ${script_dir}/calc_temporal_aggregate.py ${ua6_dir}/${experiment}/mon/atmos/r1i1p1/${var}/latest/${var}_Amon_${model}_${experiment}_${rip}_*.nc surface_downward_${direction}_stress ${agg} ${outdir}/${var}-ocean_Ayr_${model}_${experiment}_${rip}_1861-2005-${agg}.nc --time_bounds 1861-01-01 2005-12-31 --land_mask ${ua6_dir}/historical/fx/atmos/r0i0p0/sftlf/latest/sftlf_fx_${model}_historical_r0i0p0.nc --annual"
+command="${python} ${script_dir}/calc_temporal_aggregate.py ${ua6_dir}/${experiment}/mon/atmos/${rip}/${var}/latest/${var}_Amon_${model}_${experiment}_${rip}_*.nc surface_downward_${direction}_stress ${agg} ${outdir}/${var}-ocean_Ayr_${model}_${experiment}_${rip}_1861-2005-${agg}.nc --time_bounds 1861-01-01 2005-12-31 --land_mask ${ua6_dir}/historical/fx/atmos/r0i0p0/sftlf/latest/sftlf_fx_${model}_historical_r0i0p0.nc --annual"
 
 echo ${command}
 ${command}
