@@ -48,7 +48,8 @@ var_names = {'precipitation_flux': 'precipitation',
              'water_evaporation_flux': 'evaporation',
              'surface_downward_heat_flux_in_sea_water': 'surface downward heat flux',
              'precipitation_minus_evaporation_flux': 'P-E',
-             'northward_ocean_heat_transport': 'northward ocean heat transport'}
+             'northward_ocean_heat_transport': 'northward ocean heat transport',
+             'ocean_heat_content': 'ocean heat content'}
 
 
 def make_zonal_grid():
@@ -233,6 +234,7 @@ def read_data(inargs, infiles, time_constraint, extra_labels):
         trend_dict[key] = trend_cube
         clim_dict[key] = clim_cube
         file_count = file_count + 1
+
     experiment = cube.attributes['experiment_id']
     experiment = 'historicalAA' if experiment == "historicalMisc" else experiment    
     trend_ylabel = get_ylabel(cube, 'trend', inargs)
