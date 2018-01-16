@@ -203,6 +203,16 @@ def group_runs(data_dict):
     return family_list
 
 
+def normalise(cube):
+    """Normalise the data."""
+
+    std = numpy.std(cube.data)
+    mean = numpy.mean(cube.data)
+    norm = (cube.data - mean) / std
+
+    return norm
+
+
 def read_data(inargs, infiles, time_constraint, extra_labels):
     """Read data."""
 
@@ -222,7 +232,10 @@ def read_data(inargs, infiles, time_constraint, extra_labels):
         
         clim_cube = cube.collapsed('time', iris.analysis.MEAN)
         clim_cube.remove_coord('time')
- 
+
+        if inargs.normalise_trend:
+            trend_cube.data = normalise(trend_cube)
+
         model = cube.attributes['model_id']
         realization = 'r' + str(cube.attributes['realization'])
         physics = 'p' + str(cube.attributes['physics_version'])
@@ -402,6 +415,9 @@ author:
                         help="Plot a climatology curve behind the trend curve [default=False]")
     parser.add_argument("--legloc", type=int, default=None,
                         help="Legend location [default = off plot]")
+
+    parser.add_argument("--normalise_trend", action="store_true", default=False,
+                        help="Normalise the trend data [default=False]")
 
     parser.add_argument("--xlim", type=float, nargs=2, metavar=('SOUTHERN_LIMIT', 'NORTHERN LIMIT'), default=(-90, 90),
                         help="x-axis limits [default = entire]")
