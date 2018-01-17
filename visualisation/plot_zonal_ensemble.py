@@ -317,6 +317,8 @@ def align_yaxis(ax1, ax2):
 def main(inargs):
     """Run the program."""
     
+    seaborn.set_context(inargs.context)
+
     fig, ax = plt.subplots(figsize=[14, 7])
     ntimes = len(inargs.time)
     nexperiments = len(inargs.infiles)
@@ -374,8 +376,10 @@ def main(inargs):
         else:
             legend_x_pos = 1.0
         ax.legend(loc='center left', bbox_to_anchor=(legend_x_pos, 0.5))
-
-    plt.savefig(inargs.outfile, bbox_inches='tight')
+    
+    dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
+    print('dpi =', dpi)
+    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
 
 
@@ -421,6 +425,11 @@ author:
 
     parser.add_argument("--xlim", type=float, nargs=2, metavar=('SOUTHERN_LIMIT', 'NORTHERN LIMIT'), default=(-90, 90),
                         help="x-axis limits [default = entire]")
+
+    parser.add_argument("--context", type=str, default='talk', choices=('paper', 'talk'),
+                        help="Context for plot [default=auto]")
+    parser.add_argument("--dpi", type=float, default=None,
+                        help="Figure resolution in dots per square inch [default=auto]")
 
     args = parser.parse_args()             
     main(args)
