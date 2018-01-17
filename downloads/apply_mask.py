@@ -125,7 +125,7 @@ def main(inargs):
 
     for fnum, infile in enumerate(inargs.infiles):
 
-        data_cube = read_data(infile, inargs.var)
+        data_cube = read_data(infile, gio.check_iris_var(inargs.var))
         mask_cube = read_data(inargs.mask_file, inargs.mask_var)
 
         assert inargs.mask_method in ['copy', 'sftlf']
