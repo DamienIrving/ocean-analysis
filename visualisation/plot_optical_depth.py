@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import iris
 import iris.plot as iplt
 import seaborn
+seaborn.set_context('talk')
 
 # Import my modules
 
@@ -45,6 +46,7 @@ region_styles['sh'] = 'dashed'
 region_styles['nh'] = 'dashdot'
 region_styles['global'] = 'solid'
                
+
 def get_file_info(infile):
     """Strip information from the file name."""
 
@@ -74,7 +76,7 @@ def main(inargs):
         iplt.plot(cube, color=color, linestyle=style, label=experiment+', '+region)
         plt.title(model + ', ' + mip[0:2])
 
-    plt.legend()
+    plt.legend(loc=2)
     plt.ylabel('Aerosol optical depth at 550nm')
     plt.xlabel('Year')
     plt.savefig(inargs.outfile, bbox_inches='tight')
