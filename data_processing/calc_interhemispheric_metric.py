@@ -47,61 +47,88 @@ def save_history(cube, field, filename):
     history.append(cube.attributes['history'])
 
 
-def calc_agg(infiles, variable, area_cube, lat_bounds=None):
-    """Load the infiles and calculate the hemispheric mean value."""
-    
-    # Read data
+def read_data(infiles, variable, calc_annual=False):
+    """Load the input data."""
+
     with iris.FUTURE.context(cell_datetime_objects=True):
-        cube = iris.load(infiles, variable, callback=save_history)
+        cube = iris.load(infiles, gio.check_iris_var(variable), callback=save_history)
         equalise_attributes(cube)
         iris.util.unify_time_units(cube)
         cube = cube.concatenate_cube()
         cube = gio.check_time_units(cube)
-        cube = timeseries.convert_to_annual(cube) 
-    
+        if calc_annual:
+            cube = timeseries.convert_to_annual(cube) 
+
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    aux_coord_names = [coord.name() for coord in cube.aux_coords]
+    assert 'time' in coord_names
+    assert len(coord_names) == 3
+    grid_type = 'curvilinear' if aux_coord_names == ['latitude', 'longitude'] else 'latlon'
+
+    return cube, coord_names, aux_coord_names, grid_type
+
+
+def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
+                     aggregation_method, area_cube, lat_bounds=None):
+    """Load the infiles and calculate the spatial aggregate (sum or mean)."""
+
+    cube = cube.copy() 
+    coord_names = coord_names.copy()
+
     # Extract region
-    cube, grid_type = extract_region(cube, lat_bounds)
-    if grid_type == 'curvilinear':
-        assert area_cube, "Must provide an area cube of curvilinear data"
+    if lat_bounds:
+        if grid_type == 'curvilinear':
+            assert area_cube, "Must provide an area cube of curvilinear data"
+            cube = extract_region_curvilinear(cube, lat_bounds)
+        else:
+            cube = extract_region_latlon(cube, lat_bounds)
+
+    # Get area weights       
     if area_cube:
         if grid_type == 'latlon':
-            area_cube = extract_region(area_cube, lat_bounds)
-        area_weights = area_cube.data
+            area_cube = extract_region_latlon(area_cube, lat_bounds)
+        area_weights = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
     else:
         area_weights = spatial_weights.area_array(cube)
 
-    agg = cube.collapsed(['longitude', 'latitude'], iris.analysis.MEAN, weights=area_weights)
-    agg.remove_coord('longitude')
-    agg.remove_coord('latitude')
+    # Calculate spatial aggregate
+    coord_names.remove('time')
+    spatial_agg = cube.collapsed(coord_names, aggregation_method, weights=area_weights)
+    if aggregation_method == iris.analysis.SUM:
+        units = str(spatial_agg.units)
+        spatial_agg.units = units.replace('m-2', '')
+    spatial_agg.remove_coord('latitude')
+    spatial_agg.remove_coord('longitude')
+    if grid_type == 'curvilinear':
+        spatial_agg.remove_coord(coord_names[0])
+        spatial_agg.remove_coord(coord_names[1])
 
-    return agg
+    return spatial_agg
 
 
-def extract_region(cube, lat_bounds):
-    """Extract region of interest."""
+def extract_region_curvilinear(cube, lat_bounds):
+    """Extract region of interest from a curvilinear grid."""
 
     cube = cube.copy() 
-    coord_names = [coord.name() for coord in cube.dim_coords]
-    aux_coord_names = [coord.name() for coord in cube.aux_coords]
+ 
+    region_mask = create_region_mask(cube.coord('latitude').points, cube.shape, lat_bounds)
+    land_ocean_mask = cube.data.mask
+    complete_mask = region_mask + land_ocean_mask
 
-    if aux_coord_names == ['latitude', 'longitude']:
-        assert 'time' in coord_names
-        assert len(coord_names) == 3
-        region_mask = create_region_mask(cube.coord('latitude').points, cube.shape, lat_bounds)
-        land_ocean_mask = cube.data.mask
-        complete_mask = region_mask + land_ocean_mask
+    cube.data = numpy.ma.asarray(cube.data)
+    cube.data.mask = complete_mask
 
-        cube.data = numpy.ma.asarray(cube.data)
-        cube.data.mask = complete_mask
+    return cube
 
-        grid_type = 'curvilinear'
-    else:
-        southern_lat, northern_lat = lat_bounds
-        lat_constraint = iris.Constraint(latitude=lambda cell: southern_lat <= cell < northern_lat)
-        cube = cube.extract(lat_constraint)
-        grid_type = 'latlon'
 
-    return cube, grid
+def extract_region_latlon(cube, lat_bounds):
+    """Extract region of interest from a regular lat/lon grid."""
+
+    southern_lat, northern_lat = lat_bounds
+    lat_constraint = iris.Constraint(latitude=lambda cell: southern_lat <= cell < northern_lat)
+    cube = cube.extract(lat_constraint)
+
+    return cube
 
     
 def create_region_mask(latitude_array, target_shape, lat_bounds):
@@ -118,54 +145,100 @@ def create_region_mask(latitude_array, target_shape, lat_bounds):
     return mask
 
 
-def update_history(cube, infiles):
-    """Update the history attribute"""
-    
-    infile_history = {}
-    infile_history[infiles[0]] = history[0] 
- 
-    cube.attributes['history'] = gio.write_metadata(file_info=infile_history)
+def rename_cube(cube, quantity):
+    """Rename a cube according to the specifics of the analysis"""
 
+    assert quantity in ['globe sum', 'nh sum', 'sh sum', 'minus sh sum', 'div globe sum',
+                        'globe mean', 'nh mean', 'sh mean', 'minus sh mean', 'div globe mean',]
+    
+    if cube.standard_name:
+        standard_name = '_'.join([cube.standard_name, quantity.replace(' ', '_')])
+    else:
+        standard_name = '_'.join([cube.long_name.replace(' ', '_'), quantity.replace(' ', '_')])
+    long_name = ' '.join([cube.long_name, quantity])  
+    var_name = '-'.join([cube.var_name, quantity.replace(' ', '-')])
+
+    iris.std_names.STD_NAMES[standard_name] = {'canonical_units': cube.units}
+    cube.standard_name = standard_name
+    cube.long_name = long_name
+    cube.var_name = var_name
+    
     return cube
 
 
-def calc_metric(nh_mean, sh_mean):
-    """Calculate the metric"""
+def calc_diff(nh_cube, sh_cube, agg_method):
+    """Calculate the difference metric"""
     
-    metric = nh_mean.copy()
-    metric.data = nh_mean.data - sh_mean.data
+    metric = nh_cube.copy()
+    metric.data = nh_cube.data - sh_cube.data
+    metric = rename_cube(metric, 'minus sh ' + agg_method)  
     
     return metric
 
 
+def calc_frac(h_cube, globe_cube, agg_method):
+    """Calculate the global fraction metric"""
+
+    metric = h_cube.copy()
+    metric.data = h_cube.data / globe_cube.data
+    metric = rename_cube(metric, 'div globe ' + agg_method)  
+    
+    return metric
+
+
+def update_metadata(cube_list, infile_history):
+    """Create the cube list for output."""
+
+    equalise_attributes(cube_list)
+
+    for cube in cube_list:
+        cube.attributes['history'] = gio.write_metadata(file_info=infile_history)
+        cube.data = numpy.array(cube.data)  #removes _FillValue attribute
+
+    return cube_list
 
 
 def main(inargs):
     """Run the program."""
+
+    cube, coord_names, aux_coord_names, grid_type = read_data(inargs.infiles, inargs.variable, calc_annual=inargs.annual)
 
     if inargs.area_file:
         area_cube = iris.load_cube(inargs.area_file, 'cell_area')
     else:
         area_cube = None
 
-    nh_lower, nh_upper = inargs.nh_lat_bounds
-    nh_constraint = iris.Constraint(latitude=lambda cell: nh_lower <= cell < nh_upper)
+    agg_methods = {'sum': iris.analysis.SUM, 'mean': iris.analysis.MEAN}
 
-    sh_lower, sh_upper = inargs.sh_lat_bounds
-    sh_constraint = iris.Constraint(latitude=lambda cell: sh_lower <= cell < sh_upper)
+    nh_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
+                              agg_methods[inargs.aggregation_method], area_cube,
+                              lat_bounds=inargs.nh_lat_bounds)
+    sh_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
+                              agg_methods[inargs.aggregation_method], area_cube,
+                              lat_bounds=inargs.sh_lat_bounds)
+    globe_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
+                                 agg_methods[inargs.aggregation_method], area_cube)   
 
-    global_constraint = iris.Constraint()
+    nh_agg = rename_cube(nh_agg, 'nh ' + inargs.aggregation_method)  
+    sh_agg = rename_cube(sh_agg, 'sh ' + inargs.aggregation_method)
+    globe_agg = rename_cube(globe_agg, 'globe ' + inargs.aggregation_method) 
 
-    nh_agg = calc_agg(inargs.infiles, inargs.variable, area_cube, lat_bounds=inargs.nh_lat_bounds)
-    sh_agg = calc_agg(inargs.infiles, inargs.variable, area_cube, lat_bounds=inargs.sh_lat_bounds)
-    global_agg = calc_agg(inargs.infiles, inargs.variable, area_cube)     
+    cube_list = iris.cube.CubeList([nh_agg, sh_agg, globe_agg])
 
-    pdb.set_trace()
+    if inargs.metric == 'diff':
+        metric = calc_diff(nh_agg, sh_agg, inargs.aggregation_method)
+        cube_list.append(metric)
+    elif inargs.metric == 'global-fraction':
+        nh_metric = calc_frac(nh_agg, globe_agg, inargs.aggregation_method)
+        sh_metric = calc_frac(sh_agg, globe_agg, inargs.aggregation_method)
+        cube_list.append(nh_metric)
+        cube_list.append(sh_metric)
+    
+    infile_history = {}
+    infile_history[inargs.infiles[0]] = history[0] 
+    cube_list = update_metadata(cube_list, infile_history)
 
-    #metric = calc_metric(nh_agg, sh_agg)    
-    #metric = update_history(metric, inargs.infiles)
-
-    #iris.save(metric, inargs.outfile)
+    iris.save(cube_list, inargs.outfile)
 
 
 if __name__ == '__main__':
@@ -192,6 +265,11 @@ author:
 
     parser.add_argument("--aggregation_method", type=str, default='sum', choices=('mean', 'sum'),
                         help="calculate the hemispheric sum or mean")
+    
+    parser.add_argument("--metric", type=str, default=None, choices=('diff', 'global-fraction'),
+                        help="output an additional metric")
+    parser.add_argument("--annual", action="store_true", default=False,
+                        help="Output annual mean [default=False]")
 
     parser.add_argument("--nh_lat_bounds", type=float, nargs=2, metavar=('LOWER', 'UPPER'), default=(0.0, 91.0),
                         help="Northern Hemisphere latitude bounds [default = entire hemisphere]")
