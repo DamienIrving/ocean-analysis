@@ -85,7 +85,7 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
 
     # Get area weights       
     if area_cube:
-        if grid_type == 'latlon':
+        if grid_type == 'latlon' and lat_bounds:
             area_cube = extract_region_latlon(area_cube, lat_bounds)
         area_weights = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
     else:
