@@ -62,17 +62,11 @@ def get_colors(infiles):
     """Define a color for each model"""
 
     models = []
-    experiments = []
     for infile in infiles:
         filename = infile.split('/')[-1]
         model = filename.split('_')[2]
         experiment = filename.split('_')[3]
-
         models.append(model)
-        experiments.append(experiment) 
-    
-    experiments = sorted(experiments)
-    experiment_list = list(set(experiments))
     
     models = sorted(models)
     nmodels = len(set(models))
@@ -85,7 +79,7 @@ def get_colors(infiles):
             color_dict[model] = colors[count]
             count = count + 1
 
-    return color_dict, column_dict
+    return color_dict
 
 
 def load_data(infile, var, time_constraint):
@@ -96,7 +90,7 @@ def load_data(infile, var, time_constraint):
     model, experiment, rip, physics = get_run_details(cube)
     trend = timeseries.calc_trend(cube, per_yr=True)
 
-    return cube, trend, model, experiment, rip
+    return cube, trend, model, experiment
 
 
 def main(inargs):
@@ -105,17 +99,17 @@ def main(inargs):
     time_constraint = gio.get_time_constraint(inargs.time)
     fig, ax = plt.subplots()
     plt.axhline(y=0, color='0.5', linestyle='--')
-    color_dict, experiment_list = get_colors(inargs.xfiles)
+    color_dict = get_colors(inargs.infiles)
 
     column_dict = {}
-    for index, experiment in enumerate(experiment_list):
+    for index, experiment in enumerate(inargs.experiments):
         column_dict[experiment] = index + 1
 
     values = {}
     for infile in inargs.infiles:
         cube, trend, model, experiment = load_data(infile, inargs.var, time_constraint)
         label = model if experiment == 'historical' else None
-        plt.plot(column_dict[experiment], trend, 'o', label=model, color=color_dict[model])
+        plt.plot(column_dict[experiment], trend, 'o', label=label, color=color_dict[model])
 
     title = 'linear trend in %s, %s-%s' %(inargs.var.replace('_', ' '), inargs.time[0][0:4], inargs.time[1][0:4])
     plt.title(title)
@@ -125,9 +119,9 @@ def main(inargs):
     else:
         plt.ylabel(str(cube.units) + '/ year')
 
-    nexperiments = len(experiment_list)
+    nexperiments = len(inargs.experiments)
     ax.set_xticks(numpy.arange(1, nexperiments + 1))
-    ax.set_xticklabels(experiment_list)
+    ax.set_xticklabels(inargs.experiments)
     ax.set_xlim((0, nexperiments + 1))
 
     ymin, ymax = ax.get_ylim()  
@@ -166,6 +160,8 @@ author:
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
 
+    parser.add_argument("--experiments", type=str, required=True, nargs='*',
+                        help="experiments in the order they should appear")
     parser.add_argument("--ylabel", type=str, default=None,
                         help="y axis label")
 
