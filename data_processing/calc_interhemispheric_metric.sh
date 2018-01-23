@@ -1,8 +1,7 @@
 
-model=CanESM2
-
+model=NorESM1-M
 experiment=historicalMisc
-rip=r1i1p4
+rip=r1i1p1
 
 agg='sum'
 # mean sum
@@ -13,7 +12,7 @@ metric='diff'
 var='hfds'
 # hfds hfds-inferred ohc
 
-inferred=true
+inferred=false
 
 fx_rip=r0i0p0
 fx_experiment=historical
@@ -37,7 +36,7 @@ elif [ "${var}" == "hfds" ] && [ "${inferred}" == true ] ; then
     outvar=hfds-inferred
     smooth='--annual'
 elif [[ "${var}" == 'hfds' ]] ; then
-    infiles=${r87_dir}/${experiment}/mon/ocean/${rip}/hfds/latest/hfds_Omon_${model}_${experiment}_${rip}_*.nc
+    infiles=${ua6_dir}/${experiment}/mon/ocean/${rip}/hfds/latest/hfds_Omon_${model}_${experiment}_${rip}_*.nc
     longvar=surface_downward_heat_flux_in_sea_water
     areafile=${ua6_dir}/${fx_experiment}/fx/ocean/${fx_rip}/areacello/latest/areacello_fx_${model}_${fx_experiment}_${fx_rip}.nc
     outvar=hfds
