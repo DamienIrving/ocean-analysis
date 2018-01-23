@@ -111,7 +111,7 @@ def main(inargs):
         label = model if experiment == 'historical' else None
         plt.plot(column_dict[experiment], trend, 'o', label=label, color=color_dict[model])
 
-    title = 'linear trend in %s, %s-%s' %(inargs.var.replace('_', ' '), inargs.time[0][0:4], inargs.time[1][0:4])
+    title = 'linear trend in %s, %s-%s' %(cube.var_name.replace('-', ' '), inargs.time[0][0:4], inargs.time[1][0:4])
     plt.title(title)
 
     if inargs.ylabel:
