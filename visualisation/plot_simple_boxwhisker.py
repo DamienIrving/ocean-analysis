@@ -149,7 +149,10 @@ def main(inargs):
         experiment_colors = get_experiment_colors(inargs.experiments)
         seaborn.boxplot(data=data_df, palette=experiment_colors)
 
-    title = 'linear trend in %s, %s-%s' %(cube.var_name.replace('-', ' '), inargs.time[0][0:4], inargs.time[1][0:4])
+    if inargs.title:
+        title = inargs.title.replace("_", " ")
+    else:
+        title = 'linear trend in %s, %s-%s' %(cube.var_name.replace('-', ' '), inargs.time[0][0:4], inargs.time[1][0:4])
     plt.title(title)
 
     if inargs.ylabel:
@@ -201,6 +204,9 @@ author:
 
     parser.add_argument("--experiments", type=str, required=True, nargs='*',
                         help="experiments in the order they should appear")
+
+    parser.add_argument("--title", type=str, default=None,
+                        help="plot title [default: None]")
     parser.add_argument("--ylabel", type=str, default=None,
                         help="y axis label")
 
