@@ -1,7 +1,8 @@
 """
-Filename:     plot_simple_boxwhisker.py
+Filename:     plot_trend_boxwhisker.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Plot a simple box and whisker type plot (i.e. dots, not the actual box)
+Description:  Calculate the trend in a given metric for numerous data files
+              and display the result in box and whisker format
 
 """
 
@@ -103,6 +104,7 @@ def load_data(infile, var, time_constraint):
 
     with iris.FUTURE.context(cell_datetime_objects=True):
         cube = iris.load_cube(infile, gio.check_iris_var(var) & time_constraint)
+        cube.data = cube.data * 100
     model, experiment, rip, physics = get_run_details(cube)
     trend = timeseries.calc_trend(cube, per_yr=True)
 
@@ -121,6 +123,37 @@ def generate_data_dict(trend, model, experiment, rip, all_experiments):
     
     return data_dict
 
+def update_label(old_label, exponent_text):
+    if exponent_text == "":
+        return old_label
+    
+    try:
+        units = old_label[old_label.index("[") + 1:old_label.rindex("]")]
+    except ValueError:
+        units = ""
+    label = old_label.replace("[{}]".format(units), "")
+    
+    exponent_text = exponent_text.replace("\\times", "")
+    
+    return "{} [{} {}]".format(label, exponent_text, units)
+    
+
+def format_ylabel_string_with_exponent(ax):  
+    """ Format the label string with the exponent from the ScalarFormatter """
+
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+    ax.yaxis.major.formatter._useMathText = True
+    plt.draw() # Update the text
+
+    exponent_text = ax.yaxis.get_offset_text().get_text()
+    label = ax.yaxis.get_label().get_text()
+    new_label = update_label(label, ax.yaxis.get_offset_text().get_text())
+    print(new_label)    
+
+    ax.yaxis.offsetText.set_visible(False)
+    
+    return new_label    
+    
 
 def main(inargs):
     """Run the program."""
@@ -156,9 +189,9 @@ def main(inargs):
     plt.title(title)
 
     if inargs.ylabel:
-        plt.ylabel(inargs.ylabel)
+        ax.set_ylabel(inargs.ylabel)
     else:
-        plt.ylabel(str(cube.units) + ' / year')
+        ax.set_ylabel(str(cube.units) + ' / year')
 
     if inargs.points:
         nexperiments = len(inargs.experiments)
@@ -176,6 +209,11 @@ def main(inargs):
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
         ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
 
+    #plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+    #ax.yaxis.major.formatter._useMathText = True
+    new_ylabel = format_ylabel_string_with_exponent(ax)
+    plt.ylabel(new_ylabel)
+ 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     metadata_dict = {inargs.infiles[-1]: cube.attributes['history']}
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
@@ -189,7 +227,7 @@ author:
 
 """
 
-    description='Calculate metric trend for each model and plot scatter points'
+    description='Calculate trends for each input file and display in box and whisker format'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
