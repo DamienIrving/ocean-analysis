@@ -180,9 +180,12 @@ def calc_frac(h_cube, globe_cube, agg_method):
     """Calculate the global fraction metric"""
 
     metric = h_cube.copy()
-    metric.data = h_cube.data / globe_cube.data
+    metric.data = (h_cube.data / globe_cube.data) * 100
     metric = rename_cube(metric, 'div globe ' + agg_method)  
     
+    units = str(metric.units)
+    metric.units = '%'
+
     return metric
 
 
