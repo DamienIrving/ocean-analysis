@@ -17,6 +17,8 @@ import iris
 import matplotlib
 import matplotlib.pyplot as plt
 
+import pandas
+
 import seaborn
 seaborn.set_context('talk')
 
@@ -38,6 +40,20 @@ try:
     import timeseries
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
+
+
+
+def get_experiment_colors(experiment_list):
+    """Create color list for given experiment list."""
+
+    experiment_colors = {'historical': 'white',
+                         'historicalGHG': 'red',
+                         'historicalMisc': 'blue'}
+    color_list = []
+    for experiment in experiment_list:
+        color_list.append(experiment_colors[experiment])
+
+    return color_list
 
 
 def get_run_details(cube):
@@ -90,7 +106,20 @@ def load_data(infile, var, time_constraint):
     model, experiment, rip, physics = get_run_details(cube)
     trend = timeseries.calc_trend(cube, per_yr=True)
 
-    return cube, trend, model, experiment
+    return cube, trend, model, experiment, rip
+
+
+def generate_data_dict(trend, model, experiment, rip, all_experiments):
+    """Generate dict that will form a row of a pandas dataframe."""
+
+    data_dict = {'model': model, 'rip': rip}
+    for exp in all_experiments:
+        if exp == experiment:
+            data_dict[exp] = trend
+        else:
+            data_dict[exp] = numpy.nan
+    
+    return data_dict
 
 
 def main(inargs):
@@ -99,17 +128,26 @@ def main(inargs):
     time_constraint = gio.get_time_constraint(inargs.time)
     fig, ax = plt.subplots()
     plt.axhline(y=0, color='0.5', linestyle='--')
+
     color_dict = get_colors(inargs.infiles)
 
     column_dict = {}
     for index, experiment in enumerate(inargs.experiments):
         column_dict[experiment] = index + 1
 
-    values = {}
+    data_list = []
     for infile in inargs.infiles:
-        cube, trend, model, experiment = load_data(infile, inargs.var, time_constraint)
+        cube, trend, model, experiment, rip = load_data(infile, inargs.var, time_constraint)
         label = model if experiment == 'historical' else None
-        plt.plot(column_dict[experiment], trend, 'o', label=label, color=color_dict[model])
+        if inargs.points:
+            plt.plot(column_dict[experiment], trend, 'o', label=label, color=color_dict[model])
+        else:
+            data_list.append(generate_data_dict(trend, model, experiment, rip, inargs.experiments))
+ 
+    if not inargs.points:
+        data_df = pandas.DataFrame(data_list)
+        experiment_colors = get_experiment_colors(inargs.experiments)
+        seaborn.boxplot(data=data_df, palette=experiment_colors)
 
     title = 'linear trend in %s, %s-%s' %(cube.var_name.replace('-', ' '), inargs.time[0][0:4], inargs.time[1][0:4])
     plt.title(title)
@@ -117,22 +155,23 @@ def main(inargs):
     if inargs.ylabel:
         plt.ylabel(ylabel)
     else:
-        plt.ylabel(str(cube.units) + '/ year')
+        plt.ylabel(str(cube.units) + ' / year')
 
-    nexperiments = len(inargs.experiments)
-    ax.set_xticks(numpy.arange(1, nexperiments + 1))
-    ax.set_xticklabels(inargs.experiments)
-    ax.set_xlim((0, nexperiments + 1))
+    if inargs.points:
+        nexperiments = len(inargs.experiments)
+        ax.set_xticks(numpy.arange(1, nexperiments + 1))
+        ax.set_xticklabels(inargs.experiments)
+        ax.set_xlim((0, nexperiments + 1))
 
-    ymin, ymax = ax.get_ylim()  
-    ybuffer = (ymax - ymin) * 0.05
-    ax.set_ylim((ymin - ybuffer, ymax + ybuffer))
+        ymin, ymax = ax.get_ylim()  
+        ybuffer = (ymax - ymin) * 0.05
+        ax.set_ylim((ymin - ybuffer, ymax + ybuffer))
 
-    handles, labels = ax.get_legend_handles_labels()
-    labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
+        handles, labels = ax.get_legend_handles_labels()
+        labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     metadata_dict = {inargs.infiles[-1]: cube.attributes['history']}
@@ -164,6 +203,9 @@ author:
                         help="experiments in the order they should appear")
     parser.add_argument("--ylabel", type=str, default=None,
                         help="y axis label")
+
+    parser.add_argument("--points", action="store_true", default=False,
+	                help="Plot individual data points instead of box and whiskers")
 
     args = parser.parse_args()            
 
