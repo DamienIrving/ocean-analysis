@@ -122,37 +122,6 @@ def generate_data_dict(trend, model, experiment, rip, all_experiments):
             data_dict[exp] = numpy.nan
     
     return data_dict
-
-def update_label(old_label, exponent_text):
-    if exponent_text == "":
-        return old_label
-    
-    try:
-        units = old_label[old_label.index("[") + 1:old_label.rindex("]")]
-    except ValueError:
-        units = ""
-    label = old_label.replace("[{}]".format(units), "")
-    
-    exponent_text = exponent_text.replace("\\times", "")
-    
-    return "{} [{} {}]".format(label, exponent_text, units)
-    
-
-def format_ylabel_string_with_exponent(ax):  
-    """ Format the label string with the exponent from the ScalarFormatter """
-
-    ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
-    ax.yaxis.major.formatter._useMathText = True
-    plt.draw() # Update the text
-
-    exponent_text = ax.yaxis.get_offset_text().get_text()
-    label = ax.yaxis.get_label().get_text()
-    new_label = update_label(label, ax.yaxis.get_offset_text().get_text())
-    print(new_label)    
-
-    ax.yaxis.offsetText.set_visible(False)
-    
-    return new_label    
     
 
 def main(inargs):
@@ -179,6 +148,8 @@ def main(inargs):
  
     if not inargs.points:
         data_df = pandas.DataFrame(data_list)
+        if 'historicalMisc' in inargs.experiments:
+            data_df.rename(columns={'historicalMisc': 'historicalAA'}, inplace=True)
         experiment_colors = get_experiment_colors(inargs.experiments)
         seaborn.boxplot(data=data_df, palette=experiment_colors)
 
@@ -209,11 +180,11 @@ def main(inargs):
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
         ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
 
-    #plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
-    #ax.yaxis.major.formatter._useMathText = True
-    new_ylabel = format_ylabel_string_with_exponent(ax)
-    plt.ylabel(new_ylabel)
- 
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+    ax.yaxis.major.formatter._useMathText = True
+
+    dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
+    print('dpi =', dpi)
     plt.savefig(inargs.outfile, bbox_inches='tight')
     metadata_dict = {inargs.infiles[-1]: cube.attributes['history']}
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
@@ -250,6 +221,9 @@ author:
 
     parser.add_argument("--points", action="store_true", default=False,
 	                help="Plot individual data points instead of box and whiskers")
+    
+    parser.add_argument("--dpi", type=float, default=None,
+                        help="Figure resolution in dots per square inch [default=auto]")
 
     args = parser.parse_args()            
 
