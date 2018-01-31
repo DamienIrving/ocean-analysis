@@ -156,7 +156,7 @@ def main(inargs):
     plt.title(title)
 
     if inargs.ylabel:
-        plt.ylabel(ylabel)
+        plt.ylabel(inargs.ylabel)
     else:
         plt.ylabel(str(cube.units) + ' / year')
 
