@@ -203,12 +203,14 @@ def group_runs(data_dict):
     return family_list
 
 
-def normalise(cube):
+def normalise(cube, norm_factor):
     """Normalise the data."""
 
-    std = numpy.std(cube.data)
-    mean = numpy.mean(cube.data)
-    norm = (cube.data - mean) / std
+    #std = numpy.std(cube.data)
+    #mean = numpy.mean(cube.data)
+    #norm = (cube.data - mean) / std
+
+    norm = cube.data / norm_factor
 
     return norm
 
@@ -234,7 +236,8 @@ def read_data(inargs, infiles, time_constraint, extra_labels):
         clim_cube.remove_coord('time')
 
         if inargs.normalise_trend:
-            trend_cube.data = normalise(trend_cube)
+            norm_factor = float(clim_cube.collapsed('latitude', iris.analysis.SUM).data) / 1e+23
+            trend_cube.data = normalise(trend_cube, norm_factor)
 
         model = cube.attributes['model_id']
         realization = 'r' + str(cube.attributes['realization'])
@@ -356,14 +359,21 @@ def main(inargs):
     if not inargs.xlim == (-90, 90):
         correct_y_lim(ax, ensemble_mean)
 
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+    ax.yaxis.major.formatter._useMathText = True
+
     if inargs.clim:
         align_yaxis(ax, ax2)
         ax2.grid(None)
         ax2.set_ylabel(clim_ylabel)
+        ax2.yaxis.major.formatter._useMathText = True
         
     ax.set_ylabel(target_ylabel)
     ax.set_xlabel('latitude')
-    plt.axhline(y=0, color='0.5', linestyle='--')
+    if inargs.zeroline:
+        plt.axhline(y=0, color='0.5', linestyle='--')
+
+    
 
     if inargs.legloc:
         ax.legend(loc=inargs.legloc)
@@ -376,7 +386,7 @@ def main(inargs):
         else:
             legend_x_pos = 1.0
         ax.legend(loc='center left', bbox_to_anchor=(legend_x_pos, 0.5))
-    
+
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
@@ -419,6 +429,9 @@ author:
                         help="Plot a climatology curve behind the trend curve [default=False]")
     parser.add_argument("--legloc", type=int, default=None,
                         help="Legend location [default = off plot]")
+
+    parser.add_argument("--zeroline", action="store_true", default=False,
+                        help="Plot a dashed guideline at y=0 [default=False]")
 
     parser.add_argument("--normalise_trend", action="store_true", default=False,
                         help="Normalise the trend data [default=False]")
