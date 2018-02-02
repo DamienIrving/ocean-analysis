@@ -128,7 +128,7 @@ def main(inargs):
     """Run the program."""
 
     time_constraint = gio.get_time_constraint(inargs.time)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=[7, 7])
     plt.axhline(y=0, color='0.5', linestyle='--')
 
     color_dict = get_colors(inargs.infiles)
@@ -185,7 +185,7 @@ def main(inargs):
 
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
-    plt.savefig(inargs.outfile, bbox_inches='tight')
+    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
     metadata_dict = {inargs.infiles[-1]: cube.attributes['history']}
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
 
