@@ -189,7 +189,7 @@ def extract_time(cube, time_constraints_dict):
     return cube, experiment
 
 
-def read_data(inargs, infiles, time_constraints_dict):
+def read_data(inargs, infiles, time_constraints_dict, anomaly=False):
     """Read data."""
 
     data_dict = {}
@@ -204,7 +204,9 @@ def read_data(inargs, infiles, time_constraints_dict):
             cube.var_name = cube.var_name.replace('-inferred', '')
         
         cube, experiment = extract_time(cube, time_constraints_dict)
-      
+        if anomaly:
+            cube.data = cube.data - cube.data[0:20].mean()     
+
         cube.data = cube.data.astype(numpy.float64)
         cube.cell_methods = ()
         for aux_coord in ['latitude', 'longitude']:
@@ -252,7 +254,7 @@ def main(inargs):
     fig, ax = plt.subplots(figsize=[14, 7])
     nexperiments = len(inargs.infiles)
     for infiles in inargs.infiles:
-        data_dict, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_constraints_dict)
+        data_dict, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_constraints_dict, anomaly=inargs.anomaly)
     
         model_family_list = group_runs(data_dict)
         color_dict = get_colors(model_family_list)
@@ -267,7 +269,8 @@ def main(inargs):
     plt.title(title)
         
     ax.set_ylabel(ylabel)
-    plt.axhline(y=0, color='0.5', linestyle='--')
+    if inargs.zero_line:
+        plt.axhline(y=0, color='0.5', linestyle='--')
 
     if inargs.legloc:
         ax.legend(loc=inargs.legloc)
@@ -314,6 +317,12 @@ author:
                         help="Plot an ensemble mean curve [default=False]")
     parser.add_argument("--legloc", type=int, default=None,
                         help="Legend location [default = off plot]")
+
+    parser.add_argument("--zero_line", action="store_true", default=False,
+                        help="Draw a dahsed line at y=0 [default=False]")
+
+    parser.add_argument("--anomaly", action="store_true", default=False,
+                        help="convert data to an anomaly by subracting mean of first 20 data points [default=False]")
 
     args = parser.parse_args()             
     main(args)
