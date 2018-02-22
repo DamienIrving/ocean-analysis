@@ -373,8 +373,6 @@ def main(inargs):
     if inargs.zeroline:
         plt.axhline(y=0, color='0.5', linestyle='--')
 
-    
-
     if inargs.legloc:
         ax.legend(loc=inargs.legloc)
     else:
