@@ -42,7 +42,8 @@ except ImportError:
 # Define functions
 
 experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
-                     'historicalAA': 'blue', 'GHG + AA': 'purple'}
+                     'historicalAA': 'blue', 'GHG + AA': 'purple',
+                     'rcp85': 'orange'}
 
 var_names = {'precipitation_flux': 'precipitation',
              'water_evaporation_flux': 'evaporation',
@@ -173,21 +174,38 @@ def group_runs(data_dict):
     return family_list
 
 
-def read_data(inargs, infiles, time_constraint):
+def extract_time(cube, time_constraints_dict):
+    """Extract a particular time period."""
+
+    experiment = cube.attributes['experiment_id']
+    if 'historical' in experiment:
+        time_constraint = time_constraints_dict['historical']
+    elif 'rcp' in experiment:
+        time_constraint = time_constraints_dict['rcp']
+
+    #with iris.FUTURE.context(cell_datetime_objects=True):
+    cube = cube.extract(time_constraint)
+
+    return cube, experiment
+
+
+def read_data(inargs, infiles, time_constraints_dict):
     """Read data."""
 
     data_dict = {}
     file_count = 0
     for infile in infiles:
-        with iris.FUTURE.context(cell_datetime_objects=True):
-            try:
-                cube = iris.load_cube(infile, gio.check_iris_var(inargs.var) & time_constraint)
-            except iris.exceptions.ConstraintMismatchError:
-                print('using inferred value for', infile)
-                cube = iris.load_cube(infile, gio.check_iris_var('Inferred_' + inargs.var) & time_constraint)
-                cube.long_name = inargs.var.replace('_', ' ')
-                cube.var_name = cube.var_name.replace('-inferred', '')
+        try:
+            cube = iris.load_cube(infile, gio.check_iris_var(inargs.var))
+        except iris.exceptions.ConstraintMismatchError:
+            print('using inferred value for', infile)
+            cube = iris.load_cube(infile, gio.check_iris_var('Inferred_' + inargs.var))
+            cube.long_name = inargs.var.replace('_', ' ')
+            cube.var_name = cube.var_name.replace('-inferred', '')
         
+        cube, experiment = extract_time(cube, time_constraints_dict)
+      
+        cube.data = cube.data.astype(numpy.float64)
         cube.cell_methods = ()
         for aux_coord in ['latitude', 'longitude']:
             try:
@@ -205,10 +223,9 @@ def read_data(inargs, infiles, time_constraint):
         key = (model, physics, realization)
         data_dict[key] = cube
         file_count = file_count + 1
-    experiment = cube.attributes['experiment_id']
-    experiment = 'historicalAA' if experiment == "historicalMisc" else experiment    
+    
     ylabel = get_ylabel(cube, inargs)
-
+    experiment = 'historicalAA' if experiment == "historicalMisc" else experiment
     metadata_dict = {infile: cube.attributes['history']}
     
     return data_dict, experiment, ylabel, metadata_dict
@@ -228,11 +245,14 @@ def get_title(standard_name, experiment, nexperiments):
 def main(inargs):
     """Run the program."""
     
+    time_constraints_dict = {}
+    time_constraints_dict['historical'] = gio.get_time_constraint(inargs.hist_time)
+    time_constraints_dict['rcp'] = gio.get_time_constraint(inargs.rcp_time)
+
     fig, ax = plt.subplots(figsize=[14, 7])
     nexperiments = len(inargs.infiles)
     for infiles in inargs.infiles:
-        time_constraint = gio.get_time_constraint(inargs.time)
-        data_dict, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_constraint)
+        data_dict, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_constraints_dict)
     
         model_family_list = group_runs(data_dict)
         color_dict = get_colors(model_family_list)
@@ -280,8 +300,13 @@ author:
     
     parser.add_argument("--infiles", type=str, action='append', nargs='*',
                         help="Input files for a given experiment")
-    parser.add_argument("--time", type=str, nargs=2, required=True, metavar=('START_DATE', 'END_DATE'),
-                        help="Time period [default = entire]")
+
+    parser.add_argument("--hist_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        default=('1861-01-01', '2005-12-31'),
+                        help="Time bounds for historical period [default = 1861-2005]")
+    parser.add_argument("--rcp_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        default=('2006-01-01', '2100-12-31'),
+                        help="Time bounds for rcp period [default = 2006-2100]")
 
     parser.add_argument("--single_run", action="store_true", default=False,
                         help="Only use run 1 in the ensemble mean [default=False]")
