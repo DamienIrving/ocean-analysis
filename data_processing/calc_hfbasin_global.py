@@ -1,7 +1,7 @@
 """
 Filename:     calc_hfbasin_global.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Calculate zonal mean northward ocean heat transport for the global ocean.
+Description:  Calculate zonal mean northward ocean heat transport for a specified ocean region.
               Can handle hfbasin or hfy/hfx data.
 
 """
@@ -89,6 +89,24 @@ def read_data(infile_list, var, basin_cube):
     return cube
 
 
+def extract_equator(cube):
+    """Extract the equator value.
+
+    The output is technically W / lat to account for 
+      models of differing resolution.
+
+    """
+
+    cube = cube.extract(iris.Constraint(latitude=0))
+    bounds = cube.coord('latitude').bounds.flatten()
+    lat_span = bounds[1] - bounds[0]
+    cube.data = cube.data / lat_span
+
+    cube.remove_coord('latitude')
+
+    return cube 
+
+
 def main(inargs):
     """Run the program."""
 
@@ -157,6 +175,9 @@ def main(inargs):
     zonal_cube.long_name = standard_name.replace('_', ' ')
     zonal_cube.var_name = var_name   
 
+    if inargs.equator:
+        zonal_cube = extract_equator(zonal_cube)
+        
     iris.save(zonal_cube, inargs.outfile)
 
 
@@ -168,7 +189,7 @@ author:
 
 """
 
-    description='Calculate zonal mean northward ocean heat transport for the global ocean'
+    description='Calculate zonal mean northward ocean heat transport for a specified ocean region'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
@@ -180,7 +201,10 @@ author:
     
     parser.add_argument("--basin_file", type=str, default=None,
                         help="Cell basin file (used to mask marginal seas)")
-    
+
+    parser.add_argument("--equator", action="store_true", default=False,
+                        help="Output only the equator value rather than the whole grid")    
+
     parser.add_argument("--regrid", action="store_true", default=False,
                         help="Regrid to a regular lat/lon grid")
 
