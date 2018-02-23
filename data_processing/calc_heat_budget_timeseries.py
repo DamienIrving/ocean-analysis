@@ -59,6 +59,21 @@ def save_history(cube, field, filename):
     history.append(cube.attributes['history'])
 
 
+def convert_to_joules(cube):
+    """Convert units to Joules"""
+
+    assert 'W' in str(cube.units)
+    assert 'days' in str(cube.coord('time').units)
+    
+    time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
+    time_span_seconds = time_span_days * 60 * 60 * 24
+    
+    cube.data = cube.data * time_span_seconds
+    cube.units = str(cube.units).replace('W', 'J')
+    
+    return cube
+    
+
 def read_data(infiles, variable):
     """Load the input data."""
 
@@ -69,7 +84,9 @@ def read_data(infiles, variable):
     cube = gio.check_time_units(cube)
         
     cube = timeseries.convert_to_annual(cube, aggregation='mean')  ## or sum??? 
-
+    if str(cube.units) != 'J':
+        cube = convert_to_joules(cube)
+        
     coord_names = [coord.name() for coord in cube.dim_coords]
     aux_coord_names = [coord.name() for coord in cube.aux_coords]
     assert 'time' in coord_names
@@ -94,19 +111,23 @@ def calc_region_sum(cube, coord_names, aux_coord_names, grid_type, area_cube, re
         else:
             cube = extract_region_latlon(cube, lat_bounds)
 
-    # Get area weights       
-    if area_cube:
-        if grid_type == 'latlon' and lat_bounds:
-            area_cube = extract_region_latlon(area_cube, lat_bounds)
-        area_weights = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
-    else:
-        area_weights = spatial_weights.area_array(cube)
-
-    # Calculate spatial aggregate
     coord_names.remove('time')
-    spatial_agg = cube.collapsed(coord_names, iris.analysis.SUM, weights=area_weights)
-    units = str(spatial_agg.units)
-    spatial_agg.units = units.replace('m-2', '')
+    if 'm-2' in str(cube.units):
+        # Get area weights       
+        if area_cube:
+            if grid_type == 'latlon' and lat_bounds:
+                area_cube = extract_region_latlon(area_cube, lat_bounds)
+            area_weights = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
+        else:
+            area_weights = spatial_weights.area_array(cube)
+
+        # Calculate spatial aggregate
+        spatial_agg = cube.collapsed(coord_names, iris.analysis.SUM, weights=area_weights)
+        units = str(spatial_agg.units)
+        spatial_agg.units = units.replace('m-2', '')
+    else:
+        spatial_agg = cube.collapsed(coord_names, iris.analysis.SUM)
+    
     spatial_agg.remove_coord('latitude')
     spatial_agg.remove_coord('longitude')
     if grid_type == 'curvilinear':
@@ -199,6 +220,42 @@ def calc_regional_values(infiles, variable, area_cube):
     return cube_list  
 
 
+#def select_latitude(cube, latitude):
+#    """Extract the equator value.
+#
+#    The output is technically per lat to account for 
+#      models of differing resolution.
+#
+#    """
+#    cube = cube.copy()
+#    
+#    cube = cube.extract(iris.Constraint(latitude=latitude))
+#    bounds = cube.coord('latitude').bounds.flatten()
+#    lat_span = bounds[1] - bounds[0]
+#    cube.data = cube.data / lat_span
+#
+#    cube.remove_coord('latitude')
+#
+#    return cube 
+
+
+def calc_hfbasin_values(infile)
+    """Extract the northward ocean heat transport for specific latitudes."""
+
+    cube = iris.load_cube(infile, 'northward_ocean_heat_transport')
+    
+    if str(cube.units) != 'J':
+        cube = convert_to_joules(cube)
+
+    ### TODO: Just extract the three lats of interest and keep the latitude dimension?    
+        
+#    cube_list = iris.cube.CubeList([])
+#    for lat in [-30, 0, 30]:
+#        latcube = select_latitude(cube, lat)
+#        latcube = rename_cube(latcube, region + ' sum')
+#        cube_list.append(latcube)    
+
+        
 def main(inargs):
     """Run the program."""
  
@@ -210,14 +267,12 @@ def main(inargs):
     ohc_cube_list = calc_regional_values(inargs.ohc_files, 'ocean_heat_content', area_cube)
     hfds_cube_list = calc_regional_values(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', area_cube)
 
-
+    hfbasin_cube_list = calc_hfbasin_values(inargs.hfbasin_file) 
     
-
-
-    
-    infile_history = {}
-    infile_history[inargs.infiles[0]] = history[0] 
-    cube_list = update_metadata(cube_list, infile_history)
+    ## TODO: Handle the history information
+    #infile_history = {}
+    #infile_history[inargs.infiles[0]] = history[0] 
+    #cube_list = update_metadata(cube_list, infile_history)
 
     iris.save(cube_list, inargs.outfile)
 
@@ -251,8 +306,8 @@ details:
                         help="ocean heat content files (from calc_ohc.py)")
     parser.add_argument("--hfds_files", type=str, nargs='*', required=True,
                         help="surface downwarwd heat flux files (possibly from calc_hfds_inferred.py)")
-    parser.add_argument("--hfbasin_files", type=str, nargs='*', required=True,
-                        help="global northward ocean heat transport files (from calc_hfbasin_global.py)")
+    parser.add_argument("--hfbasin_file", type=str, required=True,
+                        help="global northward ocean heat transport file (from calc_hfbasin_global.py)")
 
     parser.add_argument("--area_file", type=str, default=None, 
                         help="Input area file [required for non lat/lon grids]")
