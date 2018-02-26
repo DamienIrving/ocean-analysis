@@ -128,6 +128,18 @@ def calc_trend(cube, running_mean=False, per_yr=False, remove_scaling=False):
     return trend
 
 
+def is_annual(cube):
+    """Check whether the data is annual timescale."""
+
+    year_diffs = numpy.diff(cube.coord('year').points)
+    if year_diffs.min() < 1:
+        annual = False
+    else:
+        annual = True 
+
+    return annual
+
+
 def convert_to_annual(cube, full_months=False, aggregation='mean'):
     """Convert data to annual timescale.
 
@@ -140,22 +152,20 @@ def convert_to_annual(cube, full_months=False, aggregation='mean'):
     iris.coord_categorisation.add_year(cube, 'time')
     iris.coord_categorisation.add_month(cube, 'time')
 
-    if aggregation == 'mean':
-        aggregator = iris.analysis.MEAN
-    elif aggregation == 'sum':
-        aggregator = iris.analysis.SUM
+    if not is_annual(cube):
 
-    cube = cube.aggregated_by(['year'], aggregator)
+        if aggregation == 'mean':
+            aggregator = iris.analysis.MEAN
+        elif aggregation == 'sum':
+            aggregator = iris.analysis.SUM
 
-    if full_months:
-        cube = cube.extract(iris.Constraint(month='Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec'))
+        cube = cube.aggregated_by(['year'], aggregator)
+
+        if full_months:
+            cube = cube.extract(iris.Constraint(month='Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec'))
   
     cube.remove_coord('year')
     cube.remove_coord('month')
 
     return cube
-
-
-
-
 
