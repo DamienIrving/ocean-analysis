@@ -36,10 +36,7 @@ except ImportError:
 
 # Define functions
 
-history = {}
-history['ocean_heat_content'] = []
-history['surface_downward_heat_flux_in_sea_water'] = []
-history['northward_ocean_heat_transport'] = []
+history = []
 
 region_bounds = {}
 region_bounds['globe'] = None
@@ -68,13 +65,13 @@ def convert_to_joules(cube):
     time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
     time_span_seconds = time_span_days * 60 * 60 * 24
     
-    cube.data = cube.data * time_span_seconds
+    cube.data = cube.data * uconv.broadcast_array(time_span_seconds, 0, cube.shape)
     cube.units = str(cube.units).replace('W', 'J')
     
     return cube
     
 
-def read_data(infiles, variable):
+def read_data(infiles, variable, time_constraint):
     """Load the input data."""
 
     cube = iris.load(infiles, gio.check_iris_var(variable), callback=save_history)
@@ -82,8 +79,10 @@ def read_data(infiles, variable):
     iris.util.unify_time_units(cube)
     cube = cube.concatenate_cube()
     cube = gio.check_time_units(cube)
-        
+
+    cube = cube.extract(time_constraint)  
     cube = timeseries.convert_to_annual(cube, aggregation='mean')  ## or sum??? 
+
     if str(cube.units) != 'J':
         cube = convert_to_joules(cube)
         
@@ -206,10 +205,10 @@ def update_metadata(cube_list, infile_history):
     return cube_list
 
 
-def calc_regional_values(infiles, variable, area_cube):
+def calc_regional_values(infiles, variable, time_constraint, area_cube):
     """Integrate over each region of interest."""
 
-    cube, coord_names, aux_coord_names, grid_type = read_data(infiles, variable)
+    cube, coord_names, aux_coord_names, grid_type = read_data(infiles, variable, time_constraint)
 
     cube_list = iris.cube.CubeList([])
     for region in ['globe', 'nh', 'sh', 'nhext', 'tropics', 'shext']:
@@ -218,42 +217,6 @@ def calc_regional_values(infiles, variable, area_cube):
         cube_list.append(region_sum)
 
     return cube_list  
-
-
-#def select_latitude(cube, latitude):
-#    """Extract the equator value.
-#
-#    The output is technically per lat to account for 
-#      models of differing resolution.
-#
-#    """
-#    cube = cube.copy()
-#    
-#    cube = cube.extract(iris.Constraint(latitude=latitude))
-#    bounds = cube.coord('latitude').bounds.flatten()
-#    lat_span = bounds[1] - bounds[0]
-#    cube.data = cube.data / lat_span
-#
-#    cube.remove_coord('latitude')
-#
-#    return cube 
-
-
-def calc_hfbasin_values(infile)
-    """Extract the northward ocean heat transport for specific latitudes."""
-
-    cube = iris.load_cube(infile, 'northward_ocean_heat_transport')
-    
-    if str(cube.units) != 'J':
-        cube = convert_to_joules(cube)
-
-    ### TODO: Just extract the three lats of interest and keep the latitude dimension?    
-        
-#    cube_list = iris.cube.CubeList([])
-#    for lat in [-30, 0, 30]:
-#        latcube = select_latitude(cube, lat)
-#        latcube = rename_cube(latcube, region + ' sum')
-#        cube_list.append(latcube)    
 
         
 def main(inargs):
@@ -264,15 +227,17 @@ def main(inargs):
     else:
         area_cube = None
 
-    ohc_cube_list = calc_regional_values(inargs.ohc_files, 'ocean_heat_content', area_cube)
-    hfds_cube_list = calc_regional_values(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', area_cube)
+    time_constraint = gio.get_time_constraint(inargs.time)
 
-    hfbasin_cube_list = calc_hfbasin_values(inargs.hfbasin_file) 
-    
-    ## TODO: Handle the history information
-    #infile_history = {}
-    #infile_history[inargs.infiles[0]] = history[0] 
-    #cube_list = update_metadata(cube_list, infile_history)
+    ohc_cube_list = calc_regional_values(inargs.ohc_files, 'ocean_heat_content', time_constraint, area_cube)
+    hfds_cube_list = calc_regional_values(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', time_constraint, area_cube)
+
+    cube_list = ohc_cube_list + hfds_cube_list
+
+    infile_history = {}
+    infile_history[inargs.ohc_files[0]] = history[0] 
+    infile_history[inargs.hfds_files[-1]] = history[-1]
+    cube_list = update_metadata(cube_list, infile_history)
 
     iris.save(cube_list, inargs.outfile)
 
@@ -306,11 +271,12 @@ details:
                         help="ocean heat content files (from calc_ohc.py)")
     parser.add_argument("--hfds_files", type=str, nargs='*', required=True,
                         help="surface downwarwd heat flux files (possibly from calc_hfds_inferred.py)")
-    parser.add_argument("--hfbasin_file", type=str, required=True,
-                        help="global northward ocean heat transport file (from calc_hfbasin_global.py)")
 
     parser.add_argument("--area_file", type=str, default=None, 
                         help="Input area file [required for non lat/lon grids]")
     
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
+                        help="Time period [default = entire]")
+
     args = parser.parse_args()             
     main(args)
