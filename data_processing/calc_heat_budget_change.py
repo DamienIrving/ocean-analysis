@@ -40,7 +40,6 @@ except ImportError:
 
 history = []
 
-
 def save_history(cube, field, filename):
     """Save the history attribute when reading the data.
     (This is required because the history attribute differs between input files 
@@ -101,7 +100,7 @@ def generate_results(data_dict, cube_list, time_constraint, time_bounds):
     """Generate results."""
 
     model, experiment, rip = get_attributes(cube_list[0])
-    period = '%s-%s' %(time_bounds[0].split('-')[0], time_bounds[0].split('-')[1])
+    period = '%s-%s' %(time_bounds[0].split('-')[0], time_bounds[1].split('-')[0])
 
     data_dict['model'].append(model)
     data_dict['experiment'].append(experiment)
@@ -111,7 +110,7 @@ def generate_results(data_dict, cube_list, time_constraint, time_bounds):
     for cube in cube_list:
         temporal_subset = cube.extract(time_constraint)
         clim = temporal_subset.collapsed('time', iris.analysis.MEAN)
-        data_dict[clim.var_name] = clim.data
+        data_dict[clim.var_name] = float(clim.data)
 
     return data_dict
 
@@ -135,10 +134,11 @@ def main(inargs):
     data_dict = collections.OrderedDict()
     for column in column_headers:
         data_dict[column] = []
-    data_dict = generate_results(data_dict, hist_cube_list, hist_start_constaint, inargs.start_time)
-    data_dict = generate_results(data_dict, hist_cube_list, hist_end_constaint, inargs.end_time)
-    data_dict = generate_results(data_dict, control_cube_list, control_start_constaint, inargs.start_time)
-    data_dict = generate_results(data_dict, control_cube_list, control_end_constaint, inargs.end_time)
+    data_dict = generate_results(data_dict, hist_cube_list, hist_start_constraint, inargs.start_time)
+    data_dict = generate_results(data_dict, hist_cube_list, hist_end_constraint, inargs.end_time)
+
+    data_dict = generate_results(data_dict, control_cube_list, control_start_constraint, inargs.start_time)
+    data_dict = generate_results(data_dict, control_cube_list, control_end_constraint, inargs.end_time)
 
     data_df = pandas.DataFrame.from_dict(data_dict)
     data_df.to_csv(inargs.outfile)
