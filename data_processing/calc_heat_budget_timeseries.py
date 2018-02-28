@@ -83,7 +83,7 @@ def read_data(infiles, variable, time_constraint):
     cube = cube.extract(time_constraint)  
     cube = timeseries.convert_to_annual(cube, aggregation='mean')  ## or sum??? 
 
-    if str(cube.units) != 'J':
+    if not 'J' in str(cube.units):
         cube = convert_to_joules(cube)
         
     coord_names = [coord.name() for coord in cube.dim_coords]
@@ -116,16 +116,18 @@ def calc_region_sum(cube, coord_names, aux_coord_names, grid_type, area_cube, re
         if area_cube:
             if grid_type == 'latlon' and lat_bounds:
                 area_cube = extract_region_latlon(area_cube, lat_bounds)
-            area_weights = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
+            area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
         else:
-            area_weights = spatial_weights.area_array(cube)
+            area_data = spatial_weights.area_array(cube)
 
-        # Calculate spatial aggregate
-        spatial_agg = cube.collapsed(coord_names, iris.analysis.SUM, weights=area_weights)
-        units = str(spatial_agg.units)
-        spatial_agg.units = units.replace('m-2', '')
-    else:
-        spatial_agg = cube.collapsed(coord_names, iris.analysis.SUM)
+        # Multiply by area
+        cube.data = cube.data * area_data
+        units = str(cube.units)
+        cube.units = units.replace('m-2', '')
+
+    assert cube.units == 'J'
+
+    spatial_agg = cube.collapsed(coord_names, iris.analysis.SUM)
     
     spatial_agg.remove_coord('latitude')
     spatial_agg.remove_coord('longitude')
