@@ -76,7 +76,10 @@ def get_control_time_constraint(control_cube, hist_cube, time_bounds):
     control_start_date = str(control_start_year).zfill(4)+'-01-01'
     control_end_date = str(control_end_year).zfill(4)+'-01-01'
 
-    time_constraint = get_time_constraint([control_start_date, control_end_date])
+    time_constraint = gio.get_time_constraint([control_start_date, control_end_date])
+
+    control_cube.remove_coord('year')
+    hist_cube.remove_coord('year')
 
     return time_constraint
 
@@ -108,9 +111,10 @@ def generate_results(data_dict, cube_list, time_constraint, time_bounds):
     data_dict['period'].append(period)
 
     for cube in cube_list:
+        cube = cube.copy()
         temporal_subset = cube.extract(time_constraint)
         clim = temporal_subset.collapsed('time', iris.analysis.MEAN)
-        data_dict[clim.var_name] = float(clim.data)
+        data_dict[clim.var_name].append(float(clim.data))
 
     return data_dict
 
@@ -134,6 +138,7 @@ def main(inargs):
     data_dict = collections.OrderedDict()
     for column in column_headers:
         data_dict[column] = []
+
     data_dict = generate_results(data_dict, hist_cube_list, hist_start_constraint, inargs.start_time)
     data_dict = generate_results(data_dict, hist_cube_list, hist_end_constraint, inargs.end_time)
 
