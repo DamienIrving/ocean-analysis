@@ -87,7 +87,7 @@ def read_data(infiles, variable, time_constraint):
 
     if variable == 'surface_downward_heat_flux_in_sea_water':
         agg_method = 'sum'
-    elif variable = 'ocean_heat_content':
+    elif variable == 'ocean_heat_content':
         agg_method = 'mean'
     cube = timeseries.convert_to_annual(cube, aggregation=agg_method) 
         
