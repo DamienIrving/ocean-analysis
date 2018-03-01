@@ -113,7 +113,11 @@ def generate_results(data_dict, cube_list, time_constraint, time_bounds):
     for cube in cube_list:
         cube = cube.copy()
         temporal_subset = cube.extract(time_constraint)
-        clim = temporal_subset.collapsed('time', iris.analysis.MEAN)
+        if 'ohc' in cube.var_name:
+            agg_method = iris.analysis.MEAN
+        elif 'hfds' in cube.var_name:
+            agg_method = iris.analysis.SUM
+        clim = temporal_subset.collapsed('time', agg_method)
         data_dict[clim.var_name].append(float(clim.data))
 
     return data_dict

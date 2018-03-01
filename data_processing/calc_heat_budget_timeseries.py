@@ -80,11 +80,16 @@ def read_data(infiles, variable, time_constraint):
     cube = cube.concatenate_cube()
     cube = gio.check_time_units(cube)
 
-    cube = cube.extract(time_constraint)  
-    cube = timeseries.convert_to_annual(cube, aggregation='mean')  ## or sum??? 
+    cube = cube.extract(time_constraint)
 
     if not 'J' in str(cube.units):
-        cube = convert_to_joules(cube)
+        cube = convert_to_joules(cube)  
+
+    if variable == 'surface_downward_heat_flux_in_sea_water':
+        agg_method = 'sum'
+    elif variable = 'ocean_heat_content':
+        agg_method = 'mean'
+    cube = timeseries.convert_to_annual(cube, aggregation=agg_method) 
         
     coord_names = [coord.name() for coord in cube.dim_coords]
     aux_coord_names = [coord.name() for coord in cube.aux_coords]
@@ -110,7 +115,6 @@ def calc_region_sum(cube, coord_names, aux_coord_names, grid_type, area_cube, re
         else:
             cube = extract_region_latlon(cube, lat_bounds)
 
-    coord_names.remove('time')
     if 'm-2' in str(cube.units):
         # Get area weights       
         if area_cube:
@@ -127,6 +131,7 @@ def calc_region_sum(cube, coord_names, aux_coord_names, grid_type, area_cube, re
 
     assert cube.units == 'J'
 
+    coord_names.remove('time')
     spatial_agg = cube.collapsed(coord_names, iris.analysis.SUM)
     
     spatial_agg.remove_coord('latitude')
@@ -231,9 +236,9 @@ def main(inargs):
 
     time_constraint = gio.get_time_constraint(inargs.time)
 
-    ohc_cube_list = calc_regional_values(inargs.ohc_files, 'ocean_heat_content', time_constraint, area_cube)
     hfds_cube_list = calc_regional_values(inargs.hfds_files, 'surface_downward_heat_flux_in_sea_water', time_constraint, area_cube)
-
+    ohc_cube_list = calc_regional_values(inargs.ohc_files, 'ocean_heat_content', time_constraint, area_cube)
+    
     cube_list = ohc_cube_list + hfds_cube_list
 
     infile_history = {}
