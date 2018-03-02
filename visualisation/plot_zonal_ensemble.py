@@ -223,8 +223,8 @@ def read_data(inargs, infiles, time_constraint, extra_labels):
     file_count = 0
     for infile in infiles:
         extra_label = extra_labels[file_count] if extra_labels else False
-        with iris.FUTURE.context(cell_datetime_objects=True):
-            cube = iris.load_cube(infile, gio.check_iris_var(inargs.var) & time_constraint)
+
+        cube = iris.load_cube(infile, gio.check_iris_var(inargs.var) & time_constraint)
         
         if inargs.perlat:
             grid_spacing = grids.get_grid_spacing(cube) 
