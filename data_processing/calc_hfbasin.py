@@ -1,5 +1,5 @@
 """
-Filename:     calc_hfbasin_global.py
+Filename:     calc_hfbasin.py
 Author:       Damien Irving, irving.damien@gmail.com
 Description:  Calculate zonal mean northward ocean heat transport for a specified ocean region.
               Can handle hfbasin or hfy/hfx data.
@@ -58,11 +58,12 @@ def get_history_attribute(y_files, data_cube, basin_file, basin_cube):
     return history_dict
         
 
-def read_data(infile_list, var, basin_cube):
+def read_data(infile_list, var, basin_cube, region):
     """Read the data files.
 
     The CSIRO-Mk3-6-0 model seems to be formatted incorrectly
-      and you can't select the "global_ocean" by name
+      and you can't select the regioins by name. Index 2 is 
+      definitely "global_ocean" - I need to confirm the others.
 
     """
     cube = iris.load(infile_list, gio.check_iris_var(var), callback=save_history)
@@ -76,16 +77,25 @@ def read_data(infile_list, var, basin_cube):
     model = atts['model_id']
 
     if var == 'northward_ocean_heat_transport':
+        region_index = {}
+        region_index['atlantic_arctic_ocean'] = 0
+        region_index['indian_pacific_ocean'] = 1
+        region_index['global_ocean'] = 2
         if model == 'CSIRO-Mk3-6-0':
-            cube = cube[:, 2, :]
+            cube = cube[:, region_index[region], :]
         else:
-            cube = cube.extract(iris.Constraint(region='global_ocean'))
+            cube = cube.extract(iris.Constraint(region=region))
 
     cube = timeseries.convert_to_annual(cube, full_months=True)
 
     if basin_cube:
         cube = uconv.mask_marginal_seas(cube, basin_cube)
-
+        if region != 'global_ocean':
+            basin_numbers = {}
+            basin_numbers['atlantic_arctic_ocean'] = [2, 4]
+            basin_numbers['indian_pacific_ocean'] = [3, 5]
+            cube = uconv.mask_unwanted_seas(cube, basin_cube, basin_numbers[region])
+            
     return cube
 
 
@@ -110,16 +120,19 @@ def extract_equator(cube):
 def main(inargs):
     """Run the program."""
 
+    region = inargs.region.replace('-', '_')
+
     # Basin data
     hfbasin = True if inargs.var == 'northward_ocean_heat_transport' else False
-    if inargs.basin_file and not hfbasin:
+    if not hfbasin:
+        assert inargs.basin_file, "Must provide a basin file for hfy data"
         basin_cube = iris.load_cube(inargs.basin_file)
     else:
         basin_cube = None
         inargs.basin_file = None
 
     # Heat transport data
-    data_cube = read_data(inargs.infiles, inargs.var, basin_cube)
+    data_cube = read_data(inargs.infiles, inargs.var, basin_cube, region)
     orig_standard_name = data_cube.standard_name
     orig_var_name = data_cube.var_name
   
@@ -153,7 +166,7 @@ def main(inargs):
     elif regular_grid and not hfbasin: 
         basin_array = uconv.create_basin_array(data_cube)
 
-    # Calculate output for global ocean
+    # Calculate the zonal sum (if required)
     data_cube_copy = data_cube.copy()
  
     if hfbasin:
@@ -195,16 +208,18 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("infiles", type=str, nargs='*', help="Input data files")
+    parser.add_argument("infiles", type=str, nargs='*', help="Input hfbasin or hfy data files")
     parser.add_argument("var", type=str, help="Input variable standard_name")
     parser.add_argument("outfile", type=str, help="Output file name")
     
     parser.add_argument("--basin_file", type=str, default=None,
-                        help="Cell basin file (used to mask marginal seas)")
+                        help="Cell basin file, required if hfy data (used to mask marginal seas)")
+
+    parser.add_argument("--region", type=str, default='global-ocean', choices=('atlantic-arctic-ocean', 'indian-pacific-ocean', 'global-ocean'),
+                        help="Region to extract")
 
     parser.add_argument("--equator", action="store_true", default=False,
                         help="Output only the equator value rather than the whole grid")    
-
     parser.add_argument("--regrid", action="store_true", default=False,
                         help="Regrid to a regular lat/lon grid")
 

@@ -369,6 +369,35 @@ def mask_marginal_seas(data_cube, basin_cube):
     return data_cube
 
 
+def mask_unwanted_seas(data_cube, basin_cube, basins_to_keep):
+    """Mask unwanted seas.
+
+    Args:
+      data_cube (iris.cube.Cube)
+      basin_cube (iris.cube.Cube): CMIP5 basin file
+      basins_to_keep (list): list of numbers corresponding to basins to keep
+
+    Basin names and corresponding number in basin files
+      0 global_land
+      1 southern_ocean
+      2 atlantic_ocean
+      3 pacific_ocean
+      4 arctic_ocean
+      5 indian_ocean
+      6 mediterranean_sea
+      7 black_sea
+      8 hudson_bay
+
+    """
+
+    ndim = data_cube.ndim
+    basin_array = broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], data_cube.shape)
+
+    data_cube.data.mask = numpy.where((data_cube.data.mask == False) & numpy.isin(basin_array, basins_to_keep), False, True)
+
+    return data_cube
+
+
 def match_dates(datetimes, datetime_axis):
     """Take list of datetimes and match with the corresponding datetimes in a time axis.
  
