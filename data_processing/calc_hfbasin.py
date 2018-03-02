@@ -62,8 +62,7 @@ def read_data(infile_list, var, basin_cube, region):
     """Read the data files.
 
     The CSIRO-Mk3-6-0 model seems to be formatted incorrectly
-      and you can't select the regioins by name. Index 2 is 
-      definitely "global_ocean" - I need to confirm the others.
+      and you can't select the regioins by name.
 
     """
     cube = iris.load(infile_list, gio.check_iris_var(var), callback=save_history)
