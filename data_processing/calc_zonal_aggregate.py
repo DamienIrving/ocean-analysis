@@ -83,6 +83,10 @@ def main(inargs):
     if inargs.area:
         cube = multiply_by_area(cube) 
 
+    if inargs.sftlf_file and inargs.realm:
+        sftlf_cube = iris.load_cube(inargs.sftlf_file, 'land_area_fraction')
+        cube = uconv.apply_land_ocean_mask(cube, sftlf_cube, inargs.realm)
+
     zonal_aggregate = cube.collapsed('longitude', aggregation_functions[inargs.aggregation])
     zonal_aggregate.remove_coord('longitude')
 
@@ -110,10 +114,16 @@ author:
     parser.add_argument("aggregation", type=str, choices=('mean', 'sum'), help="Method for zonal aggregation")
     parser.add_argument("outfile", type=str, help="Output file")
 
+    parser.add_argument("--realm", type=str, choices=('land', 'ocean'), default=None,
+                        help="perform the aggregation over just the ocean or land")
+    parser.add_argument("--sftlf_file", type=str, default=None,
+                        help="Land fraction file (required if you select a realm")
+
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Output annual mean [default=False]")
     parser.add_argument("--area", action='store_true', default=False,
                         help="Multiply by area [default=False]")
 
-    args = parser.parse_args()             
+    args = parser.parse_args()
+    assert bool(args.sftlf_file) == bool(args.realm), "To select a realm, specify --realm and --sftlf_file"             
     main(args)
