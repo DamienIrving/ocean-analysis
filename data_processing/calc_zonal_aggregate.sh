@@ -1,11 +1,15 @@
 
-model=CSIRO-Mk3-6-0
+model=IPSL-CM5A-LR
 
-experiment=historicalGHG
+experiment=historical
 rips=(r1i1p1)
 
 fx_rip=r0i0p0
 fx_experiment=historical
+
+spatial_agg='sum'
+vars=(rsds rlds rsus rlus hfss hfls)
+#sum mean
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/data_processing
@@ -14,7 +18,7 @@ ua6_dir=/g/data/ua6/DRSv2/CMIP5/${model}
 r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}
 
 
-for var in ohc; do
+for var in "${vars[@]}"; do
 
 if [[ "${var}" == 'pr' ]] ; then
     standard_name='precipitation_flux'
@@ -44,17 +48,59 @@ elif [[ "${var}" == 'ohc' ]] ; then
     prefix='O'
     input_tscale='yr'
     temporal_agg=' '
+elif [[ "${var}" == 'rsds' ]] ; then
+    standard_name='surface_downwelling_shortwave_flux_in_air'
+    file_var='rsds'
+    realm='atmos'
+    prefix='A'
+    input_tscale='mon'
+    temporal_agg='--annual'
+elif [[ "${var}" == 'rsus' ]] ; then
+    standard_name='surface_upwelling_shortwave_flux_in_air'
+    file_var='rsus'
+    realm='atmos'
+    prefix='A'
+    input_tscale='mon'
+    temporal_agg='--annual'
+elif [[ "${var}" == 'rlds' ]] ; then
+    standard_name='surface_downwelling_longwave_flux_in_air'
+    file_var='rlds'
+    realm='atmos'
+    prefix='A'
+    input_tscale='mon'
+    temporal_agg='--annual'
+elif [[ "${var}" == 'rlus' ]] ; then
+    standard_name='surface_upwelling_longwave_flux_in_air'
+    file_var='rlus'
+    realm='atmos'
+    prefix='A'
+    input_tscale='mon'
+    temporal_agg='--annual'
+elif [[ "${var}" == 'hfss' ]] ; then
+    standard_name='surface_upward_sensible_heat_flux'
+    file_var='hfss'
+    realm='atmos'
+    prefix='A'
+    input_tscale='mon'
+    temporal_agg='--annual'
+elif [[ "${var}" == 'hfls' ]] ; then
+    standard_name='surface_upward_latent_heat_flux'
+    file_var='hfls'
+    realm='atmos'
+    prefix='A'
+    input_tscale='mon'
+    temporal_agg='--annual'
 fi
 
 for rip in "${rips[@]}"; do
 
 mkdir -p /g/data/r87/dbi599/DRSv2/CMIP5/${model}/${experiment}/yr/${realm}/${rip}/${var}/latest/
 
-input_file=${r87_dir}/${experiment}/${input_tscale}/${realm}/${rip}/${var}/latest/${file_var}_${prefix}${input_tscale}_${model}_${experiment}_${rip}_*.nc
+input_file=${ua6_dir}/${experiment}/${input_tscale}/${realm}/${rip}/${var}/latest/${file_var}_${prefix}${input_tscale}_${model}_${experiment}_${rip}_*.nc
 
-output_file=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest/${file_var}-zonal-mean_${prefix}yr_${model}_${experiment}_${rip}_all.nc
+output_file=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest/${file_var}-zonal-${spatial_agg}_${prefix}yr_${model}_${experiment}_${rip}_all.nc
 
-command="${python} ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} mean ${output_file} ${temporal_agg}"
+command="${python} ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} ${spatial_agg} ${output_file} ${temporal_agg} --area"
 
 
 echo ${command}

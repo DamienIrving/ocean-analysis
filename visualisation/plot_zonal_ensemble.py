@@ -49,7 +49,14 @@ var_names = {'precipitation_flux': 'precipitation',
              'surface_downward_heat_flux_in_sea_water': 'surface downward heat flux',
              'precipitation_minus_evaporation_flux': 'P-E',
              'northward_ocean_heat_transport': 'northward ocean heat transport',
-             'ocean_heat_content': 'ocean heat content'}
+             'ocean_heat_content': 'ocean heat content',
+             'surface_upward_latent_heat_flux': 'latent heat flux',
+             'surface_upward_sensible_heat_flux': 'sensible heat flux',
+             'surface_downwelling_shortwave_flux_in_air': 'downwelling shortwave flux',
+             'surface_upwelling_shortwave_flux_in_air': 'upwelling shortwave flux',
+             'surface_downwelling_longwave_flux_in_air': 'downwelling longwave flux',
+             'surface_upwelling_longwave_flux_in_air': 'upwelling longwave flux'
+             }
 
 
 def make_zonal_grid():
@@ -222,6 +229,7 @@ def read_data(inargs, infiles, time_constraint, extra_labels):
     trend_dict = {}
     file_count = 0
     for infile in infiles:
+        print(infile)
         extra_label = extra_labels[file_count] if extra_labels else False
 
         cube = iris.load_cube(infile, gio.check_iris_var(inargs.var) & time_constraint)
