@@ -1,7 +1,7 @@
 
-model=NorESM1-M
+model=CSIRO-Mk3-6-0
 experiment=historicalMisc
-rip=r1i1p1
+rips=(r1i1p4 r2i1p4 r3i1p4 r4i1p4 r5i1p4 r6i1p4 r7i1p4 r8i1p4 r9i1p4 r10i1p4)
 
 agg='sum'
 # mean sum
@@ -13,6 +13,7 @@ var='hfds'
 # hfds hfds-inferred ohc
 
 inferred=false
+# true false
 
 fx_rip=r0i0p0
 fx_experiment=historical
@@ -22,6 +23,9 @@ script_dir=/home/599/dbi599/ocean-analysis/data_processing
 
 ua6_dir=/g/data/ua6/DRSv2/CMIP5/${model}
 r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}
+
+
+for rip in "${rips[@]}"; do
 
 if [[ "${var}" == "ohc" ]] ; then
     infiles=${r87_dir}/${experiment}/yr/ocean/${rip}/ohc/latest/ohc_Oyr_${model}_${experiment}_${rip}_*.nc
@@ -51,4 +55,5 @@ command="${python} ${script_dir}/calc_interhemispheric_metric.py ${infiles} ${lo
 echo ${command}
 ${command}
 
+done
 
