@@ -1,8 +1,8 @@
 
-model=CSIRO-Mk3-6-0
+model=ACCESS1-3
 
 experiment=historicalGHG
-rips=(r1i1p1 r2i1p1 r3i1p1 r4i1p1 r5i1p1 r6i1p1 r7i1p1 r8i1p1 r9i1p1 r10i1p1)
+rips=(r1i1p1 r2i1p1 r3i1p1)
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/data_processing
