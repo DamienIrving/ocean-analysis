@@ -40,7 +40,7 @@ def sum_sign(data, sign_to_keep):
       sign_to_keep (str)
       
     """
-    
+
     data = data.copy()
     data = numpy.ma.asarray(data)
     
@@ -49,8 +49,8 @@ def sum_sign(data, sign_to_keep):
         mask = data < 0
     else:
         mask = data > 0
-        
-    data.mask = mask
+    
+    data.mask = data.mask + mask
     
     return numpy.abs(data.sum(axis=1))
 
@@ -65,7 +65,7 @@ def main(inargs):
     
     lat_spacing = cube.coord('latitude').bounds[:, 1] - cube.coord('latitude').bounds[:, 0]    
     area_data = cube.data * uconv.broadcast_array(lat_spacing, 1, cube.shape)
-    
+
     metric_data = sum_sign(area_data, 'positive') - sum_sign(area_data, 'negative')
     
     metric_cube = cube.extract(iris.Constraint(latitude=0))
