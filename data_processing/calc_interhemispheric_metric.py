@@ -12,7 +12,6 @@ import argparse
 import numpy
 import iris
 from iris.experimental.equalise_cubes import equalise_attributes
-iris.FUTURE.netcdf_promote = True
 
 # Import my modules
 
@@ -50,14 +49,13 @@ def save_history(cube, field, filename):
 def read_data(infiles, variable, calc_annual=False):
     """Load the input data."""
 
-    with iris.FUTURE.context(cell_datetime_objects=True):
-        cube = iris.load(infiles, gio.check_iris_var(variable), callback=save_history)
-        equalise_attributes(cube)
-        iris.util.unify_time_units(cube)
-        cube = cube.concatenate_cube()
-        cube = gio.check_time_units(cube)
-        if calc_annual:
-            cube = timeseries.convert_to_annual(cube) 
+    cube = iris.load(infiles, gio.check_iris_var(variable), callback=save_history)
+    equalise_attributes(cube)
+    iris.util.unify_time_units(cube)
+    cube = cube.concatenate_cube()
+    cube = gio.check_time_units(cube)
+    if calc_annual:
+        cube = timeseries.convert_to_annual(cube) 
 
     coord_names = [coord.name() for coord in cube.dim_coords]
     aux_coord_names = [coord.name() for coord in cube.aux_coords]

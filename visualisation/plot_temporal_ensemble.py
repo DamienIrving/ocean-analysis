@@ -183,7 +183,6 @@ def extract_time(cube, time_constraints_dict):
     elif 'rcp' in experiment:
         time_constraint = time_constraints_dict['rcp']
 
-    #with iris.FUTURE.context(cell_datetime_objects=True):
     cube = cube.extract(time_constraint)
 
     return cube, experiment
