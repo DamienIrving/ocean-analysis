@@ -136,12 +136,15 @@ def plot_ensmean(data_dict, experiment, nexperiments,
             cube_list.append(cube)
             count = count + 1
 
-    equalise_attributes(cube_list)
-    cube_list = equalise_time_axes(cube_list)
-    ensemble_cube = cube_list.merge_cube()
+    if len(cube_list) > 1:
+        equalise_attributes(cube_list)
+        cube_list = equalise_time_axes(cube_list)
+        ensemble_cube = cube_list.merge_cube()
+        ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
+    else:
+        ensemble_mean = cube_list[0]
    
     label, color = get_ensemble_label_color(experiment, nexperiments, single_run)
-    ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
     iplt.plot(ensemble_mean, label=label, color=color, linestyle=linestyle, linewidth=linewidth)
 
     return ensemble_mean
