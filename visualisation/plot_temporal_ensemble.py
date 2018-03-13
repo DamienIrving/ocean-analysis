@@ -269,8 +269,11 @@ def main(inargs):
 
     title = get_title(inargs.var, experiment, nexperiments)
     plt.title(title)
-        
+
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+    ax.yaxis.major.formatter._useMathText = True
     ax.set_ylabel(ylabel)
+
     if inargs.zero_line:
         plt.axhline(y=0, color='0.5', linestyle='--')
 
