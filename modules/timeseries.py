@@ -1,9 +1,10 @@
 """Collection of functions for dealing with timeseries.
 
 Functions:
-  calc_seasonal_cycle  -- Calculate the seasonal cycle
-  calc_trend           -- Calculate the linear trend
-  convert_to_annual    -- Convert the data to annual mean
+  calc_seasonal_cycle         -- Calculate the seasonal cycle
+  calc_trend                  -- Calculate the linear trend
+  convert_to_annual           -- Convert the data to annual mean
+  get_control_time_constraint -- Define the time constraint for the control data
 
 """
 
@@ -30,6 +31,49 @@ def convert_to_seconds(time_axis):
     time_axis.convert_units(new_unit)
 
     return time_axis
+
+
+def get_control_time_constraint(control_cube, ref_cube, time_bounds):
+    """Define the time constraint for control data.
+
+    Args:
+      control_cube (iris.cube.Cube): cube for piControl experiment
+      ref_cube (iris.cube.Cube): reference cube (e.g. from historical experiment)
+      time_bounds (list): selected time periods from reference cube
+        (e.g. ['1861-01-01', '2005-12-31'])
+
+    """
+
+    iris.coord_categorisation.add_year(control_cube, 'time')
+    iris.coord_categorisation.add_year(ref_cube, 'time')
+
+    branch_time = ref_cube.attributes['branch_time']
+    
+    index = 0
+    for bounds in control_cube.coord('time').bounds:
+        lower, upper = bounds
+        if lower <= branch_time < upper:
+            break
+        else:
+            index = index + 1
+
+    branch_year = control_cube.coord('year').points[index]
+    ref_start_year = ref_cube.coord('year').points[0]
+    start_gap = int(time_bounds[0].split('-')[0]) - ref_start_year
+    end_gap = int(time_bounds[1].split('-')[0]) - ref_start_year
+
+    control_start_year = branch_year + start_gap
+    control_end_year = branch_year + end_gap
+
+    control_start_date = str(control_start_year).zfill(4)+'-01-01'
+    control_end_date = str(control_end_year).zfill(4)+'-01-01'
+
+    time_constraint = gio.get_time_constraint([control_start_date, control_end_date])
+
+    control_cube.remove_coord('year')
+    ref_cube.remove_coord('year')
+
+    return time_constraint
 
 
 def _linear_trend(data, time_axis):

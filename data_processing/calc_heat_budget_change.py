@@ -49,41 +49,6 @@ def save_history(cube, field, filename):
     history.append(cube.attributes['history'])
 
 
-def get_control_time_constraint(control_cube, hist_cube, time_bounds):
-    """Define the time constraints for the control data."""
-
-    iris.coord_categorisation.add_year(control_cube, 'time')
-    iris.coord_categorisation.add_year(hist_cube, 'time')
-
-    branch_time = hist_cube.attributes['branch_time']
-    
-    index = 0
-    for bounds in control_cube.coord('time').bounds:
-        lower, upper = bounds
-        if lower <= branch_time < upper:
-            break
-        else:
-            index = index + 1
-
-    branch_year = control_cube.coord('year').points[index]
-    hist_start_year = hist_cube.coord('year').points[0]
-    start_gap = int(time_bounds[0].split('-')[0]) - hist_start_year
-    end_gap = int(time_bounds[1].split('-')[0]) - hist_start_year
-
-    control_start_year = branch_year + start_gap
-    control_end_year = branch_year + end_gap
-
-    control_start_date = str(control_start_year).zfill(4)+'-01-01'
-    control_end_date = str(control_end_year).zfill(4)+'-01-01'
-
-    time_constraint = gio.get_time_constraint([control_start_date, control_end_date])
-
-    control_cube.remove_coord('year')
-    hist_cube.remove_coord('year')
-
-    return time_constraint
-
-
 def get_attributes(cube):
     """Get the model, experiment and rip information."""
 
@@ -132,8 +97,8 @@ def main(inargs):
     hist_start_constraint = gio.get_time_constraint(inargs.start_time)
     hist_end_constraint = gio.get_time_constraint(inargs.end_time)
     start_year = inargs.start_time[0].split('-')[0]
-    control_start_constraint = get_control_time_constraint(control_cube_list[0], hist_cube_list[0], inargs.start_time)
-    control_end_constraint = get_control_time_constraint(control_cube_list[0], hist_cube_list[0], inargs.end_time)
+    control_start_constraint = timeseries.get_control_time_constraint(control_cube_list[0], hist_cube_list[0], inargs.start_time)
+    control_end_constraint = timeseries.get_control_time_constraint(control_cube_list[0], hist_cube_list[0], inargs.end_time)
     
     column_headers = ['model', 'experiment', 'rip', 'period',
                       'hfds-globe-sum', 'hfds-nh-sum', 'hfds-sh-sum', 'hfds-nhext-sum', 'hfds-tropics-sum', 'hfds-shext-sum',
