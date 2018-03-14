@@ -70,11 +70,14 @@ def get_colors(family_list):
 def get_ylabel(cube, inargs):
     """get the y axis label"""
 
-    if str(cube.units) == 'kg m-2 s-1':
-        ylabel = '$kg \: m^{-2} \: s^{-1}$' 
+    if inargs.ylabel:
+        ylabel = inargs.ylabel
     else:
         ylabel = str(cube.units)
 
+    if ylabel == 'kg m-2 s-1':
+        ylabel = '$kg \: m^{-2} \: s^{-1}$' 
+        
     return ylabel
 
 
@@ -177,21 +180,7 @@ def group_runs(data_dict):
     return family_list
 
 
-def extract_time(cube, time_constraints_dict):
-    """Extract a particular time period."""
-
-    experiment = cube.attributes['experiment_id']
-    if 'historical' in experiment:
-        time_constraint = time_constraints_dict['historical']
-    elif 'rcp' in experiment:
-        time_constraint = time_constraints_dict['rcp']
-
-    cube = cube.extract(time_constraint)
-
-    return cube, experiment
-
-
-def read_data(inargs, infiles, time_constraints_dict, anomaly=False):
+def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False):
     """Read data."""
 
     data_dict = {}
@@ -205,7 +194,11 @@ def read_data(inargs, infiles, time_constraints_dict, anomaly=False):
             cube.long_name = inargs.var.replace('_', ' ')
             cube.var_name = cube.var_name.replace('-inferred', '')
         
-        cube, experiment = extract_time(cube, time_constraints_dict)
+        if ref_cube:
+            time_constraint = timeseries.get_control_time_constraint(cube, ref_cube, time_bounds)
+        else:
+            time_constraint = gio.get_time_constraint(time_bounds)
+        cube = cube.extract(time_constraint)
         if anomaly:
             cube.data = cube.data - cube.data[0:20].mean()     
 
@@ -223,6 +216,7 @@ def read_data(inargs, infiles, time_constraints_dict, anomaly=False):
         model = cube.attributes['model_id']
         realization = 'r' + str(cube.attributes['realization'])
         physics = 'p' + str(cube.attributes['physics_version'])
+        experiment = cube.attributes['experiment_id']
 
         key = (model, physics, realization)
         data_dict[key] = cube
@@ -246,26 +240,45 @@ def get_title(standard_name, experiment, nexperiments):
     return title
 
 
+def plot_file(infiles, time_bounds, inargs, nexperiments, ref_cube=None):
+    """Plot the data for a given input file."""
+
+    data_dict, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_bounds, ref_cube=ref_cube, anomaly=inargs.anomaly)
+    
+    model_family_list = group_runs(data_dict)
+    color_dict = get_colors(model_family_list)
+
+    if nexperiments == 1:
+        plot_individual(data_dict, color_dict)
+    if inargs.ensmean:
+        ensemble_mean = plot_ensmean(data_dict, experiment, nexperiments,
+                                     single_run=inargs.single_run)
+
+    return data_dict, experiment, ylabel, metadata_dict
+
+
 def main(inargs):
     """Run the program."""
     
-    time_constraints_dict = {}
-    time_constraints_dict['historical'] = gio.get_time_constraint(inargs.hist_time)
-    time_constraints_dict['rcp'] = gio.get_time_constraint(inargs.rcp_time)
-
     fig, ax = plt.subplots(figsize=[14, 7])
-    nexperiments = len(inargs.infiles)
-    for infiles in inargs.infiles:
-        data_dict, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_constraints_dict, anomaly=inargs.anomaly)
+    nexperiments = len(inargs.hist_files) + len(inargs.rcp_files) + len(inargs.control_files)
     
-        model_family_list = group_runs(data_dict)
-        color_dict = get_colors(model_family_list)
+    # Plot historical data
+    for infiles in inargs.hist_files:
+        data_dict, experiment, ylabel, metadata_dict = plot_file(infiles, inargs.hist_time, inargs, nexperiments)
 
-        if nexperiments == 1:
-            plot_individual(data_dict, color_dict)
-        if inargs.ensmean:
-            ensemble_mean = plot_ensmean(data_dict, experiment, nexperiments,
-                                         single_run=inargs.single_run)
+    # Plot control data
+    if inargs.control_files:
+        assert inargs.hist_files, 'Control plot requires branch time information from historical files'
+        ref_cube = data_dict.popitem()[1]
+        plot_start_time = inargs.hist_time[0]
+        plot_end_time = inargs.rcp_time[-1] if inargs.rcp_files else inargs.hist_time[-1]
+        for infiles in inargs.control_files:
+            data_dict, experiment, ylabel, metadata_dict = plot_file(infiles, [plot_start_time, plot_end_time], inargs, nexperiments, ref_cube=ref_cube)        
+
+    # Plot rcp data
+    for infiles in inargs.rcp_files:
+        experiment, ylabel, metadata_dict = plot_file(infiles, inargs.rcp_time, inargs, nexperiments)        
 
     title = get_title(inargs.var, experiment, nexperiments)
     plt.title(title)
@@ -306,22 +319,29 @@ author:
     parser.add_argument("var", type=str, help="Variable")
     parser.add_argument("outfile", type=str, help="Output file")                                     
     
-    parser.add_argument("--infiles", type=str, action='append', nargs='*',
-                        help="Input files for a given experiment")
+    parser.add_argument("--hist_files", type=str, action='append', nargs='*', default=[],
+                        help="Input files for an historical experiment")
+    parser.add_argument("--rcp_files", type=str, action='append', nargs='*', default=[],
+                        help="Input files for an RCP experiment")
+    parser.add_argument("--control_files", type=str, action='append', nargs='*', default=[],
+                        help="Input files for a control experiment")
 
     parser.add_argument("--hist_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2005-12-31'),
                         help="Time bounds for historical period [default = 1861-2005]")
     parser.add_argument("--rcp_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('2006-01-01', '2100-12-31'),
-                        help="Time bounds for rcp period [default = 2006-2100]")
+                        help="Time bounds for rcp period [default = None]")
 
     parser.add_argument("--single_run", action="store_true", default=False,
                         help="Only use run 1 in the ensemble mean [default=False]")
     parser.add_argument("--ensmean", action="store_true", default=False,
                         help="Plot an ensemble mean curve [default=False]")
+
     parser.add_argument("--legloc", type=int, default=None,
                         help="Legend location [default = off plot]")
+    parser.add_argument("--ylabel", type=str, default=None,
+                        help="y axis label") 
 
     parser.add_argument("--zero_line", action="store_true", default=False,
                         help="Draw a dahsed line at y=0 [default=False]")

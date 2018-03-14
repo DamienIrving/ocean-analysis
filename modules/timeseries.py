@@ -33,6 +33,17 @@ def convert_to_seconds(time_axis):
     return time_axis
 
 
+def _check_attributes(data_attrs, control_attrs):
+    """Make sure the correct control run has been used."""
+
+    assert data_attrs['parent_experiment_id'] in [control_attrs['experiment_id'], 'N/A']
+
+    control_rip = 'r%si%sp%s' %(control_attrs['realization'],
+                                control_attrs['initialization_method'],
+                                control_attrs['physics_version'])
+    assert data_attrs['parent_experiment_rip'] in [control_rip, 'N/A']
+
+
 def get_control_time_constraint(control_cube, ref_cube, time_bounds):
     """Define the time constraint for control data.
 
@@ -43,6 +54,8 @@ def get_control_time_constraint(control_cube, ref_cube, time_bounds):
         (e.g. ['1861-01-01', '2005-12-31'])
 
     """
+
+    _check_attributes(ref_cube.attributes, control_cube.attributes)
 
     iris.coord_categorisation.add_year(control_cube, 'time')
     iris.coord_categorisation.add_year(ref_cube, 'time')
