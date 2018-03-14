@@ -1,15 +1,15 @@
 
-model=CSIRO-Mk3-6-0
-experiment=historicalMisc
-rips=(r1i1p4 r2i1p4 r3i1p4 r4i1p4 r5i1p4 r6i1p4 r7i1p4 r8i1p4 r9i1p4 r10i1p4)
+model=FGOALS-g2
+experiments=(historical historicalGHG piControl)
+rips=(r1i1p1)
 
 agg='sum'
 # mean sum
 
-metric='diff'
+metric='global-fraction'
 # diff global-fraction
 
-var='hfds'
+var='ohc'
 # hfds hfds-inferred ohc
 
 inferred=false
@@ -24,7 +24,7 @@ script_dir=/home/599/dbi599/ocean-analysis/data_processing
 ua6_dir=/g/data/ua6/DRSv2/CMIP5/${model}
 r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}
 
-
+for experiment in "${experiments[@]}"; do
 for rip in "${rips[@]}"; do
 
 if [[ "${var}" == "ohc" ]] ; then
