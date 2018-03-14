@@ -63,6 +63,10 @@ def read_data(infiles, variable, calc_annual=False):
     assert len(coord_names) == 3
     grid_type = 'curvilinear' if aux_coord_names == ['latitude', 'longitude'] else 'latlon'
 
+    infile_history = {}
+    infile_history[infiles[0]] = history[0] 
+    cube.attributes['history'] = gio.write_metadata(file_info=infile_history)
+
     return cube, coord_names, aux_coord_names, grid_type
 
 
@@ -180,20 +184,18 @@ def calc_frac(h_cube, globe_cube, agg_method):
     metric = h_cube.copy()
     metric.data = (h_cube.data / globe_cube.data) * 100
     metric = rename_cube(metric, 'div globe ' + agg_method)  
-    
-    units = str(metric.units)
+
     metric.units = '%'
 
     return metric
 
 
-def update_metadata(cube_list, infile_history):
+def update_metadata(cube_list):
     """Create the cube list for output."""
 
     equalise_attributes(cube_list)
 
     for cube in cube_list:
-        cube.attributes['history'] = gio.write_metadata(file_info=infile_history)
         cube.data = numpy.array(cube.data)  #removes _FillValue attribute
 
     return cube_list
@@ -235,10 +237,7 @@ def main(inargs):
         cube_list.append(nh_metric)
         cube_list.append(sh_metric)
     
-    infile_history = {}
-    infile_history[inargs.infiles[0]] = history[0] 
-    cube_list = update_metadata(cube_list, infile_history)
-
+    cube_list = update_metadata(cube_list)
     iris.save(cube_list, inargs.outfile)
 
 
