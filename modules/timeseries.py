@@ -14,6 +14,8 @@ import iris.coord_categorisation
 import cf_units
 import pdb
 
+import general_io as gio
+
 
 def convert_to_seconds(time_axis):
     """Convert time axis units to seconds.
@@ -79,7 +81,7 @@ def get_control_time_constraint(control_cube, ref_cube, time_bounds):
     control_end_year = branch_year + end_gap
 
     control_start_date = str(control_start_year).zfill(4)+'-01-01'
-    control_end_date = str(control_end_year).zfill(4)+'-01-01'
+    control_end_date = str(control_end_year).zfill(4)+'-12-31'
 
     time_constraint = gio.get_time_constraint([control_start_date, control_end_date])
 
