@@ -86,7 +86,6 @@ def read_data(infile_list, var, basin_cube, region):
             cube = cube.extract(iris.Constraint(region=region))
 
     cube = timeseries.convert_to_annual(cube, full_months=True)
-
     if basin_cube:
         cube = uconv.mask_marginal_seas(cube, basin_cube)
         if region != 'global_ocean':
@@ -98,22 +97,6 @@ def read_data(infile_list, var, basin_cube, region):
     return cube
 
 
-def extract_equator(cube):
-    """Extract the equator value.
-
-    The output is technically W / lat to account for 
-      models of differing resolution.
-
-    """
-
-    cube = cube.extract(iris.Constraint(latitude=0))
-    bounds = cube.coord('latitude').bounds.flatten()
-    lat_span = bounds[1] - bounds[0]
-    cube.data = cube.data / lat_span
-
-    cube.remove_coord('latitude')
-
-    return cube 
 
 
 def main(inargs):
@@ -186,9 +169,6 @@ def main(inargs):
     zonal_cube.standard_name = standard_name
     zonal_cube.long_name = standard_name.replace('_', ' ')
     zonal_cube.var_name = var_name   
-
-    if inargs.equator:
-        zonal_cube = extract_equator(zonal_cube)
         
     iris.save(zonal_cube, inargs.outfile)
 
@@ -216,9 +196,7 @@ author:
 
     parser.add_argument("--region", type=str, default='global-ocean', choices=('atlantic-arctic-ocean', 'indian-pacific-ocean', 'global-ocean'),
                         help="Region to extract")
-
-    parser.add_argument("--equator", action="store_true", default=False,
-                        help="Output only the equator value rather than the whole grid")    
+ 
     parser.add_argument("--regrid", action="store_true", default=False,
                         help="Regrid to a regular lat/lon grid")
 
