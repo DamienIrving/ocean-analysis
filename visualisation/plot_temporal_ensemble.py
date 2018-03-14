@@ -43,7 +43,7 @@ except ImportError:
 
 experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
                      'historicalAA': 'blue', 'GHG + AA': 'purple',
-                     'rcp85': 'orange'}
+                     'rcp85': 'orange', 'piControl': '0.5'}
 
 var_names = {'precipitation_flux': 'precipitation',
              'water_evaporation_flux': 'evaporation',
@@ -196,9 +196,12 @@ def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False):
         
         if ref_cube:
             time_constraint = timeseries.get_control_time_constraint(cube, ref_cube, time_bounds)
+            cube = cube.extract(time_constraint)
+            cube.replace_coord(ref_cube.coord('time'))
         else:
             time_constraint = gio.get_time_constraint(time_bounds)
-        cube = cube.extract(time_constraint)
+            cube = cube.extract(time_constraint)
+
         if anomaly:
             cube.data = cube.data - cube.data[0:20].mean()     
 
