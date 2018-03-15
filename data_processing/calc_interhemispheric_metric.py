@@ -71,7 +71,8 @@ def read_data(infiles, variable, calc_annual=False):
 
 
 def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
-                     aggregation_method, area_cube, lat_bounds=None):
+                     aggregation_method, area_cube,
+                     lat_bounds=None, chunk=False):
     """Load the infiles and calculate the spatial aggregate (sum or mean)."""
 
     cube = cube.copy() 
@@ -95,7 +96,11 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
 
     # Calculate spatial aggregate
     coord_names.remove('time')
-    spatial_agg = cube.collapsed(coord_names, aggregation_method, weights=area_weights)
+    if chunk:
+        spatial_agg = uconv.chunked_collapse_by_time(cube, coord_names, aggregation_method, weights=area_weights)
+    else: 
+        spatial_agg = cube.collapsed(coord_names, aggregation_method, weights=area_weights)
+
     if aggregation_method == iris.analysis.SUM:
         units = str(spatial_agg.units)
         spatial_agg.units = units.replace('m-2', '')
@@ -210,17 +215,18 @@ def main(inargs):
         area_cube = iris.load_cube(inargs.area_file, 'cell_area')
     else:
         area_cube = None
-
+    
     agg_methods = {'sum': iris.analysis.SUM, 'mean': iris.analysis.MEAN}
 
     nh_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
                               agg_methods[inargs.aggregation_method], area_cube,
-                              lat_bounds=inargs.nh_lat_bounds)
+                              lat_bounds=inargs.nh_lat_bounds, chunk=inargs.chunk)
     sh_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
                               agg_methods[inargs.aggregation_method], area_cube,
-                              lat_bounds=inargs.sh_lat_bounds)
+                              lat_bounds=inargs.sh_lat_bounds, chunk=inargs.chunk)
     globe_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
-                                 agg_methods[inargs.aggregation_method], area_cube)   
+                                 agg_methods[inargs.aggregation_method], area_cube,
+                                 chunk=inargs.chunk)   
 
     nh_agg = rename_cube(nh_agg, 'nh ' + inargs.aggregation_method)  
     sh_agg = rename_cube(sh_agg, 'sh ' + inargs.aggregation_method)
@@ -275,6 +281,9 @@ author:
                         help="Northern Hemisphere latitude bounds [default = entire hemisphere]")
     parser.add_argument("--sh_lat_bounds", type=float, nargs=2, metavar=('LOWER', 'UPPER'), default=(-91.0, 0.0),
                         help="Southern Hemisphere latitude bounds [default = entire hemisphere]")
+
+    parser.add_argument("--chunk", action="store_true", default=False,
+                        help="Split input files on time axis to avoid memory errors [default: False]")
 
     args = parser.parse_args()             
     main(args)

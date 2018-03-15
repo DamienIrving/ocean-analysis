@@ -49,8 +49,8 @@ fi
 outfile=${r87_dir}/${experiment}/yr/ocean/${rip}/${var}/latest/${outvar}-${agg}-hemispheric-metrics_Oyr_${model}_${experiment}_${rip}_all.nc
 
 
-command="${python} ${script_dir}/calc_interhemispheric_metric.py ${infiles} ${longvar} ${outfile} --area_file ${areafile} --metric ${metric} --aggregation_method ${agg} ${smooth}"
-# --annual --nh_lat_bounds -3.5 91 --sh_lat_bounds -91 -3.5
+command="${python} ${script_dir}/calc_interhemispheric_metric.py ${infiles} ${longvar} ${outfile} --area_file ${areafile} --metric ${metric} --aggregation_method ${agg} ${smooth} --chunk "
+# --annual --nh_lat_bounds -3.5 91 --sh_lat_bounds -91 -3.5 --chunk
 
 echo ${command}
 ${command}

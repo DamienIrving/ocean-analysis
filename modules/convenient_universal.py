@@ -27,6 +27,7 @@ import numpy
 from scipy import stats
 import pdb, re
 import inspect
+import iris
 
 
 def adjust_lon_range(lons, radians=True, start=0.0):
@@ -181,6 +182,34 @@ def calc_significance(data_subset, data_all, standard_name):
                  'notes': notes,}
 
     return pvals, pval_atts
+
+
+def chunked_collapse_by_time(cube, collapse_dims, agg_method, weights=None):
+    """Collapse a spatial dimension by chunking along time axis.
+
+    Args:
+      cube (iris.cube.Cube)
+      collapse_dim (str): dimension to collapse
+      agg_method (iris.analysis.WeightedAggregator): aggregation method
+      weights (numpy.ndarray): weights for aggregation
+
+    """
+
+    assert agg_method in [iris.analysis.SUM, iris.analysis.MEAN]
+
+    chunk_list = iris.cube.CubeList([])
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    start_indexes, step = get_chunks(cube.shape, coord_names, chunk=True)
+    for index in start_indexes:
+        if type(weights) in [numpy.ndarray, numpy.ma.core.MaskedArray]:
+            chunk = cube[index:index+step, ...].collapsed(collapse_dims, agg_method, weights=weights[index:index+step, ...])
+        else:
+            chunk = cube[index:index+step, ...].collapsed(collapse_dims, agg_method)
+        chunk_list.append(chunk)
+
+    collapsed_cube = chunk_list.concatenate()[0]
+
+    return collapsed_cube
 
 
 def coordinate_pairs(lat_axis, lon_axis):

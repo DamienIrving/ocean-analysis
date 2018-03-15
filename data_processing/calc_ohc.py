@@ -69,12 +69,7 @@ def calc_ohc_vertical_integral(cube, density, specific_heat, coord_names, weight
     """
 
     if chunk:
-        integral_list = iris.cube.CubeList([])
-        start_indexes, step = uconv.get_chunks(cube.shape, coord_names, chunk=True)
-        for index in start_indexes:
-            integral_chunk = cube[index:index+step, ...].collapsed('depth', iris.analysis.SUM, weights=weights[index:index+step, ...])
-            integral_list.append(integral_chunk)
-        integral = integral_list.concatenate()[0]
+        integral = uconv.chunked_collapse_by_time(cube, 'depth', iris.analysis.SUM, weights=weights)
     else:
         integral = cube.collapsed('depth', iris.analysis.SUM, weights=weights)
        
