@@ -286,8 +286,9 @@ def main(inargs):
     title = get_title(inargs.var, experiment, nexperiments)
     plt.title(title)
 
-    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
-    ax.yaxis.major.formatter._useMathText = True
+    if inargs.scientific:
+        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+        ax.yaxis.major.formatter._useMathText = True
     ax.set_ylabel(ylabel)
 
     if inargs.zero_line:
@@ -348,6 +349,8 @@ author:
 
     parser.add_argument("--zero_line", action="store_true", default=False,
                         help="Draw a dahsed line at y=0 [default=False]")
+    parser.add_argument("--scientific", action="store_true", default=False,
+                        help="Use scientific notation for the y axis scale [default=False]")
 
     parser.add_argument("--anomaly", action="store_true", default=False,
                         help="convert data to an anomaly by subracting mean of first 20 data points [default=False]")
