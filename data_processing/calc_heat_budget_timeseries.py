@@ -13,6 +13,9 @@ import argparse
 import numpy
 import iris
 from iris.experimental.equalise_cubes import equalise_attributes
+import dask
+dask.set_options(get=dask.get)
+
 
 # Import my modules
 
@@ -103,6 +106,9 @@ def read_data(infiles, variable, time_constraint):
 def calc_region_sum(cube, coord_names, aux_coord_names, grid_type, area_cube, region):
     """Calculate the spatial sum."""
 
+    if grid_type == 'curvilinear':
+        assert area_cube, "Must provide an area cube of curvilinear data"
+
     cube = cube.copy() 
     coord_names = coord_names.copy()
     lat_bounds = region_bounds[region]
@@ -110,7 +116,6 @@ def calc_region_sum(cube, coord_names, aux_coord_names, grid_type, area_cube, re
     # Extract region
     if lat_bounds:
         if grid_type == 'curvilinear':
-            assert area_cube, "Must provide an area cube of curvilinear data"
             cube = extract_region_curvilinear(cube, lat_bounds)
         else:
             cube = extract_region_latlon(cube, lat_bounds)
