@@ -11,7 +11,8 @@ import sys, os, pdb
 import argparse
 import numpy
 import iris
-iris.FUTURE.netcdf_promote = True
+import dask
+dask.set_options(get=dask.get)
 
 # Import my modules
 

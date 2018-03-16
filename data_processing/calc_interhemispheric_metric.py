@@ -12,6 +12,8 @@ import argparse
 import numpy
 import iris
 from iris.experimental.equalise_cubes import equalise_attributes
+import dask
+dask.set_options(get=dask.get) 
 
 # Import my modules
 
