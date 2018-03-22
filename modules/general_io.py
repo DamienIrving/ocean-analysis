@@ -97,6 +97,22 @@ regions = {'asl': [-75, -60, 180, 310],
            }
 
 
+var_names = {'precipitation_flux': 'precipitation',
+             'water_evaporation_flux': 'evaporation',
+             'surface_downward_heat_flux_in_sea_water': 'surface downward heat flux',
+             'precipitation_minus_evaporation_flux': 'P-E',
+             'northward_ocean_heat_transport': 'northward ocean heat transport',
+             'ocean_heat_content': 'ocean heat content',
+             'surface_upward_latent_heat_flux': 'latent heat flux',
+             'surface_upward_sensible_heat_flux': 'sensible heat flux',
+             'surface_downwelling_shortwave_flux_in_air': 'downwelling shortwave flux',
+             'surface_upwelling_shortwave_flux_in_air': 'upwelling shortwave flux',
+             'surface_downwelling_longwave_flux_in_air': 'downwelling longwave flux',
+             'surface_upwelling_longwave_flux_in_air': 'upwelling longwave flux',
+             'Downward_Heat_Flux_at_Sea_Water_Surface_nh_sum_minus_sh_sum': 'interhemispheric difference in surface downward heat flux (NH minus SH)'
+             }
+
+
 def check_iris_var(var):
     """Check if variable is in the list of iris standard variables.
 

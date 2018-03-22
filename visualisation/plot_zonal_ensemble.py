@@ -44,20 +44,6 @@ except ImportError:
 experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
                      'historicalAA': 'blue', 'GHG + AA': 'purple'}
 
-var_names = {'precipitation_flux': 'precipitation',
-             'water_evaporation_flux': 'evaporation',
-             'surface_downward_heat_flux_in_sea_water': 'surface downward heat flux',
-             'precipitation_minus_evaporation_flux': 'P-E',
-             'northward_ocean_heat_transport': 'northward ocean heat transport',
-             'ocean_heat_content': 'ocean heat content',
-             'surface_upward_latent_heat_flux': 'latent heat flux',
-             'surface_upward_sensible_heat_flux': 'sensible heat flux',
-             'surface_downwelling_shortwave_flux_in_air': 'downwelling shortwave flux',
-             'surface_upwelling_shortwave_flux_in_air': 'upwelling shortwave flux',
-             'surface_downwelling_longwave_flux_in_air': 'downwelling longwave flux',
-             'surface_upwelling_longwave_flux_in_air': 'upwelling longwave flux'
-             }
-
 
 def make_zonal_grid():
     """Make a dummy cube with desired grid."""
@@ -277,9 +263,9 @@ def get_title(standard_name, time_list, experiment, nexperiments):
 
     ntimes = len(time_list) 
     if ntimes == 1:
-        title = '%s, %s-%s' %(var_names[standard_name],
-                                 time_list[0][0][0:4],
-                                 time_list[0][1][0:4])
+        title = '%s, %s-%s' %(gio.var_names[standard_name],
+                              time_list[0][0][0:4],
+                              time_list[0][1][0:4])
     else:
         title = plot_name
 

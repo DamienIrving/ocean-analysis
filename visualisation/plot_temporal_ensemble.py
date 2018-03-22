@@ -18,6 +18,7 @@ import iris.plot as iplt
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn
+seaborn.set_context('talk')
 
 # Import my modules
 
@@ -44,12 +45,6 @@ except ImportError:
 experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
                      'historicalAA': 'blue', 'GHG + AA': 'purple',
                      'rcp85': 'orange', 'piControl': '0.5'}
-
-var_names = {'precipitation_flux': 'precipitation',
-             'water_evaporation_flux': 'evaporation',
-             'surface_downward_heat_flux_in_sea_water': 'surface downward heat flux',
-             'precipitation_minus_evaporation_flux': 'P-E',
-             'northward_ocean_heat_transport': 'northward ocean heat transport'}
 
 
 def get_colors(family_list):
@@ -235,7 +230,10 @@ def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False):
 def get_title(standard_name, experiment, nexperiments):
     """Get the plot title"""
 
-    title = standard_name.replace('_', ' ') #var_names[standard_name]
+    try:
+        title = gio.var_names[standard_name]
+    except KeyError:
+        title = standard_name.replace('_', ' ')
 
     if nexperiments == 1:
         title = title + ', ' + experiment
