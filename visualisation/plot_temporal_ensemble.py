@@ -281,8 +281,11 @@ def main(inargs):
     for infiles in inargs.rcp_files:
         experiment, ylabel, metadata_dict = plot_file(infiles, inargs.rcp_time, inargs, nexperiments)        
 
-    title = get_title(inargs.var, experiment, nexperiments)
-    plt.title(title)
+    if inargs.title:
+         plt.title(inargs.title)
+    else:
+        title = get_title(inargs.var, experiment, nexperiments)
+        plt.title(title)
 
     if inargs.ylim:
         ymin, ymax = inargs.ylim
@@ -347,13 +350,15 @@ author:
     parser.add_argument("--legloc", type=int, default=None,
                         help="Legend location [default = off plot]")
 
+    parser.add_argument("--title", type=str, default=None,
+                        help="overwrite default plot title")
     parser.add_argument("--ylabel", type=str, default=None,
                         help="y axis label") 
     parser.add_argument("--ylim", type=float, nargs=2, metavar=('MIN', 'MAX'), default=None,
                         help="limits for y axis")
+
     parser.add_argument("--scientific", action="store_true", default=False,
                         help="Use scientific notation for the y axis scale [default=False]")
-
     parser.add_argument("--zero_line", action="store_true", default=False,
                         help="Draw a dahsed line at y=0 [default=False]")
     
