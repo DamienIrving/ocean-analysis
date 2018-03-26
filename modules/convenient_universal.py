@@ -310,7 +310,7 @@ def fix_label(label):
     return label 
 
 
-def get_chunks(cube_shape, coord_names, chunk=True):
+def get_chunks(cube_shape, coord_names, chunk=True, step=2):
     """Provide details for chunking along the time axis.
 
     The chunk option can be used to just do one single chunk.
@@ -322,7 +322,6 @@ def get_chunks(cube_shape, coord_names, chunk=True):
     if chunk:
         assert coord_names[0] == 'time'
 
-        step = 2
         remainder = ntimes % step
         while remainder == 1:
             step = step + 1

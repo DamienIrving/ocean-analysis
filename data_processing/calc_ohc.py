@@ -13,6 +13,8 @@ import numpy
 import iris
 import dask
 dask.set_options(get=dask.get)
+#import dask.multiprocessing
+#dask.set_options(get=dask.multiprocessing.get)
 
 # Import my modules
 
@@ -138,7 +140,7 @@ def main(inargs):
         temperature_atts = temperature_cube.attributes
 
         if inargs.annual:
-            temperature_cube = timeseries.convert_to_annual(temperature_cube)
+            temperature_cube = timeseries.convert_to_annual(temperature_cube, chunk=inargs.chunk)
 
         # Work around because array broadcasting isn't working in version 1.13.0 of Iris
         coord_names = [coord.name() for coord in temperature_cube.dim_coords]
@@ -157,9 +159,9 @@ def main(inargs):
                 area_data = uconv.broadcast_array(area_cube.data, [2, 3], temperature_cube.shape)
             else:
                 area_data = spatial_weights.area_array(temperature_cube)
-                
-            temperature_cube.data = temperature_cube.data * area_data
-        
+            
+            temperature_cube.data = temperature_cube.data * area_data       
+
             coord_names = [coord.name() for coord in temperature_cube.dim_coords]
             depth_axis = temperature_cube.coord('depth')
             assert depth_axis.units in ['m', 'dbar'], "Unrecognised depth axis units"

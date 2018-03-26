@@ -15,6 +15,7 @@ import cf_units
 import pdb
 
 import general_io as gio
+import convenient_universal as uconv
 
 
 def convert_to_seconds(time_axis):
@@ -199,7 +200,7 @@ def is_annual(cube):
     return annual
 
 
-def convert_to_annual(cube, full_months=False, aggregation='mean'):
+def convert_to_annual(cube, full_months=False, aggregation='mean', chunk=False):
     """Convert data to annual timescale.
 
     Args:
@@ -218,7 +219,10 @@ def convert_to_annual(cube, full_months=False, aggregation='mean'):
         elif aggregation == 'sum':
             aggregator = iris.analysis.SUM
 
-        cube = cube.aggregated_by(['year'], aggregator)
+        if chunk:
+            cube = _chunked_year_aggregation(cube, aggregator)
+        else:
+            cube = cube.aggregated_by(['year'], aggregator)
 
         if full_months:
             cube = cube.extract(iris.Constraint(month='Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec'))
@@ -227,4 +231,33 @@ def convert_to_annual(cube, full_months=False, aggregation='mean'):
     cube.remove_coord('month')
 
     return cube
+
+
+def _chunked_year_aggregation(cube, agg_method):
+    """Chunked conversion to annual timescale.
+
+    Args:
+      cube (iris.cube.Cube)
+      agg_method (iris.analysis.WeightedAggregator): aggregation method
+
+    """
+
+    assert agg_method in [iris.analysis.SUM, iris.analysis.MEAN]
+
+    chunk_list = iris.cube.CubeList([])
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    start_indexes, step = uconv.get_chunks(cube.shape, coord_names, chunk=True, step=120)
+    start_year = end_year = -5
+    for index in start_indexes:
+        start_year = cube[index:index+step, ...].coord('year').points[0]
+        assert start_year != end_year
+        end_year = cube[index:index+step, ...].coord('year').points[-1]
+
+        chunk = cube[index:index+step, ...].aggregated_by(['year'], agg_method)
+        chunk_list.append(chunk)
+
+    annual_cube = chunk_list.concatenate()[0]
+
+    return annual_cube
+
 
