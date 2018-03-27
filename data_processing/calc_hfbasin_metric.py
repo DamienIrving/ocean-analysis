@@ -96,6 +96,16 @@ def extract_equator(cube):
     return cube
 
 
+def extract_wide_equator(cube):
+    """Extract the total northward heat transport over 15S-15N."""
+
+    cube = cube.extract(iris.Constraint(latitude=lambda cell: -20.0 <= cell < 20.0))
+    cube = cube.collapsed('latitude', iris.analysis.SUM)
+    cube.remove_coord('latitude')
+
+    return cube
+
+
 def main(inargs):
     """Run the program."""
 
@@ -103,8 +113,10 @@ def main(inargs):
 
     if inargs.outtype == 'metric':
         metric_cube = calc_shape_metric(cube)
-    else:
+    elif inargs.outtype == 'equator':
         metric_cube = extract_equator(cube)
+    else:
+        metric_cube = extract_wide_equator(cube)
 
     metric_cube.attributes['history'] = gio.write_metadata(file_info={inargs.infile: cube.attributes['history']})
     iris.save(metric_cube, inargs.outfile)
@@ -126,7 +138,7 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     
     parser.add_argument("infile", type=str, help="Input hfbasin file from calc_hfbasin.py")
-    parser.add_argument("outtype", type=str, choices=('equator', 'metric'), help="Output type")            
+    parser.add_argument("outtype", type=str, choices=('equator', 'wide-equator', 'metric'), help="Output type")            
     parser.add_argument("outfile", type=str, help="Output file")  
 
     args = parser.parse_args()             

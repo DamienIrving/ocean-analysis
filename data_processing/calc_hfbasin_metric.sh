@@ -1,11 +1,11 @@
 
-model=ACCESS1-0
+model=GISS-E2-R
 
-experiment=historical
-rips=(r1i1p1 r2i1p1 r3i1p1)
+experiment=historicalMisc
+rips=(r1i1p107 r2i1p107 r3i1p107 r4i1p107 r5i1p107)
 
-outtype=equator
-# equator metric
+outtype=wide-equator
+# equator metric wide-equator
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/data_processing
