@@ -44,7 +44,9 @@ except ImportError:
 
 experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
                      'historicalAA': 'blue', 'GHG + AA': 'purple',
-                     'rcp85': 'orange', 'piControl': '0.5'}
+                     'rcp85': 'orange', 'rcp60': 'yellow',
+                     'rcp45': 'green', 'rcp26': 'magenta',
+                     'piControl': '0.5'}
 
 
 def get_colors(family_list):
@@ -142,20 +144,26 @@ def plot_ensmean(data_dict, experiment, nexperiments,
     else:
         ensemble_mean = cube_list[0]
    
-    label, color = get_ensemble_label_color(experiment, nexperiments, single_run)
+    label, color = get_ensemble_label_color(experiment, nexperiments, count, single_run)
     iplt.plot(ensemble_mean, label=label, color=color, linestyle=linestyle, linewidth=linewidth)
 
     return ensemble_mean
 
 
-def get_ensemble_label_color(experiment, nexperiments, single_run):
+def get_ensemble_label_color(experiment, nexperiments, ensemble_size, single_run):
     """Get the line label and color."""
 
-    label = 'ensemble mean (r1)' if single_run else 'ensemble mean (all runs)'
+    if ensemble_size == 1:
+        label = experiment
+    elif single_run:
+        label = 'ensemble mean (r1)' 
+    else:
+        label = 'ensemble mean (all runs)'
     color = 'black' 
 
     if nexperiments > 1:
-        label = label + ', ' + experiment
+        if ensemble_size != 1:
+            label = experiment + ', ' + label
         color = experiment_colors[experiment]
 
     return label, color
@@ -279,7 +287,7 @@ def main(inargs):
 
     # Plot rcp data
     for infiles in inargs.rcp_files:
-        experiment, ylabel, metadata_dict = plot_file(infiles, inargs.rcp_time, inargs, nexperiments)        
+        data_dict, experiment, ylabel, metadata_dict = plot_file(infiles, inargs.rcp_time, inargs, nexperiments)        
 
     if inargs.title:
          plt.title(inargs.title)
