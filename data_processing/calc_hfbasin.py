@@ -143,8 +143,8 @@ def main(inargs):
 
     # Basin array
     if inargs.basin_file and not inargs.regrid:
-        ndim = cube.ndim
-        basin_array = uconv.broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], cube.shape) 
+        ndim = data_cube.ndim
+        basin_array = uconv.broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], data_cube.shape) 
     elif regular_grid and not hfbasin: 
         basin_array = uconv.create_basin_array(data_cube)
 

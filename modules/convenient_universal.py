@@ -389,6 +389,8 @@ def mask_marginal_seas(data_cube, basin_cube):
 
     """
 
+    data_cube.data = numpy.ma.asarray(data_cube.data)
+
     ndim = data_cube.ndim
     basin_array = broadcast_array(basin_cube.data, [ndim - 2, ndim - 1], data_cube.shape)
 
