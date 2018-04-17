@@ -74,7 +74,10 @@ def apply_polynomial(x_data, coefficient_a_data, coefficient_b_data, coefficient
     else:
         polynomial = coefficient_dict['a'] + coefficient_dict['b'] * x_data + coefficient_dict['c'] * x_data**2 + coefficient_dict['d'] * x_data**3
         if not type(poly_start) == numpy.ma.core.MaskedArray:
-            poly_start = polynomial[0, ::]
+            try:
+                poly_start = polynomial[0, ::]
+            except IndexError:
+                poly_start = polynomial[0]
         result = polynomial - poly_start
 
     return result, polynomial 
@@ -201,7 +204,7 @@ def check_time_adjustment(time_values, coefficient_cube, branch_time, fnum, annu
 def main(inargs):
     """Run the program."""
     
-    first_data_cube = iris.load_cube(inargs.data_files[0], inargs.var)
+    first_data_cube = iris.load_cube(inargs.data_files[0], gio.check_iris_var(inargs.var))
     coefficient_a_cube = iris.load_cube(inargs.coefficient_file, 'coefficient a')
     coefficient_b_cube = iris.load_cube(inargs.coefficient_file, 'coefficient b')
     coefficient_c_cube = iris.load_cube(inargs.coefficient_file, 'coefficient c')
@@ -209,15 +212,19 @@ def main(inargs):
 
     coord_names = [coord.name() for coord in first_data_cube.coords(dim_coords=True)]
     assert coord_names[0] == 'time'
-    sanity_summary = coefficient_sanity_check(coefficient_a_cube, coefficient_b_cube, coefficient_c_cube, coefficient_d_cube, inargs.var)
+    if inargs.var in ['sea_water_potential_temperature', 'sea_water_salinity']:
+        sanity_summary = coefficient_sanity_check(coefficient_a_cube, coefficient_b_cube, coefficient_c_cube, coefficient_d_cube, inargs.var)
+    else:
+        sanity_summary = None
 
     time_diff, branch_time, new_time_unit = time_adjustment(first_data_cube, coefficient_a_cube)
+    data_history = first_data_cube.attributes['history']
     del first_data_cube
 
     new_cubelist = []
     for fnum, filename in enumerate(inargs.data_files):
         # Read data
-        data_cube = iris.load_cube(filename, inargs.var)
+        data_cube = iris.load_cube(filename, gio.check_iris_var(inargs.var))
         data_cube = check_data_units(data_cube, coefficient_a_cube)
         data_cube = gio.check_time_units(data_cube)
         if not inargs.no_parent_check:
@@ -239,8 +246,12 @@ def main(inargs):
         if fnum == 0:
             drift_signal, start_polynomial = apply_polynomial(time_values, coefficient_a_cube.data, coefficient_b_cube.data, coefficient_c_cube.data, coefficient_d_cube.data, poly_start=None, chunk=inargs.chunk)
         else:
+            try:
+                start = start_polynomial[0, ::]
+            except IndexError:
+                start = start_polynomial[0]
             drift_signal, scraps = apply_polynomial(time_values, coefficient_a_cube.data, coefficient_b_cube.data, coefficient_c_cube.data, coefficient_d_cube.data,
-                                                    poly_start=start_polynomial[0, ::], chunk=inargs.chunk)
+                                                    poly_start=start, chunk=inargs.chunk)
 
         if not inargs.dummy:
             new_cube = data_cube - drift_signal
@@ -248,7 +259,8 @@ def main(inargs):
             print('fake run - drift signal not subtracted')
             new_cube = data_cube
         new_cube.metadata = data_cube.metadata
-        new_cube.attributes['drift_removal'] = sanity_summary
+        if sanity_summary:
+            new_cube.attributes['drift_removal'] = sanity_summary
 
         assert (inargs.outfile[-3:] == '.nc') or (inargs.outfile[-1] == '/')
 
@@ -275,11 +287,11 @@ def main(inargs):
         equalise_attributes(new_cubelist)
         new_cubelist = new_cubelist.concatenate_cube()
 
-        metadata_dict = {inargs.data_files[0]: data_cubelist[0].attributes['history'], 
-                        inargs.coefficient_file: coefficient_a_cube.attributes['history']}
+        metadata_dict = {inargs.data_files[0]: data_history, 
+                         inargs.coefficient_file: coefficient_a_cube.attributes['history']}
         new_cubelist.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
 
-        assert new_cubelist[0].data.dtype == numpy.float32
+        #assert new_cubelist[0].data.dtype == numpy.float32
         iris.save(new_cubelist, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
 
 

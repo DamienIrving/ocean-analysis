@@ -140,7 +140,7 @@ def main(inargs):
 
     # Read the data
 
-    cubes = iris.load(inargs.infiles, inargs.var, callback=save_history)
+    cubes = iris.load(inargs.infiles, gio.check_iris_var(inargs.var), callback=save_history)
     global_atts = set_global_atts(inargs, cubes[0])
     iris.util.unify_time_units(cubes)
     cube, coord_names = concatenate_cube(cubes)
@@ -168,7 +168,11 @@ def main(inargs):
     for index, letter in enumerate(['a', 'b', 'c', 'd']):
         standard_name = 'coefficient_'+letter
         iris.std_names.STD_NAMES[standard_name] = {'canonical_units': cube.units}
-        new_cube = iris.cube.Cube(coefficients[index, ::],
+        try:
+            coef = coefficients[index, ::]
+        except IndexError:
+            coef = coefficients[index]
+        new_cube = iris.cube.Cube(coef,
                                   standard_name=standard_name,
                                   long_name='coefficient '+letter,
                                   var_name='coef_'+letter,
@@ -184,7 +188,7 @@ def main(inargs):
 
     # First decadal mean cube
     assert coord_names[0] == 'time'
-    end = 120
+    end = 10 
     time_mean = cube[0:end, ::].collapsed('time', iris.analysis.MEAN)
     time_mean.remove_coord('time')
     time_mean = check_units(time_mean, inargs.var, magnitude_check=True)
@@ -193,12 +197,11 @@ def main(inargs):
 
     # Write output file  
   
-    for cube in out_cubes:
-        assert cube.data.dtype == numpy.float32
+#    for cube in out_cubes:
+#        assert cube.data.dtype == numpy.float32
     cube_list = iris.cube.CubeList(out_cubes)
 
-    iris.FUTURE.netcdf_no_unlimited = True
-    iris.save(cube_list, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
+    iris.save(cube_list, inargs.outfile)
 
 
 if __name__ == '__main__':
@@ -221,12 +224,12 @@ notes:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("infiles", type=str, nargs='*', help="Input file names")
+    parser.add_argument("var", type=str, help="Input variable")
     parser.add_argument("outfile", type=str, help="Output file name")
 
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Convert data to annual timescale [default: False]")
-    parser.add_argument("--var", type=str, default=None,
-                        help="Input variable [default = None, which means all input variables are done]")
+
 
     args = parser.parse_args()
     main(args)
