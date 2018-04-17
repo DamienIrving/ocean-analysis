@@ -90,15 +90,19 @@ def generate_results(data_dict, cube_list, time_constraint, time_bounds):
         
 def main(inargs):
     """Run the program."""
- 
+
     hist_cube_list = iris.load(inargs.historical_file)
     control_cube_list = iris.load(inargs.control_file)
 
+    total_time = (inargs.start_time[0], inargs.end_time[-1])
+
     hist_start_constraint = gio.get_time_constraint(inargs.start_time)
     hist_end_constraint = gio.get_time_constraint(inargs.end_time)
-    start_year = inargs.start_time[0].split('-')[0]
+    hist_total_constraint = gio.get_time_constraint(total_time)
+
     control_start_constraint = timeseries.get_control_time_constraint(control_cube_list[0], hist_cube_list[0], inargs.start_time)
     control_end_constraint = timeseries.get_control_time_constraint(control_cube_list[0], hist_cube_list[0], inargs.end_time)
+    control_total_constraint = timeseries.get_control_time_constraint(control_cube_list[0], hist_cube_list[0], total_time)
     
     column_headers = ['model', 'experiment', 'rip', 'period',
                       'hfds-globe-sum', 'hfds-nh-sum', 'hfds-sh-sum', 'hfds-nhext-sum', 'hfds-tropics-sum', 'hfds-shext-sum',
@@ -110,9 +114,11 @@ def main(inargs):
 
     data_dict = generate_results(data_dict, hist_cube_list, hist_start_constraint, inargs.start_time)
     data_dict = generate_results(data_dict, hist_cube_list, hist_end_constraint, inargs.end_time)
+    data_dict = generate_results(data_dict, hist_cube_list, hist_total_constraint, total_time)
 
     data_dict = generate_results(data_dict, control_cube_list, control_start_constraint, inargs.start_time)
     data_dict = generate_results(data_dict, control_cube_list, control_end_constraint, inargs.end_time)
+    data_dict = generate_results(data_dict, control_cube_list, control_total_constraint, total_time)
 
     data_df = pandas.DataFrame.from_dict(data_dict)
     data_df.to_csv(inargs.outfile)
