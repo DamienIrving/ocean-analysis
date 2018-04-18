@@ -47,7 +47,7 @@ def _check_attributes(data_attrs, control_attrs):
     assert data_attrs['parent_experiment_rip'] in [control_rip, 'N/A']
 
 
-def get_control_time_constraint(control_cube, ref_cube, time_bounds):
+def get_control_time_constraint(control_cube, ref_cube, time_bounds, branch_time=None):
     """Define the time constraint for control data.
 
     Args:
@@ -55,6 +55,7 @@ def get_control_time_constraint(control_cube, ref_cube, time_bounds):
       ref_cube (iris.cube.Cube): reference cube (e.g. from historical experiment)
       time_bounds (list): selected time periods from reference cube
         (e.g. ['1861-01-01', '2005-12-31'])
+      branch_time (float): Override the branch time in the ref_cube attributes
 
     """
 
@@ -63,7 +64,8 @@ def get_control_time_constraint(control_cube, ref_cube, time_bounds):
     iris.coord_categorisation.add_year(control_cube, 'time')
     iris.coord_categorisation.add_year(ref_cube, 'time')
 
-    branch_time = ref_cube.attributes['branch_time']
+    if not branch_time:
+        branch_time = ref_cube.attributes['branch_time']
     
     index = 0
     for bounds in control_cube.coord('time').bounds:

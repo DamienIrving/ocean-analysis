@@ -183,7 +183,7 @@ def group_runs(data_dict):
     return family_list
 
 
-def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False):
+def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False, branch_time=None):
     """Read data."""
 
     data_dict = {}
@@ -198,7 +198,7 @@ def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False):
             cube.var_name = cube.var_name.replace('-inferred', '')
         
         if ref_cube:
-            time_constraint = timeseries.get_control_time_constraint(cube, ref_cube, time_bounds)
+            time_constraint = timeseries.get_control_time_constraint(cube, ref_cube, time_bounds, branch_time=branch_time)
             cube = cube.extract(time_constraint)
             cube.replace_coord(ref_cube.coord('time'))
         else:
@@ -249,10 +249,11 @@ def get_title(standard_name, experiment, nexperiments):
     return title
 
 
-def plot_file(infiles, time_bounds, inargs, nexperiments, ref_cube=None):
+def plot_file(infiles, time_bounds, inargs, nexperiments, ref_cube=None, branch_time=None):
     """Plot the data for a given input file."""
 
-    data_dict, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_bounds, ref_cube=ref_cube, anomaly=inargs.anomaly)
+    data_dict, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_bounds, ref_cube=ref_cube,
+                                                             anomaly=inargs.anomaly, branch_time=branch_time)
     
     model_family_list = group_runs(data_dict)
     color_dict = get_colors(model_family_list)
@@ -283,7 +284,8 @@ def main(inargs):
         plot_start_time = inargs.hist_time[0]
         plot_end_time = inargs.rcp_time[-1] if inargs.rcp_files else inargs.hist_time[-1]
         for infiles in inargs.control_files:
-            data_dict, experiment, ylabel, metadata_dict = plot_file(infiles, [plot_start_time, plot_end_time], inargs, nexperiments, ref_cube=ref_cube)        
+            data_dict, experiment, ylabel, metadata_dict = plot_file(infiles, [plot_start_time, plot_end_time], inargs, nexperiments,
+                                                                     ref_cube=ref_cube, branch_time=inargs.branch_time)        
 
     # Plot rcp data
     for infiles in inargs.rcp_files:
@@ -349,6 +351,9 @@ author:
     parser.add_argument("--rcp_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('2006-01-01', '2100-12-31'),
                         help="Time bounds for rcp period [default = None]")
+
+    parser.add_argument("--branch_time", type=float, default=None,
+                        help="Override the branch time listed in the file metadata")
 
     parser.add_argument("--single_run", action="store_true", default=False,
                         help="Only use run 1 in the ensemble mean [default=False]")
