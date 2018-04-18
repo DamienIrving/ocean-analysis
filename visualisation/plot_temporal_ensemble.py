@@ -200,6 +200,7 @@ def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False, branch
         if ref_cube:
             time_constraint = timeseries.get_control_time_constraint(cube, ref_cube, time_bounds, branch_time=branch_time)
             cube = cube.extract(time_constraint)
+            iris.util.unify_time_units([ref_cube, cube])
             cube.replace_coord(ref_cube.coord('time'))
         else:
             time_constraint = gio.get_time_constraint(time_bounds)
