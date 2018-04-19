@@ -70,7 +70,7 @@ def get_control_time_constraint(control_cube, ref_cube, time_bounds, branch_time
     index = 0
     for bounds in control_cube.coord('time').bounds:
         lower, upper = bounds
-        if lower <= branch_time < upper:
+        if lower <= float(branch_time) < upper:
             break
         else:
             index = index + 1
