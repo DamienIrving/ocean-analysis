@@ -64,18 +64,20 @@ def add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, in
     return ohc_cube
 
 
-def calc_ohc_vertical_integral(cube, density, specific_heat, coord_names, weights=None, chunk=False):
+def calc_ohc_vertical_integral(temperature_cube, volume_data, density, specific_heat, coord_names, chunk=False):
     """Calculate the ohc vertical integral.
 
     Chunking is an option to avoid memory errors.
 
     """
 
+    temperature_cube.data = temperature_cube.data * volume_data
+
     if chunk:
-        integral = uconv.chunked_collapse_by_time(cube, 'depth', iris.analysis.SUM, weights=weights)
+        integral = uconv.chunked_collapse_by_time(temperature_cube, 'depth', iris.analysis.SUM)
     else:
-        integral = cube.collapsed('depth', iris.analysis.SUM, weights=weights)
-       
+        integral = temperature_cube.collapsed('depth', iris.analysis.SUM)
+
     ohc = (integral * density * specific_heat) 
     ohc.remove_coord('depth')
     
@@ -126,11 +128,28 @@ def get_outfile_name(temperature_file, annual=False, execute=True):
     return ohc_file
 
 
+def get_volume(volume_file, area_file, temperature_cube, metadata_dict):
+    """Get the volume array"""
+
+    if volume_file:
+        volume_cube = read_spatial_file(volume_file)
+        metadata_dict[volume_file] = volume_cube.attributes['history']
+        volume_data = uconv.broadcast_array(volume_cube.data, [1, 3], temperature_cube.shape)
+    else:
+        area_cube = read_spatial_file(area_file)
+        if area_cube:
+            metadata_dict[area_file] = area_cube.attributes['history']
+            area_data = uconv.broadcast_array(area_cube.data, [2, 3], temperature_cube.shape)
+        else:
+            area_data = spatial_weights.area_array(temperature_cube)
+            
+        volume_data = spatial_weights.volume_array(temperature_cube, area_data)           
+
+    return volume_data, metadata_dict
+
+
 def main(inargs):
     """Run the program."""
-
-    area_cube = read_spatial_file(inargs.area_file)
-    volume_cube = read_spatial_file(inargs.volume_file)
 
     level_subset = gio.iris_vertical_constraint(inargs.min_depth, inargs.max_depth)
     for temperature_file in inargs.temperature_files:
@@ -142,37 +161,15 @@ def main(inargs):
         if inargs.annual:
             temperature_cube = timeseries.convert_to_annual(temperature_cube, chunk=inargs.chunk)
 
-        # Work around because array broadcasting isn't working in version 1.13.0 of Iris
         coord_names = [coord.name() for coord in temperature_cube.dim_coords]
         assert coord_names[0] == 'time'
         assert coord_names[1] == 'depth'
 
-        if volume_cube:
-            metadata_dict[inargs.volume_file] = volume_cube.attributes['history']
-            #temperature_cube = temperature_cube * volume_cube   # array broadcasting not working in iris version 1.13.0
-            volume_data = uconv.broadcast_array(volume_cube.data, [1, 3], temperature_cube.shape)
-            temperature_cube.data = temperature_cube.data * volume_data
-            vertical_weights = None
-        else:
-            if area_cube:
-                metadata_dict[inargs.area_file] = area_cube.attributes['history']
-                area_data = uconv.broadcast_array(area_cube.data, [2, 3], temperature_cube.shape)
-            else:
-                area_data = spatial_weights.area_array(temperature_cube)
-            
-            temperature_cube.data = temperature_cube.data * area_data       
+        volume_data, metadata_dict = get_volume(inargs.volume_file, inargs.area_file,
+                                                temperature_cube, metadata_dict)
 
-            coord_names = [coord.name() for coord in temperature_cube.dim_coords]
-            depth_axis = temperature_cube.coord('depth')
-            assert depth_axis.units in ['m', 'dbar'], "Unrecognised depth axis units"
-            if depth_axis.units == 'm':
-                vertical_weights = spatial_weights.calc_vertical_weights_1D(depth_axis, coord_names, temperature_cube.shape)
-            elif depth_axis.units == 'dbar':
-                assert coord_names == ['time', 'depth', 'latitude', 'longitude'], "2D weights will not work for curvilinear grid"
-                vertical_weights = spatial_weights.calc_vertical_weights_2D(depth_axis, temperature_cube.coord('latitude'), coord_names, temperature_cube.shape)
-            #vertical_weights = vertical_weights.astype(numpy.float32)
-
-        ohc_cube = calc_ohc_vertical_integral(temperature_cube, inargs.density, inargs.specific_heat, coord_names, weights=vertical_weights, chunk=inargs.chunk)
+        ohc_cube = calc_ohc_vertical_integral(temperature_cube, volume_data, inargs.density, inargs.specific_heat,
+                                              coord_names, chunk=inargs.chunk)
         ohc_cube = add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, inargs)
         ohc_file = get_outfile_name(temperature_file, annual=inargs.annual)    
 

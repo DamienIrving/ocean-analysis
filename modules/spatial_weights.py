@@ -65,6 +65,8 @@ def calc_vertical_weights_1D(depth_coord, coord_names, data_shape):
     depth_index = coord_names.index('depth')
     level_diffs = uconv.broadcast_array(level_diffs, depth_index, data_shape)
 
+    assert level_diffs.min() > 0.0 
+
     return level_diffs
 
 
@@ -102,6 +104,8 @@ def calc_vertical_weights_2D(pressure_coord, latitude_coord, coord_names, data_s
 
     depth_diffs = depth_diffs[..., numpy.newaxis]
     depth_diffs = numpy.repeat(depth_diffs, nlon, axis=-1)
+
+    assert depth_diffs.min() > 0.0 
 
     return depth_diffs
 
@@ -202,3 +206,32 @@ def area_array(cube):
     area_weights = iris.analysis.cartography.area_weights(cube)
 
     return area_weights
+
+
+def volume_array(target_cube, area_data):
+    """Create a volume array from area and depth information.
+
+    Args:
+        target_cube(iris.Cube.cube)
+        area_data (numpy.ndarray)
+        
+    """
+
+    assert target_cube.shape == area_data.shape
+
+    depth_axis = target_cube.coord('depth')
+    coord_names = [coord.name() for coord in target_cube.dim_coords]   
+
+    assert depth_axis.units in ['m', 'dbar'], "Unrecognised depth axis units"
+    if depth_axis.units == 'm':
+        depth_data = calc_vertical_weights_1D(depth_axis, coord_names, target_cube.shape)
+    elif depth_axis.units == 'dbar':
+        assert coord_names == ['depth', 'latitude', 'longitude'], "2D weights will not work for curvilinear grid"
+        depth_data = calc_vertical_weights_2D(depth_axis, target_cube.coord('latitude'), coord_names, target_cube.shape)
+
+    volume_data = area_data * depth_data
+
+    assert volume_data.shape == target_cube.shape
+
+    return volume_data
+
