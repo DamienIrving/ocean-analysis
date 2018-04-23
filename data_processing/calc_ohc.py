@@ -134,17 +134,13 @@ def get_volume(volume_file, area_file, temperature_cube, metadata_dict):
     if volume_file:
         volume_cube = read_spatial_file(volume_file)
         metadata_dict[volume_file] = volume_cube.attributes['history']
-        volume_data = uconv.broadcast_array(volume_cube.data, [1, 3], temperature_cube.shape)
+        volume_data = spatial_weights.volume_array(temperature_cube, volume_cube=volume_cube) 
     else:
         area_cube = read_spatial_file(area_file)
         if area_cube:
             metadata_dict[area_file] = area_cube.attributes['history']
-            area_data = uconv.broadcast_array(area_cube.data, [2, 3], temperature_cube.shape)
-        else:
-            area_data = spatial_weights.area_array(temperature_cube)
-            
-        volume_data = spatial_weights.volume_array(temperature_cube, area_data)           
-
+        volume_data = spatial_weights.volume_array(temperature_cube, area_cube=area_cube) 
+        
     return volume_data, metadata_dict
 
 

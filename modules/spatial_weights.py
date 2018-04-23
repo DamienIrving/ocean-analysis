@@ -208,8 +208,56 @@ def area_array(cube):
     return area_weights
 
 
-def volume_array(target_cube, area_data):
-    """Create a volume array from area and depth information.
+def volume_from_volume(target_cube, volume_cube):
+    """Create volume array from volume data cube."""
+
+    target_coord_names = [coord.name() for coord in target_cube.dim_coords]
+    volume_coord_names = [coord.name() for coord in volume_cube.dim_coords]
+    assert target_coord_names == ['time', 'depth', 'latitude', 'longitude']
+    assert volume_coord_names == ['depth', 'latitude', 'longitude']
+
+    depth_match = numpy.array_equal(volume_cube.coord('depth').points, target_cube.coord('depth').points)
+    
+    if depth_match:
+        volume_data = volume_cube.data
+    else:
+        depth_match = numpy.array_equal(volume_cube[::-1, ::].coord('depth').points, target_cube.coord('depth').points)
+        assert depth_match
+        volume_data = volume_cube[::-1, ::].data
+
+    volume_data = uconv.broadcast_array(volume_data, [1, 3], target_cube.shape)
+
+    return volume_data
+
+
+def volume_from_area(target_cube, area_cube=None):
+    """Create volume array from area data."""
+
+    target_coord_names = [coord.name() for coord in target_cube.dim_coords]
+    assert target_coord_names == ['time', 'depth', 'latitude', 'longitude']
+
+    if area_cube:
+        area_data = uconv.broadcast_array(area_cube.data, [2, 3], target_cube.shape)
+    else:
+        area_data = spatial_weights.area_array(target_cube)
+
+    depth_axis = target_cube.coord('depth')   
+    assert depth_axis.units in ['m', 'dbar'], "Unrecognised depth axis units"
+
+    if depth_axis.units == 'm':
+        depth_data = calc_vertical_weights_1D(depth_axis, target_coord_names, target_cube.shape)
+    elif depth_axis.units == 'dbar':
+        assert coord_names == ['depth', 'latitude', 'longitude'], "2D weights will not work for curvilinear grid"
+        depth_data = calc_vertical_weights_2D(depth_axis, target_cube.coord('latitude'), target_coord_names, target_cube.shape)
+
+    volume_data = area_data * depth_data
+    assert volume_data.shape == target_cube.shape
+
+    return volume_data
+
+
+def volume_array(target_cube, volume_cube=None, area_cube=None):
+    """Create a volume array.
 
     Args:
         target_cube(iris.Cube.cube)
@@ -217,21 +265,13 @@ def volume_array(target_cube, area_data):
         
     """
 
-    assert target_cube.shape == area_data.shape
+    target_coord_names = [coord.name() for coord in target_cube.dim_coords]
 
-    depth_axis = target_cube.coord('depth')
-    coord_names = [coord.name() for coord in target_cube.dim_coords]   
-
-    assert depth_axis.units in ['m', 'dbar'], "Unrecognised depth axis units"
-    if depth_axis.units == 'm':
-        depth_data = calc_vertical_weights_1D(depth_axis, coord_names, target_cube.shape)
-    elif depth_axis.units == 'dbar':
-        assert coord_names == ['depth', 'latitude', 'longitude'], "2D weights will not work for curvilinear grid"
-        depth_data = calc_vertical_weights_2D(depth_axis, target_cube.coord('latitude'), coord_names, target_cube.shape)
-
-    volume_data = area_data * depth_data
-
-    assert volume_data.shape == target_cube.shape
+    if volume_cube:
+        volume_data = volume_from_volume(target_cube, volume_cube)
+    else:
+        volume_data = volume_from_area(target_cube, area_cube=area_cube)
 
     return volume_data
+
 
