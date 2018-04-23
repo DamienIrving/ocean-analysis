@@ -213,8 +213,8 @@ def volume_from_volume(target_cube, volume_cube):
 
     target_coord_names = [coord.name() for coord in target_cube.dim_coords]
     volume_coord_names = [coord.name() for coord in volume_cube.dim_coords]
-    assert target_coord_names == ['time', 'depth', 'latitude', 'longitude']
-    assert volume_coord_names == ['depth', 'latitude', 'longitude']
+    assert target_coord_names[0:2] == ['time', 'depth'] and len(target_coord_names) == 4
+    assert volume_coord_names[0] == 'depth'
 
     depth_match = numpy.array_equal(volume_cube.coord('depth').points, target_cube.coord('depth').points)
     
@@ -234,7 +234,7 @@ def volume_from_area(target_cube, area_cube=None):
     """Create volume array from area data."""
 
     target_coord_names = [coord.name() for coord in target_cube.dim_coords]
-    assert target_coord_names == ['time', 'depth', 'latitude', 'longitude']
+    assert target_coord_names[0:2] == ['time', 'depth'] and len(target_coord_names) == 4
 
     if area_cube:
         area_data = uconv.broadcast_array(area_cube.data, [2, 3], target_cube.shape)
