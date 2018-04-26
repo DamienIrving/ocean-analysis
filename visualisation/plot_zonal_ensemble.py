@@ -42,7 +42,8 @@ except ImportError:
 # Define functions
 
 experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
-                     'historicalAA': 'blue', 'GHG + AA': 'purple'}
+                     'historicalAA': 'blue', 'GHG + AA': 'purple',
+                     'piControl': '0.5'}
 
 
 def make_zonal_grid():
@@ -119,14 +120,8 @@ def plot_individual(data_dict, color_dict):
     """Plot the individual model data"""
 
     for key, cube in data_dict.items():
-        if len(key) == 3:
-            model, physics, realization = key
-            extra_label = None
-        else:
-            model, physics, realization, extra_label = key
-        if extra_label:
-            label = model + ', ' + physics + ', ' + extra_label
-        elif (realization == 'r1') or (model == 'FGOALS-g2'):
+        model, physics, realization = key
+        if (realization == 'r1') or (model == 'FGOALS-g2'):
             label = model + ', ' + physics
         else:
             label = None
@@ -134,7 +129,7 @@ def plot_individual(data_dict, color_dict):
         iplt.plot(cube, label=label, color=color_dict[(model, physics)], linewidth=lw)
 
 
-def plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments,
+def plot_ensmean(data_dict, experiment, nexperiments,
                  single_run=False, linestyle='-', linewidth=2.0):
     """Plot the ensemble mean.
 
@@ -164,21 +159,18 @@ def plot_ensmean(data_dict, time_period, ntimes, experiment, nexperiments,
     else:
         ensemble_mean = regridded_cube_list[0]
    
-    label, color = get_ensemble_label_color(time_period, ntimes, experiment, nexperiments, single_run)
+    label, color = get_ensemble_label_color(experiment, nexperiments, single_run)
     iplt.plot(ensemble_mean, label=label, color=color, linestyle=linestyle, linewidth=linewidth)
 
     return ensemble_mean
 
 
-def get_ensemble_label_color(time_period, ntimes, experiment, nexperiments, single_run):
+def get_ensemble_label_color(experiment, nexperiments, single_run):
     """Get the line label and color."""
 
     label = 'ensemble mean (r1)' if single_run else 'ensemble mean (all runs)'
     color = 'black' 
-    if ntimes > 1:
-        label = '%s, %s-%s' %(label, time_period[0][0:4], time_period[1][0:4]) 
-        color=None
-    elif nexperiments > 1:
+    if nexperiments > 1:
         label = label + ', ' + experiment
         color = experiment_colors[experiment]
 
@@ -199,19 +191,7 @@ def group_runs(data_dict):
     return family_list
 
 
-def normalise(cube, norm_factor):
-    """Normalise the data."""
-
-    #std = numpy.std(cube.data)
-    #mean = numpy.mean(cube.data)
-    #norm = (cube.data - mean) / std
-
-    norm = cube.data / norm_factor
-
-    return norm
-
-
-def read_data(inargs, infiles, time_constraint, extra_labels):
+def read_data(inargs, infiles, ref_cube=None):
     """Read data."""
 
     clim_dict = {}
@@ -219,10 +199,16 @@ def read_data(inargs, infiles, time_constraint, extra_labels):
     file_count = 0
     for infile in infiles:
         print(infile)
-        extra_label = extra_labels[file_count] if extra_labels else False
+        cube = iris.load_cube(infile, gio.check_iris_var(inargs.var))
+        if ref_cube:
+            time_constraint = timeseries.get_control_time_constraint(cube, ref_cube, inargs.time, branch_time=inargs.branch_time)
+            cube = cube.extract(time_constraint)
+            iris.util.unify_time_units([ref_cube, cube])
+            cube.replace_coord(ref_cube.coord('time'))
+        else:
+            time_constraint = gio.get_time_constraint(inargs.time)
+            cube = cube.extract(time_constraint)
 
-        cube = iris.load_cube(infile, gio.check_iris_var(inargs.var) & time_constraint)
-        
         if inargs.perlat:
             grid_spacing = grids.get_grid_spacing(cube) 
             cube.data = cube.data / grid_spacing
@@ -232,18 +218,11 @@ def read_data(inargs, infiles, time_constraint, extra_labels):
         clim_cube = cube.collapsed('time', iris.analysis.MEAN)
         clim_cube.remove_coord('time')
 
-        if inargs.normalise_trend:
-            norm_factor = float(clim_cube.collapsed('latitude', iris.analysis.SUM).data) / 1e+23
-            trend_cube.data = normalise(trend_cube, norm_factor)
-
         model = cube.attributes['model_id']
         realization = 'r' + str(cube.attributes['realization'])
         physics = 'p' + str(cube.attributes['physics_version'])
 
-        if extra_label:        
-            key = (model, physics, realization, extra_label)
-        else:
-            key = (model, physics, realization)
+        key = (model, physics, realization)
         trend_dict[key] = trend_cube
         clim_dict[key] = clim_cube
         file_count = file_count + 1
@@ -255,19 +234,15 @@ def read_data(inargs, infiles, time_constraint, extra_labels):
 
     metadata_dict = {infile: cube.attributes['history']}
     
-    return trend_dict, clim_dict, experiment, trend_ylabel, clim_ylabel, metadata_dict
+    return cube, trend_dict, clim_dict, experiment, trend_ylabel, clim_ylabel, metadata_dict
 
 
 def get_title(standard_name, time_list, experiment, nexperiments):
     """Get the plot title"""
 
-    ntimes = len(time_list) 
-    if ntimes == 1:
-        title = '%s, %s-%s' %(gio.var_names[standard_name],
-                              time_list[0][0][0:4],
-                              time_list[0][1][0:4])
-    else:
-        title = plot_name
+    title = '%s, %s-%s' %(gio.var_names[standard_name],
+                          time_list[0][0:4],
+                          time_list[1][0:4])
 
     if nexperiments == 1:
         title = title + ', ' + experiment
@@ -314,59 +289,82 @@ def align_yaxis(ax1, ax2):
     axes[1].set_ylim(t_new_b, extrema[1][1])
 
 
+def plot_files(ax, ax2, infiles, inargs, nexperiments, ref_cube=None):
+    """Plot a list of files corresponding to a particular experiment."""
+
+    cube, trend_dict, clim_dict, experiment, trend_ylabel, clim_ylabel, metadata_dict = read_data(inargs, infiles, ref_cube=ref_cube)
+    
+    model_family_list = group_runs(trend_dict)
+    color_dict = get_colors(model_family_list)
+
+    if inargs.time_agg == 'trend':
+        target_dict = trend_dict
+        target_ylabel = trend_ylabel
+    else:
+        target_dict = clim_dict
+        target_ylabel = clim_ylabel
+
+    if nexperiments == 1:
+        plot_individual(target_dict, color_dict)
+    if inargs.ensmean:
+        ensemble_mean = plot_ensmean(target_dict, experiment, nexperiments,
+                                     single_run=inargs.single_run)
+    else:
+        ensemble_mean = None
+
+    if inargs.clim and ((nexperiments == 1) or (experiment == 'historical')):
+        ax2 = ax.twinx()
+        plot_ensmean(clim_dict, experiment, nexperiments,
+                     single_run=inargs.single_run, linestyle='--', linewidth=1.0)
+        plt.sca(ax)
+
+    return cube, metadata_dict, ensemble_mean, target_ylabel, clim_ylabel, experiment, ax2
+
+
 def main(inargs):
     """Run the program."""
     
     seaborn.set_context(inargs.context)
 
     fig, ax = plt.subplots(figsize=[14, 7])
-    ntimes = len(inargs.time)
-    nexperiments = len(inargs.infiles)
-    for infiles in inargs.infiles:
-        for time_period in inargs.time:
-            time_constraint = gio.get_time_constraint(time_period)
-            trend_dict, clim_dict, experiment, trend_ylabel, clim_ylabel, metadata_dict = read_data(inargs, infiles, time_constraint, inargs.extra_labels)
+    ax2 = None
+    nexperiments = len(inargs.hist_files)
+    if inargs.control_files:
+        nexperiments = nexperiments + len(inargs.control_files)
+
+    # Plot historical data
+    for infiles in inargs.hist_files:
+        cube, metadata_dict, ensemble_mean, ylabel, clim_ylabel, experiment, ax2 = plot_files(ax, ax2, infiles, inargs, nexperiments)
     
-            model_family_list = group_runs(trend_dict)
-            color_dict = get_colors(model_family_list)
-
-            if inargs.time_agg == 'trend':
-                target_dict = trend_dict
-                target_ylabel = trend_ylabel
-            else:
-                target_dict = clim_dict
-                target_ylabel = clim_ylabel
-
-            if (ntimes == 1) and (nexperiments == 1):
-                plot_individual(target_dict, color_dict)
-            if inargs.ensmean:
-                ensemble_mean = plot_ensmean(target_dict, time_period, ntimes, experiment, nexperiments,
-                                             single_run=inargs.single_run)
-
-            if inargs.clim and ((len(inargs.infiles) == 1) or (experiment == 'historical')):
-                ax2 = ax.twinx()
-                plot_ensmean(clim_dict, time_period, ntimes, experiment, nexperiments,
-                             single_run=inargs.single_run, linestyle='--', linewidth=1.0)
-                plt.sca(ax)
-
+    # Titles and labels        
     title = get_title(inargs.var, inargs.time, experiment, nexperiments)
     plt.title(title)
+
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+    ax.yaxis.major.formatter._useMathText = True        
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel('latitude')
+
+    # Plot control data
+    if inargs.control_files:
+        assert inargs.hist_files, 'Control plot requires branch time information from historical files'
+        ref_cube = cube
+        for infiles in inargs.control_files:
+            cube, metadata_dict, ensemble_mean, ylabel, clim_ylabel, epxeriment, ax2 = plot_files(ax, ax2, infiles, inargs, nexperiments, ref_cube=ref_cube)
+
+    # Ticks and axis limits
     plt.xticks(numpy.arange(-75, 90, 15))
     plt.xlim(inargs.xlim[0], inargs.xlim[1])
     if not inargs.xlim == (-90, 90):
         correct_y_lim(ax, ensemble_mean)
-
-    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
-    ax.yaxis.major.formatter._useMathText = True
 
     if inargs.clim:
         align_yaxis(ax, ax2)
         ax2.grid(None)
         ax2.set_ylabel(clim_ylabel)
         ax2.yaxis.major.formatter._useMathText = True
-        
-    ax.set_ylabel(target_ylabel)
-    ax.set_xlabel('latitude')
+
+    # Guidelines and legend
     if inargs.zeroline:
         plt.axhline(y=0, color='0.5', linestyle='--')
 
@@ -382,6 +380,7 @@ def main(inargs):
             legend_x_pos = 1.0
         ax.legend(loc='center left', bbox_to_anchor=(legend_x_pos, 0.5))
 
+    # Save output
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
@@ -407,13 +406,18 @@ author:
     parser.add_argument("time_agg", type=str, choices=('trend', 'climatology'), help="Temporal aggregation")
     parser.add_argument("outfile", type=str, help="Output file")                                     
     
-    parser.add_argument("--infiles", type=str, action='append', nargs='*', help="Input files for a given experiment")
+    parser.add_argument("--hist_files", type=str, action='append', nargs='*',
+                        help="Input files for a given historical experiment")
+    parser.add_argument("--control_files", type=str, action='append', nargs='*', default=[],
+                        help="Input files for a control experiment")
 
-    parser.add_argument("--extra_labels", type=str, nargs='*', default=None,
-                        help="Extra label to distinguish the input files")
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        default=('1861-01-01', '2005-12-31'),
+                        help="Time bounds [default = 1861-2005]")
 
-    parser.add_argument("--time", type=str, action='append', required=True, nargs=2, metavar=('START_DATE', 'END_DATE'),
-                        help="Time period [default = entire]")
+    parser.add_argument("--branch_time", type=float, default=None,
+                        help="Override the branch time listed in the file metadata")
+
     parser.add_argument("--perlat", action="store_true", default=False,
                         help="Scale per latitude [default=False]")
     parser.add_argument("--single_run", action="store_true", default=False,
@@ -428,11 +432,10 @@ author:
     parser.add_argument("--zeroline", action="store_true", default=False,
                         help="Plot a dashed guideline at y=0 [default=False]")
 
-    parser.add_argument("--normalise_trend", action="store_true", default=False,
-                        help="Normalise the trend data [default=False]")
-
     parser.add_argument("--xlim", type=float, nargs=2, metavar=('SOUTHERN_LIMIT', 'NORTHERN LIMIT'), default=(-90, 90),
                         help="x-axis limits [default = entire]")
+    #parser.add_argument("--ylim", type=float, nargs=2, metavar=('LOWER_LIMIT', 'UPPER_LIMIT'), default=None,
+    #                    help="y-axis limits [default = auto]")
 
     parser.add_argument("--context", type=str, default='talk', choices=('paper', 'talk'),
                         help="Context for plot [default=auto]")
