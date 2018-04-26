@@ -317,6 +317,9 @@ def main(inargs):
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
         ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
 
+    ymin, ymax = plt.ylim()
+    print('ymin:', ymin)
+    print('ymax:', ymax)
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
 
