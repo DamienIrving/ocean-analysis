@@ -1,8 +1,8 @@
 
-model=CanESM2
+model=GFDL-CM3
 
-experiments=(historicalMisc)
-rip=r1i1p4
+experiments=(historical historicalGHG historicalMisc)
+rip=r1i1p1
 
 control_rip=r1i1p1
 
@@ -26,7 +26,8 @@ dedrifted_file=${dedrifted_dir}/${experiment_name}
 
 coefficient_command="${python} ${script_dir}/calc_drift_coefficients.py ${control_file} ocean_heat_content ${coefficient_file}"
 mkdir_command="mkdir ${dedrifted_dir}"
-drift_command="${python} ${script_dir}/remove_drift.py ${experiment_file} ocean_heat_content ${coefficient_file} ${dedrifted_file}"
+drift_command="${python} ${script_dir}/remove_drift.py ${experiment_file} ocean_heat_content annual ${coefficient_file} ${dedrifted_file}"
+# --branch_time 342005 (CCSM4)
 
 echo ${coefficient_command}
 ${coefficient_command}
