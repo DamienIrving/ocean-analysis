@@ -150,8 +150,13 @@ def coefficient_sanity_check(coefficient_a_cube, coefficient_b_cube, coefficient
     return summary
 
 
-def time_adjustment(first_data_cube, coefficient_cube):
+def time_adjustment(first_data_cube, coefficient_cube, branch_time=None):
     """Determine the adjustment that needs to be made to time axis.
+
+    Args:
+        first_data_cube (iris.Cube.cube)
+        coefficient_cube (iris.Cube.cube)
+        branch_time (float): Override the branch time in the file metadata
 
     For monthly data, the branch time represents the start of the month (e.g. 1 Jan),
       while the first data time is mid-month. A factor of 15.5 is used to fix this.
@@ -162,7 +167,10 @@ def time_adjustment(first_data_cube, coefficient_cube):
     assert first_data_cube.attributes['frequency'] == 'mon'
     assert coefficient_cube.attributes['frequency'] == 'mon'
 
-    branch_time_value = float(first_data_cube.attributes['branch_time']) + 15.5
+    if branch_time:
+        branch_time_value = float(branch_time) + 15.5
+    else:
+        branch_time_value = float(first_data_cube.attributes['branch_time']) + 15.5
     branch_time_unit = coefficient_cube.attributes['time_unit']
     branch_time_calendar = coefficient_cube.attributes['time_calendar']
     data_time_coord = first_data_cube.coord('time')
@@ -177,14 +185,14 @@ def time_adjustment(first_data_cube, coefficient_cube):
 
 
 def check_time_adjustment(time_values, coefficient_cube, branch_time, fnum, annual=False):
-    """Check that the time adjustment was correct
+    """Check that the time adjustment was correct.
 
     The branch time given in CMIP5 metadata is for monthly timescale data. 
 
     If the timescale is unchanged, then after the time adjustment the first time point
       of the first data file should be zero.
 
-    If the timescale is annual, then after time adjustment the first point should 
+    If the timescale was changed to annual in this script, then after time adjustment the first point should 
       be about 6 months, because iris sets the time axis values to the mid point of the year.
     
     """
@@ -217,7 +225,7 @@ def main(inargs):
     else:
         sanity_summary = None
 
-    time_diff, branch_time, new_time_unit = time_adjustment(first_data_cube, coefficient_a_cube)
+    time_diff, branch_time, new_time_unit = time_adjustment(first_data_cube, coefficient_a_cube, branch_time=inargs.branch_time)
     data_history = first_data_cube.attributes['history']
     del first_data_cube
 
@@ -325,6 +333,9 @@ notes:
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Split the polynomial calculation up to avoid memory errors [default: False]")
     
+    parser.add_argument("--branch_time", type=float, default=None,
+                        help="Override the branch time listed in the file metadata")
+
     parser.add_argument("--dummy", action="store_true", default=False,
                         help="Do not actually subtract the drift [default: False]")
 
