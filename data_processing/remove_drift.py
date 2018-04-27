@@ -292,7 +292,7 @@ def main(inargs):
         new_cubelist.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
 
         #assert new_cubelist[0].data.dtype == numpy.float32
-        iris.save(new_cubelist, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
+        iris.save(new_cubelist, inargs.outfile)
 
 
 if __name__ == '__main__':
