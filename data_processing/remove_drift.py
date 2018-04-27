@@ -150,28 +150,33 @@ def coefficient_sanity_check(coefficient_a_cube, coefficient_b_cube, coefficient
     return summary
 
 
-def time_adjustment(first_data_cube, coefficient_cube, branch_time=None):
+def time_adjustment(first_data_cube, coefficient_cube, timescale, branch_time=None):
     """Determine the adjustment that needs to be made to time axis.
 
     Args:
         first_data_cube (iris.Cube.cube)
         coefficient_cube (iris.Cube.cube)
+        timescale (str): annual or monthly
         branch_time (float): Override the branch time in the file metadata
 
-    For monthly data, the branch time represents the start of the month (e.g. 1 Jan),
+    For CMIP5 monthly data, the branch time represents the start of the month (e.g. 1 Jan),
       while the first data time is mid-month. A factor of 15.5 is used to fix this.
-      This means this function is hard wired for monthly time adjustment only.
+      When iris is used to calculate annual data from these monthly files,
+      the first value is shifted from 15.5 to 182.5.
     
     """
 
-    assert first_data_cube.attributes['frequency'] == 'mon'
-    assert coefficient_cube.attributes['frequency'] == 'mon'
+    if timescale == 'monthly':
+        adjustment = 15.5
+    elif timescale == 'annual':
+        adjustment = 182.5
 
     if branch_time:
-        branch_time_value = float(branch_time) + 15.5
+        branch_time_value = float(branch_time) + adjustment
     else:
-        branch_time_value = float(first_data_cube.attributes['branch_time']) + 15.5
+        branch_time_value = float(first_data_cube.attributes['branch_time']) + adjustment
     branch_time_unit = coefficient_cube.attributes['time_unit']
+    assert 'days' in branch_time_unit
     branch_time_calendar = coefficient_cube.attributes['time_calendar']
     data_time_coord = first_data_cube.coord('time')
 
@@ -184,7 +189,7 @@ def time_adjustment(first_data_cube, coefficient_cube, branch_time=None):
     return time_diff, branch_time_value, new_unit
 
 
-def check_time_adjustment(time_values, coefficient_cube, branch_time, fnum, annual=False):
+def check_time_adjustment(time_values, coefficient_cube, branch_time, fnum):
     """Check that the time adjustment was correct.
 
     The branch time given in CMIP5 metadata is for monthly timescale data. 
@@ -192,8 +197,8 @@ def check_time_adjustment(time_values, coefficient_cube, branch_time, fnum, annu
     If the timescale is unchanged, then after the time adjustment the first time point
       of the first data file should be zero.
 
-    If the timescale was changed to annual in this script, then after time adjustment the first point should 
-      be about 6 months, because iris sets the time axis values to the mid point of the year.
+    If the timescale was changed to annual, then after time adjustment the first point should 
+      be about 6 months (182.5 days), because iris sets the time axis values to the mid point of the year.
     
     """
 
@@ -203,10 +208,7 @@ def check_time_adjustment(time_values, coefficient_cube, branch_time, fnum, annu
 
     if fnum == 0:
         time_diff = time_values[0] - branch_time
-        if annual:
-            assert 100 < time_diff < 200 
-        else:
-            assert time_diff == 0
+        assert time_diff == 0
 
 
 def main(inargs):
@@ -221,11 +223,13 @@ def main(inargs):
     coord_names = [coord.name() for coord in first_data_cube.coords(dim_coords=True)]
     assert coord_names[0] == 'time'
     if inargs.var in ['sea_water_potential_temperature', 'sea_water_salinity']:
-        sanity_summary = coefficient_sanity_check(coefficient_a_cube, coefficient_b_cube, coefficient_c_cube, coefficient_d_cube, inargs.var)
+        sanity_summary = coefficient_sanity_check(coefficient_a_cube, coefficient_b_cube, coefficient_c_cube, 
+                                                  coefficient_d_cube, inargs.var)
     else:
         sanity_summary = None
 
-    time_diff, branch_time, new_time_unit = time_adjustment(first_data_cube, coefficient_a_cube, branch_time=inargs.branch_time)
+    time_diff, branch_time, new_time_unit = time_adjustment(first_data_cube, coefficient_a_cube,
+                                                            inargs.timescale, branch_time=inargs.branch_time)
     data_history = first_data_cube.attributes['history']
     del first_data_cube
 
@@ -237,18 +241,13 @@ def main(inargs):
         data_cube = gio.check_time_units(data_cube)
         if not inargs.no_parent_check:
             check_attributes(data_cube.attributes, coefficient_a_cube.attributes)
-
-        # Convert timescale
-        if inargs.annual:
-            data_cube = timeseries.convert_to_annual(data_cube)
-            data_cube.data = data_cube.data.astype(numpy.float32)
  
         # Sync the data time axis with the coefficient time axis        
         time_coord = data_cube.coord('time')
         time_coord.convert_units(new_time_unit)
         
         time_values = time_coord.points.astype(numpy.float32) - time_diff
-        check_time_adjustment(time_values, coefficient_a_cube, branch_time, fnum, annual=inargs.annual)    
+        check_time_adjustment(time_values, coefficient_a_cube, branch_time, fnum)    
 
         # Remove the drift
         if fnum == 0:
@@ -323,11 +322,10 @@ notes:
 
     parser.add_argument("data_files", type=str, nargs='*', help="Input data files, in chronological order (needs to include whole experiment to get time axis correct)")
     parser.add_argument("var", type=str, help="Variable standard_name")
+    parser.add_argument("timescale", type=str, choices=('monthly', 'annual'), help="Timescale of input data")
     parser.add_argument("coefficient_file", type=str, help="Input coefficient file")
     parser.add_argument("outfile", type=str, help="Give a path instead of a file name if you want an output file corresponding to each input file")
     
-    parser.add_argument("--annual", action="store_true", default=False,
-                        help="Convert data to annual timescale [default: False]")
     parser.add_argument("--no_parent_check", action="store_true", default=False,
                         help="Do not perform the parent experiment check [default: False]")
     parser.add_argument("--chunk", action="store_true", default=False,
