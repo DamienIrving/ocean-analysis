@@ -46,7 +46,7 @@ def main(inargs):
         if inargs.symlink:
             #assert len(elsewhere_path) == 1
             command1 = 'mkdir -p %s' %(my_path)
-            command2 = 'ln -s %s/%s %s/%s'  %(elsewhere_path[0], f, my_path, f)
+            command2 = 'ln -s -f %s/%s %s/%s'  %(elsewhere_path[inargs.elsewhere_index], f, my_path, f)
             if inargs.execute:
                 os.system(command1)
                 os.system(command2)
@@ -84,6 +84,8 @@ dependencies:
                         help="Create a symlink for the elsewhere files")
     parser.add_argument("--execute", action="store_true", default=False,
                         help="Execute the symlink command rather than printing to screen")
+    parser.add_argument("--elsewhere_index", type=int, default=0,
+                        help="Index for whcih elsewhere path to use")
 
     args = parser.parse_args()             
     main(args)
