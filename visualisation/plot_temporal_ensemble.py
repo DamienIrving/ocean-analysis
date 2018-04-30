@@ -183,7 +183,7 @@ def group_runs(data_dict):
     return family_list
 
 
-def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False, branch_time=None):
+def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False, branch_index=None, branch_time=None):
     """Read data."""
 
     data_dict = {}
@@ -198,7 +198,7 @@ def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False, branch
             cube.var_name = cube.var_name.replace('-inferred', '')
         
         if ref_cube:
-            cube = timeseries.adjust_control_time(cube, ref_cube, branch_time=branch_time)
+            cube = timeseries.adjust_control_time(cube, ref_cube, branch_index=branch_index, branch_time=branch_time)
 
         if not (ref_cube and inargs.full_control):
             time_constraint = gio.get_time_constraint(time_bounds)
@@ -248,11 +248,12 @@ def get_title(standard_name, experiment, nexperiments):
     return title
 
 
-def plot_file(infiles, time_bounds, inargs, nexperiments, ref_cube=None, branch_time=None):
+def plot_file(infiles, time_bounds, inargs, nexperiments, ref_cube=None, branch_index=None, branch_time=None):
     """Plot the data for a given input file."""
 
     data_dict, experiment, ylabel, metadata_dict = read_data(inargs, infiles, time_bounds, ref_cube=ref_cube,
-                                                             anomaly=inargs.anomaly, branch_time=branch_time)
+                                                             anomaly=inargs.anomaly, branch_index=branch_index,
+                                                             branch_time=branch_time)
     
     model_family_list = group_runs(data_dict)
     color_dict = get_colors(model_family_list)
@@ -288,7 +289,8 @@ def main(inargs):
             time_bounds = [plot_start_time, plot_end_time]
         for infiles in inargs.control_files:
             data_dict, experiment, ylabel, metadata_dict = plot_file(infiles, time_bounds, inargs, nexperiments,
-                                                                     ref_cube=ref_cube, branch_time=inargs.branch_time)        
+                                                                     ref_cube=ref_cube, branch_index=inargs.branch_index,
+                                                                     branch_time=inargs.branch_time)        
 
     # Plot rcp data
     for infiles in inargs.rcp_files:
@@ -361,6 +363,8 @@ author:
 
     parser.add_argument("--branch_time", type=float, default=None,
                         help="Override the branch time listed in the file metadata")
+    parser.add_argument("--branch_index", type=int, default=None,
+                        help="Override the branch index determined from the branch time")
 
     parser.add_argument("--single_run", action="store_true", default=False,
                         help="Only use run 1 in the ensemble mean [default=False]")

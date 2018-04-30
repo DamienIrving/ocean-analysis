@@ -47,13 +47,15 @@ def _check_attributes(data_attrs, control_attrs):
     assert data_attrs['parent_experiment_rip'] in [control_rip, 'N/A']
 
 
-def adjust_control_time(cube, ref_cube, branch_time=None):
+def adjust_control_time(cube, ref_cube, branch_index=None, branch_time=None):
     """Adjust the control time axis so it matches the reference cube."""
 
-    if not branch_time:
-        branch_time = ref_cube.attributes['branch_time']
+    if branch_index == None:
+        if not branch_time:
+            branch_time = ref_cube.attributes['branch_time']
+            print('branch time =', branch_time)
+        branch_index, index_error = uconv.find_nearest(cube.coord('time').points, float(branch_time), index=True)
 
-    branch_index, index_error = uconv.find_nearest(cube.coord('time').points, branch_time, index=True)
     iris.util.unify_time_units([ref_cube, cube])
     
     adjustment_factor = cube.coord('time').points[branch_index] - ref_cube.coord('time').points[0]
