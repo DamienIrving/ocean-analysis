@@ -198,11 +198,9 @@ def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False, branch
             cube.var_name = cube.var_name.replace('-inferred', '')
         
         if ref_cube:
-            time_constraint = timeseries.get_control_time_constraint(cube, ref_cube, time_bounds, branch_time=branch_time)
-            cube = cube.extract(time_constraint)
-            iris.util.unify_time_units([ref_cube, cube])
-            cube.replace_coord(ref_cube.coord('time'))
-        else:
+            cube = timeseries.adjust_control_time(cube, ref_cube, branch_time=branch_time)
+
+        if not (ref_cube and inargs.full_control):
             time_constraint = gio.get_time_constraint(time_bounds)
             cube = cube.extract(time_constraint)
 
@@ -282,10 +280,14 @@ def main(inargs):
     if inargs.control_files:
         assert inargs.hist_files, 'Control plot requires branch time information from historical files'
         ref_cube = data_dict.popitem()[1]
-        plot_start_time = inargs.hist_time[0]
-        plot_end_time = inargs.rcp_time[-1] if inargs.rcp_files else inargs.hist_time[-1]
+        if inargs.full_control:
+            time_bounds = None
+        else:
+            plot_start_time = inargs.hist_time[0]
+            plot_end_time = inargs.rcp_time[-1] if inargs.rcp_files else inargs.hist_time[-1]
+            time_bounds = [plot_start_time, plot_end_time]
         for infiles in inargs.control_files:
-            data_dict, experiment, ylabel, metadata_dict = plot_file(infiles, [plot_start_time, plot_end_time], inargs, nexperiments,
+            data_dict, experiment, ylabel, metadata_dict = plot_file(infiles, time_bounds, inargs, nexperiments,
                                                                      ref_cube=ref_cube, branch_time=inargs.branch_time)        
 
     # Plot rcp data
@@ -380,6 +382,9 @@ author:
     parser.add_argument("--zero_line", action="store_true", default=False,
                         help="Draw a dahsed line at y=0 [default=False]")
     
+    parser.add_argument("--full_control", action="store_true", default=False,
+                        help="Plot the full control experiment [default=False]")
+
     parser.add_argument("--anomaly", action="store_true", default=False,
                         help="convert data to an anomaly by subracting mean of first 20 data points [default=False]")
 
