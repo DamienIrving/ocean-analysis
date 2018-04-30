@@ -303,9 +303,10 @@ def main(inargs):
         plt.ylim(ymin, ymax)
 
     if inargs.scientific:
-        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
         ax.yaxis.major.formatter._useMathText = True
     ax.set_ylabel(ylabel)
+    ax.yaxis.major.formatter._useOffset = False
 
     if inargs.zero_line:
         plt.axhline(y=0, color='0.5', linestyle='--')
