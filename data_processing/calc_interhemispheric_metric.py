@@ -89,12 +89,14 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
             cube = extract_region_latlon(cube, lat_bounds)
 
     # Get area weights       
-    if area_cube:
+    if type(area_cube) == iris.cube.Cube:
         if grid_type == 'latlon' and lat_bounds:
             area_cube = extract_region_latlon(area_cube, lat_bounds)
         area_weights = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
-    else:
+    elif type(area_cube) == str:
         area_weights = spatial_weights.area_array(cube)
+    else:
+        area_weights = None
 
     # Calculate spatial aggregate
     coord_names.remove('time')
@@ -103,7 +105,7 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
     else: 
         spatial_agg = cube.collapsed(coord_names, aggregation_method, weights=area_weights)
 
-    if aggregation_method == iris.analysis.SUM:
+    if area_cube and (aggregation_method == iris.analysis.SUM):
         units = str(spatial_agg.units)
         spatial_agg.units = units.replace('m-2', '')
     spatial_agg.remove_coord('latitude')
@@ -269,7 +271,7 @@ author:
     parser.add_argument("outfile", type=str, help="Output file")  
 
     parser.add_argument("--area_file", type=str, default=None, 
-                        help="Input area file [required for non lat/lon grids]")
+                        help="""Input area file (write 'calculate' to determine from grid info) [default = no area weighting]""")
 
     parser.add_argument("--aggregation_method", type=str, default='sum', choices=('mean', 'sum'),
                         help="calculate the hemispheric sum or mean")
