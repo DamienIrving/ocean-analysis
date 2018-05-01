@@ -55,6 +55,9 @@ def adjust_control_time(cube, ref_cube, branch_index=None, branch_time=None):
             branch_time = ref_cube.attributes['branch_time']
             print('branch time =', branch_time)
         branch_index, index_error = uconv.find_nearest(cube.coord('time').points, float(branch_time), index=True)
+        print('branch index =', branch_index)
+    else:
+        print('branch time =', cube.coord('time').points[branch_index])
 
     iris.util.unify_time_units([ref_cube, cube])
     
