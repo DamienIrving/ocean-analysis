@@ -119,14 +119,16 @@ def equalise_time_axes(cube_list):
     return new_cube_list
 
 
-def plot_ensmean(data_dict, experiment, nexperiments,
-                 single_run=False, linestyle='-', linewidth=2.0):
-    """Plot the ensemble mean.
+def plot_ensagg(data_dict, experiment, nexperiments, ensagg='mean',
+                single_run=False, linestyle='-', linewidth=2.0):
+    """Plot the ensemble aggregate.
 
     If single_run is true, the ensemble is calculated using
       only the first run from each model/physics family.
 
     """
+
+    aggregators = {'mean': iris.analysis.MEAN, 'median': iris.analysis.MEDIAN}
 
     cube_list = iris.cube.CubeList([])
     count = 0
@@ -140,14 +142,14 @@ def plot_ensmean(data_dict, experiment, nexperiments,
         equalise_attributes(cube_list)
         cube_list = equalise_time_axes(cube_list)
         ensemble_cube = cube_list.merge_cube()
-        ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
+        ensemble_agg = ensemble_cube.collapsed('ensemble_member', aggregators[ensagg])
     else:
-        ensemble_mean = cube_list[0]
+        ensemble_agg = cube_list[0]
    
     label, color = get_ensemble_label_color(experiment, nexperiments, count, single_run)
-    iplt.plot(ensemble_mean, label=label, color=color, linestyle=linestyle, linewidth=linewidth)
+    iplt.plot(ensemble_agg, label=label, color=color, linestyle=linestyle, linewidth=linewidth)
 
-    return ensemble_mean
+    return ensemble_agg
 
 
 def get_ensemble_label_color(experiment, nexperiments, ensemble_size, single_run):
@@ -260,16 +262,16 @@ def plot_file(infiles, time_bounds, inargs, nexperiments, ref_cube=None, branch_
 
     if nexperiments == 1:
         plot_individual(data_dict, color_dict)
-    if inargs.ensmean:
-        ensemble_mean = plot_ensmean(data_dict, experiment, nexperiments,
-                                     single_run=inargs.single_run)
+    if inargs.ensagg:
+        ensemble_agg = plot_ensagg(data_dict, experiment, nexperiments, ensagg=inargs.ensagg,
+                                   single_run=inargs.single_run)
 
     return data_dict, experiment, ylabel, metadata_dict
 
 
 def main(inargs):
     """Run the program."""
-    
+
     fig, ax = plt.subplots(figsize=[14, 7])
     nexperiments = len(inargs.hist_files) + len(inargs.rcp_files) + len(inargs.control_files)
     
@@ -368,8 +370,8 @@ author:
 
     parser.add_argument("--single_run", action="store_true", default=False,
                         help="Only use run 1 in the ensemble mean [default=False]")
-    parser.add_argument("--ensmean", action="store_true", default=False,
-                        help="Plot an ensemble mean curve [default=False]")
+    parser.add_argument("--ensagg", type=str, choices=('mean', 'median'), default=None,
+                        help="Plot an ensemble aggregate curve [default=False]")
 
     parser.add_argument("--legloc", type=int, default=None,
                         help="Legend location [default = off plot]")
