@@ -146,21 +146,21 @@ def plot_ensagg(data_dict, experiment, nexperiments, ensagg='mean',
     else:
         ensemble_agg = cube_list[0]
    
-    label, color = get_ensemble_label_color(experiment, nexperiments, count, single_run)
+    label, color = get_ensemble_label_color(experiment, nexperiments, ensagg, count, single_run)
     iplt.plot(ensemble_agg, label=label, color=color, linestyle=linestyle, linewidth=linewidth)
 
     return ensemble_agg
 
 
-def get_ensemble_label_color(experiment, nexperiments, ensemble_size, single_run):
+def get_ensemble_label_color(experiment, nexperiments, agg_method, ensemble_size, single_run):
     """Get the line label and color."""
 
     if ensemble_size == 1:
         label = experiment
     elif single_run:
-        label = 'ensemble mean (r1)' 
+        label = 'ensemble %s (r1)'  %(agg_method) 
     else:
-        label = 'ensemble mean (all runs)'
+        label = 'ensemble %s (all runs)'  %(agg_method)
     color = 'black' 
 
     if nexperiments > 1:
@@ -307,6 +307,8 @@ def main(inargs):
     if inargs.ylim:
         ymin, ymax = inargs.ylim
         plt.ylim(ymin, ymax)
+
+    plt.ylim(-4e+23, 8e+23)
 
     if inargs.scientific:
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
