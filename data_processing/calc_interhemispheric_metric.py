@@ -83,7 +83,6 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
     # Extract region
     if lat_bounds:
         if grid_type == 'curvilinear':
-            assert area_cube, "Must provide an area cube of curvilinear data"
             cube = extract_region_curvilinear(cube, lat_bounds)
         else:
             cube = extract_region_latlon(cube, lat_bounds)
