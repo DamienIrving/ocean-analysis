@@ -308,7 +308,7 @@ def main(inargs):
         ymin, ymax = inargs.ylim
         plt.ylim(ymin, ymax)
 
-    plt.ylim(-4e+23, 8e+23)
+    #plt.ylim(-4e+23, 8e+23)
 
     if inargs.scientific:
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
