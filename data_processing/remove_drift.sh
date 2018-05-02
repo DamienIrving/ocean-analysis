@@ -1,19 +1,19 @@
 
-model=FGOALS-g2
+model=GISS-E2-R
 
-experiments=(historical historicalGHG)
-rip=r1i1p1
+experiments=(historicalMisc)
+rip=r1i1p107
 
 control_rip=r1i1p1
 
 indtype=ohc-sum-hemispheric-metrics
 # ohc-zonal-sum ohc-sum-hemispheric-metrics
 
-var=ocean_heat_content_globe_sum
-# ocean_heat_content ocean_heat_content_globe_sum
+var=ocean_heat_content_nh_sum_div_globe_sum
+# ocean_heat_content ocean_heat_content_globe_sum ocean_heat_content_nh_sum_div_globe_sum
 
-outdtype=ohc-globe-sum
-# ohc-zonal-sum
+outdtype=ohc-nh-sum-div-globe-sum
+# ohc-zonal-sum ohc-nh-sum-div-globe-sum
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/data_processing
@@ -32,8 +32,8 @@ dedrifted_file=${dedrifted_dir}/${outdtype}_Oyr_${model}_${experiment}_${rip}_al
 
 coefficient_command="${python} ${script_dir}/calc_drift_coefficients.py ${control_file} ${var} ${coefficient_file}"
 mkdir_command="mkdir ${dedrifted_dir}"
-drift_command="${python} ${script_dir}/remove_drift.py ${experiment_file} ${var} annual ${coefficient_file} ${dedrifted_file} --branch_time 175382.5"
-# --branch_time 342005 (CCSM4) 175382.5 (FGOALS-g2) --no_parent_check
+drift_command="${python} ${script_dir}/remove_drift.py ${experiment_file} ${var} annual ${coefficient_file} ${dedrifted_file} --branch_time 0"
+# --branch_time 342005 (CCSM4) 175382.5 (FGOALS-g2) 0 (GISS-E2-R) --no_parent_check
 
 echo ${coefficient_command}
 ${coefficient_command}
