@@ -48,10 +48,10 @@ def save_history(cube, field, filename):
     history.append(cube.attributes['history'])
 
 
-def polyfit(data, time_axis):
+def polyfit(data, time_axis, masked_array):
     """Fit polynomial to data."""    
 
-    if type(data) == numpy.ndarray:
+    if not masked_array:
         return numpy.polynomial.polynomial.polyfit(time_axis, data, 3)
     elif data.mask[0]:
         return numpy.array([data.fill_value]*4) 
@@ -86,13 +86,14 @@ def calc_coefficients(cube, coord_names, convert_annual=False):
         if convert_annual:
             cube = timeseries.convert_to_annual(cube)
         time_axis = cube.coord('time').points.astype(numpy.float32)
-
+        masked_array = True if type(cube.data) == numpy.ma.core.MaskedArray else False
         if cube.ndim == 1:
-            coefficients = polyfit(cube.data, time_axis)
+            coefficients = polyfit(cube.data, time_axis, masked_array)
         else:    
-            coefficients = numpy.ma.apply_along_axis(polyfit, 0, cube.data, time_axis)
-            fill_value = cube.data.fill_value 
-            coefficients = numpy.ma.masked_values(coefficients, fill_value)
+            coefficients = numpy.ma.apply_along_axis(polyfit, 0, cube.data, time_axis, masked_array)
+            if masked_array:
+                fill_value = cube.data.fill_value 
+                coefficients = numpy.ma.masked_values(coefficients, fill_value)
     
     time_start = time_axis[0]
     time_end = time_axis[-1]
