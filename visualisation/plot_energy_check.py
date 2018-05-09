@@ -81,7 +81,12 @@ def get_title(cube):
 
     title = '%s, %s (%s)'  %(model, experiment, mip)
     
-    return title
+    if experiment == 'historicalMisc':
+        legloc = 3
+    else:
+        legloc = 2
+
+    return title, legloc
 
 
 def get_hfds_label(filename):
@@ -128,12 +133,17 @@ def main(inargs):
     iplt.plot(rndt_cumsum, label='TOA net radiation, cumulative sum')
 
     plt.ylabel(ohc_cube.units)
-    plt.legend(loc=2)
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
 
-    title = get_title(ohc_cube)
+    #plt.ylim(-6e+23, 8e+23)
+    ymin, ymax = plt.ylim()
+    print('ymin:', ymin)
+    print('ymax:', ymax)
+
+    title, legloc = get_title(ohc_cube)
     plt.title(title)
+    plt.legend(loc=legloc)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
