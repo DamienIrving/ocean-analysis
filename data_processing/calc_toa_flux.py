@@ -36,23 +36,25 @@ except ImportError:
 
 # Define functions
 
-def add_metadata(rndt_cube, rsdt_atts, inargs):
+def add_metadata(rndt_cube, atts):
     """Add metadata to the output cube."""
 
     standard_name = 'toa_incoming_net_flux'
-    long_name = '"TOA Incoming Net Radiation'
+    long_name = 'TOA Incoming Net Radiation'
     var_name = 'rndt'
     units = 'W m-2'
 
-    hfds_cube.standard_name = standard_name
-    hfds_cube.long_name = long_name
-    hfds_cube.var_name = var_name
-    hfds_cube.units = units
+    iris.std_names.STD_NAMES[standard_name] = {'canonical_units': units}
 
-    hfds_cube.attributes = hfss_atts
-    hfds_cube.attributes['history'] = gio.write_metadata()
+    rndt_cube.standard_name = standard_name
+    rndt_cube.long_name = long_name
+    rndt_cube.var_name = var_name
+    rndt_cube.units = units
 
-    return hfds_cube
+    rndt_cube.attributes = atts
+    rndt_cube.attributes['history'] = gio.write_metadata()
+
+    return rndt_cube
 
 
 def get_data(filename, var, target_grid=None):
@@ -134,7 +136,8 @@ def main(inargs):
         cube_dict['rlut'] = get_data(inargs.rlut_files[fnum], 'toa_outgoing_longwave_flux')
                          
         cube_dict = equalise_time_axes(cube_dict)
-        cube_dict = calc_rndt(cube_dict)  
+        cube_dict = calc_rndt(cube_dict)
+        add_metadata(cube_dict['rndt'], cube_dict['rsdt'].attributes)   
 
         rndt_file = get_outfile_name(inargs.rsdt_files[fnum])  
         print(rndt_file)
