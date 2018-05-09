@@ -1,22 +1,28 @@
 
-model=CSIRO-Mk3-6-0
+model=CanESM2
 
-experiments=(historical)
+experiments=(historical historicalGHG)
 rip=r1i1p1
 
 control_rip=r1i1p1
 
-indtype=hfbasin-global
-# ohc-zonal-sum ohc-sum-hemispheric-metrics hfbasin-global
+indtype=rndt-sum-hemispheric-metrics
+# ohc-zonal-sum ohc-sum-hemispheric-metrics hfbasin-global hfds-inferred-sum-hemispheric-metrics hfds-sum-hemispheric-metrics rndt-sum-hemispheric-metrics
 
-var=hfbasin
-# ohc hfbasin
+var=rndt
+# ohc hfbasin hfds rndt
 
-var_long=northward_ocean_heat_transport
-# ocean_heat_content ocean_heat_content_globe_sum ocean_heat_content_nh_sum_div_globe_sum northward_ocean_heat_transport
+var_long=TOA_Incoming_Net_Radiation_globe_sum
+# ocean_heat_content ocean_heat_content_globe_sum ocean_heat_content_nh_sum_div_globe_sum northward_ocean_heat_transport Downward_Heat_Flux_at_Sea_Water_Surface_globe_sum TOA_Incoming_Net_Radiation_globe_sum
 
-outdtype=hfbasin-global
-# ohc-zonal-sum ohc-nh-sum-div-globe-sum hfbasin-global
+outdtype=rndt-globe-sum
+# ohc-zonal-sum ohc-nh-sum-div-globe-sum hfbasin-global hfds-inferred-globe-sum hfds-globe-sum rndt-globe-sum
+
+realm=atmos
+#atmos ocean
+
+tscale=Ayr
+#Ayr Oyr
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/data_processing
@@ -26,12 +32,12 @@ r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}
 
 for experiment in "${experiments[@]}"; do
 
-control_file=${r87_dir}/piControl/yr/ocean/${control_rip}/${var}/latest/${indtype}_Oyr_${model}_piControl_${control_rip}_all.nc
-coefficient_file=${r87_dir}/piControl/yr/ocean/${control_rip}/${var}/latest/${outdtype}-coefficients_Oyr_${model}_piControl_${control_rip}_all.nc
-experiment_dir=${r87_dir}/${experiment}/yr/ocean/${rip}/${var}/latest
-experiment_file=${experiment_dir}/${indtype}_Oyr_${model}_${experiment}_${rip}_all.nc
+control_file=${r87_dir}/piControl/yr/${realm}/${control_rip}/${var}/latest/${indtype}_${tscale}_${model}_piControl_${control_rip}_all.nc
+coefficient_file=${r87_dir}/piControl/yr/${realm}/${control_rip}/${var}/latest/${outdtype}-coefficients_${tscale}_${model}_piControl_${control_rip}_all.nc
+experiment_dir=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest
+experiment_file=${experiment_dir}/${indtype}_${tscale}_${model}_${experiment}_${rip}_all.nc
 dedrifted_dir=${experiment_dir}/dedrifted
-dedrifted_file=${dedrifted_dir}/${outdtype}_Oyr_${model}_${experiment}_${rip}_all.nc
+dedrifted_file=${dedrifted_dir}/${outdtype}_${tscale}_${model}_${experiment}_${rip}_all.nc
 
 coefficient_command="${python} ${script_dir}/calc_drift_coefficients.py ${control_file} ${var_long} ${coefficient_file}"
 mkdir_command="mkdir ${dedrifted_dir}"
