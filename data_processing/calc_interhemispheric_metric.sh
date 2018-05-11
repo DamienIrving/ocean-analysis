@@ -1,7 +1,7 @@
 
 model=CanESM2
-experiments=(historicalMisc)
-rips=(r1i1p4)
+experiments=(piControl)
+rips=(r1i1p1)
 
 agg='sum'
 # mean sum
@@ -62,11 +62,11 @@ elif [[ "${var}" == "rndt" ]] ; then
 fi
 outdir=${r87_dir}/${experiment}/yr/${outrealm}/${rip}/${var}/latest
 mkdir -p ${outdir}
-outfile=${outdir}/${outvar}-${agg}-hemispheric-metrics_${outtscale}_${model}_${experiment}_${rip}_all.nc
+outfile=${outdir}/${outvar}-${agg}-hemispheric-metrics_${outtscale}_${model}_${experiment}_${rip}_cumsum-all.nc
+# cumsum-all
 
-
-command="${python} ${script_dir}/calc_interhemispheric_metric.py ${infiles} ${longvar} ${outfile} --metric ${metric} --aggregation_method ${agg} ${smooth} --area_file ${areafile}"
-# --annual --nh_lat_bounds -3.5 91 --sh_lat_bounds -91 -3.5 --chunk --area_file ${areafile}
+command="${python} ${script_dir}/calc_interhemispheric_metric.py ${infiles} ${longvar} ${outfile} --metric ${metric} --aggregation_method ${agg} ${smooth} --area_file ${areafile} --cumsum"
+# --annual --nh_lat_bounds -3.5 91 --sh_lat_bounds -91 -3.5 --chunk --area_file ${areafile} --cumsum
 
 echo ${command}
 ${command}

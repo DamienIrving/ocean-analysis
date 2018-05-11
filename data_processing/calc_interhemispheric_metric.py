@@ -209,6 +209,29 @@ def update_metadata(cube_list):
     return cube_list
 
 
+def cumsum(cube):
+    """Calculate the cumulative sum."""
+    
+    cube.data = numpy.cumsum(cube.data)
+    
+    return cube
+
+
+def convert_to_joules(cube):
+    """Convert units to Joules"""
+    
+    assert 'W' in str(cube.units)
+    assert 'days' in str(cube.coord('time').units)
+    
+    time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
+    time_span_seconds = time_span_days * 60 * 60 * 24
+    
+    cube.data = cube.data * uconv.broadcast_array(time_span_seconds, 0, cube.shape)
+    cube.units = str(cube.units).replace('W', 'J')
+    
+    return cube
+
+
 def main(inargs):
     """Run the program."""
 
@@ -245,7 +268,11 @@ def main(inargs):
         sh_metric = calc_frac(sh_agg, globe_agg, inargs.aggregation_method)
         cube_list.append(nh_metric)
         cube_list.append(sh_metric)
-    
+
+    if inargs.cumsum:
+        cube_list = iris.cube.CubeList(map(convert_to_joules, cube_list))
+        cube_list = iris.cube.CubeList(map(cumsum, cube_list)) 
+
     cube_list = update_metadata(cube_list)
     iris.save(cube_list, inargs.outfile)
 
@@ -284,6 +311,9 @@ author:
                         help="Northern Hemisphere latitude bounds [default = entire hemisphere]")
     parser.add_argument("--sh_lat_bounds", type=float, nargs=2, metavar=('LOWER', 'UPPER'), default=(-91.0, 0.0),
                         help="Southern Hemisphere latitude bounds [default = entire hemisphere]")
+
+    parser.add_argument("--cumsum", action="store_true", default=False,
+                        help="Output the cumulative sum [default: False]")
 
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Split input files on time axis to avoid memory errors [default: False]")

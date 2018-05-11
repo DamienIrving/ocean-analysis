@@ -1,8 +1,8 @@
 
 model=CanESM2
 
-experiments=(historical historicalGHG)
-rip=r1i1p1
+experiments=(historicalMisc)
+rip=r1i1p4
 
 control_rip=r1i1p1
 
@@ -32,12 +32,12 @@ r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}
 
 for experiment in "${experiments[@]}"; do
 
-control_file=${r87_dir}/piControl/yr/${realm}/${control_rip}/${var}/latest/${indtype}_${tscale}_${model}_piControl_${control_rip}_all.nc
-coefficient_file=${r87_dir}/piControl/yr/${realm}/${control_rip}/${var}/latest/${outdtype}-coefficients_${tscale}_${model}_piControl_${control_rip}_all.nc
+control_file=${r87_dir}/piControl/yr/${realm}/${control_rip}/${var}/latest/${indtype}_${tscale}_${model}_piControl_${control_rip}_cumsum-all.nc
+coefficient_file=${r87_dir}/piControl/yr/${realm}/${control_rip}/${var}/latest/${outdtype}-coefficients_${tscale}_${model}_piControl_${control_rip}_cumsum-all.nc
 experiment_dir=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest
-experiment_file=${experiment_dir}/${indtype}_${tscale}_${model}_${experiment}_${rip}_all.nc
+experiment_file=${experiment_dir}/${indtype}_${tscale}_${model}_${experiment}_${rip}_cumsum-all.nc
 dedrifted_dir=${experiment_dir}/dedrifted
-dedrifted_file=${dedrifted_dir}/${outdtype}_${tscale}_${model}_${experiment}_${rip}_all.nc
+dedrifted_file=${dedrifted_dir}/${outdtype}_${tscale}_${model}_${experiment}_${rip}_cumsum-all.nc
 
 coefficient_command="${python} ${script_dir}/calc_drift_coefficients.py ${control_file} ${var_long} ${coefficient_file}"
 mkdir_command="mkdir ${dedrifted_dir}"

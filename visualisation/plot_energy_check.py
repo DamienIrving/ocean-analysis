@@ -37,21 +37,6 @@ except ImportError:
 
 # Define functions
 
-def convert_to_joules(cube):
-    """Convert units to Joules"""
-    
-    assert 'W' in str(cube.units)
-    assert 'days' in str(cube.coord('time').units)
-    
-    time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
-    time_span_seconds = time_span_days * 60 * 60 * 24
-    
-    cube.data = cube.data * uconv.broadcast_array(time_span_seconds, 0, cube.shape)
-    cube.units = str(cube.units).replace('W', 'J')
-    
-    return cube
-
-
 def calc_anomaly(cube):
     """Calculate the anomaly."""
     
@@ -59,15 +44,6 @@ def calc_anomaly(cube):
     anomaly.data = anomaly.data - anomaly.data[0]
     
     return anomaly
-
-
-def calc_cumsum(cube):
-    """Calculate the cumulative sum."""
-    
-    new_cube = cube.copy()
-    new_cube.data = numpy.cumsum(new_cube.data)
-    
-    return new_cube
 
 
 def get_title(cube):
@@ -100,43 +76,53 @@ def get_hfds_label(filename):
     return label
 
 
+def plot_files(ohc_file, hfds_file, rndt_file, metadata_dict, time_constraint, dedrifted=True):
+    """ """
+
+    ohc_cube = iris.load_cube(ohc_file, 'ocean heat content globe sum' & time_constraint)
+    metadata_dict[ohc_file] = ohc_cube.attributes['history']
+
+    hfds_cube = iris.load_cube(hfds_file, 'Downward Heat Flux at Sea Water Surface globe sum' & time_constraint)
+    metadata_dict[hfds_file] = hfds_cube.attributes['history']
+
+    rndt_cube = iris.load_cube(rndt_file, 'TOA Incoming Net Radiation globe sum' & time_constraint)
+    metadata_dict[rndt_file] = rndt_cube.attributes['history']
+        
+    ohc_anomaly = calc_anomaly(ohc_cube)
+    hfds_anomaly = calc_anomaly(hfds_cube)
+    rndt_anomaly = calc_anomaly(rndt_cube)
+
+    hfds_label = get_hfds_label(hfds_file)
+    if dedrifted:
+        iplt.plot(ohc_anomaly, label='ocean heat content', color='blue')
+        iplt.plot(hfds_anomaly, label=hfds_label, color='orange')
+        iplt.plot(rndt_anomaly, label='TOA net radiation, cumulative sum', color='red')
+    else:
+        iplt.plot(ohc_anomaly, color='blue', linestyle='--')
+        iplt.plot(hfds_anomaly, color='orange', linestyle='--')
+        iplt.plot(rndt_anomaly, color='red', linestyle='--')
+
+    return metadata_dict, ohc_cube
+
+
 def main(inargs):
     """Run the program."""
 
     time_constraint = gio.get_time_constraint(inargs.time)
     metadata_dict = {}
-
-    ohc_cube = iris.load_cube(inargs.ohc_file, 'ocean heat content globe sum' & time_constraint)
-    metadata_dict[inargs.ohc_file] = ohc_cube.attributes['history']
-
-    hfds_cube_W = iris.load_cube(inargs.hfds_file, 'Downward Heat Flux at Sea Water Surface globe sum' & time_constraint)
-    metadata_dict[inargs.hfds_file] = hfds_cube_W.attributes['history']
-
-    rndt_cube_W = iris.load_cube(inargs.rndt_file, 'TOA Incoming Net Radiation globe sum' & time_constraint)
-    metadata_dict[inargs.rndt_file] = rndt_cube_W.attributes['history']
-    
-    hfds_cube_J = convert_to_joules(hfds_cube_W)
-    rndt_cube_J = convert_to_joules(rndt_cube_W)
-    
-    ohc_anomaly = calc_anomaly(ohc_cube)
-    hfds_anomaly = calc_anomaly(hfds_cube_J)
-    rndt_anomaly = calc_anomaly(rndt_cube_J)
-
-    hfds_cumsum = calc_cumsum(hfds_anomaly)
-    rndt_cumsum = calc_cumsum(rndt_anomaly)    
-
     fig, ax = plt.subplots()
 
-    hfds_label = get_hfds_label(inargs.hfds_file)
-    iplt.plot(ohc_anomaly, label='ocean heat content')
-    iplt.plot(hfds_cumsum, label=hfds_label)
-    iplt.plot(rndt_cumsum, label='TOA net radiation, cumulative sum')
+    metadata_dict, ohc_cube = plot_files(inargs.ohc_file, inargs.hfds_file, inargs.rndt_file,
+                                         metadata_dict, time_constraint, dedrifted=True)
+    if inargs.orig_ohc_file and inargs.orig_hfds_file and inargs.orig_rndt_file:
+        metadata_dict, ohc_cube = plot_files(inargs.orig_ohc_file, inargs.orig_hfds_file, inargs.orig_rndt_file,
+                                             metadata_dict, time_constraint, dedrifted=False)
 
     plt.ylabel(ohc_cube.units)
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
 
-    #plt.ylim(-6e+23, 8e+23)
+    #plt.ylim(-1e+24, 1e+24)
     ymin, ymax = plt.ylim()
     print('ymin:', ymin)
     print('ymax:', ymax)
@@ -164,14 +150,20 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("ohc_file", type=str, help="globally integrated OHC file")
-    parser.add_argument("hfds_file", type=str, help="globally integrated ocean surface downward heat flux file")   
-    parser.add_argument("rndt_file", type=str, help="globally integrated TOA net flux file")    
+    parser.add_argument("ohc_file", type=str, help="globally integrated OHC file (dedrifted)")
+    parser.add_argument("hfds_file", type=str, help="globally integrated ocean surface downward heat flux file (dedrifted)")   
+    parser.add_argument("rndt_file", type=str, help="globally integrated TOA net flux file (dedrifted)")    
     parser.add_argument("outfile", type=str, help="output file")                               
     
+    parser.add_argument("--orig_ohc_file", type=str, default=None,
+                        help="globally integrated OHC file (original, non-dedrifted)")
+    parser.add_argument("--orig_hfds_file", type=str, default=None,
+                        help="globally integrated ocean surface downward heat flux file (original, non-dedrifted)")   
+    parser.add_argument("--orig_rndt_file", type=str, default=None,
+                        help="globally integrated TOA net flux file (original, non-dedrifted)")
+
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
-                        default=('1861-01-01', '2005-12-31'),
-                        help="Time bounds for historical period [default = 1861-2005]")
+                        default=None, help="Time bounds")
 
     args = parser.parse_args()             
     main(args)
