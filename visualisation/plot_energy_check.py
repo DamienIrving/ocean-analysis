@@ -76,7 +76,7 @@ def get_hfds_label(filename):
     return label
 
 
-def plot_files(ohc_file, hfds_file, rndt_file, metadata_dict, time_constraint, dedrifted=True):
+def plot_files(ohc_file, hfds_file, rndt_file, metadata_dict, results_dict, time_constraint, dedrifted=True):
     """ """
 
     ohc_cube = iris.load_cube(ohc_file, 'ocean heat content globe sum' & time_constraint)
@@ -97,12 +97,24 @@ def plot_files(ohc_file, hfds_file, rndt_file, metadata_dict, time_constraint, d
         iplt.plot(ohc_anomaly, label='ocean heat content', color='blue')
         iplt.plot(hfds_anomaly, label=hfds_label, color='orange')
         iplt.plot(rndt_anomaly, label='TOA net radiation, cumulative sum', color='red')
+        results_dict['ocean heat content change (last minus first):'] = ohc_anomaly[-1]
+        results_dict[hfds_label + ' change (last minus first):'] = hfds_anomaly[-1]
+        results_dict['TOA net radiation, cumulative sum (last minus first):'] = rndt_anomaly[-1]
     else:
         iplt.plot(ohc_anomaly, color='blue', linestyle='--')
         iplt.plot(hfds_anomaly, color='orange', linestyle='--')
         iplt.plot(rndt_anomaly, color='red', linestyle='--')
 
-    return metadata_dict, ohc_cube
+    return metadata_dict, results_dict, ohc_cube
+
+
+def write_result(outfile, results_dict):
+    """Write results to file"""
+    
+    fout = open(outfile.replace('.png', '.txt'), 'w')
+    for label, value in results_dict.items():
+        fout.write(label + ' ' + str(value.data) + '\n')
+    fout.close()
 
 
 def main(inargs):
@@ -110,19 +122,20 @@ def main(inargs):
 
     time_constraint = gio.get_time_constraint(inargs.time)
     metadata_dict = {}
+    results_dict = {}
     fig, ax = plt.subplots()
 
-    metadata_dict, ohc_cube = plot_files(inargs.ohc_file, inargs.hfds_file, inargs.rndt_file,
-                                         metadata_dict, time_constraint, dedrifted=True)
+    metadata_dict, results_dict, ohc_cube = plot_files(inargs.ohc_file, inargs.hfds_file, inargs.rndt_file,
+                                                       metadata_dict, results_dict, time_constraint, dedrifted=True)
     if inargs.orig_ohc_file and inargs.orig_hfds_file and inargs.orig_rndt_file:
-        metadata_dict, ohc_cube = plot_files(inargs.orig_ohc_file, inargs.orig_hfds_file, inargs.orig_rndt_file,
-                                             metadata_dict, time_constraint, dedrifted=False)
+        metadata_dict, results_dict, ohc_cube = plot_files(inargs.orig_ohc_file, inargs.orig_hfds_file, inargs.orig_rndt_file,
+                                                           metadata_dict, results_dict, time_constraint, dedrifted=False)
 
     plt.ylabel(ohc_cube.units)
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
 
-    #plt.ylim(-1e+24, 1e+24)
+    #plt.ylim(-5e+24, 9e+24)
     ymin, ymax = plt.ylim()
     print('ymin:', ymin)
     print('ymax:', ymax)
@@ -131,6 +144,7 @@ def main(inargs):
     plt.title(title)
     plt.legend(loc=legloc)
 
+    write_result(inargs.outfile, results_dict)
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
 
