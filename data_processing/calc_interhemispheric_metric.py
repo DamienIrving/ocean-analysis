@@ -48,7 +48,7 @@ def save_history(cube, field, filename):
     history.append(cube.attributes['history'])
 
 
-def read_data(infiles, variable, calc_annual=False):
+def read_data(infiles, variable, calc_annual=False, chunk=False):
     """Load the input data."""
 
     cube = iris.load(infiles, gio.check_iris_var(variable), callback=save_history)
@@ -57,7 +57,7 @@ def read_data(infiles, variable, calc_annual=False):
     cube = cube.concatenate_cube()
     cube = gio.check_time_units(cube)
     if calc_annual:
-        cube = timeseries.convert_to_annual(cube) 
+        cube = timeseries.convert_to_annual(cube, chunk=chunk) 
 
     coord_names = [coord.name() for coord in cube.dim_coords]
     aux_coord_names = [coord.name() for coord in cube.aux_coords]
@@ -235,7 +235,8 @@ def convert_to_joules(cube):
 def main(inargs):
     """Run the program."""
 
-    cube, coord_names, aux_coord_names, grid_type = read_data(inargs.infiles, inargs.variable, calc_annual=inargs.annual)
+    cube, coord_names, aux_coord_names, grid_type = read_data(inargs.infiles, inargs.variable, calc_annual=inargs.annual,
+                                                              chunk=inargs.chunk)
 
     if inargs.area_file:
         area_cube = iris.load_cube(inargs.area_file, 'cell_area')
