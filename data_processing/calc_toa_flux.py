@@ -57,10 +57,10 @@ def add_metadata(rndt_cube, atts):
     return rndt_cube
 
 
-def get_data(filename, var, target_grid=None):
+def get_data(filename, var, time_constraint):
     """Read data."""
     
-    cube = iris.load_cube(filename, gio.check_iris_var(var))
+    cube = iris.load_cube(filename, gio.check_iris_var(var) & time_constraint)
     cube = gio.check_time_units(cube)
     cube = iris.util.squeeze(cube)
 
@@ -74,7 +74,8 @@ def calc_rndt(cube_dict):
     assert cube_dict['rsut'].data.min() >= 0.0  
     assert cube_dict['rlut'].data.min() >= 0.0
 
-    cube_dict['rndt'] = cube_dict['rsdt'] - cube_dict['rsut'] - cube_dict['rlut']  
+    cube_dict['rndt'] = cube_dict['rsdt'].copy()
+    cube_dict['rndt'].data = cube_dict['rsdt'].data - cube_dict['rsut'].data - cube_dict['rlut'].data  
 
     return cube_dict
 
@@ -128,18 +129,23 @@ def get_outfile_name(rsdt_file):
 def main(inargs):
     """Run the program."""
 
+    time_constraint = gio.get_time_constraint(inargs.time)
     nfiles = check_inputs(inargs)
     for fnum in range(nfiles):
         cube_dict = {}
-        cube_dict['rsdt'] = get_data(inargs.rsdt_files[fnum], 'toa_incoming_shortwave_flux')
-        cube_dict['rsut'] = get_data(inargs.rsut_files[fnum], 'toa_outgoing_shortwave_flux')
-        cube_dict['rlut'] = get_data(inargs.rlut_files[fnum], 'toa_outgoing_longwave_flux')
+        cube_dict['rsdt'] = get_data(inargs.rsdt_files[fnum], 'toa_incoming_shortwave_flux', time_constraint)
+        cube_dict['rsut'] = get_data(inargs.rsut_files[fnum], 'toa_outgoing_shortwave_flux', time_constraint)
+        cube_dict['rlut'] = get_data(inargs.rlut_files[fnum], 'toa_outgoing_longwave_flux', time_constraint)
                          
         cube_dict = equalise_time_axes(cube_dict)
         cube_dict = calc_rndt(cube_dict)
         add_metadata(cube_dict['rndt'], cube_dict['rsdt'].attributes)   
 
-        rndt_file = get_outfile_name(inargs.rsdt_files[fnum])  
+        if inargs.outfile:
+            rndt_file = inargs.outfile  
+        else:
+            assert inargs.time == None
+            rndt_file = get_outfile_name(inargs.rsdt_files[fnum])
         print(rndt_file)
         iris.save(cube_dict['rndt'], rndt_file)
 
@@ -165,6 +171,11 @@ author:
                         help="TOA outgoing shortwave flux files")
     parser.add_argument("--rlut_files", type=str, nargs='*', required=True,
                         help="TOA outgoing longwave flux files")
+
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
+                        help="Time period [default = entire]")
+    parser.add_argument("--outfile", type=str, default=None,
+                        help="Override automatic outfile name")
 
     args = parser.parse_args()             
     main(args)
