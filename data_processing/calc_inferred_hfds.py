@@ -55,7 +55,7 @@ def add_metadata(hfds_cube, hfss_atts, inargs):
     return hfds_cube
 
 
-def get_data(filename, var, target_grid=None):
+def get_data(filename, var, time_constraint, target_grid=None):
     """Read data.
     
     Positive is defined as down.
@@ -64,7 +64,7 @@ def get_data(filename, var, target_grid=None):
     
     if filename:
         with iris.FUTURE.context(cell_datetime_objects=True):
-            cube = iris.load_cube(filename, gio.check_iris_var(var))
+            cube = iris.load_cube(filename, gio.check_iris_var(var) & time_constraint)
             cube = gio.check_time_units(cube)
             cube = iris.util.squeeze(cube)
 
@@ -166,23 +166,24 @@ def main(inargs):
     """Run the program."""
 
     sftlf_cube = iris.load_cube(inargs.sftlf_file, 'land_area_fraction')
+    time_constraint = gio.get_time_constraint(inargs.time)
 
     nfiles = check_inputs(inargs)
     for fnum in range(nfiles):
         cube_dict = {}
-        cube_dict['rsds'] = get_data(inargs.rsds_files[fnum], 'surface_downwelling_shortwave_flux_in_air')
-        cube_dict['rsus'] = get_data(inargs.rsus_files[fnum], 'surface_upwelling_shortwave_flux_in_air')
-        cube_dict['rlds'] = get_data(inargs.rlds_files[fnum], 'surface_downwelling_longwave_flux_in_air')
-        cube_dict['rlus'] = get_data(inargs.rlus_files[fnum], 'surface_upwelling_longwave_flux_in_air')
+        cube_dict['rsds'] = get_data(inargs.rsds_files[fnum], 'surface_downwelling_shortwave_flux_in_air', time_constraint)
+        cube_dict['rsus'] = get_data(inargs.rsus_files[fnum], 'surface_upwelling_shortwave_flux_in_air', time_constraint)
+        cube_dict['rlds'] = get_data(inargs.rlds_files[fnum], 'surface_downwelling_longwave_flux_in_air', time_constraint)
+        cube_dict['rlus'] = get_data(inargs.rlus_files[fnum], 'surface_upwelling_longwave_flux_in_air', time_constraint)
  
-        cube_dict['hfss'] = get_data(inargs.hfss_files[fnum], 'surface_upward_sensible_heat_flux')
-        cube_dict['hfls'] = get_data(inargs.hfls_files[fnum], 'surface_upward_latent_heat_flux')
+        cube_dict['hfss'] = get_data(inargs.hfss_files[fnum], 'surface_upward_sensible_heat_flux', time_constraint)
+        cube_dict['hfls'] = get_data(inargs.hfls_files[fnum], 'surface_upward_latent_heat_flux', time_constraint)
 
         rsds_slice = next(cube_dict['rsds'].slices(['latitude', 'longitude']))
         if inargs.hfsithermds_files:
             cube_dict['hfsithermds'] = get_data(inargs.hfsithermds_files[fnum],
                                                 'heat_flux_into_sea_water_due_to_sea_ice_thermodynamics',
-                                                target_grid=rsds_slice)                          
+                                                time_constraint, target_grid=rsds_slice)                          
         
         cube_dict = equalise_time_axes(cube_dict)
         cube_dict = derived_radiation_fluxes(cube_dict, inargs)  
@@ -224,6 +225,9 @@ author:
                         help="surface latent heat flux files")
     parser.add_argument("--hfsithermds_files", type=str, nargs='*', default=None,
                         help="heat flux due to sea ice files")
+
+    parser.add_argument("--time", type=str, nargs=2, default=None, metavar=('START_DATE', 'END_DATE'),
+                        help="Time period [default = entire]")
 
     args = parser.parse_args()             
     main(args)
