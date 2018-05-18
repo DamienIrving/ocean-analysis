@@ -247,7 +247,8 @@ def main(inargs):
         time_coord.convert_units(new_time_unit)
         
         time_values = time_coord.points.astype(numpy.float32) - time_diff
-        check_time_adjustment(time_values, coefficient_a_cube, branch_time, fnum)    
+        if not inargs.no_time_check:
+            check_time_adjustment(time_values, coefficient_a_cube, branch_time, fnum)    
 
         # Remove the drift
         if fnum == 0:
@@ -328,6 +329,8 @@ notes:
     
     parser.add_argument("--no_parent_check", action="store_true", default=False,
                         help="Do not perform the parent experiment check [default: False]")
+    parser.add_argument("--no_time_check", action="store_true", default=False,
+                        help="Do not perform the time axis adjustment check [default: False]")
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Split the polynomial calculation up to avoid memory errors [default: False]")
     
