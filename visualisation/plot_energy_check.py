@@ -46,7 +46,7 @@ def calc_anomaly(cube):
     return anomaly
 
 
-def get_title(cube, hemisphere):
+def get_title(cube):
     """Get the plot title."""
 
     model = cube.attributes['model_id']
@@ -55,7 +55,7 @@ def get_title(cube, hemisphere):
     run = cube.attributes['realization']
     mip = 'r%si1p%s' %(run, physics)
 
-    title = '%s, %s (%s), %s'  %(model, experiment, mip, hemisphere)
+    title = '%s, %s (%s)'  %(model, experiment, mip)
     
     if experiment == 'historicalMisc':
         legloc = 3
@@ -69,9 +69,9 @@ def get_hfds_label(filename):
     """Get the hfds legend label"""
 
     if 'inferred' in filename:
-        label = 'ocean surface heat flux (inferred), cumulative sum'
+        label = ' ocean surface heat flux (inferred), cumulative sum'
     else:
-        label = 'ocean surface heat flux, cumulative sum'
+        label = ' ocean surface heat flux, cumulative sum'
 
     return label
 
@@ -97,17 +97,27 @@ def plot_files(ohc_file, hfds_file, rndt_file, hemisphere,
     rndt_anomaly = calc_anomaly(rndt_cube)
 
     hfds_label = get_hfds_label(hfds_file)
-    if dedrifted:
+    if dedrifted and (hemisphere == 'globe'):
         iplt.plot(ohc_anomaly, label='ocean heat content', color='blue')
         iplt.plot(hfds_anomaly, label=hfds_label, color='orange')
         iplt.plot(rndt_anomaly, label='TOA net radiation, cumulative sum', color='red')
-        results_dict['TOA net radiation, cumulative sum (last minus first):'] = rndt_anomaly[-1]
-        results_dict[hfds_label + ' change (last minus first):'] = hfds_anomaly[-1]
-        results_dict['ocean heat content change (last minus first):'] = ohc_anomaly[-1]
+    elif dedrifted and (hemisphere == 'nh'):
+        iplt.plot(ohc_anomaly, color='blue', linestyle=':')
+        iplt.plot(hfds_anomaly, color='orange', linestyle=':')
+        iplt.plot(rndt_anomaly, color='red', linestyle=':')
+    elif dedrifted and (hemisphere == 'sh'):
+        iplt.plot(ohc_anomaly, color='blue', linestyle='--')
+        iplt.plot(hfds_anomaly, color='orange', linestyle='--')
+        iplt.plot(rndt_anomaly, color='red', linestyle='--')
     else:
         iplt.plot(ohc_anomaly, color='blue', linestyle='--')
         iplt.plot(hfds_anomaly, color='orange', linestyle='--')
         iplt.plot(rndt_anomaly, color='red', linestyle='--')
+    
+    if dedrifted:
+        results_dict[hemisphere + ' TOA net radiation, cumulative sum (last minus first):'] = rndt_anomaly[-1]
+        results_dict[hemisphere + hfds_label + ' change (last minus first):'] = hfds_anomaly[-1]
+        results_dict[hemisphere + ' ocean heat content change (last minus first):'] = ohc_anomaly[-1]
 
     return metadata_dict, results_dict, ohc_cube
 
@@ -129,22 +139,26 @@ def main(inargs):
     results_dict = {}
     fig, ax = plt.subplots()
 
-    metadata_dict, results_dict, ohc_cube = plot_files(inargs.ohc_file, inargs.hfds_file, inargs.rndt_file, inargs.hemisphere,
-                                                       metadata_dict, results_dict, time_constraint, dedrifted=True)
-    if inargs.orig_ohc_file and inargs.orig_hfds_file and inargs.orig_rndt_file:
-        metadata_dict, results_dict, ohc_cube = plot_files(inargs.orig_ohc_file, inargs.orig_hfds_file, inargs.orig_rndt_file, inargs.hemisphere,
-                                                           metadata_dict, results_dict, time_constraint, dedrifted=False)
+    group_characteristics = [('globe', True), ('nh', True), ('sh', True), ('globe', False)]
+    infiles = [inargs.globe_files, inargs.nh_files, inargs.sh_files, inargs.orig_files]
+    for index, file_group in enumerate(infiles):
+        if file_group:
+            hemisphere, dedrifted = group_characteristics[index]
+            ohc_file, hfds_file, rndt_file = file_group
+            metadata_dict, results_dict, ohc_cube = plot_files(ohc_file, hfds_file, rndt_file, hemisphere,
+                                                               metadata_dict, results_dict, time_constraint,
+                                                               dedrifted=dedrifted)
 
     plt.ylabel(ohc_cube.units)
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
 
-    #plt.ylim(-5e+24, 9e+24)
+    #plt.ylim(-1e+23, 8e+23)
     ymin, ymax = plt.ylim()
     print('ymin:', ymin)
     print('ymax:', ymax)
 
-    title, legloc = get_title(ohc_cube, inargs.hemisphere)
+    title, legloc = get_title(ohc_cube)
     plt.title(title)
     plt.legend(loc=legloc)
 
@@ -168,18 +182,17 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("ohc_file", type=str, help="globally integrated OHC file (dedrifted)")
-    parser.add_argument("hfds_file", type=str, help="globally integrated ocean surface downward heat flux file (dedrifted)")   
-    parser.add_argument("rndt_file", type=str, help="globally integrated TOA net flux file (dedrifted)")
-    parser.add_argument("hemisphere", type=str, choices=('globe', 'nh', 'sh'), help="hemisphere") 
     parser.add_argument("outfile", type=str, help="output file")                               
     
-    parser.add_argument("--orig_ohc_file", type=str, default=None,
-                        help="globally integrated OHC file (original, non-dedrifted)")
-    parser.add_argument("--orig_hfds_file", type=str, default=None,
-                        help="globally integrated ocean surface downward heat flux file (original, non-dedrifted)")   
-    parser.add_argument("--orig_rndt_file", type=str, default=None,
-                        help="globally integrated TOA net flux file (original, non-dedrifted)")
+    parser.add_argument("--globe_files", type=str, nargs=3, default=None, 
+                        help="globally integrated OHC file, hfds file and netTOA file (in that order) (dedrifted)")
+    parser.add_argument("--nh_files", type=str, nargs=3, default=None, 
+                        help="NH integrated OHC file, hfds file and netTOA file (in that order) (dedrifted)")
+    parser.add_argument("--sh_files", type=str, nargs=3, default=None, 
+                        help="SH integrated OHC file, hfds file and netTOA file (in that order) (dedrifted)")
+
+    parser.add_argument("--orig_files", type=str, nargs=3, default=None, 
+                        help="globally integrated OHC file, hfds file and netTOA file (in that order), non-dedrifted")
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=None, help="Time bounds")
