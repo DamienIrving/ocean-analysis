@@ -1,7 +1,7 @@
 
 model=CanESM2
-experiments=(rcp45)
-rips=(r1i1p1)
+experiments=(historicalMisc)
+rips=(r1i1p4)
 
 fx_rip=r0i0p0
 fx_experiment=historical
@@ -23,8 +23,10 @@ rlus_files=${ua6_dir}/${experiment}/mon/atmos/${rip}/rlus/latest/rlus_Amon_${mod
 hfss_files=${ua6_dir}/${experiment}/mon/atmos/${rip}/hfss/latest/hfss_Amon_${model}_${experiment}_${rip}_*.nc
 hfls_files=${ua6_dir}/${experiment}/mon/atmos/${rip}/hfls/latest/hfls_Amon_${model}_${experiment}_${rip}_*.nc
 
-command="${python} ${script_dir}/calc_inferred_hfds.py ${sftlf_file} --rsds_files ${rsds_files} --rsus_files ${rsus_files} --rlds_files ${rlds_files} --rlus_files ${rlus_files} --hfss_files ${hfss_files} --hfls_files ${hfls_files}"
+hfsithermds_files=${ua6_dir}/${experiment}/mon/ocean/${rip}/hfsithermds/latest/hfsithermds_Omon_${model}_${experiment}_${rip}_*.nc
 
+command="${python} ${script_dir}/calc_inferred_hfds.py ${sftlf_file} --rsds_files ${rsds_files} --rsus_files ${rsus_files} --rlds_files ${rlds_files} --rlus_files ${rlus_files} --hfss_files ${hfss_files} --hfls_files ${hfls_files} --hfsithermds ${hfsithermds_files}"
+# --hfsithermds ${hfsithermds_files}
 
 echo ${command}
 ${command}
