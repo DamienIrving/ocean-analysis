@@ -69,9 +69,9 @@ def get_hfds_label(filename):
     """Get the hfds legend label"""
 
     if 'inferred' in filename:
-        label = ' ocean surface heat flux (inferred), cumulative sum'
+        label = 'ocean surface heat flux (inferred), cumulative sum'
     else:
-        label = ' ocean surface heat flux, cumulative sum'
+        label = 'ocean surface heat flux, cumulative sum'
 
     return label
 
@@ -116,7 +116,7 @@ def plot_files(ohc_file, hfds_file, rndt_file, hemisphere,
     
     if dedrifted:
         results_dict[hemisphere + ' TOA net radiation, cumulative sum (last minus first):'] = rndt_anomaly[-1]
-        results_dict[hemisphere + hfds_label + ' change (last minus first):'] = hfds_anomaly[-1]
+        results_dict[hemisphere + ' ' + hfds_label + ' change (last minus first):'] = hfds_anomaly[-1]
         results_dict[hemisphere + ' ocean heat content change (last minus first):'] = ohc_anomaly[-1]
 
     return metadata_dict, results_dict, ohc_cube
