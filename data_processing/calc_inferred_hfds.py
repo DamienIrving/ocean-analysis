@@ -115,7 +115,6 @@ def infer_hfds(cube_dict, sftlf_cube, target_grid, inargs):
     
     if inargs.hfsithermds_files:
          hfsithermds_cube = cube_dict['hfsithermds'].regrid(target_grid, iris.analysis.Linear())
-         data_list.append(hfsithermds_cube)
     else:
          hfsithermds_cube = 0.0
 
