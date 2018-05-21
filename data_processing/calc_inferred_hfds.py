@@ -65,15 +65,20 @@ def get_data(filename, var, time_constraint, target_grid=None):
     if filename:
         cube = iris.load_cube(filename, gio.check_iris_var(var) & time_constraint)
         cube = gio.check_time_units(cube)
+
         cube = iris.util.squeeze(cube)
+        aux_coord_names = [coord.name() for coord in cube.aux_coords]
+        if 'depth' in aux_coord_names:
+            cube.remove_coord('depth')
 
         if target_grid:
             cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube, target_grid_cube=target_grid)
 
-        coord_names = [coord.name() for coord in cube.dim_coords]
-        if 'depth' in coord_names:
+        dim_coord_names = [coord.name() for coord in cube.dim_coords]
+        if 'depth' in dim_coord_names:
             depth_constraint = iris.Constraint(depth=0)
             cube = cube.extract(depth_constraint)
+            cube.remove_coord('depth')
 
         if 'up' in cube.standard_name:
             cube.data = cube.data * -1
