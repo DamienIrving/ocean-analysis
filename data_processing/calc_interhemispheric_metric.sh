@@ -9,10 +9,10 @@ agg='sum'
 metric='diff'
 # diff global-fraction
 
-var='rndt'
+var='hfds'
 # hfds ohc rndt
 
-inferred=false
+inferred=true
 # true false
 
 fx_rip=r0i0p0
@@ -65,8 +65,8 @@ mkdir -p ${outdir}
 outfile=${outdir}/${outvar}-${agg}-hemispheric-metrics_${outtscale}_${model}_${experiment}_${rip}_cumsum-all.nc
 # cumsum-all
 
-command="${python} ${script_dir}/calc_interhemispheric_metric.py ${infiles} ${longvar} ${outfile} --metric ${metric} --aggregation_method ${agg} ${smooth} --area_file ${areafile} --cumsum"
-# --annual --nh_lat_bounds -3.5 91 --sh_lat_bounds -91 -3.5 --chunk --area_file ${areafile} --cumsum
+command="${python} ${script_dir}/calc_interhemispheric_metric.py ${infiles} ${longvar} ${outfile} --metric ${metric} --aggregation_method ${agg} ${smooth} --cumsum --area_file ${areafile}"
+# --nh_lat_bounds -3.5 91 --sh_lat_bounds -91 -3.5 --chunk --area_file ${areafile} --cumsum
 
 echo ${command}
 ${command}
