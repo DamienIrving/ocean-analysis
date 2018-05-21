@@ -217,21 +217,6 @@ def cumsum(cube):
     return cube
 
 
-def convert_to_joules(cube):
-    """Convert units to Joules"""
-    
-    assert 'W' in str(cube.units)
-    assert 'days' in str(cube.coord('time').units)
-    
-    time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
-    time_span_seconds = time_span_days * 60 * 60 * 24
-    
-    cube.data = cube.data * uconv.broadcast_array(time_span_seconds, 0, cube.shape)
-    cube.units = str(cube.units).replace('W', 'J')
-    
-    return cube
-
-
 def main(inargs):
     """Run the program."""
 
@@ -271,7 +256,7 @@ def main(inargs):
         cube_list.append(sh_metric)
 
     if inargs.cumsum:
-        cube_list = iris.cube.CubeList(map(convert_to_joules, cube_list))
+        cube_list = iris.cube.CubeList(map(uconv.convert_to_joules, cube_list))
         cube_list = iris.cube.CubeList(map(cumsum, cube_list)) 
 
     cube_list = update_metadata(cube_list)

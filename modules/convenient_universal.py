@@ -6,6 +6,7 @@ Functions:
   apply_lon_filter      -- Set values outside of specified longitude range to zero
   broadcast_array       -- Broadcast an array to a target shape
   calc_significance     -- Perform significance test
+  convert_to_joules     -- Convert units from Watts to Joules
   coordinate_paris      -- Generate lat/lon pairs
   create_basin_array    -- Create an ocean basin array
   dict_filter           -- Filter dictionary according to specified keys
@@ -210,6 +211,21 @@ def chunked_collapse_by_time(cube, collapse_dims, agg_method, weights=None):
     collapsed_cube = chunk_list.concatenate()[0]
 
     return collapsed_cube
+
+
+def convert_to_joules(cube):
+    """Convert units from Watts to Joules"""
+    
+    assert 'W' in str(cube.units)
+    assert 'days' in str(cube.coord('time').units)
+    
+    time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
+    time_span_seconds = time_span_days * 60 * 60 * 24
+    
+    cube.data = cube.data * broadcast_array(time_span_seconds, 0, cube.shape)
+    cube.units = str(cube.units).replace('W', 'J')
+    
+    return cube
 
 
 def coordinate_pairs(lat_axis, lon_axis):

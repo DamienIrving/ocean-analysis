@@ -106,6 +106,14 @@ def extract_wide_equator(cube):
     return cube
 
 
+def cumsum(cube):
+    """Calculate the cumulative sum."""
+    
+    cube.data = numpy.cumsum(cube.data)
+    
+    return cube
+
+
 def main(inargs):
     """Run the program."""
 
@@ -117,6 +125,10 @@ def main(inargs):
         metric_cube = extract_equator(cube)
     else:
         metric_cube = extract_wide_equator(cube)
+
+    if inargs.cumsum:
+        metric_cube = uconv.convert_to_joules(metric_cube)
+        metric_cube = cumsum(metric_cube) 
 
     metric_cube.attributes['history'] = gio.write_metadata(file_info={inargs.infile: cube.attributes['history']})
     iris.save(metric_cube, inargs.outfile)
@@ -140,6 +152,9 @@ author:
     parser.add_argument("infile", type=str, help="Input hfbasin file from calc_hfbasin.py")
     parser.add_argument("outtype", type=str, choices=('equator', 'wide-equator', 'metric'), help="Output type")            
     parser.add_argument("outfile", type=str, help="Output file")  
+
+    parser.add_argument("--cumsum", action="store_true", default=False,
+                        help="Output the cumulative sum [default: False]")
 
     args = parser.parse_args()             
     main(args)
