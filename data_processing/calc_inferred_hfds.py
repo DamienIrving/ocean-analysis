@@ -63,21 +63,20 @@ def get_data(filename, var, time_constraint, target_grid=None):
     """
     
     if filename:
-        with iris.FUTURE.context(cell_datetime_objects=True):
-            cube = iris.load_cube(filename, gio.check_iris_var(var) & time_constraint)
-            cube = gio.check_time_units(cube)
-            cube = iris.util.squeeze(cube)
+        cube = iris.load_cube(filename, gio.check_iris_var(var) & time_constraint)
+        cube = gio.check_time_units(cube)
+        cube = iris.util.squeeze(cube)
 
-            if target_grid:
-                cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube, target_grid_cube=target_grid)
+        if target_grid:
+            cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube, target_grid_cube=target_grid)
 
-            coord_names = [coord.name() for coord in cube.dim_coords]
-            if 'depth' in coord_names:
-                depth_constraint = iris.Constraint(depth=0)
-                cube = cube.extract(depth_constraint)
+        coord_names = [coord.name() for coord in cube.dim_coords]
+        if 'depth' in coord_names:
+            depth_constraint = iris.Constraint(depth=0)
+            cube = cube.extract(depth_constraint)
 
-            if 'up' in cube.standard_name:
-                cube.data = cube.data * -1
+        if 'up' in cube.standard_name:
+            cube.data = cube.data * -1
     else:
         cube = None
 
@@ -115,13 +114,14 @@ def infer_hfds(cube_dict, sftlf_cube, target_grid, inargs):
     
     if inargs.hfsithermds_files:
          hfsithermds_cube = cube_dict['hfsithermds'].regrid(target_grid, iris.analysis.Linear())
+         cube_dict['hfds-inferred'] = hfsithermds_cube.copy()
+         cube_dict['hfds-inferred'].data = cube_dict['rns'].data + cube_dict['hfls'].data + cube_dict['hfss'].data + hfsithermds_cube.data
     else:
-         hfsithermds_cube = 0.0
+         cube_dict['hfds-inferred'] = cube_dict['rns'] + cube_dict['hfls'] + cube_dict['hfss']
+         cube_dict['hfds-inferred'] = uconv.apply_land_ocean_mask(cube_dict['hfds-inferred'], sftlf_cube, 'ocean')
 
-    cube_dict['hfds-inferred'] = cube_dict['rns'] + cube_dict['hfls'] + cube_dict['hfss'] + hfsithermds_cube
-    cube_dict['hfds-inferred'] = uconv.apply_land_ocean_mask(cube_dict['hfds-inferred'], sftlf_cube, 'ocean')
     cube_dict['hfds-inferred'] = add_metadata(cube_dict['hfds-inferred'], cube_dict['hfss'].attributes, inargs)    
-        
+
     return cube_dict
 
 
