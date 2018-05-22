@@ -97,6 +97,12 @@ def read_data(infile_list, var, basin_cube, region):
     return cube
 
 
+def cumsum(cube):
+    """Calculate the cumulative sum."""
+
+    cube.data = numpy.cumsum(cube.data, axis=0)
+    
+    return cube
 
 
 def main(inargs):
@@ -169,6 +175,10 @@ def main(inargs):
     zonal_cube.standard_name = standard_name
     zonal_cube.long_name = standard_name.replace('_', ' ')
     zonal_cube.var_name = var_name   
+
+    if inargs.cumsum:
+        zonal_cube = uconv.convert_to_joules(zonal_cube)
+        zonal_aggregate = cumsum(zonal_cube)
         
     iris.save(zonal_cube, inargs.outfile)
 
@@ -199,6 +209,10 @@ author:
  
     parser.add_argument("--regrid", action="store_true", default=False,
                         help="Regrid to a regular lat/lon grid")
+
+    parser.add_argument("--cumsum", action="store_true", default=False,
+                        help="Output the cumulative sum [default: False]")
+
 
     args = parser.parse_args()            
     main(args)

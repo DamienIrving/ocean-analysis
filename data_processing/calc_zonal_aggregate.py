@@ -52,6 +52,14 @@ def save_history(cube, field, filename):
     history.append(cube.attributes['history'])
 
 
+def cumsum(cube):
+    """Calculate the cumulative sum."""
+
+    cube.data = numpy.cumsum(cube.data, axis=0)
+    
+    return cube
+
+
 def multiply_by_area(cube):
     """Multiply by cell area."""
 
@@ -92,6 +100,10 @@ def main(inargs):
     zonal_aggregate = cube.collapsed('longitude', aggregation_functions[inargs.aggregation])
     zonal_aggregate.remove_coord('longitude')
 
+    if inargs.cumsum:
+        zonal_aggregate = uconv.convert_to_joules(zonal_aggregate)
+        zonal_aggregate = cumsum(zonal_aggregate)
+
     zonal_aggregate.attributes['history'] = gio.write_metadata(file_info={inargs.infiles[0]: history[0]}) 
     iris.save(zonal_aggregate, inargs.outfile)
 
@@ -125,6 +137,9 @@ author:
                         help="Output annual mean [default=False]")
     parser.add_argument("--area", action='store_true', default=False,
                         help="Multiply by area [default=False]")
+
+    parser.add_argument("--cumsum", action="store_true", default=False,
+                        help="Output the cumulative sum [default: False]")
 
     args = parser.parse_args()
     assert bool(args.sftlf_file) == bool(args.realm), "To select a realm, specify --realm and --sftlf_file"             

@@ -1,7 +1,7 @@
 
-model=FGOALS-g2
+model=CSIRO-Mk3-6-0
 
-experiments=(piControl)
+experiments=(historical)
 rips=(r1i1p1)
 
 fx_rip=r0i0p0
@@ -9,6 +9,10 @@ fx_experiment=historical
 
 spatial_agg='sum'
 #sum mean
+
+tdetails=cumsum-all
+#all cumsum-all
+
 vars=(hfds)
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
@@ -115,10 +119,10 @@ mkdir -p /g/data/r87/dbi599/DRSv2/CMIP5/${model}/${experiment}/yr/${realm}/${rip
 
 input_file=${ua6_dir}/${experiment}/${input_tscale}/${realm}/${rip}/${var}/latest/${file_var}_${prefix}${input_tscale}_${model}_${experiment}_${rip}_*.nc
 
-output_file=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest/${file_var}-zonal-${spatial_agg}_${prefix}yr_${model}_${experiment}_${rip}_all.nc
+output_file=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest/${file_var}-zonal-${spatial_agg}_${prefix}yr_${model}_${experiment}_${rip}_${tdetails}.nc
 
-command="${python} ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} ${spatial_agg} ${output_file} ${temporal_agg} --area"
-# --area --realm ocean --sftlf_file ${sftlf_file} 
+command="${python} ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} ${spatial_agg} ${output_file} ${temporal_agg} --area --cumsum"
+# --area --realm ocean --sftlf_file ${sftlf_file} --cumsum
 
 echo ${command}
 ${command}
