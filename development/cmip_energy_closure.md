@@ -44,6 +44,13 @@ Here's my progress so far:
 
 ### Notes
 
-Energy non-closure is often just an amplitude issue, with the shape of the OHC, HFDS and netTOA curves matching
+For models where the HFDS variable is not archived, it can be inferred from the other surface fluxes:
+* Downwelling shortwave flux (rsds)
+* Upwelling shortwave flux (rsus)
+* Downwelling longwave flux (rlds)
+* Upwelling longwave flux (rlus)
+* Sensible heat flux (hfss)
+* Latent heat flux (hfss)
+* Heat flux into sea water due to sea ice thermodynamics (hfsithermds)
 
-For models where the HFDS variable is not archived, it can be inferred from the other surface fluxes: downwelling shortwave flux (rsds), upwelling shortwave flux (rsus), downwelling longwave flux (rlds), upwelling longwave flux (rlus), sensible heat flux (hfss), latent heat flux (hfss) and heat flux into sea water due to sea ice thermodynamics (hfsithermds). Typically, modelling groups archive all of those variables except hfsithermds. This obviously doesn't cause any problems when looking at zonally integrated surface heat fluxes outside of the high latitudes, but it is problematic when calculating the global intergral (for instance). While its climatological values are relatively small, when looking at the change over time in a forced (or drifting) simulation, the hfsithermds component of the surface energy budget is not negligible.  
+Typically, modelling groups archive all of these variables except hfsithermds. This obviously doesn't cause any problems when looking at surface heat fluxes outside of the high latitudes, but it is problematic when calculating the global intergral (for instance). While its climatological values are relatively small, when looking at the change over time in a forced (or drifting) simulation, the hfsithermds component of the surface energy budget is not negligible. My suspicion (based on analysis of inferred HFDS data for the CanESM2 model calculated with and without hfithermds) is that the models that show non-clousure of inferred HFDS data do so because they didn't archive hfsithermds data. 
