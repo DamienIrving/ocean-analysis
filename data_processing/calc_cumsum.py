@@ -12,6 +12,20 @@ import argparse, copy
 import numpy
 import iris
 
+cwd = os.getcwd()
+repo_dir = '/'
+for directory in cwd.split('/')[1:]:
+    repo_dir = os.path.join(repo_dir, directory)
+    if directory == 'ocean-analysis':
+        break
+
+modules_dir = os.path.join(repo_dir, 'modules')
+sys.path.append(modules_dir)
+
+import general_io as gio
+import timeseries
+import convenient_universal as uconv
+
 
 # Import my modules
 
@@ -39,6 +53,7 @@ def cumsum(cube, clim=None):
 
     if clim:
         cube.data = cube.data - clim.data
+        print('Climatology sum:', clim.data.sum())
     
     cube.data = numpy.cumsum(cube.data, axis=0)
     
@@ -55,8 +70,9 @@ def main(inargs):
     metadata_dict[inargs.infile] = cube.attributes['history']
     if inargs.clim:
         clim_data_cube = iris.load_cube(inargs.clim, gio.check_iris_var(inargs.var))
+        clim_data_cube = uconv.convert_to_joules(clim_data_cube)
         clim_cube = clim_data_cube.collapsed('time', iris.analysis.MEAN)
-        clim_cube = uconv.convert_to_joules(clim_cube)
+        
         assert clim_cube.units == 'J'
         metadata_dict[inargs.clim] = clim_cube.attributes['history']
     else:
