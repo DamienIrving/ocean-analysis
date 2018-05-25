@@ -48,18 +48,6 @@ except ImportError:
 
 # Define functions
      
-def cumsum(cube, clim=None):
-    """Calculate the cumulative sum of the anomaly data."""
-
-    if clim:
-        cube.data = cube.data - clim.data
-        print('Climatology sum:', clim.data.sum())
-    
-    cube.data = numpy.cumsum(cube.data, axis=0)
-    
-    return cube
-
-
 def main(inargs):
     """Run the program."""
 
@@ -68,17 +56,8 @@ def main(inargs):
     assert cube.units == 'J'
     metadata_dict = {} 
     metadata_dict[inargs.infile] = cube.attributes['history']
-    if inargs.clim:
-        clim_data_cube = iris.load_cube(inargs.clim, gio.check_iris_var(inargs.var))
-        clim_data_cube = uconv.convert_to_joules(clim_data_cube)
-        clim_cube = clim_data_cube.collapsed('time', iris.analysis.MEAN)
-        
-        assert clim_cube.units == 'J'
-        metadata_dict[inargs.clim] = clim_cube.attributes['history']
-    else:
-        clim_cube = None
-
-    cube = cumsum(cube, clim=clim_cube)  
+    
+    cube = cumsum(cube)  
 
     cube.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
     iris.save(cube, inargs.outfile)
@@ -101,9 +80,6 @@ author:
     parser.add_argument("infile", type=str, help="Input file name")
     parser.add_argument("var", type=str, help="Input file variable (standard_name)")
     parser.add_argument("outfile", type=str, help="Output file name")
-
-    parser.add_argument("--clim", type=str, default=None,
-                        help="Calculate the cumulative anomaly relative to this climatology")
 
     args = parser.parse_args()
     main(args)
