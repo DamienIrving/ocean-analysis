@@ -140,7 +140,7 @@ def get_equatorial_transport(hfbasin_file, results_dict, metadata_dict, time_con
     equator_cube = cube.extract(iris.Constraint(latitude=0))
 
     anomaly = calc_anomaly(equator_cube)
-    results_dict[' equatorial northward ocean heat transport, cumulative sum (last minus first):'] = anomaly[-1]
+    results_dict['equatorial northward ocean heat transport, cumulative sum (last minus first):'] = anomaly[-1]
 
     return results_dict
 
@@ -167,7 +167,7 @@ def main(inargs):
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
 
-    #plt.ylim(-1e+23, 1e+24)
+    #plt.ylim(-1e+23, 7e+23)
     ymin, ymax = plt.ylim()
     print('ymin:', ymin)
     print('ymax:', ymax)
