@@ -131,6 +131,20 @@ def write_result(outfile, results_dict):
     fout.close()
 
 
+def get_equatorial_transport(hfbasin_file, results_dict, metadata_dict, time_constraint):
+    """Calculate the equatorial transport"""
+
+    cube = iris.load_cube(hfbasin_file, 'northward_ocean_heat_transport' & time_constraint)
+    metadata_dict[hfbasin_file] = cube.attributes['history']
+
+    equator_cube = cube.extract(iris.Constraint(latitude=0))
+
+    anomaly = calc_anomaly(equator_cube)
+    results_dict[' equatorial northward ocean heat transport, cumulative sum (last minus first):'] = anomaly[-1]
+
+    return results_dict
+
+
 def main(inargs):
     """Run the program."""
 
@@ -153,7 +167,7 @@ def main(inargs):
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
 
-    #plt.ylim(-1e+23, 8e+23)
+    #plt.ylim(-1e+23, 1e+24)
     ymin, ymax = plt.ylim()
     print('ymin:', ymin)
     print('ymax:', ymax)
@@ -161,6 +175,10 @@ def main(inargs):
     title, legloc = get_title(ohc_cube)
     plt.title(title)
     plt.legend(loc=legloc)
+
+    if inargs.hfbasin_file:
+        results_dict = get_equatorial_transport(inargs.hfbasin_file, results_dict,
+                                                metadata_dict, time_constraint)
 
     write_result(inargs.outfile, results_dict)
     plt.savefig(inargs.outfile, bbox_inches='tight')
@@ -190,6 +208,9 @@ author:
                         help="NH integrated OHC file, hfds file and netTOA file (in that order) (dedrifted)")
     parser.add_argument("--sh_files", type=str, nargs=3, default=None, 
                         help="SH integrated OHC file, hfds file and netTOA file (in that order) (dedrifted)")
+
+    parser.add_argument("--hfbasin_file", type=str, default=None, 
+                        help="hfbasin file (to include in text output)") 
 
     parser.add_argument("--orig_files", type=str, nargs=3, default=None, 
                         help="globally integrated OHC file, hfds file and netTOA file (in that order), non-dedrifted")
