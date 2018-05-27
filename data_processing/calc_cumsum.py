@@ -12,21 +12,6 @@ import argparse, copy
 import numpy
 import iris
 
-cwd = os.getcwd()
-repo_dir = '/'
-for directory in cwd.split('/')[1:]:
-    repo_dir = os.path.join(repo_dir, directory)
-    if directory == 'ocean-analysis':
-        break
-
-modules_dir = os.path.join(repo_dir, 'modules')
-sys.path.append(modules_dir)
-
-import general_io as gio
-import timeseries
-import convenient_universal as uconv
-
-
 # Import my modules
 
 cwd = os.getcwd()
