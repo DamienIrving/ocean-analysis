@@ -1,5 +1,5 @@
 """
-Filename:     plot_energy_check.py
+Filename:     plot_global_energy_check.py
 Author:       Damien Irving, irving.damien@gmail.com
 Description:  Plot ohc, hfds and rndt
 
