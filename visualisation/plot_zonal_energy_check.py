@@ -32,6 +32,7 @@ try:
     import general_io as gio
     import timeseries
     import convenient_universal as uconv
+    import grids
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -61,7 +62,7 @@ def calc_anomaly(cube):
     return anomaly
 
 
-def get_data(infile, var, metadata_dict, time_constraint):
+def get_data(infile, var, metadata_dict, time_constraint, regrid=False):
     """Get data"""
 
     if infile:
@@ -70,6 +71,11 @@ def get_data(infile, var, metadata_dict, time_constraint):
         anomaly = calc_anomaly(cube)
         final_value = anomaly[-1, ::].data.sum()
         print(var, 'final global total:', final_value)
+
+        if regrid:
+            anomaly = grids.regrid_1D(anomaly, regrid, 'latitude')
+            final_value = anomaly[-1, ::].data.sum()
+            print(var, 'final global total (after regrid):', final_value)
     else:
         cube = None
         anomaly = None
@@ -137,10 +143,15 @@ def main(inargs):
                                                                       metadata_dict, time_constraint)
     cube_dict['hfds'], anomaly_dict['hfds'], metadata_dict = get_data(hfds_file, 'surface_downward_heat_flux_in_sea_water',
                                                                       metadata_dict, time_constraint)
+    if inargs.regrid:
+        target_cube = cube_dict['rndt']
+    else:
+        target_cube = False
+
     cube_dict['ohc'], anomaly_dict['ohc'], metadata_dict = get_data(ohc_file, 'ocean heat content',
-                                                                    metadata_dict, time_constraint)
+                                                                    metadata_dict, time_constraint, regrid=target_cube)
     cube_dict['hfbasin'], anomaly_dict['hfbasin'], metadata_dict = get_data(hfbasin_file, 'northward_ocean_heat_transport',
-                                                                            metadata_dict, time_constraint)    
+                                                                            metadata_dict, time_constraint, regrid=target_cube)    
     
     if ohc_file and hfds_file:
         ocean_convergence = anomaly_dict['ohc'][-1, ::] - anomaly_dict['hfds'][-1, ::]
@@ -180,5 +191,8 @@ author:
     parser.add_argument("experiment", type=str, help="experiment")  
     parser.add_argument("outfile", type=str, help="output file")                               
     
+    parser.add_argument("--regrid", action='store_true', default=False,
+                        help="Regrid ocean data to rndt grid [default=False]")
+
     args = parser.parse_args()             
     main(args)
