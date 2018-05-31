@@ -34,23 +34,6 @@ except ImportError:
 
 # Define functions
 
-def get_depth_array(data_cube, depth_name):
-    """Get the depth data array"""
-
-    depth_coord = data_cube.coord(depth_name)
-    coord_names = [coord.name() for coord in data_cube.dim_coords]
-
-    error_msg =  "Unrecognised depth axis units, " +  str(depth_coord.units)
-    assert depth_coord.units in ['m', 'dbar'], error_msg
-    if depth_coord.units == 'm':
-        depth_interval_array = spatial_weights.calc_vertical_weights_1D(depth_coord, coord_names, data_cube.shape)
-    elif depth_coord.units == 'dbar':
-        assert coord_names == ['depth', 'latitude', 'longitude'], "2D weights will not work for curvilinear grid"
-        depth_interval_array = spatial_weights.calc_vertical_weights_2D(depth_coord, data_cube.coord('latitude'), coord_names, data_cube.shape)
-
-    return depth_interval_array
-
-
 def construct_volume_cube(volume_data, global_atts, dim_coords):
     """Construct the new volume cube """
 
@@ -80,7 +63,7 @@ def main(inargs):
     data_cube = data_cube[0, ::]
     data_cube.remove_coord('time')
 
-    depth_data = get_depth_array(data_cube, depth_name)
+    depth_data = spatial_weights.get_depth_array(data_cube, depth_name)
 
     # Area data
     area_cube = iris.load_cube(inargs.area_file)

@@ -230,6 +230,23 @@ def volume_from_volume(target_cube, volume_cube):
     return volume_data
 
 
+def get_depth_array(data_cube, depth_name):
+    """Get the depth data array"""
+
+    depth_coord = data_cube.coord(depth_name)
+    coord_names = [coord.name() for coord in data_cube.dim_coords]
+
+    error_msg =  "Unrecognised depth axis units, " +  str(depth_coord.units)
+    assert depth_coord.units in ['m', 'dbar'], error_msg
+    if depth_coord.units == 'm':
+        depth_interval_array = calc_vertical_weights_1D(depth_coord, coord_names, data_cube.shape)
+    elif depth_coord.units == 'dbar':
+        assert coord_names == ['depth', 'latitude', 'longitude'], "2D weights will not work for curvilinear grid"
+        depth_interval_array = calc_vertical_weights_2D(depth_coord, data_cube.coord('latitude'), coord_names, data_cube.shape)
+
+    return depth_interval_array
+
+
 def volume_from_area(target_cube, area_cube=None):
     """Create volume array from area data."""
 
@@ -239,19 +256,13 @@ def volume_from_area(target_cube, area_cube=None):
     if area_cube:
         area_data = uconv.broadcast_array(area_cube.data, [2, 3], target_cube.shape)
     else:
-        area_data = spatial_weights.area_array(target_cube)
+        area_data = area_array(target_cube)
 
-    depth_axis = target_cube.coord('depth')   
-    assert depth_axis.units in ['m', 'dbar'], "Unrecognised depth axis units"
-
-    if depth_axis.units == 'm':
-        depth_data = calc_vertical_weights_1D(depth_axis, target_coord_names, target_cube.shape)
-    elif depth_axis.units == 'dbar':
-        assert coord_names == ['depth', 'latitude', 'longitude'], "2D weights will not work for curvilinear grid"
-        depth_data = calc_vertical_weights_2D(depth_axis, target_cube.coord('latitude'), target_coord_names, target_cube.shape)
+    depth_data = get_depth_array(target_cube, 'depth')
 
     volume_data = area_data * depth_data
-    assert volume_data.shape == target_cube.shape
+    volume_data = numpy.ma.asarray(volume_data)
+    volume_data.mask = target_cube.data.mask
 
     return volume_data
 
@@ -264,8 +275,6 @@ def volume_array(target_cube, volume_cube=None, area_cube=None):
         area_data (numpy.ndarray)
         
     """
-
-    target_coord_names = [coord.name() for coord in target_cube.dim_coords]
 
     if volume_cube:
         volume_data = volume_from_volume(target_cube, volume_cube)
