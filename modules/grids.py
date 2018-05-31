@@ -99,8 +99,16 @@ def get_grid_res(horiz_shape):
     return new_res
 
 
-def curvilinear_to_rectilinear(cube, target_grid_cube=None):
-    """Regrid curvilinear data to a rectilinear grid if necessary."""
+def curvilinear_to_rectilinear(cube, weights=None, target_grid_cube=None, grid_res=2.5):
+    """Regrid curvilinear data to a rectilinear grid if necessary.
+
+    Args:
+      cube (iris.Cube.cube) - Cube to regrid
+      weights (numpy.ndarray) - Area cube for area weighted mean
+      target_grid_cube (iris.Cube.cube) - Cube on target grid
+      grid_res (float) - Uniform grid resolution for if no target supplied
+      
+    """
 
     coord_names = [coord.name() for coord in cube.dim_coords]
     aux_coord_names = [coord.name() for coord in cube.aux_coords]
@@ -113,7 +121,7 @@ def curvilinear_to_rectilinear(cube, target_grid_cube=None):
     if aux_coord_names == ['latitude', 'longitude']:
 
         if not target_grid_cube:
-            grid_res = get_grid_res(cube.coord('latitude').shape)
+            #grid_res = get_grid_res(cube.coord('latitude').shape)
             lats = numpy.arange(-90, 90.01, grid_res)
             lons = numpy.arange(0, 360, grid_res)
             target_grid_cube = _make_grid(lats, lons)
@@ -129,7 +137,6 @@ def curvilinear_to_rectilinear(cube, target_grid_cube=None):
     
         cube_list = []
         for i, cube_slice in enumerate(cube.slices(slice_dims)):
-            weights = numpy.ones(cube_slice.shape)
             cube_slice.coord(axis='x').coord_system = iris.coord_systems.GeogCS(iris.fileformats.pp.EARTH_RADIUS)
             cube_slice.coord(axis='y').coord_system = iris.coord_systems.GeogCS(iris.fileformats.pp.EARTH_RADIUS)
             regridded_cube = regrid_weighted_curvilinear_to_rectilinear(cube_slice, weights, target_grid_cube)

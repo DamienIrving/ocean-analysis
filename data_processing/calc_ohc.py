@@ -32,6 +32,7 @@ try:
     import spatial_weights
     import convenient_universal as uconv
     import timeseries
+    import grids
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -47,8 +48,6 @@ def add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, in
     var_name = 'ohc'
     units = 'J'
 
-    if not (inargs.area_file or inargs.volume_file):
-        units = units + ' m-2'
     iris.std_names.STD_NAMES[standard_name] = {'canonical_units': units}
 
     ohc_cube.standard_name = standard_name
@@ -105,7 +104,7 @@ def get_depth_text(temperature_cube, min_depth, max_depth):
     return depth_text
 
 
-def get_outfile_name(temperature_file, annual=False, execute=True):
+def get_outfile_name(temperature_file, grid, annual=False, execute=True):
     """Define the OHC file name using the temperature file name as a template."""
 
     ohc_file = temperature_file.replace('thetao', 'ohc')
@@ -115,6 +114,9 @@ def get_outfile_name(temperature_file, annual=False, execute=True):
     if annual:
         ohc_file = ohc_file.replace('/mon/', '/yr/')
         ohc_file = ohc_file.replace('Omon', 'Oyr')
+
+    if grid:
+        ohc_file = ohc_file.replace('.nc', '_'+grid+'.nc')
 
     ohc_file_components = ohc_file.split('/')
     ohc_file_components.pop(-1)
@@ -128,18 +130,12 @@ def get_outfile_name(temperature_file, annual=False, execute=True):
     return ohc_file
 
 
-def get_volume(volume_file, area_file, temperature_cube, metadata_dict):
+def get_volume(volume_file, temperature_cube, metadata_dict):
     """Get the volume array"""
 
-    if volume_file:
-        volume_cube = read_spatial_file(volume_file)
-        metadata_dict[volume_file] = volume_cube.attributes['history']
-        volume_data = spatial_weights.volume_array(temperature_cube, volume_cube=volume_cube) 
-    else:
-        area_cube = read_spatial_file(area_file)
-        if area_cube:
-            metadata_dict[area_file] = area_cube.attributes['history']
-        volume_data = spatial_weights.volume_array(temperature_cube, area_cube=area_cube) 
+    volume_cube = read_spatial_file(volume_file)
+    metadata_dict[volume_file] = volume_cube.attributes['history']
+    volume_data = spatial_weights.volume_array(temperature_cube, volume_cube=volume_cube) 
         
     return volume_data, metadata_dict
 
@@ -157,17 +153,23 @@ def main(inargs):
         if inargs.annual:
             temperature_cube = timeseries.convert_to_annual(temperature_cube, chunk=inargs.chunk)
 
-        coord_names = [coord.name() for coord in temperature_cube.dim_coords]
+        if inargs.regrid:
+            area_cube = read_spatial_file(inargs.regrid)
+            temperature_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(temperature_cube, weights=area_cube.data)
+            volume_data = spatial_weights.volume_array(temperature_cube)
+            grid = 'y72x144'
+        else:
+            assert inargs.volume_file, "Must provide volume file if not regridding data"
+            volume_data, metadata_dict = get_volume(inargs.volume_file, temperature_cube, metadata_dict)
+            coord_names = [coord.name() for coord in temperature_cube.dim_coords]
+            grid = None
+
         assert coord_names[0] == 'time'
         assert coord_names[1] == 'depth'
-
-        volume_data, metadata_dict = get_volume(inargs.volume_file, inargs.area_file,
-                                                temperature_cube, metadata_dict)
-
         ohc_cube = calc_ohc_vertical_integral(temperature_cube, volume_data, inargs.density, inargs.specific_heat,
                                               coord_names, chunk=inargs.chunk)
         ohc_cube = add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, inargs)
-        ohc_file = get_outfile_name(temperature_file, annual=inargs.annual)    
+        ohc_file = get_outfile_name(temperature_file, grid, annual=inargs.annual)    
 
         iris.save(ohc_cube, ohc_file)
         print(ohc_file)
@@ -195,10 +197,10 @@ notes:
     parser.add_argument("temperature_files", type=str, nargs='*', help="Input temperature data files")
     parser.add_argument("temperature_var", type=str, help="Input temperature variable name (the standard_name)")
 
-    parser.add_argument("--area_file", type=str, default=None,
-                        help="Cell area file (used to make output units W instead of W m-2)")
+    parser.add_argument("--regrid", type=str, default=None,
+                        help="Regrid data using this area weighting file.")
     parser.add_argument("--volume_file", type=str, default=None,
-                        help="Cell volume file (used to make output units W instead of W m-2)")
+                        help="Cell volume file")
 
     parser.add_argument("--min_depth", type=float, default=None,
                         help="Only include data below this vertical level")
