@@ -60,20 +60,47 @@ def cumsum(cube):
     return cube
 
 
-def multiply_by_area(cube):
+def multiply_by_area(cube, area_cube):
     """Multiply by cell area."""
 
-    if not cube.coord('latitude').has_bounds():
-        cube.coord('latitude').guess_bounds()
-    if not cube.coord('longitude').has_bounds():
-        cube.coord('longitude').guess_bounds()
-    area_weights = iris.analysis.cartography.area_weights(cube)
+    assert cube.ndim == 3
+    area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
 
     units = str(cube.units)
-    cube.data = cube.data * area_weights   
+    cube.data = cube.data * area_data   
     cube.units = units.replace('m-2', '')
 
     return cube
+
+
+def curvilinear_agg(cube, ref_cube, agg_method):
+    """Zonal aggregation for curvilinear data."""
+
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    assert coord_names[0] == 'time'
+    assert cube.ndim == 3
+
+    new_lat_bounds = ref_cube.coord('latitude').bounds
+    ntime = cube.shape[0]
+    nlat = len(new_lat_bounds)
+    new_data = numpy.ma.zeros((ntime, nlat))
+
+    for lat_index in range(0, nlat):
+        lat_cube = grids.extract_latregion_curvilinear(cube, new_lat_bounds[lat_index])
+        lat_agg = lat_cube.collapsed(coord_names[1:], agg_method)
+        new_data[:, lat_index] = lat_agg.data
+
+    time_coord = cube.coord('time')
+    lat_coord = ref_cube.coord('latitude')
+    new_cube = iris.cube.Cube(new_data,
+                              standard_name=cube.standard_name,
+                              long_name=cube.long_name,
+                              var_name=cube.var_name,
+                              units=cube.units,
+                              attributes=cube.attributes,
+                              dim_coords_and_dims=[(time_coord, 0), (lat_coord, 1)],)
+
+    return new_cube
 
 
 def main(inargs):
@@ -88,17 +115,30 @@ def main(inargs):
     if inargs.annual:
         cube = timeseries.convert_to_annual(cube, full_months=True)
 
-    cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
-
     if inargs.area:
-        cube = multiply_by_area(cube) 
+        area_cube = iris.load_cube(inargs.area, 'cell_area')
+        cube = multiply_by_area(cube, area_cube) 
 
     if inargs.sftlf_file and inargs.realm:
         sftlf_cube = iris.load_cube(inargs.sftlf_file, 'land_area_fraction')
         cube = uconv.apply_land_ocean_mask(cube, sftlf_cube, inargs.realm)
 
-    zonal_aggregate = cube.collapsed('longitude', aggregation_functions[inargs.aggregation])
-    zonal_aggregate.remove_coord('longitude')
+    if inargs.ref_file:
+        ref_cube = iris.load(inargs.ref_file)[0]
+    else:
+        ref_cube = None
+        
+    aux_coord_names = [coord.name() for coord in cube.aux_coords]
+    if 'latitude' in aux_coord_names:
+        # curvilinear grid
+        assert ref_cube
+        zonal_aggregate = curvilinear_agg(cube, ref_cube, aggregation_functions[inargs.aggregation])        
+    #elif ref_cube:
+    #    zonal_aggregate = rectilinear_agg(cube, ref_cube, aggregation_functions[inargs.aggregation]) 
+    else:
+        # rectilinear grid
+        zonal_aggregate = cube.collapsed('longitude', aggregation_functions[inargs.aggregation])
+        zonal_aggregate.remove_coord('longitude')
 
     if inargs.cumsum:
         zonal_aggregate = uconv.convert_to_joules(zonal_aggregate)
@@ -128,6 +168,9 @@ author:
     parser.add_argument("aggregation", type=str, choices=('mean', 'sum'), help="Method for zonal aggregation")
     parser.add_argument("outfile", type=str, help="Output file")
 
+    parser.add_argument("--ref_file", type=str, default=None,
+                        help="Reference grid for output (required for curvilinear data)")
+
     parser.add_argument("--realm", type=str, choices=('land', 'ocean'), default=None,
                         help="perform the aggregation over just the ocean or land")
     parser.add_argument("--sftlf_file", type=str, default=None,
@@ -135,8 +178,8 @@ author:
 
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Output annual mean [default=False]")
-    parser.add_argument("--area", action='store_true', default=False,
-                        help="Multiply by area [default=False]")
+    parser.add_argument("--area", type=str, default=None, 
+                        help="""Multiply data by area (using this file) [default = None]""")
 
     parser.add_argument("--cumsum", action="store_true", default=False,
                         help="Output the cumulative sum [default: False]")
