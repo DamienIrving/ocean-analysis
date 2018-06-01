@@ -56,8 +56,9 @@ def read_data(infiles, variable, calc_annual=False, chunk=False):
     iris.util.unify_time_units(cube)
     cube = cube.concatenate_cube()
     cube = gio.check_time_units(cube)
+
     if calc_annual:
-        cube = timeseries.convert_to_annual(cube, chunk=chunk) 
+        cube = timeseries.convert_to_annual(cube, chunk=chunk)
 
     coord_names = [coord.name() for coord in cube.dim_coords]
     aux_coord_names = [coord.name() for coord in cube.aux_coords]
@@ -83,14 +84,14 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
     # Extract region
     if lat_bounds:
         if grid_type == 'curvilinear':
-            cube = extract_region_curvilinear(cube, lat_bounds)
+            cube = grids.extract_latregion_curvilinear(cube, lat_bounds)
         else:
-            cube = extract_region_latlon(cube, lat_bounds)
+            cube = grids.extract_latregion_rectilinear(cube, lat_bounds)
 
     # Get area weights       
     if type(area_cube) == iris.cube.Cube:
         if grid_type == 'latlon' and lat_bounds:
-            area_cube = extract_region_latlon(area_cube, lat_bounds)
+            area_cube = grids.extract_latregion_rectilinear(area_cube, lat_bounds)
         area_weights = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
     elif type(area_cube) == str:
         area_weights = spatial_weights.area_array(cube)
@@ -114,45 +115,6 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
         spatial_agg.remove_coord(coord_names[1])
 
     return spatial_agg
-
-
-def extract_region_curvilinear(cube, lat_bounds):
-    """Extract region of interest from a curvilinear grid."""
-
-    cube = cube.copy() 
- 
-    region_mask = create_region_mask(cube.coord('latitude').points, cube.shape, lat_bounds)
-    land_ocean_mask = cube.data.mask
-    complete_mask = region_mask + land_ocean_mask
-
-    cube.data = numpy.ma.asarray(cube.data)
-    cube.data.mask = complete_mask
-
-    return cube
-
-
-def extract_region_latlon(cube, lat_bounds):
-    """Extract region of interest from a regular lat/lon grid."""
-
-    southern_lat, northern_lat = lat_bounds
-    lat_constraint = iris.Constraint(latitude=lambda cell: southern_lat <= cell < northern_lat)
-    cube = cube.extract(lat_constraint)
-
-    return cube
-
-    
-def create_region_mask(latitude_array, target_shape, lat_bounds):
-    """Create mask from the latitude auxillary coordinate"""
-
-    target_ndim = len(target_shape)
-
-    southern_lat, northern_lat = lat_bounds
-    mask_array = numpy.where((latitude_array >= southern_lat) & (latitude_array < northern_lat), False, True)
-
-    mask = uconv.broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
-    assert mask.shape == target_shape 
-
-    return mask
 
 
 def rename_cube(cube, quantity):

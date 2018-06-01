@@ -8,10 +8,24 @@ Functions:
 
 """
 
-import pdb
+import pdb, os, sys
 import numpy
 import iris
 from iris.experimental.regrid import regrid_weighted_curvilinear_to_rectilinear
+
+cwd = os.getcwd()
+repo_dir = '/'
+for directory in cwd.split('/')[1:]:
+    repo_dir = os.path.join(repo_dir, directory)
+    if directory == 'ocean-analysis':
+        break
+
+modules_dir = os.path.join(repo_dir, 'modules')
+sys.path.append(modules_dir)
+try:
+    import convenient_universal as uconv
+except ImportError:
+    raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
 
 def _check_coord_names(cube, coord_names):
@@ -154,6 +168,53 @@ def curvilinear_to_rectilinear(cube, weights=None, target_grid_cube=None, grid_r
         regrid_status = False
     
     return new_cube, coord_names, regrid_status
+
+
+def _create_region_mask(latitude_array, target_shape, lat_bounds):
+    """Create mask from the latitude auxillary coordinate"""
+
+    target_ndim = len(target_shape)
+
+    southern_lat, northern_lat = lat_bounds
+    mask_array = numpy.where((latitude_array >= southern_lat) & (latitude_array < northern_lat), False, True)
+
+    mask = uconv.broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
+    assert mask.shape == target_shape 
+
+    return mask
+
+
+def extract_latregion_curvilinear(cube, lat_bounds):
+    """Extract region of interest from a curvilinear grid.
+
+    Returns the entire original cube with all points masked except those of interest.
+
+    """
+
+    cube = cube.copy() 
+ 
+    region_mask = _create_region_mask(cube.coord('latitude').points, cube.shape, lat_bounds)
+    land_ocean_mask = cube.data.mask
+    complete_mask = region_mask + land_ocean_mask
+
+    cube.data = numpy.ma.asarray(cube.data)
+    cube.data.mask = complete_mask
+
+    return cube
+
+
+def extract_latregion_rectilinear(cube, lat_bounds):
+    """Extract region of interest from a regular lat/lon grid.
+
+    Returns subset of the original cube that contains only the latitude range of interest. 
+
+    """
+
+    southern_lat, northern_lat = lat_bounds
+    lat_constraint = iris.Constraint(latitude=lambda cell: southern_lat <= cell < northern_lat)
+    cube = cube.extract(lat_constraint)
+
+    return cube
 
 
 def regrid_1D(cube, target_cube, y_axis_name, clear_units=False):
