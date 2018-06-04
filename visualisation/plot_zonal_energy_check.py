@@ -62,7 +62,24 @@ def calc_anomaly(cube):
     return anomaly
 
 
-def get_data(infile, var, metadata_dict, time_constraint, regrid=False):
+def regrid(anomaly, ref_cube):
+    """Regrid to reference cube, preserving the data sum"""
+
+    lat_bounds = anomaly.coord('latitude').bounds
+    lat_diffs = numpy.apply_along_axis(lambda x: x[1] - x[0], 1, lat_bounds)
+    anomaly_scaled = anomaly / lat_diffs
+
+    ref_points = [('latitude', ref_cube.coord('latitude').points)]
+    anomaly_regridded = anomaly_scaled.interpolate(ref_points, iris.analysis.Linear())         
+
+    ref_lat_bounds = ref_cube.coord('latitude').bounds
+    ref_lat_diffs = numpy.apply_along_axis(lambda x: x[1] - x[0], 1, ref_lat_bounds)
+    new_anomaly = anomaly_regridded * ref_lat_diffs
+
+    return new_anomaly
+
+
+def get_data(infile, var, metadata_dict, time_constraint, ref_cube=False):
     """Get data"""
 
     if infile:
@@ -72,10 +89,13 @@ def get_data(infile, var, metadata_dict, time_constraint, regrid=False):
         final_value = anomaly[-1, ::].data.sum()
         print(var, 'final global total:', final_value)
 
-        if regrid:
-            anomaly = grids.regrid_1D(anomaly, regrid, 'latitude')
-            final_value = anomaly[-1, ::].data.sum()
-            print(var, 'final global total (after regrid):', final_value)
+        if ref_cube:
+            grid_match = ref_cube.coord('latitude') == cube.coord('latitude')
+            if not grid_match:
+                anomaly = regrid(anomaly, ref_cube)
+                final_value = anomaly[-1, ::].data.sum()
+                print(var, 'final global total (after regrid):', final_value)
+            anomaly.replace_coord(ref_cube.coord('latitude'))
     else:
         cube = None
         anomaly = None
@@ -84,15 +104,15 @@ def get_data(infile, var, metadata_dict, time_constraint, regrid=False):
     return cube, anomaly, metadata_dict
 
 
-def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly):
-    """Plot the ocean heat uptake and storage"""
+def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly):
+    """Plot the heat uptake and storage"""
 
     ax = plt.subplot(gs[0])
     plt.sca(ax)
 
     iplt.plot(ohc_anomaly[-1, ::], color='blue', label='OHC')
     iplt.plot(hfds_anomaly[-1, ::], color='orange', label='hfds')
-    #iplt.plot(convergence, color='green', label='convergence')
+    iplt.plot(rndt_anomaly[-1, ::], color='red', label='rndt')
 
     plt.xlabel('latitude')
     plt.ylabel('J')
@@ -103,8 +123,8 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly):
     plt.legend()
 
 
-def plot_transport(gs, hfbasin_data, hfbasin_inferred):
-    """Plot the northward ocean heat transport"""
+def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred):
+    """Plot the northward heat transport"""
 
     ax = plt.subplot(gs[1])
     plt.sca(ax)
@@ -113,6 +133,7 @@ def plot_transport(gs, hfbasin_data, hfbasin_inferred):
         iplt.plot(hfbasin_data[-1, ::], color='purple', label='northward OHT')
 
     iplt.plot(hfbasin_inferred, color='purple', linestyle='--', label='inferred northward OHT')
+    iplt.plot(hfatmos_inferred, color='green', linestyle='--', label='inferred northward AHT')
 
     plt.xlabel('latitude')
     plt.ylabel('J')
@@ -142,31 +163,26 @@ def main(inargs):
     cube_dict['rndt'], anomaly_dict['rndt'], metadata_dict = get_data(rndt_file, 'TOA Incoming Net Radiation',
                                                                       metadata_dict, time_constraint)
     cube_dict['hfds'], anomaly_dict['hfds'], metadata_dict = get_data(hfds_file, 'surface_downward_heat_flux_in_sea_water',
-                                                                      metadata_dict, time_constraint)
-    if inargs.regrid:
-        target_cube = cube_dict['rndt']
-    else:
-        target_cube = False
-
+                                                                      metadata_dict, time_constraint, ref_cube=cube_dict['rndt'])
     cube_dict['ohc'], anomaly_dict['ohc'], metadata_dict = get_data(ohc_file, 'ocean heat content',
-                                                                    metadata_dict, time_constraint, regrid=target_cube)
+                                                                    metadata_dict, time_constraint, ref_cube=cube_dict['rndt'])
     cube_dict['hfbasin'], anomaly_dict['hfbasin'], metadata_dict = get_data(hfbasin_file, 'northward_ocean_heat_transport',
-                                                                            metadata_dict, time_constraint, regrid=target_cube)    
+                                                                            metadata_dict, time_constraint)     
+
+    ocean_convergence = anomaly_dict['ohc'][-1, ::] - anomaly_dict['hfds'][-1, ::]
+    anomaly_dict['hfbasin-inferred'] = ocean_convergence.copy()
+    anomaly_dict['hfbasin-inferred'].data = numpy.ma.cumsum(-1 * ocean_convergence.data)
     
-    if ohc_file and hfds_file:
-        ocean_convergence = anomaly_dict['ohc'][-1, ::] - anomaly_dict['hfds'][-1, ::]
-        anomaly_dict['hfbasin-inferred'] = ocean_convergence.copy()
-        anomaly_dict['hfbasin-inferred'].data = numpy.ma.cumsum(-1 * ocean_convergence.data)
-    else:
-        anomaly_dict['hfbasin-inferred'] = None
+    atmos_convergence = anomaly_dict['hfds'][-1, ::] - anomaly_dict['rndt'][-1, ::]
+    anomaly_dict['hfatmos-inferred'] = atmos_convergence.copy()
+    anomaly_dict['hfatmos-inferred'].data = numpy.ma.cumsum(-1 * atmos_convergence.data)
 
     fig = plt.figure(figsize=[10, 14])
     gs = gridspec.GridSpec(2, 1)
 
-    if ohc_file and hfds_file:
-        plot_uptake_storage(gs, anomaly_dict['ohc'], anomaly_dict['hfds'])
-        plt.title(get_title(cube_dict['ohc']))
-        plot_transport(gs, anomaly_dict['hfbasin'], anomaly_dict['hfbasin-inferred'])
+    plot_uptake_storage(gs, anomaly_dict['ohc'], anomaly_dict['hfds'], anomaly_dict['rndt'])
+    plt.title(get_title(cube_dict['ohc']))
+    plot_transport(gs, anomaly_dict['hfbasin'], anomaly_dict['hfbasin-inferred'], anomaly_dict['hfatmos-inferred'])
         
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
@@ -190,9 +206,6 @@ author:
     parser.add_argument("model", type=str, help="model")
     parser.add_argument("experiment", type=str, help="experiment")  
     parser.add_argument("outfile", type=str, help="output file")                               
-    
-    parser.add_argument("--regrid", action='store_true', default=False,
-                        help="Regrid ocean data to rndt grid [default=False]")
 
     args = parser.parse_args()             
     main(args)
