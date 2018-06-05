@@ -124,7 +124,7 @@ def main(inargs):
         cube = uconv.apply_land_ocean_mask(cube, sftlf_cube, inargs.realm)
 
     if inargs.ref_file:
-        ref_cube = iris.load(inargs.ref_file)[0]
+        ref_cube = iris.load_cube(inargs.ref_file, 'toa_incoming_shortwave_flux')
     else:
         ref_cube = None
         
@@ -169,7 +169,7 @@ author:
     parser.add_argument("outfile", type=str, help="Output file")
 
     parser.add_argument("--ref_file", type=str, default=None,
-                        help="Reference grid for output (required for curvilinear data)")
+                        help="Reference grid for output (required for curvilinear data - use rsdt file)")
 
     parser.add_argument("--realm", type=str, choices=('land', 'ocean'), default=None,
                         help="perform the aggregation over just the ocean or land")
