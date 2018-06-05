@@ -31,6 +31,7 @@ try:
     import convenient_universal as uconv
     import spatial_weights
     import timeseries
+    import grids
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
