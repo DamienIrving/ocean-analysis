@@ -149,10 +149,10 @@ def main(inargs):
 
     mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr'  %(inargs.model, inargs.experiment)
 
-    rndt_file = glob.glob('%s/atmos/r1i1p1/rndt/latest/dedrifted/rndt-zonal-sum_Ayr_%s_historical_r1i1p1_cumsum-all.nc' %(mydir, inargs.model))
-    hfds_file = glob.glob('%s/ocean/r1i1p1/hfds/latest/dedrifted/hfds-zonal-sum_Oyr_%s_historical_r1i1p1_cumsum-all.nc' %(mydir, inargs.model))
-    ohc_file = glob.glob('%s/ocean/r1i1p1/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_historical_r1i1p1_all.nc' %(mydir, inargs.model))
-    hfbasin_file = glob.glob('%s/ocean/r1i1p1/hfbasin/latest/dedrifted/hfbasin-global_Oyr_%s_historical_r1i1p1_cumsum-all.nc' %(mydir, inargs.model))
+    rndt_file = glob.glob('%s/atmos/%s/rndt/latest/dedrifted/rndt-zonal-sum_Ayr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, inargs.model, inargs.experiment, inargs.mip))
+    hfds_file = glob.glob('%s/ocean/%s/hfds/latest/dedrifted/hfds-zonal-sum_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, inargs.model, inargs.experiment, inargs.mip))
+    ohc_file = glob.glob('%s/ocean/%s/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_%s_%s_all.nc' %(mydir, inargs.mip, inargs.model, inargs.experiment, inargs.mip))
+    hfbasin_file = glob.glob('%s/ocean/%s/hfbasin/latest/dedrifted/hfbasin-global_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, inargs.model, inargs.experiment, inargs.mip))
     
     time_constraint = gio.get_time_constraint(['1861-01-01', '2005-12-31'])
     
@@ -184,8 +184,10 @@ def main(inargs):
     plt.title(get_title(cube_dict['ohc']))
     plot_transport(gs, anomaly_dict['hfbasin'], anomaly_dict['hfbasin-inferred'], anomaly_dict['hfatmos-inferred'])
         
-    plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info=metadata_dict)
+    outfile = '/g/data/r87/dbi599/figures/energy-check-zonal/energy-check-zonal_yr_%s_%s_%s_1861-2005.png' %(inargs.model, inargs.experiment, inargs.mip)
+    plt.savefig(outfile, bbox_inches='tight')
+    gio.write_metadata(outfile, file_info=metadata_dict)
+    print(outfile)
 
 
 if __name__ == '__main__':
@@ -204,8 +206,8 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("model", type=str, help="model")
-    parser.add_argument("experiment", type=str, help="experiment")  
-    parser.add_argument("outfile", type=str, help="output file")                               
+    parser.add_argument("experiment", type=str, help="experiment")
+    parser.add_argument("mip", type=str, help="mip")                                  
 
     args = parser.parse_args()             
     main(args)
