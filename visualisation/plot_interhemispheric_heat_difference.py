@@ -129,6 +129,8 @@ def main(inargs):
     ax.xaxis.major.formatter._useMathText = True
     ax.set_xlabel('Northern Hemisphere minus Southern Hemisphere (Joules)')
 
+    if experiment == 'historicalMisc':
+        experiment = 'historicalAA'
     plt.title('Interhemispheric difference in accumulated heat, 1861-2005 (%s)' %(experiment))
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile)
