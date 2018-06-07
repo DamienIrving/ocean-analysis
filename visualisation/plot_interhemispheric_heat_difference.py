@@ -39,8 +39,12 @@ except ImportError:
 
 names = {'ohc': 'ocean heat content',
          'hfds': 'Downward Heat Flux at Sea Water Surface',
-         'rndt': 'TOA Incoming Net Radiation'}
+         'netTOA': 'TOA Incoming Net Radiation'}
 
+columns = ['model', 'mip', 
+           'netTOA, historical', 'netTOA, historicalAA', 'netTOA, historicalGHG',
+           'hfds, historical', 'hfds, historicalAA', 'hfds, historicalGHG',
+           'ohc, historical', 'ohc, historicalAA', 'ohc, historicalGHG']
 
 def calc_anomaly(cube):
     """Calculate the anomaly."""
@@ -60,23 +64,27 @@ def get_simulation_attributes(cube):
     run = cube.attributes['realization']
     mip = 'r%si1p%s' %(run, physics)
 
+    if experiment == 'historicalMisc':
+        experiment = 'historicalAA'
+
     return model, experiment, mip
 
 
-def generate_data_dict(diff, model, mip, variable):
+def generate_data_dict(diff, model, experiment, mip, var):
     """Generate dict that will form a row of a pandas dataframe."""
 
     data_dict = {'model': model, 'mip': mip}
-    for var in ['rndt', 'hfds', 'ohc']:
-        if var == variable:
-            data_dict[var] = diff
+    for column_label in columns[2:]:
+        data_label = var + ', ' + experiment
+        if data_label == column_label:
+            data_dict[column_label] = diff
         else:
-            data_dict[var] = numpy.nan
+            data_dict[column_label] = numpy.nan
     
     return data_dict
 
 
-def calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, ref_experiment):
+def calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint):
     """Calculate the interhemispheric difference timeseries."""
 
     nh_name = names[var] + ' nh sum'
@@ -91,8 +99,6 @@ def calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, ref_exper
 
     assert nh_attributes == sh_attributes
     model, experiment, mip = nh_attributes 
-    if ref_experiment:
-        assert experiment == ref_experiment 
 
     diff = nh_anomaly.data[-1] - sh_anomaly.data[-1]
  
@@ -108,30 +114,26 @@ def main(inargs):
     plt.axvline(x=0, color='0.5', linestyle='--')
 
     data_list = []
-    experiment = None
     for nh_file, sh_file in inargs.rndt_files:
-        diff, model, experiment, mip = calc_interhemispheric_diff(nh_file, sh_file, 'rndt', time_constraint, experiment)
-        data_list.append(generate_data_dict(diff, model, mip, 'rndt'))
+        diff, model, experiment, mip = calc_interhemispheric_diff(nh_file, sh_file, 'netTOA', time_constraint)
+        data_list.append(generate_data_dict(diff, model, experiment, mip, 'netTOA'))
         
     for nh_file, sh_file in inargs.hfds_files:
-        diff, model, experiment, mip = calc_interhemispheric_diff(nh_file, sh_file, 'hfds', time_constraint, experiment)
-        data_list.append(generate_data_dict(diff, model, mip, 'hfds'))
+        diff, model, experiment, mip = calc_interhemispheric_diff(nh_file, sh_file, 'hfds', time_constraint)
+        data_list.append(generate_data_dict(diff, model, experiment, mip, 'hfds'))
 
     for nh_file, sh_file in inargs.ohc_files:
-        diff, model, experiment, mip = calc_interhemispheric_diff(nh_file, sh_file, 'ohc', time_constraint, experiment)
-        data_list.append(generate_data_dict(diff, model, mip, 'ohc'))
+        diff, model, experiment, mip = calc_interhemispheric_diff(nh_file, sh_file, 'ohc', time_constraint)
+        data_list.append(generate_data_dict(diff, model, experiment, mip, 'ohc'))
 
-    data_df = pandas.DataFrame(data_list)   
-    data_df.rename(columns={'rndt': 'netTOA'}, inplace=True)    
-    seaborn.boxplot(data=data_df[['model', 'mip', 'netTOA', 'hfds', 'ohc']], orient="h", palette=['red', 'yellow', 'blue'])
+    data_df = pandas.DataFrame(data_list)      
+    seaborn.boxplot(data=data_df[columns], orient="h", palette=['red', '#FFDDDD', '#FFDDDD', 'yellow', '#fdffdd', '#fdffdd', 'blue', '#ddddff', '#ddddff'])
 
     plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0), useMathText=True)
     ax.xaxis.major.formatter._useMathText = True
     ax.set_xlabel('Northern Hemisphere minus Southern Hemisphere (Joules)')
 
-    if experiment == 'historicalMisc':
-        experiment = 'historicalAA'
-    plt.title('Interhemispheric difference in accumulated heat, 1861-2005 (%s)' %(experiment))
+    plt.title('Interhemispheric difference in accumulated heat, 1861-2005')
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile)
 
