@@ -11,6 +11,7 @@ import sys, os, pdb, glob
 import argparse
 import numpy
 import iris
+from iris.experimental.equalise_cubes import equalise_attributes
 import iris.plot as iplt
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
@@ -39,18 +40,37 @@ except ImportError:
 
 # Define functions
 
-def get_title(cube):
-    """Get the plot title."""
+def ensemble_grid():
+    """Make a dummy cube with desired grid."""
+       
+    lat_values = numpy.arange(-89.5, 90, 1.0)
 
-    model = cube.attributes['model_id']
-    experiment = cube.attributes['experiment_id']
-    physics = cube.attributes['physics_version']
-    run = cube.attributes['realization']
-    mip = 'r%si1p%s' %(run, physics)
+    latitude = iris.coords.DimCoord(lat_values,
+                                    var_name='lat',
+                                    standard_name='latitude',
+                                    long_name='latitude',
+                                    units='degrees_north',
+                                    coord_system=iris.coord_systems.GeogCS(iris.fileformats.pp.EARTH_RADIUS))
 
-    title = '%s, %s (%s)'  %(model, experiment, mip)
-    
-    return title
+    dummy_data = numpy.zeros(len(lat_values))
+    new_cube = iris.cube.Cube(dummy_data, dim_coords_and_dims=[(latitude, 0)])
+
+    new_cube.coord('latitude').guess_bounds()
+
+    return new_cube
+
+
+def ensemble_mean(cube_list):
+    """Calculate the ensemble mean."""
+
+    if len(cube_list) > 1:
+        equalise_attributes(cube_list)
+        ensemble_cube = cube_list.merge_cube()
+        ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
+    else:
+        ensemble_mean = cube_list[0]
+
+    return ensemble_mean
 
 
 def calc_anomaly(cube):
@@ -58,6 +78,8 @@ def calc_anomaly(cube):
     
     anomaly = cube.copy()
     anomaly.data = anomaly.data - anomaly.data[0]
+    anomaly = anomaly[-1, ::]
+    anomaly.remove_coord('time')
     
     return anomaly
 
@@ -79,23 +101,31 @@ def regrid(anomaly, ref_cube):
     return new_anomaly
 
 
-def get_data(infile, var, metadata_dict, time_constraint, ref_cube=False):
+def get_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_cube=False):
     """Get data"""
 
     if infile:
         cube = iris.load_cube(infile[0], var & time_constraint)
         metadata_dict[infile[0]] = cube.attributes['history']
         anomaly = calc_anomaly(cube)
-        final_value = anomaly[-1, ::].data.sum()
+        final_value = anomaly.data.sum()
         print(var, 'final global total:', final_value)
 
         if ref_cube:
             grid_match = ref_cube.coord('latitude') == cube.coord('latitude')
             if not grid_match:
                 anomaly = regrid(anomaly, ref_cube)
-                final_value = anomaly[-1, ::].data.sum()
+                final_value = anomaly.data.sum()
                 print(var, 'final global total (after regrid):', final_value)
-            anomaly.replace_coord(ref_cube.coord('latitude'))
+
+            if ref_cube.standard_name:
+                anomaly.replace_coord(ref_cube.coord('latitude'))
+            else:
+                if not anomaly.coord('latitude').has_bounds():
+                    anomaly.coord('latitude').guess_bounds()
+        
+        new_aux_coord = iris.coords.AuxCoord(ensemble_number, long_name='ensemble_member', units='no_unit')
+        anomaly.add_aux_coord(new_aux_coord)
     else:
         cube = None
         anomaly = None
@@ -104,87 +134,124 @@ def get_data(infile, var, metadata_dict, time_constraint, ref_cube=False):
     return cube, anomaly, metadata_dict
 
 
-def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly):
+def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=None, decorate=True):
     """Plot the heat uptake and storage"""
 
     ax = plt.subplot(gs[0])
     plt.sca(ax)
 
-    iplt.plot(ohc_anomaly[-1, ::], color='blue', label='OHC')
-    iplt.plot(hfds_anomaly[-1, ::], color='orange', label='hfds')
-    iplt.plot(rndt_anomaly[-1, ::], color='red', label='rndt')
+    if decorate:
+        labels = ['OHC', 'hfds', 'netTOA']
+    else:
+        labels = [None, None, None]
 
-    plt.xlabel('latitude')
-    plt.ylabel('J')
-    plt.xlim(-90, 90)
+    iplt.plot(ohc_anomaly, color='blue', label=labels[0], linewidth=linewidth)
+    iplt.plot(hfds_anomaly, color='orange', label=labels[1], linewidth=linewidth)
+    iplt.plot(rndt_anomaly, color='red', label=labels[2], linewidth=linewidth)
 
-    plt.axhline(y=0, color='0.5', linestyle='--')
+    if decorate:
+        plt.ylabel('J')
+        plt.xlim(-90, 90)
 
-    plt.legend()
+        plt.axhline(y=0, color='0.5', linestyle='--')
+        plt.legend()
 
 
-def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred):
+def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, linewidth=None, decorate=True):
     """Plot the northward heat transport"""
 
     ax = plt.subplot(gs[1])
     plt.sca(ax)
 
-    if hfbasin_data:
-        iplt.plot(hfbasin_data[-1, ::], color='purple', label='northward OHT')
+    if decorate:
+        labels = ['inferred northward OHT', 'inferred northward AHT']
+    else:
+        labels = [None, None]
 
-    iplt.plot(hfbasin_inferred, color='purple', linestyle='--', label='inferred northward OHT')
-    iplt.plot(hfatmos_inferred, color='green', linestyle='--', label='inferred northward AHT')
+    #if hfbasin_data:
+    #    iplt.plot(hfbasin_data, color='purple', label='northward OHT')
 
-    plt.xlabel('latitude')
-    plt.ylabel('J')
-    plt.xlim(-90, 90)
+    iplt.plot(hfbasin_inferred, color='purple', linestyle='--', label=labels[0], linewidth=linewidth)
+    iplt.plot(hfatmos_inferred, color='green', linestyle='--', label=labels[1], linewidth=linewidth)
 
-    plt.axhline(y=0, color='0.5', linestyle='--')
+    if decorate:
+        plt.xlabel('latitude')
+        plt.ylabel('J')
+        plt.xlim(-90, 90)
 
-    plt.legend()
+        plt.axhline(y=0, color='0.5', linestyle='--')
+
+        plt.legend()
 
 
 def main(inargs):
     """Run program"""
 
-    mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr'  %(inargs.model, inargs.experiment)
-
-    rndt_file = glob.glob('%s/atmos/%s/rndt/latest/dedrifted/rndt-zonal-sum_Ayr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, inargs.model, inargs.experiment, inargs.mip))
-    hfds_file = glob.glob('%s/ocean/%s/hfds/latest/dedrifted/hfds-zonal-sum_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, inargs.model, inargs.experiment, inargs.mip))
-    ohc_file = glob.glob('%s/ocean/%s/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_%s_%s_all.nc' %(mydir, inargs.mip, inargs.model, inargs.experiment, inargs.mip))
-    hfbasin_file = glob.glob('%s/ocean/%s/hfbasin/latest/dedrifted/hfbasin-global_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, inargs.model, inargs.experiment, inargs.mip))
-    
-    time_constraint = gio.get_time_constraint(['1861-01-01', '2005-12-31'])
-    
-    cube_dict = {}
-    anomaly_dict = {}
-    metadata_dict = {}
-
-    cube_dict['rndt'], anomaly_dict['rndt'], metadata_dict = get_data(rndt_file, 'TOA Incoming Net Radiation',
-                                                                      metadata_dict, time_constraint)
-    cube_dict['hfds'], anomaly_dict['hfds'], metadata_dict = get_data(hfds_file, 'surface_downward_heat_flux_in_sea_water',
-                                                                      metadata_dict, time_constraint, ref_cube=cube_dict['rndt'])
-    cube_dict['ohc'], anomaly_dict['ohc'], metadata_dict = get_data(ohc_file, 'ocean heat content',
-                                                                    metadata_dict, time_constraint, ref_cube=cube_dict['rndt'])
-    cube_dict['hfbasin'], anomaly_dict['hfbasin'], metadata_dict = get_data(hfbasin_file, 'northward_ocean_heat_transport',
-                                                                            metadata_dict, time_constraint)     
-
-    ocean_convergence = anomaly_dict['ohc'][-1, ::] - anomaly_dict['hfds'][-1, ::]
-    anomaly_dict['hfbasin-inferred'] = ocean_convergence.copy()
-    anomaly_dict['hfbasin-inferred'].data = numpy.ma.cumsum(-1 * ocean_convergence.data)
-    
-    atmos_convergence = anomaly_dict['hfds'][-1, ::] - anomaly_dict['rndt'][-1, ::]
-    anomaly_dict['hfatmos-inferred'] = atmos_convergence.copy()
-    anomaly_dict['hfatmos-inferred'].data = numpy.ma.cumsum(-1 * atmos_convergence.data)
-
-    fig = plt.figure(figsize=[10, 14])
+    fig = plt.figure(figsize=[12, 14])
     gs = gridspec.GridSpec(2, 1)
 
-    plot_uptake_storage(gs, anomaly_dict['ohc'], anomaly_dict['hfds'], anomaly_dict['rndt'])
-    plt.title(get_title(cube_dict['ohc']))
-    plot_transport(gs, anomaly_dict['hfbasin'], anomaly_dict['hfbasin-inferred'], anomaly_dict['hfatmos-inferred'])
-        
-    outfile = '/g/data/r87/dbi599/figures/energy-check-zonal/energy-check-zonal_yr_%s_%s_%s_1861-2005.png' %(inargs.model, inargs.experiment, inargs.mip)
+    nmodels = len(inargs.models)
+    ensemble_ref_cube = ensemble_grid() if nmodels > 1 else None
+
+    var_list = ['rndt', 'hfds', 'ohc', 'hfbasin-inferred', 'hfatmos-inferred']
+    data_dict = {}
+    for var in var_list:
+        data_dict[var] = iris.cube.CubeList([])
+
+    for index, model in enumerate(inargs.models):
+
+        mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr'  %(model, inargs.experiment)
+
+        rndt_file = glob.glob('%s/atmos/%s/rndt/latest/dedrifted/rndt-zonal-sum_Ayr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, model, inargs.experiment, inargs.mip))
+        hfds_file = glob.glob('%s/ocean/%s/hfds/latest/dedrifted/hfds-zonal-sum_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, model, inargs.experiment, inargs.mip))
+        ohc_file = glob.glob('%s/ocean/%s/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_%s_%s_all.nc' %(mydir, inargs.mip, model, inargs.experiment, inargs.mip))
+        #hfbasin_file = glob.glob('%s/ocean/%s/hfbasin/latest/dedrifted/hfbasin-global_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, model, inargs.experiment, inargs.mip))
+    
+        time_constraint = gio.get_time_constraint(['1861-01-01', '2005-12-31'])
+        anomaly_dict = {}
+        metadata_dict = {}
+
+        rndt_cube, anomaly_dict['rndt'], metadata_dict = get_data(rndt_file, 'TOA Incoming Net Radiation',
+                                                                  metadata_dict, time_constraint, index, ref_cube=ensemble_ref_cube)
+
+        ref_cube = ensemble_ref_cube if ensemble_ref_cube else rndt_cube
+  
+        cube, anomaly_dict['hfds'], metadata_dict = get_data(hfds_file, 'surface_downward_heat_flux_in_sea_water',
+                                                             metadata_dict, time_constraint, index, ref_cube=ref_cube)
+        cube, anomaly_dict['ohc'], metadata_dict = get_data(ohc_file, 'ocean heat content',
+                                                            metadata_dict, time_constraint, index, ref_cube=ref_cube)
+        #cube, anomaly_dict['hfbasin'], metadata_dict = get_data(hfbasin_file, 'northward_ocean_heat_transport',
+        #                                                        metadata_dict, time_constraint, index)     
+
+        ocean_convergence = anomaly_dict['ohc'] - anomaly_dict['hfds']
+        anomaly_dict['hfbasin-inferred'] = ocean_convergence.copy()
+        anomaly_dict['hfbasin-inferred'].data = numpy.ma.cumsum(-1 * ocean_convergence.data)
+    
+        atmos_convergence = anomaly_dict['hfds'] - anomaly_dict['rndt']
+        anomaly_dict['hfatmos-inferred'] = atmos_convergence.copy()
+        anomaly_dict['hfatmos-inferred'].data = numpy.ma.cumsum(-1 * atmos_convergence.data)
+
+        if nmodels > 1:
+            plot_uptake_storage(gs, anomaly_dict['ohc'], anomaly_dict['hfds'], anomaly_dict['rndt'], linewidth=0.3, decorate=False)
+            plot_transport(gs, None, anomaly_dict['hfbasin-inferred'], anomaly_dict['hfatmos-inferred'], linewidth=0.3, decorate=False) 
+
+        for var in var_list:
+            data_dict[var].append(anomaly_dict[var])
+
+    ensemble_dict = {}
+    for var in var_list:
+        cube_list = iris.cube.CubeList(filter(None, data_dict[var]))
+        ensemble_dict[var] = ensemble_mean(cube_list)
+
+    linewidth = None if nmodels == 1 else 4.0
+    model_label = 'ensemble' if nmodels > 1 else inargs.models[0] 
+    title = 'zonally integrated heat accumulation, 1861-2005 (%s, %s, %s)'  %(model_label, inargs.experiment, inargs.mip) 
+
+    plot_uptake_storage(gs, ensemble_dict['ohc'], ensemble_dict['hfds'], ensemble_dict['rndt'])
+    plt.title(title)
+    plot_transport(gs, None, ensemble_dict['hfbasin-inferred'], ensemble_dict['hfatmos-inferred'])   #raw_hfbasin=ensemble_dict['hfbasin'])
+
+    outfile = '/g/data/r87/dbi599/figures/energy-check-zonal/energy-check-zonal_yr_%s_%s_%s_1861-2005.png' %(model_label, inargs.experiment, inargs.mip)
     plt.savefig(outfile, bbox_inches='tight')
     gio.write_metadata(outfile, file_info=metadata_dict)
     print(outfile)
@@ -205,7 +272,7 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("model", type=str, help="model")
+    parser.add_argument("models", type=str, nargs='*', help="models")
     parser.add_argument("experiment", type=str, help="experiment")
     parser.add_argument("mip", type=str, help="mip")                                  
 
