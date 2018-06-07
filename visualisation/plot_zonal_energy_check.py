@@ -40,6 +40,9 @@ except ImportError:
 
 # Define functions
 
+aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
+              'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
+
 def ensemble_grid():
     """Make a dummy cube with desired grid."""
        
@@ -199,12 +202,12 @@ def main(inargs):
         data_dict[var] = iris.cube.CubeList([])
 
     for index, model in enumerate(inargs.models):
-
+        mip = 'r1i1' + aa_physics[model] if inargs.experiment == 'historicalMisc' else 'r1i1p1' 
         mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr'  %(model, inargs.experiment)
 
-        rndt_file = glob.glob('%s/atmos/%s/rndt/latest/dedrifted/rndt-zonal-sum_Ayr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, model, inargs.experiment, inargs.mip))
-        hfds_file = glob.glob('%s/ocean/%s/hfds/latest/dedrifted/hfds-zonal-sum_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, model, inargs.experiment, inargs.mip))
-        ohc_file = glob.glob('%s/ocean/%s/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_%s_%s_all.nc' %(mydir, inargs.mip, model, inargs.experiment, inargs.mip))
+        rndt_file = glob.glob('%s/atmos/%s/rndt/latest/dedrifted/rndt-zonal-sum_Ayr_%s_%s_%s_cumsum-all.nc' %(mydir, mip, model, inargs.experiment, mip))
+        hfds_file = glob.glob('%s/ocean/%s/hfds/latest/dedrifted/hfds-zonal-sum_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, mip, model, inargs.experiment, mip))
+        ohc_file = glob.glob('%s/ocean/%s/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_%s_%s_all.nc' %(mydir, mip, model, inargs.experiment, mip))
         #hfbasin_file = glob.glob('%s/ocean/%s/hfbasin/latest/dedrifted/hfbasin-global_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, model, inargs.experiment, inargs.mip))
     
         time_constraint = gio.get_time_constraint(['1861-01-01', '2005-12-31'])
@@ -244,14 +247,15 @@ def main(inargs):
         ensemble_dict[var] = ensemble_mean(cube_list)
 
     linewidth = None if nmodels == 1 else 4.0
-    model_label = 'ensemble' if nmodels > 1 else inargs.models[0] 
-    title = 'zonally integrated heat accumulation, 1861-2005 (%s, %s, %s)'  %(model_label, inargs.experiment, inargs.mip) 
+    model_label = 'ensemble' if nmodels > 1 else inargs.models[0]
+    experiment_label = 'historicalAA' if inargs.experiment == 'historicalMisc' else inargs.experiment 
+    title = 'zonally integrated heat accumulation, 1861-2005 (%s, %s, %s)'  %(model_label, experiment_label, mip) 
 
     plot_uptake_storage(gs, ensemble_dict['ohc'], ensemble_dict['hfds'], ensemble_dict['rndt'])
     plt.title(title)
-    plot_transport(gs, None, ensemble_dict['hfbasin-inferred'], ensemble_dict['hfatmos-inferred'])   #raw_hfbasin=ensemble_dict['hfbasin'])
+    plot_transport(gs, None, ensemble_dict['hfbasin-inferred'], ensemble_dict['hfatmos-inferred'])   #ensemble_dict['hfbasin']
 
-    outfile = '/g/data/r87/dbi599/figures/energy-check-zonal/energy-check-zonal_yr_%s_%s_%s_1861-2005.png' %(model_label, inargs.experiment, inargs.mip)
+    outfile = '/g/data/r87/dbi599/figures/energy-check-zonal/energy-check-zonal_yr_%s_%s_%s_1861-2005.png' %(model_label, experiment_label, mip)
     plt.savefig(outfile, bbox_inches='tight')
     gio.write_metadata(outfile, file_info=metadata_dict)
     print(outfile)
@@ -273,8 +277,7 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("models", type=str, nargs='*', help="models")
-    parser.add_argument("experiment", type=str, help="experiment")
-    parser.add_argument("mip", type=str, help="mip")                                  
+    parser.add_argument("experiment", type=str, choices=('historical', 'historicalGHG', 'historicalMisc'), help="experiment")                                  
 
     args = parser.parse_args()             
     main(args)
