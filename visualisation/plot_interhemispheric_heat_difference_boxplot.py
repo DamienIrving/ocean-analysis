@@ -147,7 +147,7 @@ author:
 
 """
 
-    description = 'Plot ensemble interhemispheric heat difference timeseries for OHC, hfds and rndt'
+    description = 'Plot ensemble interhemispheric heat difference boxplot for OHC, hfds and rndt'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
