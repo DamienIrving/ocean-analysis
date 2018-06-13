@@ -239,6 +239,7 @@ def main(inargs):
         data_cube = iris.load_cube(filename, gio.check_iris_var(inargs.var))
         data_cube = check_data_units(data_cube, coefficient_a_cube)
         data_cube = gio.check_time_units(data_cube)
+        data_cube.cell_methods = ()
         if not inargs.no_parent_check:
             check_attributes(data_cube.attributes, coefficient_a_cube.attributes)
  
