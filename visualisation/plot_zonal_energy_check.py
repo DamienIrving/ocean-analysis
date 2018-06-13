@@ -137,7 +137,7 @@ def get_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_c
     return cube, anomaly, metadata_dict
 
 
-def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=None, decorate=True):
+def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=None, decorate=True, ylim=True):
     """Plot the heat uptake and storage"""
 
     ax = plt.subplot(gs)
@@ -152,6 +152,10 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=N
     iplt.plot(hfds_anomaly, color='orange', label=labels[1], linewidth=linewidth)
     iplt.plot(rndt_anomaly, color='red', label=labels[2], linewidth=linewidth)
 
+    if ylim:
+        ylower, yupper = ylim
+        plt.ylim(ylower * 1e22, yupper * 1e22)
+
     if decorate:
         plt.ylabel('J')
         plt.xlim(-90, 90)
@@ -160,7 +164,7 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=N
         plt.legend()
 
 
-def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, linewidth=None, decorate=True):
+def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, linewidth=None, decorate=True, ylim=None):
     """Plot the northward heat transport"""
 
     ax = plt.subplot(gs)
@@ -177,6 +181,10 @@ def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, linewid
     iplt.plot(hfbasin_inferred, color='purple', linestyle='--', label=labels[0], linewidth=linewidth)
     iplt.plot(hfatmos_inferred, color='green', linestyle='--', label=labels[1], linewidth=linewidth)
 
+    if ylim:
+        ylower, yupper = ylim
+        plt.ylim(ylower * 1e23, yupper * 1e23)
+
     if decorate:
         plt.xlabel('latitude')
         plt.ylabel('J')
@@ -192,7 +200,7 @@ def main(inargs):
 
     nexp = len(inargs.experiments)
 
-    fig = plt.figure(figsize=[12 * nexp, 14])
+    fig = plt.figure(figsize=[11 * nexp, 14])
     gs = gridspec.GridSpec(2, nexp)
 
     nmodels = len(inargs.models)
@@ -239,8 +247,10 @@ def main(inargs):
             anomaly_dict['hfatmos-inferred'].data = numpy.ma.cumsum(-1 * atmos_convergence.data)
 
             if nmodels > 1:
-                plot_uptake_storage(gs[plot_index], anomaly_dict['ohc'], anomaly_dict['hfds'], anomaly_dict['rndt'], linewidth=0.3, decorate=False)
-                plot_transport(gs[plot_index + nexp], None, anomaly_dict['hfbasin-inferred'], anomaly_dict['hfatmos-inferred'], linewidth=0.3, decorate=False) 
+                plot_uptake_storage(gs[plot_index], anomaly_dict['ohc'], anomaly_dict['hfds'], anomaly_dict['rndt'],
+                                    linewidth=0.3, decorate=False, ylim=inargs.ylim_storage)
+                plot_transport(gs[plot_index + nexp], None, anomaly_dict['hfbasin-inferred'], anomaly_dict['hfatmos-inferred'],
+                               linewidth=0.3, decorate=False, ylim=inargs.ylim_transport) 
 
             for var in var_list:
                 data_dict[var].append(anomaly_dict[var])
@@ -252,22 +262,18 @@ def main(inargs):
 
         linewidth = None if nmodels == 1 else 4.0
         model_label = 'ensemble' if nmodels > 1 else inargs.models[0]
-        experiment_label = 'historicalAA' if experiment == 'historicalMisc' else experiment 
-        title = '%s, %s, %s'  %(model_label, experiment_label, mip) 
+        experiment_label = 'historicalAA' if experiment == 'historicalMisc' else experiment  
 
-        plot_uptake_storage(gs[plot_index], ensemble_dict['ohc'], ensemble_dict['hfds'], ensemble_dict['rndt'])
-        plt.title(title)
-        plot_transport(gs[plot_index + nexp], None, ensemble_dict['hfbasin-inferred'], ensemble_dict['hfatmos-inferred'])   #ensemble_dict['hfbasin']
+        plot_uptake_storage(gs[plot_index], ensemble_dict['ohc'], ensemble_dict['hfds'], ensemble_dict['rndt'], ylim=inargs.ylim_storage)
+        plt.title(experiment_label)
+        plot_transport(gs[plot_index + nexp], None, ensemble_dict['hfbasin-inferred'], ensemble_dict['hfatmos-inferred'], ylim=inargs.ylim_transport)   #ensemble_dict['hfbasin']
 
         plot_index = plot_index + 1
 
     fig.suptitle('zonally integrated heat accumulation, 1861-2005', fontsize='large')
 
-    #outfile = '/g/data/r87/dbi599/figures/energy-check-zonal/energy-check-zonal_yr_%s_%s_%s_1861-2005.png' %(model_label, experiment_label, mip)
-    outfile = 'test.png'
-    plt.savefig(outfile, bbox_inches='tight')
-    gio.write_metadata(outfile, file_info=metadata_dict)
-    print(outfile)
+    plt.savefig(inargs.outfile, bbox_inches='tight')
+    gio.write_metadata(inargs.outfile, file_info=metadata_dict)
 
 
 if __name__ == '__main__':
@@ -285,8 +291,14 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("models", type=str, nargs='*', help="models")
+    parser.add_argument("outfile", type=str, help="name of output file. e.g. /g/data/r87/dbi599/figures/energy-check-zonal/energy-check-zonal_yr_model_experiment_mip_1861-2005.png")
+    parser.add_argument("--models", type=str, nargs='*', help="models")
     parser.add_argument("--experiments", type=str, nargs='*', choices=('historical', 'historicalGHG', 'historicalMisc'), help="experiments")                                  
+
+    parser.add_argument("--ylim_storage", type=float, nargs=2, default=None,
+                        help="y limits for storage plots (x 10^22)")
+    parser.add_argument("--ylim_transport", type=float, nargs=2, default=None,
+                        help="y limits for transport plots (x 10^23)")
 
     args = parser.parse_args()             
     main(args)
