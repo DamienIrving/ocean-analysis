@@ -144,7 +144,7 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=N
     plt.sca(ax)
 
     if decorate:
-        labels = ['OHC', 'hfds', 'netTOA']
+        labels = ['OHC', 'OHU', 'netTOA']
     else:
         labels = [None, None, None]
 
@@ -157,7 +157,7 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=N
         plt.ylim(ylower * 1e22, yupper * 1e22)
 
     if decorate:
-        plt.ylabel('J')
+        plt.ylabel('$J \; lat^{-1}$')
         plt.xlim(-90, 90)
 
         plt.axhline(y=0, color='0.5', linestyle='--')
@@ -187,7 +187,7 @@ def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, linewid
 
     if decorate:
         plt.xlabel('latitude')
-        plt.ylabel('J')
+        plt.ylabel('$J \; lat^{-1}$')
         plt.xlim(-90, 90)
 
         plt.axhline(y=0, color='0.5', linestyle='--')
@@ -271,8 +271,9 @@ def main(inargs):
         plot_index = plot_index + 1
 
     fig.suptitle('zonally integrated heat accumulation, 1861-2005', fontsize='large')
-
-    plt.savefig(inargs.outfile, bbox_inches='tight')
+    dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
+    print('dpi =', dpi)
+    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
     gio.write_metadata(inargs.outfile, file_info=metadata_dict)
 
 
@@ -299,6 +300,9 @@ author:
                         help="y limits for storage plots (x 10^22)")
     parser.add_argument("--ylim_transport", type=float, nargs=2, default=None,
                         help="y limits for transport plots (x 10^23)")
+
+    parser.add_argument("--dpi", type=float, default=None,
+                        help="Figure resolution in dots per square inch [default=auto]")
 
     args = parser.parse_args()             
     main(args)
