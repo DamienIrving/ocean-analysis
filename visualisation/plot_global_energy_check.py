@@ -167,7 +167,9 @@ def main(inargs):
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
 
-    #plt.ylim(-1e+23, 7e+23)
+    if inargs.ylim:
+        lower, upper = inargs.ylim
+        plt.ylim(lower * 1e+23, upper * 1e+23)
     ymin, ymax = plt.ylim()
     print('ymin:', ymin)
     print('ymax:', ymax)
@@ -217,6 +219,8 @@ author:
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=None, help="Time bounds")
+    parser.add_argument("--ylim", type=float, nargs=2, default=None,
+                        help="y limits (x 10^23)")
 
     args = parser.parse_args()             
     main(args)
