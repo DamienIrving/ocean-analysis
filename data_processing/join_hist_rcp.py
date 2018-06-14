@@ -59,11 +59,13 @@ def main(inargs):
         cube = cube_list.concatenate_cube()
         cube.attributes['branch_time'] = branch_time
         cube.attributes['experiment_id'] = 'historical-' + rcp_experiment
-        cube.attributes['history'] = gio.write_metadata(file_info={inargs.hist_file: history})
 
         outcubes.append(cube.copy())
 
+    for cube in outcubes:
+        cube.attributes['history'] = gio.write_metadata(file_info={inargs.hist_file: history})
     equalise_attributes(outcubes)
+
     iris.save(outcubes, inargs.outfile)
 
 
