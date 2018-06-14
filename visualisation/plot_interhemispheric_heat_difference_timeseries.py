@@ -166,15 +166,17 @@ def main(inargs):
 
     #plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0), useMathText=True)
     #ax.xaxis.major.formatter._useMathText = True
-    ax.set_ylabel('Northern Hemisphere minus Southern Hemisphere (Joules)')
+    ax.set_ylabel('NH minus SH (Joules)')
+    plt.legend()
     plt.title('interhemispheric difference in accumulated heat')
 
     atmos_transport_tendency = calc_transport_tendency(ensemble_dict['hfds'], ensemble_dict['netTOA'])
     ocean_transport_tendency = calc_transport_tendency(ensemble_dict['ohc'], ensemble_dict['hfds'])
     ax = plt.subplot(gs[1])
     plt.sca(ax)
-    iplt.plot(atmos_transport_tendency, color='green', linestyle='--', label='atmos transport tendency')
-    iplt.plot(ocean_transport_tendency, color='purple', linestyle='--', label='ocean transport tendency')
+    iplt.plot(atmos_transport_tendency.rolling_window('time', iris.analysis.MEAN, 20), color='green', label='atmos transport tendency')
+    iplt.plot(ocean_transport_tendency.rolling_window('time', iris.analysis.MEAN, 20), color='purple', label='ocean transport tendency')
+    plt.legend()
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile)
