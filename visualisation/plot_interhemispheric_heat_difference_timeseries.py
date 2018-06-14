@@ -14,6 +14,7 @@ import iris
 from iris.experimental.equalise_cubes import equalise_attributes
 import iris.plot as iplt
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import seaborn
 seaborn.set_context('talk')
 
@@ -127,14 +128,26 @@ def calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, ensemble_
     return diff
 
 
+def calc_transport_tendency(upper, lower):
+    """ """
+
+    tendency = upper[1:].copy()
+    diff = upper.data - lower.data
+    tendency.data = numpy.diff(diff)
+
+    return tendency
+
+
 def main(inargs):
     """Run the program."""
 
     time_constraint = gio.get_time_constraint(inargs.time)
     #metadata_dict = {}
-    fig, ax = plt.subplots()
     #plt.axvline(x=0, color='0.5', linestyle='--')
     
+    fig = plt.figure()
+    gs = gridspec.GridSpec(2, 1)
+
     infiles = {}
     infiles['netTOA'] = inargs.rndt_files
     infiles['hfds'] = inargs.hfds_files
@@ -146,14 +159,23 @@ def main(inargs):
             nh_file, sh_file = file_pair
             diff = calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, file_num)
             cube_list.append(diff)
-        ensemble_cube = ensemble_aggregation(cube_list, 'median')
-        iplt.plot(ensemble_cube, label=var, color=colors[var])
+        ensemble_dict[var] = ensemble_aggregation(cube_list, 'median')
+        ax = plt.subplot(gs[0])
+        plt.sca(ax)
+        iplt.plot(ensemble_dict[var], label=var, color=colors[var])
 
     #plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0), useMathText=True)
     #ax.xaxis.major.formatter._useMathText = True
     ax.set_ylabel('Northern Hemisphere minus Southern Hemisphere (Joules)')
+    plt.title('interhemispheric difference in accumulated heat')
 
-    plt.title('Interhemispheric difference in accumulated heat')
+    atmos_transport_tendency = calc_transport_tendency(ensemble_dict['hfds'], ensemble_dict['netTOA'])
+    ocean_transport_tendency = calc_transport_tendency(ensemble_dict['ohc'], ensemble_dict['hfds'])
+    ax = plt.subplot(gs[1])
+    plt.sca(ax)
+    iplt.plot(atmos_transport_tendency, color='green', linestyle='--', label='atmos transport tendency')
+    iplt.plot(ocean_transport_tendency, color='purple', linestyle='--', label='ocean transport tendency')
+
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile)
 
