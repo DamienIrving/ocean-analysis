@@ -1,12 +1,12 @@
 
-model=CanESM2
+model=GFDL-CM3
 experiment=rcp85
 mip=r1i1p1
 
-var=ohc
+vars=(rndt hfds ohc)
 # rndt hfds ohc
 
-inferred=false
+inferred=true
 
 fx_rip=r0i0p0
 fx_experiment=historical
@@ -15,6 +15,8 @@ python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/data_processing
 
 r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}
+
+for var in "${vars[@]}"; do
 
 if [[ "${var}" == "rndt" ]] ; then
     long_name=TOA_Incoming_Net_Radiation
@@ -36,7 +38,7 @@ elif [[ "${var}" == "ohc" ]] ; then
     cumsum=' '
 fi
 
-if [ "${inferred}" == true ] ; then
+if [ "${var}" == "hfds" ] && [ "${inferred}" == true ] ; then
     file_label=${var}-inferred-sum-hemispheric-metrics
 else
     file_label=${var}-sum-hemispheric-metrics
@@ -51,4 +53,5 @@ command="${python} ${script_dir}/join_hist_rcp.py ${hist_file} ${rcp_file} ${out
 echo ${command}
 ${command}
 
+done
 
