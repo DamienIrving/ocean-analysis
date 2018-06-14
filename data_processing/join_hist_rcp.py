@@ -63,6 +63,7 @@ def main(inargs):
 
         outcubes.append(cube.copy())
 
+    equalise_attributes(outcubes)
     iris.save(outcubes, inargs.outfile)
 
 
