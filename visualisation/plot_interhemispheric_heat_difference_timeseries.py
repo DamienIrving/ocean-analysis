@@ -7,7 +7,7 @@ Description:  Plot ensemble interhemispheric heat difference timeseries for OHC,
 
 # Import general Python modules
 
-import sys, os, pdb
+import sys, os, pdb, glob
 import argparse
 import numpy
 import iris
@@ -38,11 +38,20 @@ except ImportError:
 
 # Define functions
 
-colors = {'ohc': 'blue', 'hfds': 'orange', 'netTOA': 'red'}
+colors = {'ohc': 'blue', 'hfds': 'orange', 'rndt': 'red'}
 
 names = {'ohc': 'ocean heat content',
          'hfds': 'Downward Heat Flux at Sea Water Surface',
-         'netTOA': 'TOA Incoming Net Radiation'}
+         'rndt': 'TOA Incoming Net Radiation'}
+
+plot_variables = {'ohc': 'OHC',
+                  'hfds': 'OHU',
+                  'rndt': 'netTOA'}
+
+aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
+              'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
+
+linestyles = {'historical-rcp85': 'solid', 'historicalGHG': '--', 'historicalAA': ':'}
 
 
 def equalise_time_axes(cube_list):
@@ -88,7 +97,7 @@ def calc_anomaly(cube):
 
 
 def get_simulation_attributes(cube):
-    """Get model. experiment and mip information."""
+    """Get model, experiment and mip information."""
 
     model = cube.attributes['model_id']
     experiment = cube.attributes['experiment_id']
@@ -128,55 +137,55 @@ def calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, ensemble_
     return diff
 
 
-def calc_transport_tendency(upper, lower):
-    """ """
+def get_file_pair(var, model, experiment):
+    """Get a file pair of interest"""
 
-    tendency = upper[1:].copy()
-    diff = upper.data - lower.data
-    tendency.data = numpy.diff(diff)
+    dir_experiment = 'rcp85' if experiment == 'historical-rcp85' else experiment 
+    mip = 'r1i1' + aa_physics[model] if experiment == 'historicalMisc' else 'r1i1p1'
+    time_info = 'all' if var == 'ohc' else 'cumsum-all'
+    tscale = 'Ayr' if var == 'rndt' else 'Oyr'
+    realm = 'atmos' if var =='rndt' else 'ocean'
 
-    return tendency
+    mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr/%s/%s/%s/latest/dedrifted'  %(model, dir_experiment, realm, mip, var)
+ 
+    output = {}
+    for region in ['nh', 'sh']:
+        file_start = '%s*%s-sum'  %(var, region)
+        files = glob.glob('%s/%s_*.nc' %(mydir, file_start))
+        assert len(files) == 1, 'File search failed for %s, %s, %s' %(var, model, experiment)
+        output[region] = files[0]
+
+    return output['nh'], output['sh']
 
 
 def main(inargs):
     """Run the program."""
 
-    time_constraint = gio.get_time_constraint(inargs.time)
     #metadata_dict = {}
     #plt.axvline(x=0, color='0.5', linestyle='--')
-    
-    fig = plt.figure()
-    gs = gridspec.GridSpec(2, 1)
+    fig, ax = plt.subplots()
+    for experiment in ['historical-rcp85', 'historicalGHG', 'historicalMisc']:
+        ensemble_dict = {}
+        upper_time_bound = '2100-12-31' if experiment == 'historical-rcp85' else '2005-12-31'
+        time_constraint = gio.get_time_constraint(['1861-01-01', upper_time_bound])
+        for var in ['rndt', 'hfds', 'ohc']:
+            cube_list = iris.cube.CubeList([])
+            for file_num, model in enumerate(inargs.models):
+                nh_file, sh_file = get_file_pair(var, model, experiment)
+                diff = calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, file_num)
+                cube_list.append(diff)
+            ensemble_dict[var] = ensemble_aggregation(cube_list, 'median')
 
-    infiles = {}
-    infiles['netTOA'] = inargs.rndt_files
-    infiles['hfds'] = inargs.hfds_files
-    infiles['ohc'] = inargs.ohc_files
-    ensemble_dict = {}
-    for var in ['netTOA', 'hfds', 'ohc']:
-        cube_list = iris.cube.CubeList([])
-        for file_num, file_pair in enumerate(infiles[var]):
-            nh_file, sh_file = file_pair
-            diff = calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, file_num)
-            cube_list.append(diff)
-        ensemble_dict[var] = ensemble_aggregation(cube_list, 'median')
-        ax = plt.subplot(gs[0])
-        plt.sca(ax)
-        iplt.plot(ensemble_dict[var], label=var, color=colors[var])
+            plot_experiment = 'historicalAA' if experiment == 'historicalMisc' else experiment
+            plot_variable = plot_variables[var]
+            plot_label = '%s, %s' %(plot_variable, plot_experiment)
+            iplt.plot(ensemble_dict[var], label=plot_label, color=colors[var], linestyle=linestyles[plot_experiment])
 
-    #plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0), useMathText=True)
-    #ax.xaxis.major.formatter._useMathText = True
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+    ax.yaxis.major.formatter._useMathText = True
     ax.set_ylabel('NH minus SH (Joules)')
-    plt.legend()
+    plt.legend(loc=3)
     plt.title('interhemispheric difference in accumulated heat')
-
-    atmos_transport_tendency = calc_transport_tendency(ensemble_dict['hfds'], ensemble_dict['netTOA'])
-    ocean_transport_tendency = calc_transport_tendency(ensemble_dict['ohc'], ensemble_dict['hfds'])
-    ax = plt.subplot(gs[1])
-    plt.sca(ax)
-    iplt.plot(atmos_transport_tendency.rolling_window('time', iris.analysis.MEAN, 20), color='green', label='atmos transport tendency')
-    iplt.plot(ocean_transport_tendency.rolling_window('time', iris.analysis.MEAN, 20), color='purple', label='ocean transport tendency')
-    plt.legend()
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile)
@@ -197,17 +206,8 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
+    parser.add_argument("models", type=str, nargs='*', help="models")
     parser.add_argument("outfile", type=str, help="output file")                               
-    
-    parser.add_argument("--rndt_files", type=str, nargs=2, action='append', 
-                        help="NH and SH integrated netTOA file, in that order (dedrifted)")
-    parser.add_argument("--hfds_files", type=str, nargs=2, action='append', 
-                        help="NH and SH integrated hfds file, in that order (dedrifted)")
-    parser.add_argument("--ohc_files", type=str, nargs=2, action='append', 
-                        help="NH and SH OHC file, in that order (dedrifted)")
-
-    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
-                        default=['1861-01-01', '2005-12-31'], help="Time bounds")
 
     args = parser.parse_args()             
     main(args)
