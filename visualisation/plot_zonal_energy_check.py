@@ -163,6 +163,9 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=N
         plt.axhline(y=0, color='0.5', linestyle='--')
         plt.legend()
 
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+    ax.yaxis.major.formatter._useMathText = True
+
 
 def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, linewidth=None, decorate=True, ylim=None):
     """Plot the northward heat transport"""
@@ -191,8 +194,10 @@ def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, linewid
         plt.xlim(-90, 90)
 
         plt.axhline(y=0, color='0.5', linestyle='--')
-
         plt.legend()
+
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+    ax.yaxis.major.formatter._useMathText = True
 
 
 def main(inargs):
