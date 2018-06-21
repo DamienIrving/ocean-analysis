@@ -167,22 +167,23 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=N
     ax.yaxis.major.formatter._useMathText = True
 
 
-def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, linewidth=None, decorate=True, ylim=None):
+def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, hftotal_inferred, linewidth=None, decorate=True, ylim=None):
     """Plot the northward heat transport"""
 
     ax = plt.subplot(gs)
     plt.sca(ax)
 
     if decorate:
-        labels = ['inferred northward OHT', 'inferred northward AHT']
+        labels = ['inferred northward OHT', 'inferred northward AHT', 'inferred total transport']
     else:
-        labels = [None, None]
+        labels = [None, None, None]
 
     #if hfbasin_data:
     #    iplt.plot(hfbasin_data, color='purple', label='northward OHT')
 
     iplt.plot(hfbasin_inferred, color='purple', linestyle='--', label=labels[0], linewidth=linewidth)
     iplt.plot(hfatmos_inferred, color='green', linestyle='--', label=labels[1], linewidth=linewidth)
+    iplt.plot(hftotal_inferred, color='black', linestyle='--', label=labels[2], linewidth=linewidth)
 
     if ylim:
         ylower, yupper = ylim
@@ -211,7 +212,7 @@ def main(inargs):
     nmodels = len(inargs.models)
     ensemble_ref_cube = ensemble_grid() if nmodels > 1 else None
 
-    var_list = ['rndt', 'hfds', 'ohc', 'hfbasin-inferred', 'hfatmos-inferred']
+    var_list = ['rndt', 'hfds', 'ohc', 'hfbasin-inferred', 'hfatmos-inferred', 'hftotal-inferred']
     plot_index = 0
     for experiment in inargs.experiments:
         data_dict = {}
@@ -251,11 +252,15 @@ def main(inargs):
             anomaly_dict['hfatmos-inferred'] = atmos_convergence.copy()
             anomaly_dict['hfatmos-inferred'].data = numpy.ma.cumsum(-1 * atmos_convergence.data)
 
+            total_convergence = anomaly_dict['ohc'] - anomaly_dict['rndt']
+            anomaly_dict['hftotal-inferred'] = total_convergence.copy()
+            anomaly_dict['hftotal-inferred'].data = numpy.ma.cumsum(-1 * total_convergence.data)
+
             if nmodels > 1:
                 plot_uptake_storage(gs[plot_index], anomaly_dict['ohc'], anomaly_dict['hfds'], anomaly_dict['rndt'],
                                     linewidth=0.3, decorate=False, ylim=inargs.ylim_storage)
                 plot_transport(gs[plot_index + nexp], None, anomaly_dict['hfbasin-inferred'], anomaly_dict['hfatmos-inferred'],
-                               linewidth=0.3, decorate=False, ylim=inargs.ylim_transport) 
+                               anomaly_dict['hftotal-inferred'], linewidth=0.3, decorate=False, ylim=inargs.ylim_transport) 
 
             for var in var_list:
                 data_dict[var].append(anomaly_dict[var])
@@ -271,7 +276,7 @@ def main(inargs):
 
         plot_uptake_storage(gs[plot_index], ensemble_dict['ohc'], ensemble_dict['hfds'], ensemble_dict['rndt'], ylim=inargs.ylim_storage)
         plt.title(experiment_label)
-        plot_transport(gs[plot_index + nexp], None, ensemble_dict['hfbasin-inferred'], ensemble_dict['hfatmos-inferred'], ylim=inargs.ylim_transport)   #ensemble_dict['hfbasin']
+        plot_transport(gs[plot_index + nexp], None, ensemble_dict['hfbasin-inferred'], ensemble_dict['hfatmos-inferred'], ensemble_dict['hftotal-inferred'], ylim=inargs.ylim_transport) #ensemble_dict['hfbasin']
 
         plot_index = plot_index + 1
 
