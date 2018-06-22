@@ -214,21 +214,31 @@ def main(inargs):
 
     var_list = ['rndt', 'hfds', 'ohc', 'hfbasin-inferred', 'hfatmos-inferred', 'hftotal-inferred']
     plot_index = 0
+    time_text = '1861-2005'
     for experiment in inargs.experiments:
         data_dict = {}
+        if 'rcp' in experiment:
+            time_text = '1861-2100'
+
         for var in var_list:
             data_dict[var] = iris.cube.CubeList([])
  
         for index, model in enumerate(inargs.models):
             mip = 'r1i1' + aa_physics[model] if experiment == 'historicalMisc' else 'r1i1p1'
-            mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr'  %(model, experiment.split('-')[-1])
+            dir_exp = experiment.split('-')[-1]
+            file_exp = 'historical-' + experiment if experiment[0:3] == 'rcp' else experiment
 
-            rndt_file = glob.glob('%s/atmos/%s/rndt/latest/dedrifted/rndt-zonal-sum_Ayr_%s_%s_%s_cumsum-all.nc' %(mydir, mip, model, experiment, mip))
-            hfds_file = glob.glob('%s/ocean/%s/hfds/latest/dedrifted/hfds-zonal-sum_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, mip, model, experiment, mip))
-            ohc_file = glob.glob('%s/ocean/%s/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_%s_%s_all.nc' %(mydir, mip, model, experiment, mip))
-            #hfbasin_file = glob.glob('%s/ocean/%s/hfbasin/latest/dedrifted/hfbasin-global_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, model, experiment, inargs.mip))
+            mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr'  %(model, dir_exp)
+
+            rndt_file = glob.glob('%s/atmos/%s/rndt/latest/dedrifted/rndt-zonal-sum_Ayr_%s_%s_%s_cumsum-all.nc' %(mydir, mip, model, file_exp, mip))
+            hfds_file = glob.glob('%s/ocean/%s/hfds/latest/dedrifted/hfds-zonal-sum_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, mip, model, file_exp, mip))
+            ohc_file = glob.glob('%s/ocean/%s/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_%s_%s_all.nc' %(mydir, mip, model, file_exp, mip))
+            #hfbasin_file = glob.glob('%s/ocean/%s/hfbasin/latest/dedrifted/hfbasin-global_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, model, file_exp, inargs.mip))
     
-            time_constraint = gio.get_time_constraint(['1861-01-01', '2100-12-31'])
+            if experiment[0:3] == 'rcp':
+                time_constraint = gio.get_time_constraint(['2006-01-01', '2100-12-31'])
+            else:
+                time_constraint = gio.get_time_constraint(['1861-01-01', '2100-12-31'])
             anomaly_dict = {}
             metadata_dict = {}
 
@@ -280,7 +290,7 @@ def main(inargs):
 
         plot_index = plot_index + 1
 
-    fig.suptitle('zonally integrated heat accumulation, 1861-2005', fontsize='large')
+    fig.suptitle('zonally integrated heat accumulation, ' + time_text, fontsize='large')
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
@@ -304,7 +314,7 @@ author:
 
     parser.add_argument("outfile", type=str, help="name of output file. e.g. /g/data/r87/dbi599/figures/energy-check-zonal/energy-check-zonal_yr_model_experiment_mip_1861-2005.png")
     parser.add_argument("--models", type=str, nargs='*', help="models")
-    parser.add_argument("--experiments", type=str, nargs='*', choices=('historical', 'historicalGHG', 'historicalMisc', 'historical-rcp85'), help="experiments")                                  
+    parser.add_argument("--experiments", type=str, nargs='*', choices=('historical', 'historicalGHG', 'historicalMisc', 'historical-rcp85', 'rcp85'), help="experiments")                                  
 
     parser.add_argument("--ylim_storage", type=float, nargs=2, default=None,
                         help="y limits for storage plots (x 10^22)")
