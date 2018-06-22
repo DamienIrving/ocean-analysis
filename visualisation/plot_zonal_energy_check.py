@@ -125,7 +125,7 @@ def get_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_c
                 anomaly.replace_coord(ref_cube.coord('latitude'))
             else:
                 if not anomaly.coord('latitude').has_bounds():
-                    anomaly.coord('latitude').guess_bounds()
+                    anomaly.coord('latitude').bounds = ref_cube.coord('latitude').bounds
         
         new_aux_coord = iris.coords.AuxCoord(ensemble_number, long_name='ensemble_member', units='no_unit')
         anomaly.add_aux_coord(new_aux_coord)
@@ -220,15 +220,15 @@ def main(inargs):
             data_dict[var] = iris.cube.CubeList([])
  
         for index, model in enumerate(inargs.models):
-            mip = 'r1i1' + aa_physics[model] if experiment == 'historicalMisc' else 'r1i1p1' 
-            mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr'  %(model, experiment)
+            mip = 'r1i1' + aa_physics[model] if experiment == 'historicalMisc' else 'r1i1p1'
+            mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr'  %(model, experiment.split('-')[-1])
 
             rndt_file = glob.glob('%s/atmos/%s/rndt/latest/dedrifted/rndt-zonal-sum_Ayr_%s_%s_%s_cumsum-all.nc' %(mydir, mip, model, experiment, mip))
             hfds_file = glob.glob('%s/ocean/%s/hfds/latest/dedrifted/hfds-zonal-sum_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, mip, model, experiment, mip))
             ohc_file = glob.glob('%s/ocean/%s/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_%s_%s_all.nc' %(mydir, mip, model, experiment, mip))
             #hfbasin_file = glob.glob('%s/ocean/%s/hfbasin/latest/dedrifted/hfbasin-global_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, model, experiment, inargs.mip))
     
-            time_constraint = gio.get_time_constraint(['1861-01-01', '2005-12-31'])
+            time_constraint = gio.get_time_constraint(['1861-01-01', '2100-12-31'])
             anomaly_dict = {}
             metadata_dict = {}
 
@@ -304,7 +304,7 @@ author:
 
     parser.add_argument("outfile", type=str, help="name of output file. e.g. /g/data/r87/dbi599/figures/energy-check-zonal/energy-check-zonal_yr_model_experiment_mip_1861-2005.png")
     parser.add_argument("--models", type=str, nargs='*', help="models")
-    parser.add_argument("--experiments", type=str, nargs='*', choices=('historical', 'historicalGHG', 'historicalMisc'), help="experiments")                                  
+    parser.add_argument("--experiments", type=str, nargs='*', choices=('historical', 'historicalGHG', 'historicalMisc', 'historical-rcp85'), help="experiments")                                  
 
     parser.add_argument("--ylim_storage", type=float, nargs=2, default=None,
                         help="y limits for storage plots (x 10^22)")
