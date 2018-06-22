@@ -33,6 +33,17 @@ except ImportError:
 
 # Define functions
 
+def clean_attributes(cube):
+    """Remove attributes that might cause problems with merge."""
+
+    cube.cell_methods = ()
+
+    aux_coord_names = [coord.name() for coord in cube.aux_coords]
+    for aux_coord in aux_coord_names:
+        cube.remove_coord(aux_coord)
+
+    return cube
+
      
 def main(inargs):
     """Run the program."""
@@ -42,12 +53,12 @@ def main(inargs):
     for var in inargs.variables:
         metadata_dict = {}
         hist_cube = iris.load_cube(inargs.hist_file, gio.check_iris_var(var) & hist_time_constraint)
-        hist_cube.cell_methods = ()
+        hist_cube = clean_attributes(hist_cube)
         branch_time = hist_cube.attributes['branch_time']
         history = hist_cube.attributes['history']
         
         rcp_cube = iris.load_cube(inargs.rcp_file, gio.check_iris_var(var))
-        rcp_cube.cell_methods = ()
+        rcp_cube = clean_attributes(rcp_cube)
         rcp_experiment = rcp_cube.attributes['experiment_id']
 
         if inargs.cumsum:
