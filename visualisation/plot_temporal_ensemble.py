@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn
 seaborn.set_context('talk')
+import cmdline_provenance as cmdprov
 
 # Import my modules
 
@@ -330,7 +331,9 @@ def main(inargs):
     print('ymin:', ymin)
     print('ymax:', ymax)
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info=metadata_dict)
+
+    fname, extension = inargs.outfile.split('.')
+    cmdprov.write_history_txt(fname+'.met', file_info=metadata_dict)
 
 
 if __name__ == '__main__':

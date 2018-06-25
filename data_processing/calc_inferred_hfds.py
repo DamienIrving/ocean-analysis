@@ -14,6 +14,7 @@ import iris
 from iris.experimental.equalise_cubes import equalise_attributes
 import dask
 dask.set_options(get=dask.get)
+import cmdline_provenance as cmdprov
 
 # Import my modules
 
@@ -50,7 +51,7 @@ def add_metadata(hfds_cube, hfss_atts, inargs):
     hfds_cube.units = units
 
     hfds_cube.attributes = hfss_atts
-    hfds_cube.attributes['history'] = gio.write_metadata()
+    hfds_cube.attributes['history'] = cmdprov.new_cmdline_history(repo_dir=repo_dir)
 
     return hfds_cube
 
@@ -79,7 +80,7 @@ def get_data(filename, var, time_constraint, target_grid=None):
             depth_constraint = iris.Constraint(depth=0)
             cube = cube.extract(depth_constraint)
             cube.remove_coord('depth')
-
+ 
         if 'up' in cube.standard_name:
             cube.data = cube.data * -1
     else:
