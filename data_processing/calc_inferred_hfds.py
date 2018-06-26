@@ -51,7 +51,7 @@ def add_metadata(hfds_cube, hfss_atts, inargs):
     hfds_cube.units = units
 
     hfds_cube.attributes = hfss_atts
-    hfds_cube.attributes['history'] = cmdprov.new_cmdline_history(repo_dir=repo_dir)
+    hfds_cube.attributes['history'] = cmdprov.new_log(git_repo=repo_dir)
 
     return hfds_cube
 

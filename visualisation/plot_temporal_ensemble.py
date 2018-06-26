@@ -333,7 +333,8 @@ def main(inargs):
     plt.savefig(inargs.outfile, bbox_inches='tight')
 
     fname, extension = inargs.outfile.split('.')
-    cmdprov.write_history_txt(fname+'.met', file_info=metadata_dict)
+    new_log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+    cmdprov.write_log(fname+'.met', new_log)
 
 
 if __name__ == '__main__':
