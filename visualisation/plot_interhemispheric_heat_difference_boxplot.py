@@ -37,14 +37,14 @@ except ImportError:
 # Define functions
 
 
-names = {'ohc': 'ocean heat content',
-         'hfds': 'Downward Heat Flux at Sea Water Surface',
+names = {'OHC': 'ocean heat content',
+         'OHU': 'Downward Heat Flux at Sea Water Surface',
          'netTOA': 'TOA Incoming Net Radiation'}
 
 columns = ['model', 'mip', 
            'netTOA, historical', 'netTOA, historicalAA', 'netTOA, historicalGHG',
-           'hfds, historical', 'hfds, historicalAA', 'hfds, historicalGHG',
-           'ohc, historical', 'ohc, historicalAA', 'ohc, historicalGHG']
+           'OHU, historical', 'OHU, historicalAA', 'OHU, historicalGHG',
+           'OHC, historical', 'OHC, historicalAA', 'OHC, historicalGHG']
 
 def calc_anomaly(cube):
     """Calculate the anomaly."""
@@ -119,12 +119,12 @@ def main(inargs):
         data_list.append(generate_data_dict(diff, model, experiment, mip, 'netTOA'))
         
     for nh_file, sh_file in inargs.hfds_files:
-        diff, model, experiment, mip = calc_interhemispheric_diff(nh_file, sh_file, 'hfds', time_constraint)
-        data_list.append(generate_data_dict(diff, model, experiment, mip, 'hfds'))
+        diff, model, experiment, mip = calc_interhemispheric_diff(nh_file, sh_file, 'OHU', time_constraint)
+        data_list.append(generate_data_dict(diff, model, experiment, mip, 'OHU'))
 
     for nh_file, sh_file in inargs.ohc_files:
-        diff, model, experiment, mip = calc_interhemispheric_diff(nh_file, sh_file, 'ohc', time_constraint)
-        data_list.append(generate_data_dict(diff, model, experiment, mip, 'ohc'))
+        diff, model, experiment, mip = calc_interhemispheric_diff(nh_file, sh_file, 'OHC', time_constraint)
+        data_list.append(generate_data_dict(diff, model, experiment, mip, 'OHC'))
 
     data_df = pandas.DataFrame(data_list)      
     seaborn.boxplot(data=data_df[columns], orient="h", palette=['red', '#FFDDDD', '#FFDDDD', 'yellow', '#fdffdd', '#fdffdd', 'blue', '#ddddff', '#ddddff'])
