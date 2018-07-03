@@ -20,6 +20,7 @@ import matplotlib.cm as mpl_cm
 
 import cartopy
 import cartopy.crs as ccrs
+from cartopy.util import add_cyclic_point
 
 import numpy
 
@@ -188,14 +189,19 @@ def get_palette(palette_name):
     return cmap
 
 
-def get_spatial_info(cube):
+def get_spatial_info(cube, add_cyclic=False):
     """Get the spatial information required for plotting."""
 
-    x = cube.coord('longitude').points
+    if add_cyclic:
+        data, x = add_cyclic_point(cube.data, coord=cube.coord('longitude').points)
+    else:
+        data = cube.data
+        x = cube.coord('longitude').points
+
     y = cube.coord('latitude').points
     inproj = input_projections[cube.attributes['input_projection']]
 
-    return x, y, inproj
+    return data, x, y, inproj
 
 
 def get_time_constraint(start, end):
@@ -239,6 +245,7 @@ def multiplot(cube_dict, nrows, ncols,
               #spatial bounds
               spstereo_limit=-30,
               region=['None',],
+              add_cyclic_point=False,
               #lines
               line_list=None,
               line_width=1.0,
@@ -357,7 +364,7 @@ def multiplot(cube_dict, nrows, ncols,
                 try:
                     colour_cube = cube_dict[(colour_label, plotnum)]
                     cf = plot_colour(colour_cube, ax, colour_type, colourbar_type, 
-                                     palette_name, extend, colourbar_tick_list)
+                                     palette_name, extend, colourbar_tick_list, add_cyclic_point)
                     units_name = units_name if units_name else str(colour_cube.units)
                     units_name, exponent = uconv.units_info(units_name)
                     if colourbar_type == 'individual' and not no_colourbar_switch:
@@ -403,8 +410,8 @@ def multiplot(cube_dict, nrows, ncols,
                 try:
                     contour_cube = cube_dict[(contour_label, plotnum)]
                     plot_contour(contour_cube, ax, contour_levels, contour_labels, 
-                                 width=contour_width,
-                                 colour=contour_colour)
+                                 width=contour_width, colour=contour_colour,
+                                 add_cyclic=add_cyclic_point)
                 except KeyError:
                     pass
 
@@ -412,7 +419,7 @@ def multiplot(cube_dict, nrows, ncols,
                 hatching_label = 'hatching'+str(layer)
                 try:
                     hatch_cube = cube_dict[(hatching_label, plotnum)]
-                    plot_hatching(hatch_cube, ax, hatch_bounds, hatch_styles)
+                    plot_hatching(hatch_cube, ax, hatch_bounds, hatch_styles, add_cyclic_point)
                 except KeyError:
                     pass
 
@@ -434,33 +441,33 @@ def multiplot(cube_dict, nrows, ncols,
 
 def plot_colour(cube, ax,
                 colour_type, colourbar_type, 
-                palette, extend, ticks):
+                palette, extend, ticks, add_cyclic):
     """Plot the colour plot."""
 
     assert colour_type in ['smooth', 'pixels']
 
-    x, y, inproj = get_spatial_info(cube)
+    data, x, y, inproj = get_spatial_info(cube, add_cyclic=add_cyclic)
     cmap = get_palette(palette) if palette else None
     if colour_type == 'smooth':
         print('data max:', cube.data.max())
         print('data min:', cube.data.min())
         print('data median amplitude:', numpy.ma.median(numpy.ma.abs(cube.data)))
-        cf = ax.contourf(x, y, cube.data, transform=inproj,  
+        cf = ax.contourf(x, y, data, transform=inproj,  
                          cmap=cmap, levels=ticks, extend=extend)
         #colors is the option where you can give a list of hex strings
         #haven't been able to figure out how to get extent to work with that
     elif colour_type == 'pixels':
-        cf = ax.pcolormesh(x, y, cube.data, transform=inproj, cmap=cmap, vmin=ticks[0], vmax=ticks[-1])
+        cf = ax.pcolormesh(x, y, data, transform=inproj, cmap=cmap, vmin=ticks[0], vmax=ticks[-1])
 
     return cf
 
 
 def plot_contour(cube, ax, levels, labels_switch,
-                 width=1.5, colour='k'):
+                 width=1.5, colour='k', add_cyclic=False):
     """Plot the contours."""
 
-    x, y, inproj = get_spatial_info(cube)
-    contour_plot = ax.contour(x, y, cube.data, transform=inproj,
+    data, x, y, inproj = get_spatial_info(cube, add_cyclic=add_cyclic)
+    contour_plot = ax.contour(x, y, data, transform=inproj,
                               colors=colour, linewidths=width, levels=levels)  
     print('contour levels:', contour_plot.levels)
     if labels_switch:
@@ -504,15 +511,15 @@ def plot_flow(x, y, u, v, ax, flow_type, units, regrid_shape=40,
     ax.quiverkey(qplot, 0.95, 1.02, quiver_length, label, labelpos='W')
 
 
-def plot_hatching(cube, ax, hatch_bounds, hatch_styles):
+def plot_hatching(cube, ax, hatch_bounds, hatch_styles, add_cyclic):
     """Plot the hatching."""
 
     hatch_styles_converted = []
     for style in hatch_styles:
         hatch_styles_converted.append(hatch_style_dict[style])
 
-    x, y, inproj = get_spatial_info(cube)
-    ax.contourf(x, y, cube.data, transform=inproj, 
+    data, x, y, inproj = get_spatial_info(cube, add_cyclic=add_cyclic)
+    ax.contourf(x, y, data, transform=inproj, 
                 colors='none', levels=hatch_bounds, hatches=hatch_styles_converted)
     
     # An alternative would be:
@@ -690,6 +697,7 @@ def main(inargs):
               #spatial bounds
               spstereo_limit=inargs.spstereo_limit,
               region=inargs.region,
+              add_cyclic_point=inargs.add_cyclic_point,
               #lines
               line_list=inargs.line,
               line_width=inargs.line_width,
@@ -798,6 +806,8 @@ example:
                                 or indicate a single choice to be applied to all plots""")
     parser.add_argument("--spstereo_limit", type=float, default=-30,
                         help="highest latitude to be plotted if the map projection is South Polar Stereographic")
+    parser.add_argument("--add_cyclic_point", action="store_true", default=False,
+                        help="Add a cyclic longitude point to eliminate white space in plot [default: False]")
                         
     # Lines and labels
     parser.add_argument("--line", type=str, action='append', default=None, nargs=8, 
