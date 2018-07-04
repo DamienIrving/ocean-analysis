@@ -31,8 +31,10 @@ def get_results(data_rows, experiment, variable, mip, model, rip):
     for o in outputs:
         for version in o.versions:
             vtext = str(version.version)
-            for trackid, datafile in zip(version.tracking_ids(), version.files):
-                data_dict = {'file': str(datafile), 'version': vtext, 'track_id': str(trackid)}
+            dataset_id = str(version.dataset_id)
+            for track_id, data_file in zip(version.tracking_ids(), version.files):
+                data_dict = {'file': str(data_file), 'version': vtext,
+                             'track_id': str(track_id), 'dataset_id': dataset_id}
                 data_rows.append(data_dict)
 
     return data_rows    
@@ -53,7 +55,7 @@ def main(inargs):
         data_rows = get_results(data_rows, inargs.experiment, var, 'fx', inargs.model, inargs.fx_rip)
 
     df = pandas.DataFrame(data_rows)  
-    df = df[['file', 'version', 'track_id']]
+    df = df[['file', 'version', 'dataset_id', 'track_id']]
     df = df.sort_values(by=['file', 'version'])
     df = df.reset_index(drop=True)
 
