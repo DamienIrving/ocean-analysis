@@ -201,6 +201,16 @@ def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, hftotal
     ax.yaxis.major.formatter._useMathText = True
 
 
+def get_time_text(time_bounds):
+    """Time text for plot title"""
+
+    start_year = time_bounds[0].split('-')[0]
+    end_year = time_bounds[-1].split('-')[0]
+    time_text = '%s-%s' %(start_year, end_year)
+
+    return time_text
+
+
 def main(inargs):
     """Run program"""
 
@@ -214,12 +224,10 @@ def main(inargs):
 
     var_list = ['rndt', 'hfds', 'ohc', 'hfbasin-inferred', 'hfatmos-inferred', 'hftotal-inferred']
     plot_index = 0
-    time_text = '1861-2005'
+    time_constraint = gio.get_time_constraint(inargs.time)
+    time_text = get_time_text(inargs.time)
     for experiment in inargs.experiments:
         data_dict = {}
-        if 'rcp' in experiment:
-            time_text = '1861-2100'
-
         for var in var_list:
             data_dict[var] = iris.cube.CubeList([])
  
@@ -235,10 +243,6 @@ def main(inargs):
             ohc_file = glob.glob('%s/ocean/%s/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_%s_%s_all.nc' %(mydir, mip, model, file_exp, mip))
             #hfbasin_file = glob.glob('%s/ocean/%s/hfbasin/latest/dedrifted/hfbasin-global_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, inargs.mip, model, file_exp, inargs.mip))
     
-            if experiment[0:3] == 'rcp':
-                time_constraint = gio.get_time_constraint(['2006-01-01', '2100-12-31'])
-            else:
-                time_constraint = gio.get_time_constraint(['1861-01-01', '2100-12-31'])
             anomaly_dict = {}
             metadata_dict = {}
 
@@ -315,6 +319,9 @@ author:
     parser.add_argument("outfile", type=str, help="name of output file. e.g. /g/data/r87/dbi599/figures/energy-check-zonal/energy-check-zonal_yr_model_experiment_mip_1861-2005.png")
     parser.add_argument("--models", type=str, nargs='*', help="models")
     parser.add_argument("--experiments", type=str, nargs='*', choices=('historical', 'historicalGHG', 'historicalMisc', 'historical-rcp85', 'rcp85'), help="experiments")                                  
+
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=('1861-01-01', '2005-12-31'),
+                        help="Time period [default = 1861-2005]")
 
     parser.add_argument("--ylim_storage", type=float, nargs=2, default=None,
                         help="y limits for storage plots (x 10^22)")
