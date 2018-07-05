@@ -215,7 +215,8 @@ def main(inargs):
     """Run program"""
 
     nexp = len(inargs.experiments)
-
+    if inargs.sum:
+        nexp = nexp + 1
     fig = plt.figure(figsize=[11 * nexp, 14])
     gs = gridspec.GridSpec(2, nexp)
 
@@ -226,6 +227,7 @@ def main(inargs):
     plot_index = 0
     time_constraint = gio.get_time_constraint(inargs.time)
     time_text = get_time_text(inargs.time)
+    ensemble_dict = {}
     for experiment in inargs.experiments:
         data_dict = {}
         for var in var_list:
@@ -279,21 +281,40 @@ def main(inargs):
             for var in var_list:
                 data_dict[var].append(anomaly_dict[var])
 
-        ensemble_dict = {}
+        ensemble_dict[experiment] = {}
         for var in var_list:
             cube_list = iris.cube.CubeList(filter(None, data_dict[var]))
-            ensemble_dict[var] = ensemble_mean(cube_list)
+            ensemble_dict[experiment][var] = ensemble_mean(cube_list)
 
         linewidth = None if nmodels == 1 else 4.0
         model_label = 'ensemble' if nmodels > 1 else inargs.models[0]
         experiment_label = 'historicalAA' if experiment == 'historicalMisc' else experiment  
 
-        plot_uptake_storage(gs[plot_index], ensemble_dict['ohc'], ensemble_dict['hfds'], ensemble_dict['rndt'], ylim=inargs.ylim_storage)
+        plot_uptake_storage(gs[plot_index], ensemble_dict[experiment]['ohc'], ensemble_dict[experiment]['hfds'],
+                            ensemble_dict[experiment]['rndt'], ylim=inargs.ylim_storage)
         plt.title(experiment_label)
-        plot_transport(gs[plot_index + nexp], None, ensemble_dict['hfbasin-inferred'], ensemble_dict['hfatmos-inferred'], ensemble_dict['hftotal-inferred'], ylim=inargs.ylim_transport) #ensemble_dict['hfbasin']
+        plot_transport(gs[plot_index + nexp], None, ensemble_dict[experiment]['hfbasin-inferred'], ensemble_dict[experiment]['hfatmos-inferred'],
+                       ensemble_dict[experiment]['hftotal-inferred'], ylim=inargs.ylim_transport) #ensemble_dict[experiment]['hfbasin']
 
         plot_index = plot_index + 1
 
+    if inargs.sum:
+        exp1, exp2 = inargs.sum
+
+        ohc_sum = ensemble_dict[exp1]['ohc'] + ensemble_dict[exp2]['ohc']
+        hfds_sum = ensemble_dict[exp1]['hfds'] + ensemble_dict[exp2]['hfds']
+        rndt_sum = ensemble_dict[exp1]['rndt'] + ensemble_dict[exp2]['rndt']
+        plot_uptake_storage(gs[plot_index], ohc_sum, hfds_sum, rndt_sum, ylim=inargs.ylim_storage)
+
+        exp1_label = 'historicalAA' if exp1 == 'historicalMisc' else exp1 
+        exp2_label = 'historicalAA' if exp2 == 'historicalMisc' else exp2 
+        plt.title(exp1_label + ' + ' + exp2_label)
+
+        hfbasin_sum = ensemble_dict[exp1]['hfbasin-inferred'] + ensemble_dict[exp2]['hfbasin-inferred']
+        hfatmos_sum = ensemble_dict[exp1]['hfatmos-inferred'] + ensemble_dict[exp2]['hfatmos-inferred']
+        hftotal_sum = ensemble_dict[exp1]['hftotal-inferred'] + ensemble_dict[exp2]['hftotal-inferred']
+        plot_transport(gs[plot_index + nexp], None, hfbasin_sum, hfatmos_sum, hftotal_sum, ylim=inargs.ylim_transport)
+        
     fig.suptitle('zonally integrated heat accumulation, ' + time_text, fontsize='large')
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
@@ -327,6 +348,9 @@ author:
                         help="y limits for storage plots (x 10^22)")
     parser.add_argument("--ylim_transport", type=float, nargs=2, default=None,
                         help="y limits for transport plots (x 10^23)")
+
+    parser.add_argument("--sum", type=str, nargs=2, default=None,
+                        help="add an extra plot with the sum of these two experiments")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
