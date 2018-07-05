@@ -15,7 +15,7 @@ cmip5 = CMIP5.DB.connect()
 
 atmos_variables = ['rsdt', 'rsut', 'rlut', 'hfss', 'hfls', 'rsds', 'rsus', 'rlds', 'rlus']
 ocean_variables = ['hfds', 'hfsithermds', 'thetao']
-fx_variables = ['volcello', 'areacello']
+fx_variables = ['sftlf', 'areacella', 'volcello', 'areacello']
 
 # Define functions
 
