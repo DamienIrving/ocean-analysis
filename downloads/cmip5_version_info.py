@@ -16,6 +16,7 @@ cmip5 = CMIP5.DB.connect()
 atmos_variables = ['rsdt', 'rsut', 'rlut', 'hfss', 'hfls', 'rsds', 'rsus', 'rlds', 'rlus']
 ocean_variables = ['hfds', 'hfsithermds', 'thetao']
 fx_variables = ['sftlf', 'areacella', 'volcello', 'areacello']
+aero_variables = ['od550aer']
 
 # Define functions
 
@@ -53,6 +54,9 @@ def main(inargs):
     
     for var in fx_variables:
         data_rows = get_results(data_rows, inargs.experiment, var, 'fx', inargs.model, inargs.fx_rip)
+
+    for var in aero_variables:
+        data_rows = get_results(data_rows, inargs.experiment, var, 'aero', inargs.model, inargs.rip)
 
     df = pandas.DataFrame(data_rows)  
     df = df[['file', 'version', 'dataset_id', 'track_id']]
