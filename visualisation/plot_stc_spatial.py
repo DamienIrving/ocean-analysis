@@ -63,12 +63,15 @@ def load_data(infiles, basin):
         cube = cube[:, basin_index[basin], : ,:]
         cube = timeseries.convert_to_annual(cube)
 
+    assert str(cube.units) == 'kg s-1'
+    cube.data = (cube.data / 1023) / 1e+6
+    cube.units = 'Sv'
+
     experiment = cube.attributes['experiment_id']
     
-    depth_constraint = iris.Constraint(depth=lambda cell: cell <= 250)
-    lat_constraint = iris.Constraint(latitude=lambda cell: -30.0 <= cell < 30.0)
-
-    cube = cube.extract(depth_constraint & lat_constraint)
+    #depth_constraint = iris.Constraint(depth=lambda cell: cell <= 250)
+    #lat_constraint = iris.Constraint(latitude=lambda cell: -30.0 <= cell < 30.0)
+    #cube = cube.extract(depth_constraint & lat_constraint)
     
     return cube, experiment
 
@@ -79,10 +82,12 @@ def plot_data(ax, cube, basin):
     plt.sca(ax)
 
     clim_cube = cube.collapsed('time', iris.analysis.MEAN)
-    if basin == 'atlantic':
-        levels = [-1.25e+10, -1.0e+10, -7.5e+9, -5.0e+9, -2.5e+9, 0, 2.5e+9, 5.0e+9, 7.5e+9, 1.0e+10, 1.25e+10]
-    else:
-        levels = [-5e+10, -4e+10, -3e+10, -2e+10, -1e+10, 0, 1e+10, 2e+10, 3e+10, 4e+10, 5e+10]
+    #if basin == 'atlantic':
+    #    levels = [-1.25e+10, -1.0e+10, -7.5e+9, -5.0e+9, -2.5e+9, 0, 2.5e+9, 5.0e+9, 7.5e+9, 1.0e+10, 1.25e+10]
+    #else:
+    #    levels = [-5e+10, -4e+10, -3e+10, -2e+10, -1e+10, 0, 1e+10, 2e+10, 3e+10, 4e+10, 5e+10]
+
+    levels = [-16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14, 16]
     iplt.contourf(clim_cube, cmap='RdBu_r', levels=levels, extend='both')
 
     cbar = plt.colorbar(orientation='horizontal')
