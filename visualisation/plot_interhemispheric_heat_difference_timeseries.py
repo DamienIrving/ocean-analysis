@@ -168,17 +168,15 @@ def main(inargs):
         ensemble_dict = {}
         upper_time_bound = '2100-12-31' if experiment == 'historical-rcp85' else '2005-12-31'
         time_constraint = gio.get_time_constraint(['1861-01-01', upper_time_bound])
-        for var in ['rndt', 'hfds', 'ohc']:
+        for var in ['ohc', 'hfds', 'rndt']:
             cube_list = iris.cube.CubeList([])
             for file_num, model in enumerate(inargs.models):
                 nh_file, sh_file = get_file_pair(var, model, experiment)
                 diff = calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, file_num)
                 cube_list.append(diff)
             ensemble_dict[var] = ensemble_aggregation(cube_list, 'median')
-
             plot_experiment = 'historicalAA' if experiment == 'historicalMisc' else experiment
-            plot_variable = plot_variables[var]
-            plot_label = '%s, %s' %(plot_variable, plot_experiment)
+            plot_label = plot_variables[var] if experiment == 'historical-rcp85' else None
             iplt.plot(ensemble_dict[var], label=plot_label, color=colors[var], linestyle=linestyles[plot_experiment])
 
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
