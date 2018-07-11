@@ -1,7 +1,7 @@
 """
 Filename:     plot_zonal_ensemble.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Plot zonal mean for an ensemble of models  
+Description:  Plot zonal ensemble  
 
 """
 
@@ -41,8 +41,8 @@ except ImportError:
 
 # Define functions
 
-experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
-                     'historicalAA': 'blue', 'GHG + AA': 'purple',
+experiment_colors = {'historical': 'purple', 'historicalGHG': 'red',
+                     'historicalAA': 'blue', 'GHG + AA': 'green',
                      'piControl': '0.5'}
 
 
@@ -203,14 +203,14 @@ def read_data(inargs, infiles, ref_cube=None):
 
     clim_dict = {}
     trend_dict = {}
-    file_count = 0
-    for infile in infiles:
-        print(infile)
+    for filenum, infile in enumerate(infiles):
         cube = iris.load_cube(infile, gio.check_iris_var(inargs.var))
         if ref_cube:
-            time_constraint = timeseries.get_control_time_constraint(cube, ref_cube, inargs.time, branch_time=inargs.branch_time)
+            branch_time = None if inargs.branch_times[filenum] == 'default' else str(inargs.branch_times[filenum])
+            time_constraint = timeseries.get_control_time_constraint(cube, ref_cube, inargs.time, branch_time=branch_time)
             cube = cube.extract(time_constraint)
             iris.util.unify_time_units([ref_cube, cube])
+            cube.coord('time').units = ref_cube.coord('time').units
             cube.replace_coord(ref_cube.coord('time'))
         else:
             time_constraint = gio.get_time_constraint(inargs.time)
@@ -234,7 +234,6 @@ def read_data(inargs, infiles, ref_cube=None):
         key = (model, physics, realization)
         trend_dict[key] = trend_cube
         clim_dict[key] = clim_cube
-        file_count = file_count + 1
 
     experiment = cube.attributes['experiment_id']
     experiment = 'historicalAA' if experiment == "historicalMisc" else experiment    
@@ -348,8 +347,9 @@ def main(inargs):
     title = get_title(inargs.var, inargs.time, experiment, nexperiments)
     plt.title(title)
 
-    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
-    ax.yaxis.major.formatter._useMathText = True        
+    if inargs.scientific:
+        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+        ax.yaxis.major.formatter._useMathText = True        
     ax.set_ylabel(ylabel)
     ax.set_xlabel('latitude')
 
@@ -423,8 +423,8 @@ author:
                         default=('1861-01-01', '2005-12-31'),
                         help="Time bounds [default = 1861-2005]")
 
-    parser.add_argument("--branch_time", type=float, default=None,
-                        help="Override the branch time listed in the file metadata")
+    parser.add_argument("--branch_times", type=str, nargs='*', default=None,
+                        help="Need value for each control file (write default to use metadata)")
 
     parser.add_argument("--perlat", action="store_true", default=False,
                         help="Scale per latitude [default=False]")
@@ -436,7 +436,8 @@ author:
                         help="Plot a climatology curve behind the trend curve [default=False]")
     parser.add_argument("--legloc", type=int, default=None,
                         help="Legend location [default = off plot]")
-
+    parser.add_argument("--scientific", action="store_true", default=False,
+                        help="Use scientific notation for the y axis scale [default=False]")
     parser.add_argument("--zeroline", action="store_true", default=False,
                         help="Plot a dashed guideline at y=0 [default=False]")
 
@@ -446,7 +447,7 @@ author:
     #                    help="y-axis limits [default = auto]")
 
     parser.add_argument("--context", type=str, default='talk', choices=('paper', 'talk'),
-                        help="Context for plot [default=auto]")
+                        help="Context for plot [default=talk]")
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
 
