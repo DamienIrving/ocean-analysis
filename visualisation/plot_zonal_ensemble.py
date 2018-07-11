@@ -216,6 +216,8 @@ def read_data(inargs, infiles, ref_cube=None):
             time_constraint = gio.get_time_constraint(inargs.time)
             cube = cube.extract(time_constraint)
 
+        #cube = uconv.convert_to_joules(cube)
+
         if inargs.perlat:
             grid_spacing = grids.get_grid_spacing(cube) 
             cube.data = cube.data / grid_spacing
@@ -300,7 +302,6 @@ def plot_files(ax, ax2, infiles, inargs, nexperiments, ref_cube=None):
     """Plot a list of files corresponding to a particular experiment."""
 
     cube, trend_dict, clim_dict, experiment, trend_ylabel, clim_ylabel, metadata_dict = read_data(inargs, infiles, ref_cube=ref_cube)
-    
     model_family_list = group_runs(trend_dict)
     color_dict = get_colors(model_family_list)
 
