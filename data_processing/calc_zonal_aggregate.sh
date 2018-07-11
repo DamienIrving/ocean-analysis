@@ -1,19 +1,19 @@
 
 model=NorESM1-M
 
-experiments=(piControl historical)
+experiments=(historical historicalGHG historicalMisc piControl)
 rips=(r1i1p1)
 
 fx_rip=r0i0p0
 fx_experiment=historical
 
-spatial_agg='sum'
+spatial_agg='mean'
 #sum mean
 
-tdetails=cumsum-all
+tdetails=all
 #all cumsum-all
 
-vars=(hfds)
+vars=(tauu uas)
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/data_processing
@@ -23,7 +23,7 @@ r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}
 
 sftlf_file=${ua6_dir}/${fx_experiment}/fx/atmos/${fx_rip}/sftlf/latest/sftlf_fx_${model}_${fx_experiment}_${fx_rip}.nc
 areacello_file=${ua6_dir}/${fx_experiment}/fx/ocean/${fx_rip}/areacello/latest/areacello_fx_${model}_${fx_experiment}_${fx_rip}.nc
-
+areacella_file=${ua6_dir}/${fx_experiment}/fx/atmos/${fx_rip}/areacella/latest/areacella_fx_${model}_${fx_experiment}_${fx_rip}.nc
 
 for var in "${vars[@]}"; do
 
@@ -118,20 +118,34 @@ elif [[ "${var}" == 'hfds' ]] ; then
     prefix='O'
     input_tscale='mon'
     temporal_agg='--annual'
+elif [[ "${var}" == 'tauu' ]] ; then
+    standard_name='surface_downward_eastward_stress'
+    file_var='tauu'
+    realm='atmos'
+    prefix='A'
+    input_tscale='mon'
+    temporal_agg='--annual'
+elif [[ "${var}" == 'uas' ]] ; then
+    standard_name='eastward_wind'
+    file_var='uas'
+    realm='atmos'
+    prefix='A'
+    input_tscale='mon'
+    temporal_agg='--annual'
 fi
 
 for experiment in "${experiments[@]}"; do
 for rip in "${rips[@]}"; do
 
-ref_file=${ua6_dir}/historical/mon/atmos/${rip}/rsdt/latest/rsdt_Amon_${model}_historical_${rip}_185001-200512.nc
+ref_file=${ua6_dir}/historical/mon/atmos/r1i1p1/rsdt/latest/rsdt_Amon_${model}_historical_r1i1p1_185001-200512.nc
 
 mkdir -p /g/data/r87/dbi599/DRSv2/CMIP5/${model}/${experiment}/yr/${realm}/${rip}/${var}/latest/
 
 input_file=${ua6_dir}/${experiment}/${input_tscale}/${realm}/${rip}/${var}/latest/${file_var}_${prefix}${input_tscale}_${model}_${experiment}_${rip}_*.nc
 
-output_file=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest/${file_var}-zonal-${spatial_agg}_${prefix}yr_${model}_${experiment}_${rip}_${tdetails}.nc
+output_file=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest/${file_var}-ocean-zonal-${spatial_agg}_${prefix}yr_${model}_${experiment}_${rip}_${tdetails}.nc
 
-command="${python} ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} ${spatial_agg} ${output_file} ${temporal_agg} --ref_file ${ref_file} --cumsum --area ${areacello_file}"
+command="${python} ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} ${spatial_agg} ${output_file} ${temporal_agg} --realm ocean --sftlf_file ${sftlf_file}"
 # --area ${areacello_file} --realm ocean --sftlf_file ${sftlf_file} --cumsum --ref_file ${ref_file}
 
 echo ${command}
