@@ -109,7 +109,8 @@ var_names = {'precipitation_flux': 'precipitation',
              'surface_upwelling_shortwave_flux_in_air': 'upwelling shortwave flux',
              'surface_downwelling_longwave_flux_in_air': 'downwelling longwave flux',
              'surface_upwelling_longwave_flux_in_air': 'upwelling longwave flux',
-             'Downward_Heat_Flux_at_Sea_Water_Surface_nh_sum_minus_sh_sum': 'interhemispheric difference in surface downward heat flux (NH minus SH)'
+             'Downward_Heat_Flux_at_Sea_Water_Surface_nh_sum_minus_sh_sum': 'interhemispheric difference in surface downward heat flux (NH minus SH)',
+             'surface_downward_eastward_stress': 'eastward surface wind stress'
              }
 
 
