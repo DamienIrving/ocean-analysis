@@ -168,18 +168,8 @@ def plot_ensmean(data_dict, experiment, nexperiments,
 def get_ensemble_label_color(experiment, nexperiments, ensemble_size, single_run):
     """Get the line label and color."""
 
-    if ensemble_size == 1:
-        label = experiment
-    elif single_run:
-        label = 'ensemble mean (r1)' 
-    else:
-        label = 'ensemble mean (all runs)'
-    color = 'black' 
-
-    if nexperiments > 1:
-        if ensemble_size != 1:
-            label = experiment + ', ' + label
-        color = experiment_colors[experiment]
+    label = experiment
+    color = experiment_colors[experiment]
 
     return label, color
 
@@ -333,7 +323,7 @@ def main(inargs):
     
     seaborn.set_context(inargs.context)
 
-    fig, ax = plt.subplots(figsize=[14, 7])
+    fig, ax = plt.subplots()   # figsize=[14, 7]
     ax2 = None
     nexperiments = len(inargs.hist_files)
     if inargs.control_files:
@@ -343,13 +333,18 @@ def main(inargs):
     for infiles in inargs.hist_files:
         cube, metadata_dict, ensemble_mean, ylabel, clim_ylabel, experiment, ax2 = plot_files(ax, ax2, infiles, inargs, nexperiments)
     
-    # Titles and labels        
-    title = get_title(inargs.var, inargs.time, experiment, nexperiments)
+    # Titles and labels
+    if inargs.title:
+        title = inargs.title
+    else:
+        title = get_title(inargs.var, inargs.time, experiment, nexperiments)
     plt.title(title)
 
     if inargs.scientific:
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
         ax.yaxis.major.formatter._useMathText = True        
+    if inargs.ylabel:
+        ylabel = inargs.ylabel
     ax.set_ylabel(ylabel)
     ax.set_xlabel('latitude')
 
@@ -440,6 +435,10 @@ author:
                         help="Use scientific notation for the y axis scale [default=False]")
     parser.add_argument("--zeroline", action="store_true", default=False,
                         help="Plot a dashed guideline at y=0 [default=False]")
+    parser.add_argument("--title", type=str, default=None,
+                        help="plot title [default: None]")
+    parser.add_argument("--ylabel", type=str, default=None,
+                        help="Override the default y axis label")
 
     parser.add_argument("--xlim", type=float, nargs=2, metavar=('SOUTHERN_LIMIT', 'NORTHERN LIMIT'), default=(-90, 90),
                         help="x-axis limits [default = entire]")
