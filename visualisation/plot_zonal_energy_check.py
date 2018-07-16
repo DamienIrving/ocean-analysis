@@ -215,7 +215,9 @@ def main(inargs):
     """Run program"""
 
     nexp = len(inargs.experiments)
-    if inargs.sum:
+    if inargs.sum_only:
+        nexp = 1
+    elif inargs.sum:
         nexp = nexp + 1
     fig = plt.figure(figsize=[11 * nexp, 14])
     gs = gridspec.GridSpec(2, nexp)
@@ -271,12 +273,13 @@ def main(inargs):
             total_convergence = anomaly_dict['ohc'] - anomaly_dict['rndt']
             anomaly_dict['hftotal-inferred'] = total_convergence.copy()
             anomaly_dict['hftotal-inferred'].data = numpy.ma.cumsum(-1 * total_convergence.data)
-
-            if nmodels > 1:
-                plot_uptake_storage(gs[plot_index], anomaly_dict['ohc'], anomaly_dict['hfds'], anomaly_dict['rndt'],
-                                    linewidth=0.3, decorate=False, ylim=inargs.ylim_storage)
-                plot_transport(gs[plot_index + nexp], None, anomaly_dict['hfbasin-inferred'], anomaly_dict['hfatmos-inferred'],
-                               anomaly_dict['hftotal-inferred'], linewidth=0.3, decorate=False, ylim=inargs.ylim_transport) 
+            
+            if not inargs.sum_only:
+                if nmodels > 1:
+                    plot_uptake_storage(gs[plot_index], anomaly_dict['ohc'], anomaly_dict['hfds'], anomaly_dict['rndt'],
+                                        linewidth=0.3, decorate=False, ylim=inargs.ylim_storage)
+                    plot_transport(gs[plot_index + nexp], None, anomaly_dict['hfbasin-inferred'], anomaly_dict['hfatmos-inferred'],
+                                   anomaly_dict['hftotal-inferred'], linewidth=0.3, decorate=False, ylim=inargs.ylim_transport) 
 
             for var in var_list:
                 data_dict[var].append(anomaly_dict[var])
@@ -290,13 +293,14 @@ def main(inargs):
         model_label = 'ensemble' if nmodels > 1 else inargs.models[0]
         experiment_label = 'historicalAA' if experiment == 'historicalMisc' else experiment  
 
-        plot_uptake_storage(gs[plot_index], ensemble_dict[experiment]['ohc'], ensemble_dict[experiment]['hfds'],
-                            ensemble_dict[experiment]['rndt'], ylim=inargs.ylim_storage)
-        plt.title(experiment_label)
-        plot_transport(gs[plot_index + nexp], None, ensemble_dict[experiment]['hfbasin-inferred'], ensemble_dict[experiment]['hfatmos-inferred'],
-                       ensemble_dict[experiment]['hftotal-inferred'], ylim=inargs.ylim_transport) #ensemble_dict[experiment]['hfbasin']
+        if not inargs.sum_only:
+            plot_uptake_storage(gs[plot_index], ensemble_dict[experiment]['ohc'], ensemble_dict[experiment]['hfds'],
+                                ensemble_dict[experiment]['rndt'], ylim=inargs.ylim_storage)
+            plt.title(experiment_label)
+            plot_transport(gs[plot_index + nexp], None, ensemble_dict[experiment]['hfbasin-inferred'], ensemble_dict[experiment]['hfatmos-inferred'],
+                           ensemble_dict[experiment]['hftotal-inferred'], ylim=inargs.ylim_transport) #ensemble_dict[experiment]['hfbasin']
 
-        plot_index = plot_index + 1
+            plot_index = plot_index + 1
 
     if inargs.sum:
         exp1, exp2 = inargs.sum
@@ -353,6 +357,9 @@ author:
                         help="switch for turning off plot title [default: False]")
     parser.add_argument("--sum", type=str, nargs=2, default=None,
                         help="add an extra plot with the sum of these two experiments")
+
+    parser.add_argument("--sum_only", action='store_true', default=False,
+                        help="include the sum plot only")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
