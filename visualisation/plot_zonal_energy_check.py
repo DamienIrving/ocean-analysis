@@ -314,8 +314,9 @@ def main(inargs):
         hfatmos_sum = ensemble_dict[exp1]['hfatmos-inferred'] + ensemble_dict[exp2]['hfatmos-inferred']
         hftotal_sum = ensemble_dict[exp1]['hftotal-inferred'] + ensemble_dict[exp2]['hftotal-inferred']
         plot_transport(gs[plot_index + nexp], None, hfbasin_sum, hfatmos_sum, hftotal_sum, ylim=inargs.ylim_transport)
-        
-    fig.suptitle('zonally integrated heat accumulation, ' + time_text, fontsize='large')
+    
+    if not inargs.no_title:
+        fig.suptitle('zonally integrated heat accumulation, ' + time_text, fontsize='large')
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
@@ -348,7 +349,8 @@ author:
                         help="y limits for storage plots (x 10^22)")
     parser.add_argument("--ylim_transport", type=float, nargs=2, default=None,
                         help="y limits for transport plots (x 10^23)")
-
+    parser.add_argument("--no_title", action="store_true", default=False,
+                        help="switch for turning off plot title [default: False]")
     parser.add_argument("--sum", type=str, nargs=2, default=None,
                         help="add an extra plot with the sum of these two experiments")
 
