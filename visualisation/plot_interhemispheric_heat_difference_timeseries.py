@@ -164,7 +164,7 @@ def main(inargs):
     #metadata_dict = {}
     #plt.axvline(x=0, color='0.5', linestyle='--')
     fig, ax = plt.subplots()
-    for experiment in ['historical-rcp85', 'historicalGHG', 'historicalMisc']:
+    for experiment in inargs.experiments:
         ensemble_dict = {}
         upper_time_bound = '2100-12-31' if experiment == 'historical-rcp85' else '2005-12-31'
         time_constraint = gio.get_time_constraint(['1861-01-01', upper_time_bound])
@@ -179,13 +179,20 @@ def main(inargs):
             plot_label = plot_variables[var] if experiment == 'historical-rcp85' else None
             iplt.plot(ensemble_dict[var], label=plot_label, color=colors[var], linestyle=linestyles[plot_experiment])
 
+    if inargs.ylim:
+        ylower, yupper = inargs.ylim
+        plt.ylim(ylower * 1e24, yupper * 1e24)
+  
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
     ax.yaxis.major.formatter._useMathText = True
     ax.set_ylabel('NH minus SH (Joules)')
     plt.legend(loc=3)
     plt.title('interhemispheric difference in accumulated heat')
 
-    plt.savefig(inargs.outfile, bbox_inches='tight')
+    dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
+    print('dpi =', dpi)
+    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
+
     gio.write_metadata(inargs.outfile)
 
 
@@ -205,7 +212,18 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("models", type=str, nargs='*', help="models")
-    parser.add_argument("outfile", type=str, help="output file")                               
+    parser.add_argument("outfile", type=str, help="output file")
+
+    parser.add_argument("--ylim", type=float, nargs=2, default=None,
+                        help="y limits for plots (x 10^24)")
+
+    parser.add_argument("--experiments", type=str, nargs='*',
+                        choices=('historical-rcp85', 'historicalGHG', 'historicalMisc'),
+                        default=('historical-rcp85', 'historicalGHG', 'historicalMisc'),
+                        help="experiments to plot")                               
+
+    parser.add_argument("--dpi", type=float, default=None,
+                        help="Figure resolution in dots per square inch [default=auto]")
 
     args = parser.parse_args()             
     main(args)
