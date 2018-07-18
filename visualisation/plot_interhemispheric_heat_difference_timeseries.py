@@ -38,11 +38,14 @@ except ImportError:
 
 # Define functions
 
-colors = {'ohc': 'blue', 'hfds': 'orange', 'rndt': 'red'}
+var_colors = {'ohc': 'blue', 'hfds': 'orange', 'rndt': 'red'}
+exp_colors = {'historical-rcp85': 'black', 'historicalGHG': 'red', 'historicalAA': 'blue'}
 
 names = {'ohc': 'ocean heat content',
          'hfds': 'Downward Heat Flux at Sea Water Surface',
          'rndt': 'TOA Incoming Net Radiation'}
+
+titles = ['netTOA', 'OHU', 'OHC']
 
 plot_variables = {'ohc': 'OHC',
                   'hfds': 'OHU',
@@ -52,6 +55,7 @@ aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
               'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
 
 linestyles = {'historical-rcp85': 'solid', 'historicalGHG': '--', 'historicalAA': ':'}
+#linestyles = {'rndt': 'solid', 'hfds': '--', 'ohc': ':'}
 
 
 def equalise_time_axes(cube_list):
@@ -158,37 +162,68 @@ def get_file_pair(var, model, experiment):
     return output['nh'], output['sh']
 
 
-def main(inargs):
-    """Run the program."""
-
-    #metadata_dict = {}
-    #plt.axvline(x=0, color='0.5', linestyle='--')
-    fig, ax = plt.subplots()
-    for experiment in inargs.experiments:
-        ensemble_dict = {}
-        upper_time_bound = '2100-12-31' if experiment == 'historical-rcp85' else '2005-12-31'
-        time_constraint = gio.get_time_constraint(['1861-01-01', upper_time_bound])
-        for var in ['ohc', 'hfds', 'rndt']:
-            cube_list = iris.cube.CubeList([])
-            for file_num, model in enumerate(inargs.models):
-                nh_file, sh_file = get_file_pair(var, model, experiment)
-                diff = calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, file_num)
-                cube_list.append(diff)
-            ensemble_dict[var] = ensemble_aggregation(cube_list, 'median')
-            plot_experiment = 'historicalAA' if experiment == 'historicalMisc' else experiment
-            plot_label = plot_variables[var] if experiment == 'historical-rcp85' else None
-            iplt.plot(ensemble_dict[var], label=plot_label, color=colors[var], linestyle=linestyles[plot_experiment])
+def set_plot_features(inargs, ax):
+    """ """
 
     if inargs.ylim:
         ylower, yupper = inargs.ylim
         plt.ylim(ylower * 1e24, yupper * 1e24)
   
+    ax.set_ylabel('NH minus SH (Joules)')
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
     ax.yaxis.major.formatter._useMathText = True
-    ax.set_ylabel('NH minus SH (Joules)')
+        
     plt.legend(loc=3)
-    plt.title('interhemispheric difference in accumulated heat')
 
+
+def main(inargs):
+    """Run the program."""
+
+    #metadata_dict = {}
+    #plt.axvline(x=0, color='0.5', linestyle='--')
+
+    if inargs.plot_type == 'single':
+        fig, ax = plt.subplots()
+    else:
+        fig = plt.figure(figsize=[30, 7])
+        gs = gridspec.GridSpec(1, 3)
+        axes = [plt.subplot(gs[0]), plt.subplot(gs[1]), plt.subplot(gs[2])]
+
+    for experiment in inargs.experiments:
+        plot_experiment = 'historicalAA' if experiment == 'historicalMisc' else experiment
+        ensemble_dict = {}
+        upper_time_bound = '2100-12-31' if experiment == 'historical-rcp85' else '2005-12-31'
+        time_constraint = gio.get_time_constraint(['1861-01-01', upper_time_bound])
+        for index, var in enumerate(['rndt', 'hfds', 'ohc']):
+            cube_list = iris.cube.CubeList([])
+            for file_num, model in enumerate(inargs.models):
+                nh_file, sh_file = get_file_pair(var, model, experiment)
+                diff = calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, file_num)
+                cube_list.append(diff)
+                if inargs.plot_type == 'panels' and inargs.individual:
+                    plt.sca(axes[index])
+                    iplt.plot(diff, color=exp_colors[plot_experiment], linewidth=0.3)
+
+            ensemble_dict[var] = ensemble_aggregation(cube_list, 'median')
+            
+            if inargs.plot_type == 'single':
+                plot_label = plot_variables[var] if experiment == 'historical-rcp85' else None
+                iplt.plot(ensemble_dict[var], label=plot_label, color=var_colors[var], linestyle=linestyles[plot_experiment])
+            else:
+                plt.sca(axes[index])
+                iplt.plot(ensemble_dict[var], label=plot_experiment, color=exp_colors[plot_experiment])
+                    
+    if inargs.plot_type == 'single':
+        plt.title('interhemispheric difference in accumulated heat')
+        set_plot_features(inargs, ax)
+    else:
+        plt.suptitle('interhemispheric difference in accumulated heat')
+        for index in range(3):
+            plt.sca(axes[index])
+            plt.title(titles[index])
+            set_plot_features(inargs, axes[index])
+            
+            
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
@@ -212,6 +247,7 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("models", type=str, nargs='*', help="models")
+    parser.add_argument("plot_type", type=str, choices=('single', 'panels'), help="plot type")
     parser.add_argument("outfile", type=str, help="output file")
 
     parser.add_argument("--ylim", type=float, nargs=2, default=None,
@@ -224,6 +260,9 @@ author:
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
+
+    parser.add_argument("--individual", action="store_true", default=False,
+                        help="Show curves for individual models [default=False]")
 
     args = parser.parse_args()             
     main(args)
