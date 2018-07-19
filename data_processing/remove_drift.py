@@ -296,8 +296,11 @@ def main(inargs):
         equalise_attributes(new_cubelist)
         new_cubelist = new_cubelist.concatenate_cube()
 
-        metadata_dict = {inargs.data_files[0]: data_history, 
-                         inargs.coefficient_file: coefficient_a_cube.attributes['history']}
+        try: 
+            metadata_dict = {inargs.data_files[0]: data_history, 
+                             inargs.coefficient_file: coefficient_a_cube.attributes['history']}
+        except KeyError:
+            metadata_dict = {inargs.data_files[0]: data_history}
         new_cubelist.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
 
         #assert new_cubelist[0].data.dtype == numpy.float32

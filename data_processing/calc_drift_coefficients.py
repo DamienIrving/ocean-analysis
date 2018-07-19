@@ -45,7 +45,10 @@ def save_history(cube, field, filename):
 
     """ 
 
-    history.append(cube.attributes['history'])
+    try:
+        history.append(cube.attributes['history'])
+    except KeyError:
+        pass
 
 
 def polyfit(data, time_axis, masked_array):
@@ -106,7 +109,10 @@ def set_global_atts(inargs, cube):
 
     atts = copy.copy(cube.attributes)
     atts['polynomial'] = 'a + bx + cx^2 + dx^3'
-    atts['history'] = gio.write_metadata(file_info={inargs.infiles[0]: history[0]}) 
+    try:
+        atts['history'] = gio.write_metadata(file_info={inargs.infiles[0]: history[0]}) 
+    except IndexError:
+        pass
 
     return atts
 

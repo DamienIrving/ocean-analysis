@@ -232,8 +232,11 @@ def read_data(inargs, infiles, time_bounds, ref_cube=None, anomaly=False, branch
     
     ylabel = get_ylabel(cube, inargs)
     experiment = 'historicalAA' if experiment == "historicalMisc" else experiment
-    metadata_dict = {infile: cube.attributes['history']}
-    
+    try:
+        metadata_dict = {infile: cube.attributes['history']}
+    except KeyError:
+        metadata_dict = None    
+
     return data_dict, experiment, ylabel, metadata_dict
 
 
