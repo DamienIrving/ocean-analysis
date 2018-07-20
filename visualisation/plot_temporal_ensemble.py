@@ -156,17 +156,9 @@ def plot_ensagg(data_dict, experiment, nexperiments, ensagg='mean',
 def get_ensemble_label_color(experiment, nexperiments, agg_method, ensemble_size, single_run):
     """Get the line label and color."""
 
-    if ensemble_size == 1:
-        label = experiment
-    elif single_run:
-        label = 'ensemble %s (r1)'  %(agg_method) 
-    else:
-        label = 'ensemble %s (all runs)'  %(agg_method)
+    label = experiment
     color = 'black' 
-
     if nexperiments > 1:
-        if ensemble_size != 1:
-            label = experiment + ', ' + label
         color = experiment_colors[experiment]
 
     return label, color
