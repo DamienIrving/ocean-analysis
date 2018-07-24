@@ -204,7 +204,7 @@ def main(inargs):
                     plt.sca(axes[index])
                     iplt.plot(diff, color=exp_colors[plot_experiment], linewidth=0.3)
 
-            ensemble_dict[var] = ensemble_aggregation(cube_list, 'median')
+            ensemble_dict[var] = ensemble_aggregation(cube_list, inargs.ensagg)
             
             if inargs.plot_type == 'single':
                 plot_label = plot_variables[var] if experiment == 'historical-rcp85' else None
@@ -257,6 +257,9 @@ author:
                         choices=('historical-rcp85', 'historicalGHG', 'historicalMisc'),
                         default=('historical-rcp85', 'historicalGHG', 'historicalMisc'),
                         help="experiments to plot")                               
+
+    parser.add_argument("--ensagg", type=str, default='median', choices=('mean', 'median'),
+                        help="Ensemble mean or median [default=median]")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
