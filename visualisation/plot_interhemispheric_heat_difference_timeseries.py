@@ -85,10 +85,12 @@ def ensemble_aggregation(cube_list, operator):
         equalise_time_axes(cube_list)
         ensemble_cube = cube_list.merge_cube()
         ensemble_agg = ensemble_cube.collapsed('ensemble_member', aggregators[operator])
+        ensemble_spread = ensemble_cube.collapsed('ensemble_member', iris.analysis.PERCENTILE, percent=[25, 75])
     else:
         ensemble_agg = cube_list[0]
+        ensemble_spread = None
 
-    return ensemble_agg
+    return ensemble_agg, ensemble_spread
 
 
 def calc_anomaly(cube):
@@ -191,7 +193,8 @@ def main(inargs):
 
     for experiment in inargs.experiments:
         plot_experiment = 'historicalAA' if experiment == 'historicalMisc' else experiment
-        ensemble_dict = {}
+        ensemble_agg_dict = {}
+        ensemble_spread_dict = {}
         upper_time_bound = '2100-12-31' if experiment == 'historical-rcp85' else '2005-12-31'
         time_constraint = gio.get_time_constraint(['1861-01-01', upper_time_bound])
         for index, var in enumerate(['rndt', 'hfds', 'ohc']):
@@ -204,14 +207,19 @@ def main(inargs):
                     plt.sca(axes[index])
                     iplt.plot(diff, color=exp_colors[plot_experiment], linewidth=0.3)
 
-            ensemble_dict[var] = ensemble_aggregation(cube_list, inargs.ensagg)
+            ensemble_agg_dict[var], ensemble_spread_dict[var] = ensemble_aggregation(cube_list, inargs.ensagg)
             
             if inargs.plot_type == 'single':
                 plot_label = plot_variables[var] if experiment == 'historical-rcp85' else None
-                iplt.plot(ensemble_dict[var], label=plot_label, color=var_colors[var], linestyle=linestyles[plot_experiment])
+                iplt.plot(ensemble_agg_dict[var], label=plot_label, color=var_colors[var], linestyle=linestyles[plot_experiment])
             else:
                 plt.sca(axes[index])
-                iplt.plot(ensemble_dict[var], label=plot_experiment, color=exp_colors[plot_experiment])
+                iplt.plot(ensemble_agg_dict[var], label=plot_experiment, color=exp_colors[plot_experiment])
+                if ensemble_spread_dict[var]:
+                    time_values = ensemble_spread_dict[var][0, ::].coord('time').points - 54567.5    # ensemble_spread_dict[var][0, ::].coord('time').points[-7]
+                    upper_bound = ensemble_spread_dict[var][0, ::].data
+                    lower_bound = ensemble_spread_dict[var][-1, ::].data
+                    iplt.plt.fill_between(time_values, upper_bound, lower_bound, facecolor=exp_colors[plot_experiment], alpha=0.15)
                     
     if inargs.plot_type == 'single':
         plt.title('interhemispheric difference in accumulated heat')
