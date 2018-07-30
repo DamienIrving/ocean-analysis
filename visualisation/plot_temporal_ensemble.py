@@ -325,7 +325,10 @@ def main(inargs):
     ymin, ymax = plt.ylim()
     print('ymin:', ymin)
     print('ymax:', ymax)
-    plt.savefig(inargs.outfile, bbox_inches='tight')
+
+    dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
+    print('dpi =', dpi)
+    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
 
     fname, extension = inargs.outfile.split('.')
     new_log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
@@ -394,6 +397,8 @@ author:
 
     parser.add_argument("--anomaly", action="store_true", default=False,
                         help="convert data to an anomaly by subracting mean of first 20 data points [default=False]")
+    parser.add_argument("--dpi", type=float, default=None,
+                        help="Figure resolution in dots per square inch [default=auto]")
 
     args = parser.parse_args()             
     main(args)
