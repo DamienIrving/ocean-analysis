@@ -18,6 +18,13 @@ from matplotlib import gridspec
 import seaborn
 seaborn.set_context('talk')
 
+import matplotlib as mpl
+mpl.rcParams['axes.labelsize'] = 'large'
+mpl.rcParams['axes.titlesize'] = 'x-large'
+mpl.rcParams['xtick.labelsize'] = 'medium'
+mpl.rcParams['ytick.labelsize'] = 'medium'
+mpl.rcParams['legend.fontsize'] = 'large'
+
 # Import my modules
 
 cwd = os.getcwd()
@@ -144,13 +151,13 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=N
     plt.sca(ax)
 
     if decorate:
-        labels = ['OHC', 'OHU', 'netTOA']
+        labels = ['netTOA', 'OHU', 'OHC']
     else:
         labels = [None, None, None]
 
-    iplt.plot(ohc_anomaly, color='blue', label=labels[0], linewidth=linewidth)
+    iplt.plot(rndt_anomaly, color='red', label=labels[0], linewidth=linewidth)
     iplt.plot(hfds_anomaly, color='orange', label=labels[1], linewidth=linewidth)
-    iplt.plot(rndt_anomaly, color='red', label=labels[2], linewidth=linewidth)
+    iplt.plot(ohc_anomaly, color='blue', label=labels[2], linewidth=linewidth)    
 
     if ylim:
         ylower, yupper = ylim
@@ -174,15 +181,15 @@ def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, hftotal
     plt.sca(ax)
 
     if decorate:
-        labels = ['inferred northward OHT', 'inferred northward AHT', 'inferred total transport']
+        labels = ['northward AHT', 'northward OHT', 'total transport']
     else:
         labels = [None, None, None]
 
     #if hfbasin_data:
     #    iplt.plot(hfbasin_data, color='purple', label='northward OHT')
 
-    iplt.plot(hfbasin_inferred, color='purple', linestyle='--', label=labels[0], linewidth=linewidth)
-    iplt.plot(hfatmos_inferred, color='green', linestyle='--', label=labels[1], linewidth=linewidth)
+    iplt.plot(hfatmos_inferred, color='green', linestyle='--', label=labels[0], linewidth=linewidth)
+    iplt.plot(hfbasin_inferred, color='purple', linestyle='--', label=labels[1], linewidth=linewidth)    
     iplt.plot(hftotal_inferred, color='black', linestyle='--', label=labels[2], linewidth=linewidth)
 
     if ylim:
@@ -230,7 +237,7 @@ def main(inargs):
     time_constraint = gio.get_time_constraint(inargs.time)
     time_text = get_time_text(inargs.time)
     ensemble_dict = {}
-    for experiment in inargs.experiments:
+    for experiment in ['historicalGHG', 'historicalMisc', 'historical']:
         data_dict = {}
         for var in var_list:
             data_dict[var] = iris.cube.CubeList([])
@@ -274,7 +281,7 @@ def main(inargs):
             anomaly_dict['hftotal-inferred'] = total_convergence.copy()
             anomaly_dict['hftotal-inferred'].data = numpy.ma.cumsum(-1 * total_convergence.data)
             
-            if not inargs.sum_only:
+            if experiment in inargs.experiments:
                 if nmodels > 1:
                     plot_uptake_storage(gs[plot_index], anomaly_dict['ohc'], anomaly_dict['hfds'], anomaly_dict['rndt'],
                                         linewidth=0.3, decorate=False, ylim=inargs.ylim_storage)
@@ -293,7 +300,7 @@ def main(inargs):
         model_label = 'ensemble' if nmodels > 1 else inargs.models[0]
         experiment_label = 'historicalAA' if experiment == 'historicalMisc' else experiment  
 
-        if not inargs.sum_only:
+        if experiment in inargs.experiments:
             plot_uptake_storage(gs[plot_index], ensemble_dict[experiment]['ohc'], ensemble_dict[experiment]['hfds'],
                                 ensemble_dict[experiment]['rndt'], ylim=inargs.ylim_storage)
             plt.title(experiment_label)
