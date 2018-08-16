@@ -19,6 +19,13 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn
 
+import matplotlib as mpl
+mpl.rcParams['axes.labelsize'] = 'large'
+mpl.rcParams['axes.titlesize'] = 'x-large'
+mpl.rcParams['xtick.labelsize'] = 'medium'
+mpl.rcParams['ytick.labelsize'] = 'medium'
+mpl.rcParams['legend.fontsize'] = 'large'
+
 # Import my modules
 
 cwd = os.getcwd()
@@ -41,7 +48,7 @@ except ImportError:
 
 # Define functions
 
-experiment_colors = {'historical': 'purple', 'historicalGHG': 'red',
+experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
                      'historicalAA': 'blue', 'GHG + AA': 'green',
                      'piControl': '0.5'}
 
@@ -336,9 +343,10 @@ def main(inargs):
     # Titles and labels
     if inargs.title:
         title = inargs.title
-    else:
-        title = get_title(inargs.var, inargs.time, experiment, nexperiments)
-    plt.title(title)
+        plt.title(title)
+    #else:
+        #title = get_title(inargs.var, inargs.time, experiment, nexperiments)
+    
 
     if inargs.scientific:
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
