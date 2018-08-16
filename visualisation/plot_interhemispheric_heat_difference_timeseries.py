@@ -15,8 +15,17 @@ from iris.experimental.equalise_cubes import equalise_attributes
 import iris.plot as iplt
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+
 import seaborn
 seaborn.set_context('talk')
+
+import matplotlib as mpl
+mpl.rcParams['axes.labelsize'] = 'large'
+mpl.rcParams['axes.titlesize'] = 'x-large'
+mpl.rcParams['xtick.labelsize'] = 'medium'
+mpl.rcParams['ytick.labelsize'] = 'medium'
+mpl.rcParams['legend.fontsize'] = 'large'
+
 
 # Import my modules
 
@@ -222,10 +231,12 @@ def main(inargs):
                     iplt.plt.fill_between(time_values, upper_bound, lower_bound, facecolor=exp_colors[plot_experiment], alpha=0.15)
                     
     if inargs.plot_type == 'single':
-        plt.title('interhemispheric difference in accumulated heat')
+        if inargs.title:
+            plt.title('interhemispheric difference in accumulated heat')
         set_plot_features(inargs, ax)
     else:
-        plt.suptitle('interhemispheric difference in accumulated heat')
+        if inargs.title:
+            plt.suptitle('interhemispheric difference in accumulated heat')
         for index in range(3):
             plt.sca(axes[index])
             plt.title(titles[index])
@@ -272,6 +283,8 @@ author:
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
 
+    parser.add_argument("--title", action="store_true", default=False,
+                        help="Include a plot title [default=False]")
     parser.add_argument("--individual", action="store_true", default=False,
                         help="Show curves for individual models [default=False]")
 
