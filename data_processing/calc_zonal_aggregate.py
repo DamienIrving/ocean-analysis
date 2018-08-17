@@ -14,6 +14,7 @@ import iris
 from iris.experimental.equalise_cubes import equalise_attributes
 import dask
 dask.set_options(get=dask.get)
+import cmdline_provenance as cmdprov
 
 # Import my modules
 
@@ -60,6 +61,23 @@ def cumsum(cube):
     return cube
 
 
+def select_basin(cube, basin_cube, basin_name):
+    """Select an ocean basin."""
+    
+    basins = {'atlantic': 2, 
+              'pacific': 3,
+              'indian': 5}
+
+    assert basin_name in basins.keys()
+
+    assert cube.ndim == 4
+    basin_array = uconv.broadcast_array(basin_cube.data, [1, 3], cube.shape) 
+
+    cube.data.mask = numpy.where((cube.data.mask == False) & (basin_array == basins[basin_name]), False, True)
+
+    return cube
+
+
 def multiply_by_area(cube, area_cube):
     """Multiply by cell area."""
 
@@ -77,28 +95,36 @@ def curvilinear_agg(cube, ref_cube, agg_method):
     """Zonal aggregation for curvilinear data."""
 
     coord_names = [coord.name() for coord in cube.dim_coords]
+
     assert coord_names[0] == 'time'
-    assert cube.ndim == 3
+    target_shape = [cube.shape[0]]
+    target_coords = [(cube.coord('time'), 0)]
+    target_lat_index = 1
+
+    if cube.ndim == 4:
+        assert coord_names[1] == 'depth'
+        target_shape.append(cube.shape[1])
+        target_coords.append((cube.coord('depth'), 1))
+        target_lat_index = 2
 
     new_lat_bounds = ref_cube.coord('latitude').bounds
-    ntime = cube.shape[0]
     nlat = len(new_lat_bounds)
-    new_data = numpy.ma.zeros((ntime, nlat))
+    target_shape.append(nlat)
+    new_data = numpy.ma.zeros(target_shape)
 
     for lat_index in range(0, nlat):
         lat_cube = grids.extract_latregion_curvilinear(cube, new_lat_bounds[lat_index])
-        lat_agg = lat_cube.collapsed(coord_names[1:], agg_method)
-        new_data[:, lat_index] = lat_agg.data
+        lat_agg = lat_cube.collapsed(coord_names[-2:], agg_method)
+        new_data[..., lat_index] = lat_agg.data
 
-    time_coord = cube.coord('time')
-    lat_coord = ref_cube.coord('latitude')
+    target_coords.append((ref_cube.coord('latitude'), target_lat_index))
     new_cube = iris.cube.Cube(new_data,
                               standard_name=cube.standard_name,
                               long_name=cube.long_name,
                               var_name=cube.var_name,
                               units=cube.units,
                               attributes=cube.attributes,
-                              dim_coords_and_dims=[(time_coord, 0), (lat_coord, 1)],)
+                              dim_coords_and_dims=target_coords,)
 
     return new_cube
 
@@ -111,9 +137,16 @@ def main(inargs):
     iris.util.unify_time_units(cube)
     cube = cube.concatenate_cube()
     cube = gio.check_time_units(cube)
+    metadata_dict = {inargs.infiles[0]: history[0]}
 
     if inargs.annual:
-        cube = timeseries.convert_to_annual(cube, full_months=True)
+        cube = timeseries.convert_to_annual(cube, full_months=True, chunk=True)
+
+    if inargs.basin:
+        basin_file, basin_name = inargs.basin
+        basin_cube = iris.load_cube(basin_file, 'region')
+        metadata_dict[basin_file] = basin_cube.attributes['history']
+        cube = select_basin(cube, basin_cube, basin_name)        
 
     if inargs.area:
         area_cube = iris.load_cube(inargs.area, 'cell_area')
@@ -144,7 +177,7 @@ def main(inargs):
         zonal_aggregate = uconv.convert_to_joules(zonal_aggregate)
         zonal_aggregate = cumsum(zonal_aggregate)
 
-    zonal_aggregate.attributes['history'] = gio.write_metadata(file_info={inargs.infiles[0]: history[0]}) 
+    zonal_aggregate.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     iris.save(zonal_aggregate, inargs.outfile)
 
 
@@ -168,14 +201,16 @@ author:
     parser.add_argument("aggregation", type=str, choices=('mean', 'sum'), help="Method for zonal aggregation")
     parser.add_argument("outfile", type=str, help="Output file")
 
-    parser.add_argument("--ref_file", type=str, nargs=2, default=None,
+    parser.add_argument("--ref_file", type=str, nargs=2, metavar=('FILE', 'VARIABLE'), default=None,
                         help="Reference grid for output (required for curvilinear data) - give file name and variable name")
 
     parser.add_argument("--realm", type=str, choices=('land', 'ocean'), default=None,
                         help="perform the aggregation over just the ocean or land")
     parser.add_argument("--sftlf_file", type=str, default=None,
                         help="Land fraction file (required if you select a realm")
-
+    parser.add_argument("--basin", type=str, nargs=2, metavar=('BASIN_FILE', 'BASIN_NAME'), default=None,
+                        help="indian, pacific or atlantic [default=globe]")
+    
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Output annual mean [default=False]")
     parser.add_argument("--area", type=str, default=None, 
