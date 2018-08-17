@@ -1,7 +1,7 @@
 """
-Filename:     calc_volume.py
+Filename:     calc_volcello.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Calculate the volume
+Description:  Calculate the CMIP5 volcello variable
 
 """
 
@@ -89,7 +89,7 @@ author:
 
 """
 
-    description='Calculate the volume'
+    description='Calculate the CMIP5 volcello variable'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
