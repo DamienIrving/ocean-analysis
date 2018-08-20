@@ -91,6 +91,27 @@ def multiply_by_area(cube, area_cube):
     return cube
 
 
+def lat_aggregate(cube, coord_names, lat_bounds, agg_method):
+    """Calculate the latitudinal aggregate for a given latitude band."""
+
+    lat_cube = grids.extract_latregion_curvilinear(cube,lat_bounds)
+    lat_agg = lat_cube.collapsed(coord_names[-2:], agg_method)
+    lat_agg.remove_coord('latitude')
+    lat_agg.remove_coord('longitude')
+    
+    for coord_name in coord_names[-2:]:
+        try:
+            lat_agg.remove_coord(coord_name)
+        except iris.exceptions.CoordinateNotFoundError:
+            pass
+
+    if 'depth' in coord_names:
+        lat_agg = iris.util.new_axis(lat_agg, 'depth')
+        lat_agg.transpose()
+
+    return lat_agg
+
+
 def curvilinear_agg(cube, ref_cube, agg_method):
     """Zonal aggregation for curvilinear data."""
 
@@ -113,8 +134,16 @@ def curvilinear_agg(cube, ref_cube, agg_method):
     new_data = numpy.ma.zeros(target_shape)
 
     for lat_index in range(0, nlat):
-        lat_cube = grids.extract_latregion_curvilinear(cube, new_lat_bounds[lat_index])
-        lat_agg = lat_cube.collapsed(coord_names[-2:], agg_method)
+        if cube.ndim == 4:
+            chunk_list = iris.cube.CubeList([])
+            for sub_cube in cube.slices_over('depth'):
+                lat_agg = lat_aggregate(sub_cube, coord_names, new_lat_bounds[lat_index], agg_method)
+                chunk_list.append(lat_agg)
+            lat_agg = chunk_list.concatenate_cube()
+        else:
+            lat_agg = lat_aggregate(cube, coord_names, new_lat_bounds[lat_index], agg_method)
+
+        #uconv.chunked_collapse_by_time(lat_cube, coord_names[-2:], agg_method)
         new_data[..., lat_index] = lat_agg.data
 
     target_coords.append((ref_cube.coord('latitude'), target_lat_index))
