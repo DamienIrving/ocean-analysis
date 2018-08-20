@@ -7,7 +7,7 @@ Description:  calculate the zonal aggregate
 
 # Import general Python modules
 
-import sys, os, pdb
+import sys, os, pdb, re
 import argparse
 import numpy
 import iris
@@ -105,9 +105,9 @@ def lat_aggregate(cube, coord_names, lat_bounds, agg_method):
         except iris.exceptions.CoordinateNotFoundError:
             pass
 
-    if 'depth' in coord_names:
-        lat_agg = iris.util.new_axis(lat_agg, 'depth')
-        lat_agg.transpose()
+#    if 'depth' in coord_names:
+#        lat_agg = iris.util.new_axis(lat_agg, 'depth')
+#        lat_agg.transpose()
 
     return lat_agg
 
@@ -134,16 +134,15 @@ def curvilinear_agg(cube, ref_cube, agg_method):
     new_data = numpy.ma.zeros(target_shape)
 
     for lat_index in range(0, nlat):
-        if cube.ndim == 4:
-            chunk_list = iris.cube.CubeList([])
-            for sub_cube in cube.slices_over('depth'):
-                lat_agg = lat_aggregate(sub_cube, coord_names, new_lat_bounds[lat_index], agg_method)
-                chunk_list.append(lat_agg)
-            lat_agg = chunk_list.concatenate_cube()
-        else:
-            lat_agg = lat_aggregate(cube, coord_names, new_lat_bounds[lat_index], agg_method)
+        #if cube.ndim == 4:
+        #    chunk_list = iris.cube.CubeList([])
+        #    for sub_cube in cube.slices_over('depth'):
+        #        lat_agg = lat_aggregate(sub_cube, coord_names, new_lat_bounds[lat_index], agg_method)
+        #        chunk_list.append(lat_agg)
+        #    lat_agg = chunk_list.concatenate_cube()
+        #else:
+        lat_agg = lat_aggregate(cube, coord_names, new_lat_bounds[lat_index], agg_method)
 
-        #uconv.chunked_collapse_by_time(lat_cube, coord_names[-2:], agg_method)
         new_data[..., lat_index] = lat_agg.data
 
     target_coords.append((ref_cube.coord('latitude'), target_lat_index))
@@ -161,53 +160,82 @@ def curvilinear_agg(cube, ref_cube, agg_method):
 def main(inargs):
     """Run the program."""
 
-    cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var), callback=save_history)
-    equalise_attributes(cube)
-    iris.util.unify_time_units(cube)
-    cube = cube.concatenate_cube()
-    cube = gio.check_time_units(cube)
-    metadata_dict = {inargs.infiles[0]: history[0]}
-
-    if inargs.annual:
-        cube = timeseries.convert_to_annual(cube, full_months=True, chunk=True)
+    metadata_dict = {}
 
     if inargs.basin:
         basin_file, basin_name = inargs.basin
         basin_cube = iris.load_cube(basin_file, 'region')
         metadata_dict[basin_file] = basin_cube.attributes['history']
-        cube = select_basin(cube, basin_cube, basin_name)        
+    else:
+        basin_cube = None
 
     if inargs.area:
         area_cube = iris.load_cube(inargs.area, 'cell_area')
-        cube = multiply_by_area(cube, area_cube) 
+    else:
+        area_cube = None
 
-    if inargs.sftlf_file and inargs.realm:
+    if inargs.sftlf_file or inargs.realm:
+        assert inargs.sftlf_file and inargs.realm, "Must give --realm and --sftlf_file"
         sftlf_cube = iris.load_cube(inargs.sftlf_file, 'land_area_fraction')
-        cube = uconv.apply_land_ocean_mask(cube, sftlf_cube, inargs.realm)
 
     if inargs.ref_file:
         ref_cube = iris.load_cube(inargs.ref_file[0], inargs.ref_file[1])
     else:
         ref_cube = None
-        
-    aux_coord_names = [coord.name() for coord in cube.aux_coords]
-    if 'latitude' in aux_coord_names:
-        # curvilinear grid
-        assert ref_cube
-        zonal_aggregate = curvilinear_agg(cube, ref_cube, aggregation_functions[inargs.aggregation])        
-    #elif ref_cube:
-    #    zonal_aggregate = rectilinear_agg(cube, ref_cube, aggregation_functions[inargs.aggregation]) 
-    else:
-        # rectilinear grid
-        zonal_aggregate = cube.collapsed('longitude', aggregation_functions[inargs.aggregation])
-        zonal_aggregate.remove_coord('longitude')
 
-    if inargs.cumsum:
-        zonal_aggregate = uconv.convert_to_joules(zonal_aggregate)
-        zonal_aggregate = cumsum(zonal_aggregate)
+    output_cubelist = iris.cube.CubeList([])
+    for fnum, filename in enumerate(inargs.infiles):
+        cube = iris.load_cube(filename, gio.check_iris_var(inargs.var))
 
-    zonal_aggregate.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
-    iris.save(zonal_aggregate, inargs.outfile)
+        if inargs.annual:
+            cube = timeseries.convert_to_annual(cube, full_months=True, chunk=False)
+    
+        if basin_cube:
+            cube = select_basin(cube, basin_cube, basin_name)        
+
+        if area_cube:
+            cube = multiply_by_area(cube, area_cube) 
+
+        if inargs.realm:
+            cube = uconv.apply_land_ocean_mask(cube, sftlf_cube, inargs.realm)
+
+        aux_coord_names = [coord.name() for coord in cube.aux_coords]
+        if 'latitude' in aux_coord_names:
+            # curvilinear grid
+            assert ref_cube
+            zonal_aggregate = curvilinear_agg(cube, ref_cube, aggregation_functions[inargs.aggregation])        
+        else:
+            # rectilinear grid
+            zonal_aggregate = cube.collapsed('longitude', aggregation_functions[inargs.aggregation])
+            zonal_aggregate.remove_coord('longitude')
+
+        if inargs.cumsum:
+            zonal_aggregate = uconv.convert_to_joules(zonal_aggregate)
+            zonal_aggregate = cumsum(zonal_aggregate)
+
+        if inargs.outfile[-3:] == '.nc':
+            output_cubelist.append(zonal_aggregate)
+        elif inargs.outfile[-1] == '/':        
+            infile = filename.split('/')[-1]
+            infile = re.sub(cube.var_name + '_', cube.var_name + '-' + 'zonal-' + inargs.aggregation + '_', infile)
+            if inargs.annual:
+                infile = re.sub('Omon', 'Oyr', infile)
+                infile = re.sub('Amon', 'Ayr', infile)
+       
+            outfile = inargs.outfile + infile
+            metadata_dict[filename] = cube.attributes['history'] 
+            zonal_aggregate.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+
+            iris.save(zonal_aggregate, outfile)
+            print('output:', outfile)
+            del zonal_aggregate
+
+        if inargs.outfile[-3:] == '.nc':
+            equalise_attributes(output_cubelist)
+            output_cubelist = output_cubelist.concatenate_cube()
+            metadata_dict[filename] = cube.attributes['history']
+            output_cubelist.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+            iris.save(output_cubelist, inargs.outfile)
 
 
 if __name__ == '__main__':
