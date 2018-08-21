@@ -105,10 +105,6 @@ def lat_aggregate(cube, coord_names, lat_bounds, agg_method):
         except iris.exceptions.CoordinateNotFoundError:
             pass
 
-#    if 'depth' in coord_names:
-#        lat_agg = iris.util.new_axis(lat_agg, 'depth')
-#        lat_agg.transpose()
-
     return lat_agg
 
 
@@ -134,15 +130,7 @@ def curvilinear_agg(cube, ref_cube, agg_method):
     new_data = numpy.ma.zeros(target_shape)
 
     for lat_index in range(0, nlat):
-        #if cube.ndim == 4:
-        #    chunk_list = iris.cube.CubeList([])
-        #    for sub_cube in cube.slices_over('depth'):
-        #        lat_agg = lat_aggregate(sub_cube, coord_names, new_lat_bounds[lat_index], agg_method)
-        #        chunk_list.append(lat_agg)
-        #    lat_agg = chunk_list.concatenate_cube()
-        #else:
         lat_agg = lat_aggregate(cube, coord_names, new_lat_bounds[lat_index], agg_method)
-
         new_data[..., lat_index] = lat_agg.data
 
     target_coords.append((ref_cube.coord('latitude'), target_lat_index))
