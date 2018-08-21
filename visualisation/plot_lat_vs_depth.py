@@ -140,6 +140,7 @@ author:
 
     parser.add_argument("contourf_file", type=str, help="Filled contour data file") 
     parser.add_argument("var", type=str, help="Variable")
+    parser.add_argument("outfile", type=str, help="Output file name")
 
     parser.add_argument("--contour_file", type=str, default=None,
                         help="unfilled contour data file")
