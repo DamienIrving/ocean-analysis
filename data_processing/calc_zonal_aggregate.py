@@ -201,6 +201,8 @@ def main(inargs):
             zonal_aggregate = uconv.convert_to_joules(zonal_aggregate)
             zonal_aggregate = cumsum(zonal_aggregate)
 
+        zonal_aggregate.data = zonal_aggregate.data.astype(numpy.float32)
+
         if inargs.outfile[-3:] == '.nc':
             output_cubelist.append(zonal_aggregate)
         elif inargs.outfile[-1] == '/':        
@@ -214,7 +216,7 @@ def main(inargs):
             metadata_dict[filename] = cube.attributes['history'] 
             zonal_aggregate.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
 
-            iris.save(zonal_aggregate, outfile)
+            iris.save(zonal_aggregate, outfile, netcdf_format='NETCDF3_CLASSIC')
             print('output:', outfile)
             del zonal_aggregate
 
@@ -223,7 +225,7 @@ def main(inargs):
             output_cubelist = output_cubelist.concatenate_cube()
             metadata_dict[filename] = cube.attributes['history']
             output_cubelist.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
-            iris.save(output_cubelist, inargs.outfile)
+            iris.save(output_cubelist, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
 
 
 if __name__ == '__main__':
