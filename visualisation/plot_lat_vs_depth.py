@@ -47,10 +47,37 @@ for directory in cwd.split('/')[1:]:
 
 # Define functions
 
-def create_plot(contourf_cube, contour_cube):
+def set_units(cube, scale_factor=1):
+    """Set the units.
+    Args:
+      cube (iris.cube.Cube): Data cube
+      scale_factor (int): Scale the data
+        e.g. a scale factor of 3 will mean the data are 
+        mutliplied by 10^3 (and units will be 10^-3)
+    """
+
+    trend_data = cube.data * 10**scale_factor
+
+    unit_scale = ''
+    if scale_factor != 0:
+        if scale_factor > 0.0:
+            unit_scale = '10^{-%i}'  %(scale_factor)
+        else:
+            unit_scale = '10^{%i}'  %(abs(scale_factor))
+
+    units = str(cube.units)
+    units = units.replace(" ", " \enspace ")
+    units = units.replace("-1", "^{-1}")
+    units = '$%s \enspace %s$'  %(unit_scale, units)
+
+    return trend_data, units
+
+
+def create_plot(contourf_cube, contour_cube, scale_factor):
     """Create the plot."""
     
     fig = plt.figure()   #figsize=[10, 8])
+    cbar_ax = fig.add_axes([0.93, 0.2, 0.02, 0.65])
     gs = gridspec.GridSpec(1, 1)
 
     axMain = plt.subplot(gs[0])
@@ -60,9 +87,10 @@ def create_plot(contourf_cube, contour_cube):
     #cmocean.cm.balance
 
     lats = contourf_cube.coord('latitude').points
-    levs = contourf_cube.coord('depth').points            
-    contourf_data = contourf_cube.data
-    contourf_ticks = [-0.005, -0.004, -0.003, -0.002, -0.001, 0, 0.001, 0.002, 0.003, 0.004, 0.005]
+    levs = contourf_cube.coord('depth').points 
+    
+    contourf_data, units = set_units(contourf_cube, scale_factor=scale_factor)           
+    contourf_ticks = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
 
     cf = axMain.contourf(lats, levs, contourf_data,
                          cmap=cmap, extend='both', levels=contourf_ticks)
@@ -79,8 +107,9 @@ def create_plot(contourf_cube, contour_cube):
     axMain.invert_yaxis()
     axMain.set_xlim((-70, 70))
     axMain.xaxis.set_ticks_position('bottom')
-    axMain.set_xticks([-60, -40, -20, 0, 20, 40, 60])
-    plt.ylabel('Depth (m)', fontsize='small')
+    axMain.set_xticks([-80, -60, -40, -20, 0, 20, 40, 60, 80])
+    plt.ylabel('Depth (m)')
+    plt.xlabel('Latitude')
     axMain.get_yaxis().set_label_coords(-0.11, 1.1)
 
     # Shallow section
@@ -94,8 +123,12 @@ def create_plot(contourf_cube, contour_cube):
         plt.clabel(cplot_shallow, contour_levels[0::2], fmt='%2.1f', colors='0.3', fontsize=8)
 
     axShallow.set_ylim((0.0, 500.0))
+    axShallow.set_xlim((-70, 70))
     axShallow.invert_yaxis()
     plt.setp(axShallow.get_xticklabels(), visible=False)
+
+    cbar = plt.colorbar(cf, cbar_ax)
+    cbar.set_label(units)
 
 
 def main(inargs):
@@ -111,7 +144,7 @@ def main(inargs):
     else:
         contour_cube = None
     
-    create_plot(contourf_cube, contour_cube)
+    create_plot(contourf_cube, contour_cube, inargs.scale_factor)
 
     # Save output
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
@@ -119,7 +152,7 @@ def main(inargs):
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
     
     log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
-    log_file = re.sub('.nc', '.met', inargs.outfile)
+    log_file = re.sub('.png', '.met', inargs.outfile)
     cmdprov.write_log(log_file, log_text)
 
 
@@ -139,11 +172,14 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("contourf_file", type=str, help="Filled contour data file") 
-    parser.add_argument("var", type=str, help="Variable")
+    parser.add_argument("variable", type=str, help="Variable")
     parser.add_argument("outfile", type=str, help="Output file name")
 
     parser.add_argument("--contour_file", type=str, default=None,
                         help="unfilled contour data file")
+
+    parser.add_argument("--scale_factor", type=int, default=3,
+                        help="Scale factor (e.g. scale factor of 3 will multiply trends by 10^3 [default=1]")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")

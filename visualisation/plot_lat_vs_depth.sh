@@ -34,5 +34,5 @@ echo ${trend_command}
 clim_command="${python} ${script_dir}/calc_temporal_aggregate.py ${dedrift_dir}/thetao-zonal-mean_Oyr_${model}_${experiment}_${rip}_all.nc sea_water_potential_temperature clim ${dedrift_dir}/thetao-zonal-mean_Oyr_${model}_${experiment}${rip}_1950-2000-clim.nc --time_bounds 1950-01-01 2000-12-31"
 echo ${clim_command}
 
-plot_command="${python} ${vis_dir}/plot_lat_vs_depth.py ${dedrift_dir}/thetao-zonal-mean_Oyr_${model}_${experiment}_${rip}_1950-2000-trend.nc sea_water_potential_temperature ${fig_dir}/thetao-zonal-mean_Oyr_${model}_${experiment}_${rip}_1950-2000-trend.png --contour_file ${dedrift_dir}/thetao-zonal-mean_Oyr_${model}_${experiment}_${rip}_1950-2000-clim.nc"
+plot_command="${python} ${vis_dir}/plot_lat_vs_depth.py ${dedrift_dir}/thetao-zonal-mean_Oyr_${model}_${experiment}_${rip}_1950-2000-trend.nc sea_water_potential_temperature ${fig_dir}/thetao-zonal-mean_Oyr_${model}_${experiment}_${rip}_1950-2000-trend.png --contour_file ${dedrift_dir}/thetao-zonal-mean_Oyr_${model}_${experiment}_${rip}_1950-2000-clim.nc --scale_factor"
 echo ${plot_command}
