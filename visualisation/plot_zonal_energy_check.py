@@ -19,10 +19,10 @@ import seaborn
 seaborn.set_context('talk')
 
 import matplotlib as mpl
-mpl.rcParams['axes.labelsize'] = 'large'
-mpl.rcParams['axes.titlesize'] = 'x-large'
-mpl.rcParams['xtick.labelsize'] = 'medium'
-mpl.rcParams['ytick.labelsize'] = 'medium'
+mpl.rcParams['axes.labelsize'] = 'x-large'
+mpl.rcParams['axes.titlesize'] = 'xx-large'
+mpl.rcParams['xtick.labelsize'] = 'large'
+mpl.rcParams['ytick.labelsize'] = 'large'
 mpl.rcParams['legend.fontsize'] = 'large'
 
 # Import my modules
@@ -144,7 +144,8 @@ def get_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_c
     return cube, anomaly, metadata_dict
 
 
-def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=None, decorate=True, ylim=True):
+def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly,
+                        linestyle='-', linewidth=None, decorate=True, ylim=True):
     """Plot the heat uptake and storage"""
 
     ax = plt.subplot(gs)
@@ -155,16 +156,16 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=N
     else:
         labels = [None, None, None]
 
-    iplt.plot(rndt_anomaly, color='red', label=labels[0], linewidth=linewidth)
-    iplt.plot(hfds_anomaly, color='orange', label=labels[1], linewidth=linewidth)
-    iplt.plot(ohc_anomaly, color='blue', label=labels[2], linewidth=linewidth)    
+    iplt.plot(rndt_anomaly, color='red', label=labels[0], linestyle=linestyle, linewidth=linewidth)
+    iplt.plot(hfds_anomaly, color='orange', label=labels[1], linestyle=linestyle, linewidth=linewidth)
+    iplt.plot(ohc_anomaly, color='blue', label=labels[2], linestyle=linestyle, linewidth=linewidth)    
 
     if ylim:
         ylower, yupper = ylim
         plt.ylim(ylower * 1e22, yupper * 1e22)
 
     if decorate:
-        plt.ylabel('$J \; lat^{-1}$')
+        plt.ylabel('Excess heat accumulation ($J \; lat^{-1}$)')
         plt.xlim(-90, 90)
 
         plt.axhline(y=0, color='0.5', linestyle='--')
@@ -174,7 +175,8 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly, linewidth=N
     ax.yaxis.major.formatter._useMathText = True
 
 
-def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, hftotal_inferred, linewidth=None, decorate=True, ylim=None):
+def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, hftotal_inferred,
+                   linewidth=None, linestyle='-', decorate=True, ylim=None):
     """Plot the northward heat transport"""
 
     ax = plt.subplot(gs)
@@ -188,17 +190,17 @@ def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, hftotal
     #if hfbasin_data:
     #    iplt.plot(hfbasin_data, color='purple', label='northward OHT')
 
-    iplt.plot(hfatmos_inferred, color='green', linestyle='--', label=labels[0], linewidth=linewidth)
-    iplt.plot(hfbasin_inferred, color='purple', linestyle='--', label=labels[1], linewidth=linewidth)    
-    iplt.plot(hftotal_inferred, color='black', linestyle='--', label=labels[2], linewidth=linewidth)
+    iplt.plot(hfatmos_inferred, color='green', label=labels[0], linestyle=linestyle, linewidth=linewidth)
+    iplt.plot(hfbasin_inferred, color='purple', label=labels[1], linestyle=linestyle, linewidth=linewidth)    
+    iplt.plot(hftotal_inferred, color='black', label=labels[2], linestyle=linestyle, linewidth=linewidth)
 
     if ylim:
         ylower, yupper = ylim
         plt.ylim(ylower * 1e23, yupper * 1e23)
 
     if decorate:
-        plt.xlabel('latitude')
-        plt.ylabel('$J \; lat^{-1}$')
+        plt.xlabel('Latitude')
+        plt.ylabel('Excess heat transport ($J \; lat^{-1}$)')
         plt.xlim(-90, 90)
 
         plt.axhline(y=0, color='0.5', linestyle='--')
@@ -284,9 +286,9 @@ def main(inargs):
             if experiment in inargs.experiments:
                 if nmodels > 1:
                     plot_uptake_storage(gs[plot_index], anomaly_dict['ohc'], anomaly_dict['hfds'], anomaly_dict['rndt'],
-                                        linewidth=0.3, decorate=False, ylim=inargs.ylim_storage)
+                                        linewidth=0.8, linestyle='--', decorate=False, ylim=inargs.ylim_storage)
                     plot_transport(gs[plot_index + nexp], None, anomaly_dict['hfbasin-inferred'], anomaly_dict['hfatmos-inferred'],
-                                   anomaly_dict['hftotal-inferred'], linewidth=0.3, decorate=False, ylim=inargs.ylim_transport) 
+                                   anomaly_dict['hftotal-inferred'], linewidth=0.8, linestyle='--', decorate=False, ylim=inargs.ylim_transport) 
 
             for var in var_list:
                 data_dict[var].append(anomaly_dict[var])
@@ -296,16 +298,16 @@ def main(inargs):
             cube_list = iris.cube.CubeList(filter(None, data_dict[var]))
             ensemble_dict[experiment][var] = ensemble_mean(cube_list)
 
-        linewidth = None if nmodels == 1 else 4.0
+        linewidth = None if nmodels == 1 else 3.0
         model_label = 'ensemble' if nmodels > 1 else inargs.models[0]
         experiment_label = 'historicalAA' if experiment == 'historicalMisc' else experiment  
 
         if experiment in inargs.experiments:
             plot_uptake_storage(gs[plot_index], ensemble_dict[experiment]['ohc'], ensemble_dict[experiment]['hfds'],
-                                ensemble_dict[experiment]['rndt'], ylim=inargs.ylim_storage)
+                                ensemble_dict[experiment]['rndt'], linewidth=linewidth, ylim=inargs.ylim_storage)
             plt.title(experiment_label)
             plot_transport(gs[plot_index + nexp], None, ensemble_dict[experiment]['hfbasin-inferred'], ensemble_dict[experiment]['hfatmos-inferred'],
-                           ensemble_dict[experiment]['hftotal-inferred'], ylim=inargs.ylim_transport) #ensemble_dict[experiment]['hfbasin']
+                           ensemble_dict[experiment]['hftotal-inferred'], linewidth=linewidth, ylim=inargs.ylim_transport) #ensemble_dict[experiment]['hfbasin']
 
             plot_index = plot_index + 1
 
