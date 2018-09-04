@@ -20,11 +20,11 @@ import seaborn
 seaborn.set_context('talk')
 
 import matplotlib as mpl
-mpl.rcParams['axes.labelsize'] = 'large'
-mpl.rcParams['axes.titlesize'] = 'x-large'
-mpl.rcParams['xtick.labelsize'] = 'medium'
-mpl.rcParams['ytick.labelsize'] = 'medium'
-mpl.rcParams['legend.fontsize'] = 'large'
+mpl.rcParams['axes.labelsize'] = 'x-large'
+mpl.rcParams['axes.titlesize'] = 'xx-large'
+mpl.rcParams['xtick.labelsize'] = 'large'
+mpl.rcParams['ytick.labelsize'] = 'large'
+mpl.rcParams['legend.fontsize'] = 'x-large'
 
 
 # Import my modules
@@ -47,8 +47,10 @@ except ImportError:
 
 # Define functions
 
+exp_labels = {'historical-rcp85': 'historical-rcp85', 'historicalGHG': 'GHG-only', 'historicalMisc': 'AA-only'}
+
 var_colors = {'ohc': 'blue', 'hfds': 'orange', 'rndt': 'red'}
-exp_colors = {'historical-rcp85': 'black', 'historicalGHG': 'red', 'historicalAA': 'blue'}
+exp_colors = {'historical-rcp85': 'black', 'GHG-only': 'red', 'AA-only': 'blue'}
 
 names = {'ohc': 'ocean heat content',
          'hfds': 'Downward Heat Flux at Sea Water Surface',
@@ -63,7 +65,7 @@ plot_variables = {'ohc': 'OHC',
 aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
               'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
 
-linestyles = {'historical-rcp85': 'solid', 'historicalGHG': '--', 'historicalAA': ':'}
+linestyles = {'historical-rcp85': 'solid', 'GHG-only': '--', 'AA-only': ':'}
 #linestyles = {'rndt': 'solid', 'hfds': '--', 'ohc': ':'}
 
 
@@ -180,6 +182,7 @@ def set_plot_features(inargs, ax):
         ylower, yupper = inargs.ylim
         plt.ylim(ylower * 1e24, yupper * 1e24)
   
+    ax.set_xlabel('Year')
     ax.set_ylabel('NH minus SH (Joules)')
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
     ax.yaxis.major.formatter._useMathText = True
@@ -201,7 +204,7 @@ def main(inargs):
         axes = [plt.subplot(gs[0]), plt.subplot(gs[1]), plt.subplot(gs[2])]
 
     for experiment in inargs.experiments:
-        plot_experiment = 'historicalAA' if experiment == 'historicalMisc' else experiment
+        plot_experiment = exp_labels[experiment]
         ensemble_agg_dict = {}
         ensemble_spread_dict = {}
         upper_time_bound = '2100-12-31' if experiment == 'historical-rcp85' else '2005-12-31'
