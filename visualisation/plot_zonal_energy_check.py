@@ -145,7 +145,7 @@ def get_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_c
 
 
 def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly,
-                        linestyle='-', linewidth=None, decorate=True, ylim=True):
+                        exp_num=None, linestyle='-', linewidth=None, decorate=True, ylim=True):
     """Plot the heat uptake and storage"""
 
     ax = plt.subplot(gs)
@@ -165,7 +165,8 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly,
         plt.ylim(ylower * 1e22, yupper * 1e22)
 
     if decorate:
-        plt.ylabel('Excess heat accumulation ($J \; lat^{-1}$)')
+        if exp_num == 0:
+            plt.ylabel('Excess heat accumulation ($J \; lat^{-1}$)')
         plt.xlim(-90, 90)
 
         plt.axhline(y=0, color='0.5', linestyle='--')
@@ -176,7 +177,7 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly,
 
 
 def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, hftotal_inferred,
-                   linewidth=None, linestyle='-', decorate=True, ylim=None):
+                   exp_num=None, linewidth=None, linestyle='-', decorate=True, ylim=None):
     """Plot the northward heat transport"""
 
     ax = plt.subplot(gs)
@@ -200,7 +201,8 @@ def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, hftotal
 
     if decorate:
         plt.xlabel('Latitude')
-        plt.ylabel('Excess heat transport ($J \; lat^{-1}$)')
+        if exp_num == 0:
+            plt.ylabel('Excess heat transport ($J \; lat^{-1}$)')
         plt.xlim(-90, 90)
 
         plt.axhline(y=0, color='0.5', linestyle='--')
@@ -239,12 +241,12 @@ def main(inargs):
     time_constraint = gio.get_time_constraint(inargs.time)
     time_text = get_time_text(inargs.time)
     ensemble_dict = {}
-    for experiment in ['historicalGHG', 'historicalMisc', 'historical']:
+    for exp_num, experiment in enumerate(['historicalGHG', 'historicalMisc', 'historical']):
         data_dict = {}
         for var in var_list:
             data_dict[var] = iris.cube.CubeList([])
  
-        for index, model in enumerate(inargs.models):
+        for model_num, model in enumerate(inargs.models):
             mip = 'r1i1' + aa_physics[model] if experiment == 'historicalMisc' else 'r1i1p1'
             dir_exp = experiment.split('-')[-1]
             file_exp = 'historical-' + experiment if experiment[0:3] == 'rcp' else experiment
@@ -260,16 +262,16 @@ def main(inargs):
             metadata_dict = {}
 
             rndt_cube, anomaly_dict['rndt'], metadata_dict = get_data(rndt_file, 'TOA Incoming Net Radiation',
-                                                                      metadata_dict, time_constraint, index, ref_cube=ensemble_ref_cube)
+                                                                      metadata_dict, time_constraint, model_num, ref_cube=ensemble_ref_cube)
 
             ref_cube = ensemble_ref_cube if ensemble_ref_cube else rndt_cube
   
             cube, anomaly_dict['hfds'], metadata_dict = get_data(hfds_file, 'surface_downward_heat_flux_in_sea_water',
-                                                                 metadata_dict, time_constraint, index, ref_cube=ref_cube)
+                                                                 metadata_dict, time_constraint, model_num, ref_cube=ref_cube)
             cube, anomaly_dict['ohc'], metadata_dict = get_data(ohc_file, 'ocean heat content',
-                                                                metadata_dict, time_constraint, index, ref_cube=ref_cube)
+                                                                metadata_dict, time_constraint, model_num, ref_cube=ref_cube)
             #cube, anomaly_dict['hfbasin'], metadata_dict = get_data(hfbasin_file, 'northward_ocean_heat_transport',
-            #                                                        metadata_dict, time_constraint, index)     
+            #                                                        metadata_dict, time_constraint, model_num)     
 
             ocean_convergence = anomaly_dict['ohc'] - anomaly_dict['hfds']
             anomaly_dict['hfbasin-inferred'] = ocean_convergence.copy()
@@ -304,10 +306,10 @@ def main(inargs):
 
         if experiment in inargs.experiments:
             plot_uptake_storage(gs[plot_index], ensemble_dict[experiment]['ohc'], ensemble_dict[experiment]['hfds'],
-                                ensemble_dict[experiment]['rndt'], linewidth=linewidth, ylim=inargs.ylim_storage)
+                                ensemble_dict[experiment]['rndt'], exp_num=exp_num, linewidth=linewidth, ylim=inargs.ylim_storage)
             plt.title(experiment_label)
             plot_transport(gs[plot_index + nexp], None, ensemble_dict[experiment]['hfbasin-inferred'], ensemble_dict[experiment]['hfatmos-inferred'],
-                           ensemble_dict[experiment]['hftotal-inferred'], linewidth=linewidth, ylim=inargs.ylim_transport) #ensemble_dict[experiment]['hfbasin']
+                           ensemble_dict[experiment]['hftotal-inferred'], exp_num=exp_num, linewidth=linewidth, ylim=inargs.ylim_transport) #ensemble_dict[experiment]['hfbasin']
 
             plot_index = plot_index + 1
 
@@ -326,7 +328,7 @@ def main(inargs):
         hfbasin_sum = ensemble_dict[exp1]['hfbasin-inferred'] + ensemble_dict[exp2]['hfbasin-inferred']
         hfatmos_sum = ensemble_dict[exp1]['hfatmos-inferred'] + ensemble_dict[exp2]['hfatmos-inferred']
         hftotal_sum = ensemble_dict[exp1]['hftotal-inferred'] + ensemble_dict[exp2]['hftotal-inferred']
-        plot_transport(gs[plot_index + nexp], None, hfbasin_sum, hfatmos_sum, hftotal_sum, ylim=inargs.ylim_transport)
+        plot_transport(gs[plot_index + nexp], None, hfbasin_sum, hfatmos_sum, hftotal_sum, linewidth=linewidth, ylim=inargs.ylim_transport)
     
     if not inargs.no_title:
         fig.suptitle('zonally integrated heat accumulation, ' + time_text, fontsize='large')
