@@ -20,11 +20,11 @@ from matplotlib import gridspec
 import seaborn
 
 import matplotlib as mpl
-mpl.rcParams['axes.labelsize'] = 'large'
-mpl.rcParams['axes.titlesize'] = 'x-large'
-mpl.rcParams['xtick.labelsize'] = 'medium'
-mpl.rcParams['ytick.labelsize'] = 'medium'
-mpl.rcParams['legend.fontsize'] = 'large'
+mpl.rcParams['axes.labelsize'] = 'x-large'
+mpl.rcParams['axes.titlesize'] = 'xx-large'
+mpl.rcParams['xtick.labelsize'] = 'large'
+mpl.rcParams['ytick.labelsize'] = 'large'
+mpl.rcParams['legend.fontsize'] = 'x-large'
 
 # Import my modules
 
@@ -51,6 +51,9 @@ except ImportError:
 experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
                      'historicalAA': 'blue', 'GHG + AA': 'green',
                      'piControl': '0.5'}
+
+experiment_labels = {'historical': 'historical', 'historicalGHG': 'GHG-only',
+                     'historicalAA': 'AA-only', 'piControl': 'control'}
 
 
 def make_zonal_grid():
@@ -175,7 +178,7 @@ def plot_ensmean(data_dict, experiment, nexperiments,
 def get_ensemble_label_color(experiment, nexperiments, ensemble_size, single_run):
     """Get the line label and color."""
 
-    label = experiment
+    label = experiment_labels[experiment]
     color = experiment_colors[experiment]
 
     return label, color
