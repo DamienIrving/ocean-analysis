@@ -16,14 +16,8 @@ import iris.plot as iplt
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn
-seaborn.set_context('talk')
-
 import matplotlib as mpl
-mpl.rcParams['axes.labelsize'] = 'x-large'
-mpl.rcParams['axes.titlesize'] = 'xx-large'
-mpl.rcParams['xtick.labelsize'] = 'large'
-mpl.rcParams['ytick.labelsize'] = 'large'
-mpl.rcParams['legend.fontsize'] = 'large'
+
 
 # Import my modules
 
@@ -49,6 +43,15 @@ except ImportError:
 
 aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
               'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
+
+seaborn.set(style='whitegrid')
+
+mpl.rcParams['axes.labelsize'] = 20
+mpl.rcParams['axes.titlesize'] = 24
+mpl.rcParams['xtick.labelsize'] = 20
+mpl.rcParams['ytick.labelsize'] = 20
+mpl.rcParams['legend.fontsize'] = 20
+
 
 def ensemble_grid():
     """Make a dummy cube with desired grid."""
@@ -166,10 +169,10 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly,
 
     if decorate:
         if exp_num == 0:
-            plt.ylabel('Excess heat accumulation ($J \; lat^{-1}$)')
+            plt.ylabel('Heat uptake/storage ($J \; lat^{-1}$)')
         plt.xlim(-90, 90)
 
-        plt.axhline(y=0, color='0.5', linestyle='--')
+        #plt.axhline(y=0, color='0.5', linestyle='--')
         plt.legend()
 
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
@@ -202,10 +205,10 @@ def plot_transport(gs, hfbasin_data, hfbasin_inferred, hfatmos_inferred, hftotal
     if decorate:
         plt.xlabel('Latitude')
         if exp_num == 0:
-            plt.ylabel('Excess heat transport ($J \; lat^{-1}$)')
+            plt.ylabel('Heat transport ($J \; lat^{-1}$)')
         plt.xlim(-90, 90)
 
-        plt.axhline(y=0, color='0.5', linestyle='--')
+        #plt.axhline(y=0, color='0.5', linestyle='--')
         plt.legend()
 
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)

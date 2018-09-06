@@ -17,15 +17,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 import seaborn
-seaborn.set_context('talk')
-
 import matplotlib as mpl
-mpl.rcParams['axes.labelsize'] = 'x-large'
-mpl.rcParams['axes.titlesize'] = 'xx-large'
-mpl.rcParams['xtick.labelsize'] = 'large'
-mpl.rcParams['ytick.labelsize'] = 'large'
-mpl.rcParams['legend.fontsize'] = 'x-large'
-
 
 # Import my modules
 
@@ -66,7 +58,14 @@ aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
               'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
 
 linestyles = {'historical-rcp85': 'solid', 'GHG-only': '--', 'AA-only': ':'}
-#linestyles = {'rndt': 'solid', 'hfds': '--', 'ohc': ':'}
+
+seaborn.set(style='ticks')
+
+mpl.rcParams['axes.labelsize'] = 20
+mpl.rcParams['axes.titlesize'] = 24
+mpl.rcParams['xtick.labelsize'] = 20
+mpl.rcParams['ytick.labelsize'] = 20
+mpl.rcParams['legend.fontsize'] = 20
 
 
 def equalise_time_axes(cube_list):
@@ -175,7 +174,7 @@ def get_file_pair(var, model, experiment):
     return output['nh'], output['sh']
 
 
-def set_plot_features(inargs, ax):
+def set_plot_features(inargs, ax, plotnum):
     """ """
 
     if inargs.ylim:
@@ -183,7 +182,8 @@ def set_plot_features(inargs, ax):
         plt.ylim(ylower * 1e24, yupper * 1e24)
   
     ax.set_xlabel('Year')
-    ax.set_ylabel('NH minus SH (Joules)')
+    if plotnum == 0:
+        ax.set_ylabel('NH minus SH (Joules)')
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
     ax.yaxis.major.formatter._useMathText = True
         
@@ -243,7 +243,7 @@ def main(inargs):
         for index in range(3):
             plt.sca(axes[index])
             plt.title(titles[index])
-            set_plot_features(inargs, axes[index])
+            set_plot_features(inargs, axes[index], index)
             
             
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']

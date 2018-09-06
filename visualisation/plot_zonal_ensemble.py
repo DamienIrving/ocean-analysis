@@ -18,13 +18,8 @@ import iris.plot as iplt
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import seaborn
-
 import matplotlib as mpl
-mpl.rcParams['axes.labelsize'] = 'x-large'
-mpl.rcParams['axes.titlesize'] = 'xx-large'
-mpl.rcParams['xtick.labelsize'] = 'large'
-mpl.rcParams['ytick.labelsize'] = 'large'
-mpl.rcParams['legend.fontsize'] = 'x-large'
+
 
 # Import my modules
 
@@ -55,6 +50,13 @@ experiment_colors = {'historical': 'black', 'historicalGHG': 'red',
 experiment_labels = {'historical': 'historical', 'historicalGHG': 'GHG-only',
                      'historicalAA': 'AA-only', 'piControl': 'control'}
 
+seaborn.set(style='whitegrid')
+
+mpl.rcParams['axes.labelsize'] = 'xx-large'
+mpl.rcParams['axes.titlesize'] = 'xx-large'
+mpl.rcParams['xtick.labelsize'] = 'x-large'
+mpl.rcParams['ytick.labelsize'] = 'x-large'
+mpl.rcParams['legend.fontsize'] = 'xx-large'
 
 def make_zonal_grid():
     """Make a dummy cube with desired grid."""
@@ -333,7 +335,7 @@ def main(inargs):
     
     seaborn.set_context(inargs.context)
 
-    fig, ax = plt.subplots()   # figsize=[14, 7]
+    fig, ax = plt.subplots(figsize=[8, 5])
     ax2 = None
     nexperiments = len(inargs.hist_files)
     if inargs.control_files:
