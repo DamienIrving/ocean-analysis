@@ -61,11 +61,11 @@ linestyles = {'historical-rcp85': 'solid', 'GHG-only': '--', 'AA-only': ':'}
 
 seaborn.set(style='ticks')
 
-mpl.rcParams['axes.labelsize'] = 20
-mpl.rcParams['axes.titlesize'] = 24
-mpl.rcParams['xtick.labelsize'] = 20
-mpl.rcParams['ytick.labelsize'] = 20
-mpl.rcParams['legend.fontsize'] = 20
+mpl.rcParams['axes.labelsize'] = 24
+mpl.rcParams['axes.titlesize'] = 28
+mpl.rcParams['xtick.labelsize'] = 24
+mpl.rcParams['ytick.labelsize'] = 24
+mpl.rcParams['legend.fontsize'] = 24
 
 
 def equalise_time_axes(cube_list):

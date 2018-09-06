@@ -46,10 +46,10 @@ aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
 
 seaborn.set(style='whitegrid')
 
-mpl.rcParams['axes.labelsize'] = 20
-mpl.rcParams['axes.titlesize'] = 24
-mpl.rcParams['xtick.labelsize'] = 20
-mpl.rcParams['ytick.labelsize'] = 20
+mpl.rcParams['axes.labelsize'] = 24
+mpl.rcParams['axes.titlesize'] = 28
+mpl.rcParams['xtick.labelsize'] = 24
+mpl.rcParams['ytick.labelsize'] = 24
 mpl.rcParams['legend.fontsize'] = 20
 
 
@@ -291,9 +291,9 @@ def main(inargs):
             if experiment in inargs.experiments:
                 if nmodels > 1:
                     plot_uptake_storage(gs[plot_index], anomaly_dict['ohc'], anomaly_dict['hfds'], anomaly_dict['rndt'],
-                                        linewidth=0.8, linestyle='--', decorate=False, ylim=inargs.ylim_storage)
+                                        linewidth=1.0, linestyle='--', decorate=False, ylim=inargs.ylim_storage)
                     plot_transport(gs[plot_index + nexp], None, anomaly_dict['hfbasin-inferred'], anomaly_dict['hfatmos-inferred'],
-                                   anomaly_dict['hftotal-inferred'], linewidth=0.8, linestyle='--', decorate=False, ylim=inargs.ylim_transport) 
+                                   anomaly_dict['hftotal-inferred'], linewidth=1.0, linestyle='--', decorate=False, ylim=inargs.ylim_transport) 
 
             for var in var_list:
                 data_dict[var].append(anomaly_dict[var])
@@ -303,7 +303,7 @@ def main(inargs):
             cube_list = iris.cube.CubeList(filter(None, data_dict[var]))
             ensemble_dict[experiment][var] = ensemble_mean(cube_list)
 
-        linewidth = None if nmodels == 1 else 3.0
+        linewidth = None if nmodels == 1 else 4.0
         model_label = 'ensemble' if nmodels > 1 else inargs.models[0]
         experiment_label = 'historicalAA' if experiment == 'historicalMisc' else experiment  
 
@@ -322,7 +322,7 @@ def main(inargs):
         ohc_sum = ensemble_dict[exp1]['ohc'] + ensemble_dict[exp2]['ohc']
         hfds_sum = ensemble_dict[exp1]['hfds'] + ensemble_dict[exp2]['hfds']
         rndt_sum = ensemble_dict[exp1]['rndt'] + ensemble_dict[exp2]['rndt']
-        plot_uptake_storage(gs[plot_index], ohc_sum, hfds_sum, rndt_sum, ylim=inargs.ylim_storage)
+        plot_uptake_storage(gs[plot_index], ohc_sum, hfds_sum, rndt_sum, linewidth=linewidth, ylim=inargs.ylim_storage)
 
         exp1_label = 'historicalAA' if exp1 == 'historicalMisc' else exp1 
         exp2_label = 'historicalAA' if exp2 == 'historicalMisc' else exp2 
