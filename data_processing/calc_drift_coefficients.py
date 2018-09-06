@@ -70,21 +70,21 @@ def calc_coefficients(cube, coord_names, convert_annual=False):
     Choices are made to avoid memory errors on large arrays.
 
     """
-
-    masked_array = True if type(cube.data) == numpy.ma.core.MaskedArray else False
+    
+    #masked_array = True if type(cube.data) == numpy.ma.core.MaskedArray else False
+    masked_array = True
     if 'depth' in coord_names:
         assert coord_names[1] == 'depth', 'coordinate order must be time, depth, ...'
-        slice_dims = copy.copy(coord_names)
-        slice_dims.remove('depth')
         out_shape = list(cube.shape)
         out_shape[0] = 4
         coefficients = numpy.zeros(out_shape, dtype=numpy.float32)
-        for i, x_slice in enumerate(cube.slices(slice_dims)):
+        for i, cube_slice in enumerate(cube.slices_over('depth')):
             if convert_annual:
-                x_slice = timeseries.convert_to_annual(x_slice)
-            time_axis = x_slice.coord('time').points.astype(numpy.float32)
-            coefficients[:,i,::] = numpy.ma.apply_along_axis(polyfit, 0, x_slice.data, time_axis, masked_array)
-        fill_value = x_slice.data.fill_value 
+                cube_slice = timeseries.convert_to_annual(cube_slice)
+            time_axis = cube_slice.coord('time').points.astype(numpy.float32)
+            pdb.set_trace()
+            coefficients[:,i,::] = numpy.ma.apply_along_axis(polyfit, 0, cube_slice.data, time_axis, masked_array)
+        fill_value = cube_slice.data.fill_value 
         coefficients = numpy.ma.masked_values(coefficients, fill_value)
     else:
         if convert_annual:
