@@ -9,6 +9,7 @@ Description:  corresponds to energy_budget_in_one_plot.ipynb
 
 import sys, os, pdb, glob
 import argparse
+import itertools
 import numpy
 import iris
 from iris.experimental.equalise_cubes import equalise_attributes
@@ -43,6 +44,9 @@ except ImportError:
 
 aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
               'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
+titles = {'historical': 'historical', 'historicalGHG': 'GHG-only',
+          'historicalMisc': 'AA-only', 'GHG+AA': 'GHG + AA',
+          'hist-GHG+AA': 'historical - (GHG + AA)'}
 
 seaborn.set(style='whitegrid')
 
@@ -147,8 +151,8 @@ def read_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_
     return cube, anomaly, metadata_dict
 
 
-def get_anomalies(rndt_file, hfds_file, ohc_file, time_constraint, model_num,
-                  ensemble_ref_cube, anomaly_dict, metadata_dict):
+def get_anomalies(rndt_file, hfds_file, ohc_file, experiment, time_constraint,
+                  model_num, ensemble_ref_cube, anomaly_dict, metadata_dict):
     """Get the cumulative sum anomaly."""
     
     rndt_cube, rndt_anomaly, metadata_dict = read_data(rndt_file,
@@ -179,23 +183,26 @@ def get_anomalies(rndt_file, hfds_file, ohc_file, time_constraint, model_num,
     hftotal_inferred = total_convergence.copy()
     hftotal_inferred.data = numpy.ma.cumsum(-1 * total_convergence.data)
             
-    anomaly_dict[('rndt', exp)].append(rndt_anomaly)
-    anomaly_dict[('hfds', exp)].append(hfds_anomaly)
-    anomaly_dict[('ohc', exp)].append(ohc_anomaly)
-    anomaly_dict[('hfbasin-inferred', exp)].append(hfbasin_inferred)
-    anomaly_dict[('hfatmos-inferred', exp)].append(hfatmos_inferred)
-    anomaly_dict[('hftotal-inferred', exp)].append(hftotal_inferred)
+    anomaly_dict[('rndt', experiment)].append(rndt_anomaly)
+    anomaly_dict[('hfds', experiment)].append(hfds_anomaly)
+    anomaly_dict[('ohc', experiment)].append(ohc_anomaly)
+    anomaly_dict[('hfbasin-inferred', experiment)].append(hfbasin_inferred)
+    anomaly_dict[('hfatmos-inferred', experiment)].append(hfatmos_inferred)
+    anomaly_dict[('hftotal-inferred', experiment)].append(hftotal_inferred)
 
     return anomaly_dict, metadata_dict
 
 
 def plot_uptake_storage(gs, rndt_anomaly, hfds_anomaly, ohc_anomaly,
                         exp_num=None, linestyle='-', linewidth=None, 
-                        decorate=True, ylim=True):
+                        decorate=True, title=None, ylim=True):
     """Plot the heat uptake and storage"""
 
     ax = plt.subplot(gs)
     plt.sca(ax)
+
+    if title:
+        plt.title(title)
 
     if decorate:
         labels = ['netTOA', 'OHU', 'OHC']
@@ -252,7 +259,7 @@ def plot_transport(gs, hfbasin_inferred, hfatmos_inferred, hftotal_inferred,
     if decorate:
         plt.xlabel('Latitude')
         if exp_num == 0:
-            plt.ylabel('Heat transport ($J \; lat^{-1}$)')
+            plt.ylabel('Accumulated heat transport ($J$)')
         plt.xlim(-90, 90)
 
         #plt.axhline(y=0, color='0.5', linestyle='--')
@@ -283,8 +290,7 @@ def main(inargs):
     time_constraint = gio.get_time_constraint(inargs.time)
 
     anomaly_dict = {}
-    var_exp_combinations = itertools.product(var_list, exp_list)
-    for combo in var_exp_combinations:
+    for combo in itertools.product(var_list, exp_list):
         anomaly_dict[combo] = iris.cube.CubeList([])
 
     # Get data for the three experiments
@@ -302,7 +308,7 @@ def main(inargs):
     
             metadata_dict = {}
             anomaly_dict, metadata_dict = get_anomalies(rndt_file, hfds_file, ohc_file,
-                                                        time_constraint, model_num,
+                                                        exp, time_constraint, model_num,
                                                         ensemble_ref_cube, anomaly_dict,
                                                         metadata_dict)
             
@@ -313,7 +319,7 @@ def main(inargs):
                        anomaly_dict[(var, 'historicalMisc')][mod_num]
             data_diff = anomaly_dict[(var, 'historical')][mod_num] - data_sum        
             anomaly_dict[(var, 'GHG+AA')].append(data_sum)
-            anomaly_dict[(var, 'hist-GHG+AA')].append(data_sum)
+            anomaly_dict[(var, 'hist-GHG+AA')].append(data_diff)
         
     # Plot individual model data
     nexp = len(inargs.experiments)
@@ -337,7 +343,7 @@ def main(inargs):
 
     # Plot ensemble data
     ensemble_dict = {}
-    for combo in var_exp_combinations:
+    for combo in itertools.product(var_list, exp_list):
         cube_list = iris.cube.CubeList(filter(None, anomaly_dict[combo]))
         ensemble_dict[combo] = ensemble_mean(cube_list)
     
@@ -348,13 +354,13 @@ def main(inargs):
                             ensemble_dict[('rndt', exp)],
                             ensemble_dict[('hfds', exp)],
                             ensemble_dict[('ohc', exp)],
-                            linewidth=linewidth, linestyle='-',
+                            linewidth=linewidth, title=titles[exp],
                             exp_num=plot_index, ylim=inargs.ylim_storage)
         plot_transport(gs[plot_index + nexp],
                        ensemble_dict[('hfbasin-inferred', exp)],
                        ensemble_dict[('hfatmos-inferred', exp)],
                        ensemble_dict[('hftotal-inferred', exp)],
-                       linewidth=linewidth, linestyle='-',
+                       linewidth=linewidth,
                        exp_num=plot_index, ylim=inargs.ylim_transport) 
     
     if not inargs.no_title:
