@@ -114,8 +114,8 @@ def regrid(anomaly, ref_cube):
     return new_anomaly
 
 
-def get_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_cube=False):
-    """Get data"""
+def read_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_cube=False):
+    """Read data and calculate anomaly"""
 
     if infile:
         cube = iris.load_cube(infile[0], var & time_constraint)
@@ -147,8 +147,51 @@ def get_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_c
     return cube, anomaly, metadata_dict
 
 
-def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly,
-                        exp_num=None, linestyle='-', linewidth=None, decorate=True, ylim=True):
+def get_anomalies(rndt_file, hfds_file, ohc_file, time_constraint, model_num,
+                  ensemble_ref_cube, anomaly_dict, metadata_dict):
+    """Get the cumulative sum anomaly."""
+    
+    rndt_cube, rndt_anomaly, metadata_dict = read_data(rndt_file,
+                                                       'TOA Incoming Net Radiation',
+                                                       metadata_dict, time_constraint, 
+                                                       model_num, 
+                                                       ref_cube=ensemble_ref_cube)
+
+    ref_cube = ensemble_ref_cube if ensemble_ref_cube else rndt_cube
+  
+    cube, hfds_anomaly, metadata_dict = read_data(hfds_file, 
+                                                 'surface_downward_heat_flux_in_sea_water',
+                                                  metadata_dict, time_constraint,
+                                                  model_num, ref_cube=ref_cube)
+    cube, ohc_anomaly, metadata_dict = read_data(ohc_file, 'ocean heat content',
+                                                 metadata_dict, time_constraint,
+                                                 model_num, ref_cube=ref_cube)
+
+    ocean_convergence = ohc_anomaly - hfds_anomaly
+    hfbasin_inferred = ocean_convergence.copy()
+    hfbasin_inferred.data = numpy.ma.cumsum(-1 * ocean_convergence.data)
+    
+    atmos_convergence = hfds_anomaly - rndt_anomaly
+    hfatmos_inferred = atmos_convergence.copy()
+    hfatmos_inferred.data = numpy.ma.cumsum(-1 * atmos_convergence.data)
+
+    total_convergence = ohc_anomaly - rndt_anomaly
+    hftotal_inferred = total_convergence.copy()
+    hftotal_inferred.data = numpy.ma.cumsum(-1 * total_convergence.data)
+            
+    anomaly_dict[('rndt', exp)].append(rndt_anomaly)
+    anomaly_dict[('hfds', exp)].append(hfds_anomaly)
+    anomaly_dict[('ohc', exp)].append(ohc_anomaly)
+    anomaly_dict[('hfbasin-inferred', exp)].append(hfbasin_inferred)
+    anomaly_dict[('hfatmos-inferred', exp)].append(hfatmos_inferred)
+    anomaly_dict[('hftotal-inferred', exp)].append(hftotal_inferred)
+
+    return anomaly_dict, metadata_dict
+
+
+def plot_uptake_storage(gs, rndt_anomaly, hfds_anomaly, ohc_anomaly,
+                        exp_num=None, linestyle='-', linewidth=None, 
+                        decorate=True, ylim=True):
     """Plot the heat uptake and storage"""
 
     ax = plt.subplot(gs)
@@ -159,9 +202,12 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly,
     else:
         labels = [None, None, None]
 
-    iplt.plot(rndt_anomaly, color='red', label=labels[0], linestyle=linestyle, linewidth=linewidth)
-    iplt.plot(hfds_anomaly, color='orange', label=labels[1], linestyle=linestyle, linewidth=linewidth)
-    iplt.plot(ohc_anomaly, color='blue', label=labels[2], linestyle=linestyle, linewidth=linewidth)    
+    iplt.plot(rndt_anomaly, color='red', label=labels[0],
+              linestyle=linestyle, linewidth=linewidth)
+    iplt.plot(hfds_anomaly, color='orange', label=labels[1],
+              linestyle=linestyle, linewidth=linewidth)
+    iplt.plot(ohc_anomaly, color='blue', label=labels[2],
+              linestyle=linestyle, linewidth=linewidth)    
 
     if ylim:
         ylower, yupper = ylim
@@ -180,7 +226,8 @@ def plot_uptake_storage(gs, ohc_anomaly, hfds_anomaly, rndt_anomaly,
 
 
 def plot_transport(gs, hfbasin_inferred, hfatmos_inferred, hftotal_inferred,
-                   exp_num=None, linewidth=None, linestyle='-', decorate=True, ylim=None):
+                   exp_num=None, linewidth=None, linestyle='-',
+                   decorate=True, ylim=None):
     """Plot the northward heat transport"""
 
     ax = plt.subplot(gs)
@@ -191,9 +238,12 @@ def plot_transport(gs, hfbasin_inferred, hfatmos_inferred, hftotal_inferred,
     else:
         labels = [None, None, None]
 
-    iplt.plot(hfatmos_inferred, color='green', label=labels[0], linestyle=linestyle, linewidth=linewidth)
-    iplt.plot(hfbasin_inferred, color='purple', label=labels[1], linestyle=linestyle, linewidth=linewidth)    
-    iplt.plot(hftotal_inferred, color='black', label=labels[2], linestyle=linestyle, linewidth=linewidth)
+    iplt.plot(hfatmos_inferred, color='green', label=labels[0],
+              linestyle=linestyle, linewidth=linewidth)
+    iplt.plot(hfbasin_inferred, color='purple', label=labels[1],
+              linestyle=linestyle, linewidth=linewidth)    
+    iplt.plot(hftotal_inferred, color='black', label=labels[2],
+              linestyle=linestyle, linewidth=linewidth)
 
     if ylim:
         ylower, yupper = ylim
@@ -225,31 +275,24 @@ def get_time_text(time_bounds):
 def main(inargs):
     """Run program"""
 
-    nexp = len(inargs.experiments)
-    if inargs.sum_only:
-        nexp = 1
-    elif inargs.sum:
-        nexp = nexp + 1
-    fig = plt.figure(figsize=[11 * nexp, 14])
-    gs = gridspec.GridSpec(2, nexp)
-
     nmodels = len(inargs.models)
     ensemble_ref_cube = ensemble_grid() if nmodels > 1 else None
 
     var_list = ['rndt', 'hfds', 'ohc', 'hfbasin-inferred', 'hfatmos-inferred', 'hftotal-inferred']
-    plot_index = 0
+    exp_list = ['historicalGHG', 'historicalMisc', 'historical', 'GHG+AA', 'hist-GHG+AA']
     time_constraint = gio.get_time_constraint(inargs.time)
-    time_text = get_time_text(inargs.time)
-    ensemble_dict = {}
-    for exp_num, experiment in enumerate(['historicalGHG', 'historicalMisc', 'historical']):
-        data_dict = {}
-        for var in var_list:
-            data_dict[var] = iris.cube.CubeList([])
- 
+
+    anomaly_dict = {}
+    var_exp_combinations = itertools.product(var_list, exp_list)
+    for combo in var_exp_combinations:
+        anomaly_dict[combo] = iris.cube.CubeList([])
+
+    # Get data for the three experiments
+    for exp in ['historicalGHG', 'historicalMisc', 'historical']:
         for model_num, model in enumerate(inargs.models):
-            mip = 'r1i1' + aa_physics[model] if experiment == 'historicalMisc' else 'r1i1p1'
-            dir_exp = experiment.split('-')[-1]
-            file_exp = 'historical-' + experiment if experiment[0:3] == 'rcp' else experiment
+            mip = 'r1i1' + aa_physics[model] if exp == 'historicalMisc' else 'r1i1p1'
+            dir_exp = exp.split('-')[-1]
+            file_exp = 'historical-' + exp if exp[0:3] == 'rcp' else exp
 
             mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr'  %(model, dir_exp)
 
@@ -257,97 +300,67 @@ def main(inargs):
             hfds_file = glob.glob('%s/ocean/%s/hfds/latest/dedrifted/hfds-zonal-sum_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, mip, model, file_exp, mip))
             ohc_file = glob.glob('%s/ocean/%s/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_%s_%s_all.nc' %(mydir, mip, model, file_exp, mip))
     
-            anomaly_dict = {}
             metadata_dict = {}
-
-            rndt_cube, anomaly_dict['rndt'], metadata_dict = get_data(rndt_file, 'TOA Incoming Net Radiation',
-                                                                      metadata_dict, time_constraint, model_num, 
-                                                                      ref_cube=ensemble_ref_cube)
-
-            ref_cube = ensemble_ref_cube if ensemble_ref_cube else rndt_cube
-  
-            cube, anomaly_dict['hfds'], metadata_dict = get_data(hfds_file, 
-                                                                 'surface_downward_heat_flux_in_sea_water',
-                                                                 metadata_dict, time_constraint, model_num, 
-                                                                 ref_cube=ref_cube)
-            cube, anomaly_dict['ohc'], metadata_dict = get_data(ohc_file, 'ocean heat content',
-                                                                metadata_dict, time_constraint, model_num, 
-                                                                ref_cube=ref_cube)
-
-            ocean_convergence = anomaly_dict['ohc'] - anomaly_dict['hfds']
-            anomaly_dict['hfbasin-inferred'] = ocean_convergence.copy()
-            anomaly_dict['hfbasin-inferred'].data = numpy.ma.cumsum(-1 * ocean_convergence.data)
-    
-            atmos_convergence = anomaly_dict['hfds'] - anomaly_dict['rndt']
-            anomaly_dict['hfatmos-inferred'] = atmos_convergence.copy()
-            anomaly_dict['hfatmos-inferred'].data = numpy.ma.cumsum(-1 * atmos_convergence.data)
-
-            total_convergence = anomaly_dict['ohc'] - anomaly_dict['rndt']
-            anomaly_dict['hftotal-inferred'] = total_convergence.copy()
-            anomaly_dict['hftotal-inferred'].data = numpy.ma.cumsum(-1 * total_convergence.data)
+            anomaly_dict, metadata_dict = get_anomalies(rndt_file, hfds_file, ohc_file,
+                                                        time_constraint, model_num,
+                                                        ensemble_ref_cube, anomaly_dict,
+                                                        metadata_dict)
             
-            if experiment in inargs.experiments:
-                if nmodels > 1:
-                    plot_uptake_storage(gs[plot_index], anomaly_dict['ohc'],
-                                        anomaly_dict['hfds'], anomaly_dict['rndt'],
-                                        linewidth=1.0, linestyle='--', decorate=False,
-                                        ylim=inargs.ylim_storage)
-                    plot_transport(gs[plot_index + nexp],
-                                   anomaly_dict['hfbasin-inferred'],
-                                   anomaly_dict['hfatmos-inferred'],
-                                   anomaly_dict['hftotal-inferred'],
-                                   linewidth=1.0, linestyle='--',
-                                   decorate=False, ylim=inargs.ylim_transport) 
-
-            for var in var_list:
-                data_dict[var].append(anomaly_dict[var])
-
-        ensemble_dict[experiment] = {}
+    # Calculate the GHG + AA variables
+    for mod_num in range(nmodels):
         for var in var_list:
-            cube_list = iris.cube.CubeList(filter(None, data_dict[var]))
-            ensemble_dict[experiment][var] = ensemble_mean(cube_list)
+            data_sum = anomaly_dict[(var, 'historicalGHG')][mod_num] + \
+                       anomaly_dict[(var, 'historicalMisc')][mod_num]
+            data_diff = anomaly_dict[(var, 'historical')][mod_num] - data_sum        
+            anomaly_dict[(var, 'GHG+AA')].append(data_sum)
+            anomaly_dict[(var, 'hist-GHG+AA')].append(data_sum)
+        
+    # Plot individual model data
+    nexp = len(inargs.experiments)
+    fig = plt.figure(figsize=[11 * nexp, 14])
+    gs = gridspec.GridSpec(2, nexp)
+    if nmodels > 1:
+        for plot_index, exp in enumerate(inargs.experiments):    
+            for mod_num in range(nmodels):    
+                plot_uptake_storage(gs[plot_index],
+                                    anomaly_dict[('rndt', exp)][mod_num],
+                                    anomaly_dict[('hfds', exp)][mod_num],
+                                    anomaly_dict[('ohc', exp)][mod_num],
+                                    linewidth=1.0, linestyle='--',
+                                    decorate=False, ylim=inargs.ylim_storage)
+                plot_transport(gs[plot_index + nexp],
+                               anomaly_dict[('hfbasin-inferred', exp)][mod_num],
+                               anomaly_dict[('hfatmos-inferred', exp)][mod_num],
+                               anomaly_dict[('hftotal-inferred', exp)][mod_num],
+                               linewidth=1.0, linestyle='--',
+                               decorate=False, ylim=inargs.ylim_transport) 
 
-        linewidth = None if nmodels == 1 else 4.0
-        model_label = 'ensemble' if nmodels > 1 else inargs.models[0]
-        experiment_label = 'historicalAA' if experiment == 'historicalMisc' else experiment  
-
-        if experiment in inargs.experiments:
-            plot_uptake_storage(gs[plot_index], ensemble_dict[experiment]['ohc'],
-                                ensemble_dict[experiment]['hfds'],
-                                ensemble_dict[experiment]['rndt'],
-                                exp_num=exp_num, linewidth=linewidth,
-                                ylim=inargs.ylim_storage)
-            plt.title(experiment_label)
-            plot_transport(gs[plot_index + nexp],
-                           ensemble_dict[experiment]['hfbasin-inferred'],
-                           ensemble_dict[experiment]['hfatmos-inferred'],
-                           ensemble_dict[experiment]['hftotal-inferred'],
-                           exp_num=exp_num, linewidth=linewidth,
-                           ylim=inargs.ylim_transport) #ensemble_dict[experiment]['hfbasin']
-
-            plot_index = plot_index + 1
-
-    if inargs.sum:
-        exp1, exp2 = inargs.sum
-
-        ohc_sum = ensemble_dict[exp1]['ohc'] + ensemble_dict[exp2]['ohc']
-        hfds_sum = ensemble_dict[exp1]['hfds'] + ensemble_dict[exp2]['hfds']
-        rndt_sum = ensemble_dict[exp1]['rndt'] + ensemble_dict[exp2]['rndt']
-        plot_uptake_storage(gs[plot_index], ohc_sum, hfds_sum, rndt_sum,
-                            linewidth=linewidth, ylim=inargs.ylim_storage)
-
-        exp1_label = 'historicalAA' if exp1 == 'historicalMisc' else exp1 
-        exp2_label = 'historicalAA' if exp2 == 'historicalMisc' else exp2 
-        plt.title(exp1_label + ' + ' + exp2_label)
-
-        hfbasin_sum = ensemble_dict[exp1]['hfbasin-inferred'] + ensemble_dict[exp2]['hfbasin-inferred']
-        hfatmos_sum = ensemble_dict[exp1]['hfatmos-inferred'] + ensemble_dict[exp2]['hfatmos-inferred']
-        hftotal_sum = ensemble_dict[exp1]['hftotal-inferred'] + ensemble_dict[exp2]['hftotal-inferred']
-        plot_transport(gs[plot_index + nexp], None, hfbasin_sum, hfatmos_sum, hftotal_sum,
-                       linewidth=linewidth, ylim=inargs.ylim_transport)
+    # Plot ensemble data
+    ensemble_dict = {}
+    for combo in var_exp_combinations:
+        cube_list = iris.cube.CubeList(filter(None, anomaly_dict[combo]))
+        ensemble_dict[combo] = ensemble_mean(cube_list)
+    
+    linewidth = None if nmodels == 1 else 4.0
+    model_label = 'ensemble' if nmodels > 1 else inargs.models[0]
+    for plot_index, exp in enumerate(inargs.experiments):
+        plot_uptake_storage(gs[plot_index],
+                            ensemble_dict[('rndt', exp)],
+                            ensemble_dict[('hfds', exp)],
+                            ensemble_dict[('ohc', exp)],
+                            linewidth=linewidth, linestyle='-',
+                            exp_num=plot_index, ylim=inargs.ylim_storage)
+        plot_transport(gs[plot_index + nexp],
+                       ensemble_dict[('hfbasin-inferred', exp)],
+                       ensemble_dict[('hfatmos-inferred', exp)],
+                       ensemble_dict[('hftotal-inferred', exp)],
+                       linewidth=linewidth, linestyle='-',
+                       exp_num=plot_index, ylim=inargs.ylim_transport) 
     
     if not inargs.no_title:
+        time_text = get_time_text(inargs.time)
         fig.suptitle('zonally integrated heat accumulation, ' + time_text, fontsize='large')
+
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
@@ -374,8 +387,8 @@ author:
     parser.add_argument("--models", type=str, nargs='*', help="models")
     parser.add_argument("--experiments", type=str, nargs='*',
                         choices=('historical', 'historicalGHG', 'historicalMisc',
-                                 'historical-rcp85', 'rcp85'),
-                        help="experiments")                                  
+                                 'GHG+AA', 'hist-GHG+AA'),
+                        help="experiments to plot")                                  
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2005-12-31'),
@@ -387,11 +400,6 @@ author:
                         help="y limits for transport plots (x 10^23)")
     parser.add_argument("--no_title", action="store_true", default=False,
                         help="switch for turning off plot title [default: False]")
-    parser.add_argument("--sum", type=str, nargs=2, default=None,
-                        help="add an extra plot with the sum of these two experiments")
-
-    parser.add_argument("--sum_only", action='store_true', default=False,
-                        help="include the sum plot only")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
