@@ -123,6 +123,10 @@ def read_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_
 
     if infile:
         cube = iris.load_cube(infile[0], var & time_constraint)
+        try:
+            cube.remove_coord('longitude')
+        except iris.exceptions.CoordinateNotFoundError:
+            pass         
         metadata_dict[infile[0]] = cube.attributes['history']
         anomaly = calc_anomaly(cube)
         final_value = anomaly.data.sum()
