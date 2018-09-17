@@ -155,7 +155,7 @@ def read_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_
     return cube, anomaly, metadata_dict
 
 
-def get_anomalies(rndt_file, hfds_file, ohc_file, experiment, time_constraint,
+def get_anomalies(rndt_file, hfds_file, ohc_file, time_constraint,
                   model_num, ensemble_ref_cube, anomaly_dict, metadata_dict):
     """Get the cumulative sum anomaly."""
     
@@ -186,7 +186,8 @@ def get_anomalies(rndt_file, hfds_file, ohc_file, experiment, time_constraint,
     total_convergence = ohc_anomaly - rndt_anomaly
     hftotal_inferred = total_convergence.copy()
     hftotal_inferred.data = numpy.ma.cumsum(-1 * total_convergence.data)
-            
+
+    experiment = cube.attributes['model_id']            
     anomaly_dict[('rndt', experiment)].append(rndt_anomaly)
     anomaly_dict[('hfds', experiment)].append(hfds_anomaly)
     anomaly_dict[('ohc', experiment)].append(ohc_anomaly)
@@ -298,21 +299,14 @@ def main(inargs):
         anomaly_dict[combo] = iris.cube.CubeList([])
 
     # Get data for the three experiments
-    for exp in ['historicalGHG', 'historicalMisc', 'historical']:
-        for model_num, model in enumerate(inargs.models):
-            mip = 'r1i1' + aa_physics[model] if exp == 'historicalMisc' else 'r1i1p1'
-            dir_exp = exp.split('-')[-1]
-            file_exp = 'historical-' + exp if exp[0:3] == 'rcp' else exp
-
-            mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr'  %(model, dir_exp)
-
-            rndt_file = glob.glob('%s/atmos/%s/rndt/latest/dedrifted/rndt-zonal-sum_Ayr_%s_%s_%s_cumsum-all.nc' %(mydir, mip, model, file_exp, mip))
-            hfds_file = glob.glob('%s/ocean/%s/hfds/latest/dedrifted/hfds-zonal-sum_Oyr_%s_%s_%s_cumsum-all.nc' %(mydir, mip, model, file_exp, mip))
-            ohc_file = glob.glob('%s/ocean/%s/ohc/latest/dedrifted/ohc-zonal-sum_Oyr_%s_%s_%s_all.nc' %(mydir, mip, model, file_exp, mip))
-    
+    assert len(inargs.ghg_files) == len(inargs.aa_files) == len(inargs.hist_files)
+    nmodels = len(inargs.ghg_files)
+    for exp_files in [inargs.ghg_files, inargs.aa_files, inargs.hist_files]:
+        for model_num, model_files in enumerate(exp_files):
+            rndt_file, hfds_file, ohc_file = model_files
             metadata_dict = {}
             anomaly_dict, metadata_dict = get_anomalies(rndt_file, hfds_file, ohc_file,
-                                                        exp, time_constraint, model_num,
+                                                        time_constraint, model_num,
                                                         ensemble_ref_cube, anomaly_dict,
                                                         metadata_dict)
             
@@ -386,7 +380,7 @@ author:
 
 """
 
-    description = 'Plot ensemble timeseries'
+    description = 'Plot zonally integrated heat budget data'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
@@ -394,7 +388,13 @@ author:
 
     parser.add_argument("outfile", type=str, help="name of output file")
 
-    parser.add_argument("--models", type=str, nargs='*', help="models")
+    parser.add_argument("--hist_files", type=str, required=True, nargs=3, action='append',
+                        help="historical experiment netTOA, OHU and OHC files for a given model (in that order)")
+    parser.add_argument("--ghg_files", type=str, required=True, nargs=3, action='append',
+                        help="historicalGHG experiment netTOA, OHU and OHC files for a given model (in that order)")
+    parser.add_argument("--aa_files", type=str, required=True, nargs=3, action='append',
+                        help="historicalAA experiment netTOA, OHU and OHC files for a given model (in that order)")
+
     parser.add_argument("--experiments", type=str, nargs='*',
                         choices=('historical', 'historicalGHG', 'historicalMisc',
                                  'GHG+AA', 'hist-GHG+AA'),
