@@ -122,12 +122,12 @@ def read_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_
     """Read data and calculate anomaly"""
 
     if infile:
-        cube = iris.load_cube(infile[0], var & time_constraint)
+        cube = iris.load_cube(infile, var & time_constraint)
         try:
             cube.remove_coord('longitude')
         except iris.exceptions.CoordinateNotFoundError:
             pass         
-        metadata_dict[infile[0]] = cube.attributes['history']
+        metadata_dict[infile] = cube.attributes['history']
         anomaly = calc_anomaly(cube)
         final_value = anomaly.data.sum()
         print(var, 'final global total:', final_value)
@@ -187,7 +187,7 @@ def get_anomalies(rndt_file, hfds_file, ohc_file, time_constraint,
     hftotal_inferred = total_convergence.copy()
     hftotal_inferred.data = numpy.ma.cumsum(-1 * total_convergence.data)
 
-    experiment = cube.attributes['model_id']            
+    experiment = cube.attributes['experiment_id']            
     anomaly_dict[('rndt', experiment)].append(rndt_anomaly)
     anomaly_dict[('hfds', experiment)].append(hfds_anomaly)
     anomaly_dict[('ohc', experiment)].append(ohc_anomaly)
@@ -287,7 +287,8 @@ def get_time_text(time_bounds):
 def main(inargs):
     """Run program"""
 
-    nmodels = len(inargs.models)
+    assert len(inargs.ghg_files) == len(inargs.aa_files) == len(inargs.hist_files)
+    nmodels = len(inargs.ghg_files)
     ensemble_ref_cube = ensemble_grid() if nmodels > 1 else None
 
     var_list = ['rndt', 'hfds', 'ohc', 'hfbasin-inferred', 'hfatmos-inferred', 'hftotal-inferred']
@@ -299,8 +300,6 @@ def main(inargs):
         anomaly_dict[combo] = iris.cube.CubeList([])
 
     # Get data for the three experiments
-    assert len(inargs.ghg_files) == len(inargs.aa_files) == len(inargs.hist_files)
-    nmodels = len(inargs.ghg_files)
     for exp_files in [inargs.ghg_files, inargs.aa_files, inargs.hist_files]:
         for model_num, model_files in enumerate(exp_files):
             rndt_file, hfds_file, ohc_file = model_files
