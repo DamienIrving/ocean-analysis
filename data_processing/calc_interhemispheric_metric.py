@@ -14,6 +14,7 @@ import iris
 from iris.experimental.equalise_cubes import equalise_attributes
 import dask
 dask.set_options(get=dask.get) 
+import cmdline_provenance as cmdprov
 
 # Import my modules
 
@@ -38,24 +39,10 @@ except ImportError:
 
 # Define functions
 
-history = []
-
-def save_history(cube, field, filename):
-    """Save the history attribute when reading the data.
-    (This is required because the history attribute differs between input files 
-      and is therefore deleted upon equilising attributes)  
-    """ 
-
-    history.append(cube.attributes['history'])
-
-
-def read_data(infiles, variable, calc_annual=False, chunk=False):
+def read_data(infile, variable, calc_annual=False, chunk=False):
     """Load the input data."""
 
-    cube = iris.load(infiles, gio.check_iris_var(variable), callback=save_history)
-    equalise_attributes(cube)
-    iris.util.unify_time_units(cube)
-    cube = cube.concatenate_cube()
+    cube = iris.load_cube(infile, gio.check_iris_var(variable))
     cube = gio.check_time_units(cube)
 
     if calc_annual:
@@ -67,9 +54,9 @@ def read_data(infiles, variable, calc_annual=False, chunk=False):
     assert len(coord_names) == 3
     grid_type = 'curvilinear' if aux_coord_names == ['latitude', 'longitude'] else 'latlon'
 
-    infile_history = {}
-    infile_history[infiles[0]] = history[0] 
-    cube.attributes['history'] = gio.write_metadata(file_info=infile_history)
+    #infile_history = {}
+    #infile_history[infiles[0]] = history[0] 
+    #cube.attributes['history'] = gio.write_metadata(file_info=infile_history)
 
     return cube, coord_names, aux_coord_names, grid_type
 
@@ -161,13 +148,12 @@ def calc_frac(h_cube, globe_cube, agg_method):
     return metric
 
 
-def update_metadata(cube_list):
+def update_metadata(cube_list, new_log):
     """Create the cube list for output."""
-
-    equalise_attributes(cube_list)
 
     for cube in cube_list:
         cube.data = numpy.array(cube.data)  #removes _FillValue attribute
+        cube.attributes['history'] = new_log
 
     return cube_list
 
@@ -180,50 +166,69 @@ def cumsum(cube):
     return cube
 
 
+def combine_cubes(cube_list):
+    """Combine two like cubes"""
+
+    equalise_attributes(cube_list)
+    iris.util.unify_time_units(cube_list)
+    cube = cube_list.concatenate_cube()
+    cube = gio.check_time_units(cube)
+
+    return cube
+
+
 def main(inargs):
     """Run the program."""
-
-    cube, coord_names, aux_coord_names, grid_type = read_data(inargs.infiles, inargs.variable, calc_annual=inargs.annual,
-                                                              chunk=inargs.chunk)
 
     if inargs.area_file:
         area_cube = iris.load_cube(inargs.area_file, 'cell_area')
     else:
         area_cube = None
-    
+
     agg_methods = {'sum': iris.analysis.SUM, 'mean': iris.analysis.MEAN}
+    for file_number, infile in enumerate(inargs.infiles):
+        cube, coord_names, aux_coord_names, grid_type = read_data(infile, inargs.variable, calc_annual=inargs.annual,
+                                                                  chunk=inargs.chunk)
 
-    nh_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
-                              agg_methods[inargs.aggregation_method], area_cube,
-                              lat_bounds=inargs.nh_lat_bounds, chunk=inargs.chunk)
-    sh_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
-                              agg_methods[inargs.aggregation_method], area_cube,
-                              lat_bounds=inargs.sh_lat_bounds, chunk=inargs.chunk)
-    globe_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
-                                 agg_methods[inargs.aggregation_method], area_cube,
-                                 chunk=inargs.chunk)   
+        nh_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
+                                  agg_methods[inargs.aggregation_method], area_cube,
+                                  lat_bounds=inargs.nh_lat_bounds, chunk=inargs.chunk)
+        sh_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
+                                  agg_methods[inargs.aggregation_method], area_cube,
+                                  lat_bounds=inargs.sh_lat_bounds, chunk=inargs.chunk)
+        globe_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
+                                     agg_methods[inargs.aggregation_method], area_cube,
+                                     chunk=inargs.chunk)   
 
-    nh_agg = rename_cube(nh_agg, 'nh ' + inargs.aggregation_method)  
-    sh_agg = rename_cube(sh_agg, 'sh ' + inargs.aggregation_method)
-    globe_agg = rename_cube(globe_agg, 'globe ' + inargs.aggregation_method) 
+        nh_agg = rename_cube(nh_agg, 'nh ' + inargs.aggregation_method)  
+        sh_agg = rename_cube(sh_agg, 'sh ' + inargs.aggregation_method)
+        globe_agg = rename_cube(globe_agg, 'globe ' + inargs.aggregation_method) 
 
-    cube_list = iris.cube.CubeList([nh_agg, sh_agg, globe_agg])
+        cube_list = iris.cube.CubeList([nh_agg, sh_agg, globe_agg])
 
-    if 'diff' in inargs.metric:
-        metric = calc_diff(nh_agg, sh_agg, inargs.aggregation_method)
-        cube_list.append(metric)
-    if 'global-fraction' in inargs.metric:
-        nh_metric = calc_frac(nh_agg, globe_agg, inargs.aggregation_method)
-        sh_metric = calc_frac(sh_agg, globe_agg, inargs.aggregation_method)
-        cube_list.append(nh_metric)
-        cube_list.append(sh_metric)
+        if 'diff' in inargs.metric:
+            metric = calc_diff(nh_agg, sh_agg, inargs.aggregation_method)
+            cube_list.append(metric)
+        if 'global-fraction' in inargs.metric:
+            nh_metric = calc_frac(nh_agg, globe_agg, inargs.aggregation_method)
+            sh_metric = calc_frac(sh_agg, globe_agg, inargs.aggregation_method)
+            cube_list.append(nh_metric)
+            cube_list.append(sh_metric)
 
-    if inargs.cumsum:
-        cube_list = iris.cube.CubeList(map(uconv.convert_to_joules, cube_list))
-        cube_list = iris.cube.CubeList(map(cumsum, cube_list)) 
+        if inargs.cumsum:
+            cube_list = iris.cube.CubeList(map(uconv.convert_to_joules, cube_list))
+            cube_list = iris.cube.CubeList(map(cumsum, cube_list)) 
 
-    cube_list = update_metadata(cube_list)
-    iris.save(cube_list, inargs.outfile)
+        if file_number == 0:
+            final_cube_list = cube_list
+        else:
+            for var_num in range(len(cube_list)):
+                cube_pair = iris.cube.CubeList([final_cube_list[var_num], cube_list[var_num]])
+                final_cube_list[var_num] = combine_cubes(cube_pair)
+
+    new_log = cmdprov.new_log(infile_history={infile: cube.attributes['history']}, git_repo=repo_dir)
+    final_cube_list = update_metadata(final_cube_list, new_log)
+    iris.save(final_cube_list, inargs.outfile)
 
 
 if __name__ == '__main__':
