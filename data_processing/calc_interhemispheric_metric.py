@@ -51,18 +51,13 @@ def read_data(infile, variable, calc_annual=False, chunk=False):
     coord_names = [coord.name() for coord in cube.dim_coords]
     aux_coord_names = [coord.name() for coord in cube.aux_coords]
     assert 'time' in coord_names
-    assert len(coord_names) == 3
     grid_type = 'curvilinear' if aux_coord_names == ['latitude', 'longitude'] else 'latlon'
-
-    #infile_history = {}
-    #infile_history[infiles[0]] = history[0] 
-    #cube.attributes['history'] = gio.write_metadata(file_info=infile_history)
 
     return cube, coord_names, aux_coord_names, grid_type
 
 
 def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
-                     aggregation_method, area_cube,
+                     aggregation_method, weights_cube,
                      lat_bounds=None, chunk=False):
     """Load the infiles and calculate the spatial aggregate (sum or mean)."""
 
@@ -76,28 +71,35 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
         else:
             cube = grids.extract_latregion_rectilinear(cube, lat_bounds)
 
-    # Get area weights       
-    if type(area_cube) == iris.cube.Cube:
+    # Get weights       
+    if type(weights_cube) == iris.cube.Cube:
         if grid_type == 'latlon' and lat_bounds:
-            area_cube = grids.extract_latregion_rectilinear(area_cube, lat_bounds)
-        area_weights = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
-    elif type(area_cube) == str:
-        area_weights = spatial_weights.area_array(cube)
+            weights_cube = grids.extract_latregion_rectilinear(weights_cube, lat_bounds)
+        weights_array = uconv.broadcast_array(weights_cube.data, [1, weights_cube.ndim], cube.shape)
+    elif type(weights_cube) == str:
+        assert weights_cube.ndim == 2
+        weights_array = spatial_weights.area_array(cube)
     else:
-        area_weights = None
+        weights_array = None
 
     # Calculate spatial aggregate
     coord_names.remove('time')
     if chunk:
-        spatial_agg = uconv.chunked_collapse_by_time(cube, coord_names, aggregation_method, weights=area_weights)
+        spatial_agg = uconv.chunked_collapse_by_time(cube, coord_names, aggregation_method, weights=weights_array)
     else: 
-        spatial_agg = cube.collapsed(coord_names, aggregation_method, weights=area_weights)
+        spatial_agg = cube.collapsed(coord_names, aggregation_method, weights=weights_array)
 
-    if area_cube and (aggregation_method == iris.analysis.SUM):
+    if weights_cube and (aggregation_method == iris.analysis.SUM):
         units = str(spatial_agg.units)
-        spatial_agg.units = units.replace('m-2', '')
+        if weights_cube.ndim == 2:
+            spatial_agg.units = units.replace('m-2', '')
+
     spatial_agg.remove_coord('latitude')
     spatial_agg.remove_coord('longitude')
+    try:
+        spatial_agg.remove_coord('depth')
+    except iris.exceptions.CoordinateNotFoundError:
+        pass
     if grid_type == 'curvilinear':
         spatial_agg.remove_coord(coord_names[0])
         spatial_agg.remove_coord(coord_names[1])
@@ -180,10 +182,10 @@ def combine_cubes(cube_list):
 def main(inargs):
     """Run the program."""
 
-    if inargs.area_file:
-        area_cube = iris.load_cube(inargs.area_file, 'cell_area')
+    if inargs.weights_file:
+        weights_cube = iris.load_cube(inargs.weights_file)
     else:
-        area_cube = None
+        weights_cube = None
 
     agg_methods = {'sum': iris.analysis.SUM, 'mean': iris.analysis.MEAN}
     for file_number, infile in enumerate(inargs.infiles):
@@ -191,13 +193,13 @@ def main(inargs):
                                                                   chunk=inargs.chunk)
 
         nh_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
-                                  agg_methods[inargs.aggregation_method], area_cube,
+                                  agg_methods[inargs.aggregation_method], weights_cube,
                                   lat_bounds=inargs.nh_lat_bounds, chunk=inargs.chunk)
         sh_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
-                                  agg_methods[inargs.aggregation_method], area_cube,
+                                  agg_methods[inargs.aggregation_method], weights_cube,
                                   lat_bounds=inargs.sh_lat_bounds, chunk=inargs.chunk)
         globe_agg = calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
-                                     agg_methods[inargs.aggregation_method], area_cube,
+                                     agg_methods[inargs.aggregation_method], weights_cube,
                                      chunk=inargs.chunk)   
 
         nh_agg = rename_cube(nh_agg, 'nh ' + inargs.aggregation_method)  
@@ -250,13 +252,13 @@ author:
     parser.add_argument("variable", type=str, help="Input variable")                                                 
     parser.add_argument("outfile", type=str, help="Output file")  
 
-    parser.add_argument("--area_file", type=str, default=None, 
-                        help="""Input area file (write 'calculate' to determine from grid info) [default = no area weighting]""")
+    parser.add_argument("--weights_file", type=str, default=None, 
+                        help="""Input weights file (write 'calculate' to determine from grid info) [default = no weighting]""")
 
     parser.add_argument("--aggregation_method", type=str, default='sum', choices=('mean', 'sum'),
                         help="calculate the hemispheric sum or mean")
     
-    parser.add_argument("--metric", type=str, default=None, nargs='*', choices=('diff', 'global-fraction'),
+    parser.add_argument("--metric", type=str, default=[], nargs='*', choices=('diff', 'global-fraction'),
                         help="output additional metrics")
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Output annual mean [default=False]")

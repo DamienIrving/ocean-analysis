@@ -1,14 +1,14 @@
 
-model=GFDL-CM3
-experiments=(rcp85)
+model=CanESM2
+experiments=(historical)
 rips=(r1i1p1)
-vars=(hfds ohc rndt)
+vars=(thetao)
 # hfds ohc rndt
 
-inferred=true
+inferred=false
 # true false
 
-agg='sum'
+agg='mean'
 # mean sum
 
 
@@ -25,61 +25,76 @@ for var in "${vars[@]}"; do
 for experiment in "${experiments[@]}"; do
 for rip in "${rips[@]}"; do
 
+cumsum=' '
+tdetails='all'
+metric=' '
+#'--metric diff global-fraction'
+
 if [[ "${var}" == "ohc" ]] ; then
     infiles=${r87_dir}/${experiment}/yr/ocean/${rip}/ohc/latest/ohc_Oyr_${model}_${experiment}_${rip}_*.nc
     longvar=ocean_heat_content
-    area=' '
+    weights=' '
     outvar=ohc
     outtscale='Oyr'
     outrealm='ocean'
     smooth=' '
-    tdetails='all'
-    metric='global-fraction'
-    cumsum=' '
+    #tdetails='all'
+    #metric='global-fraction'
+    #cumsum=' '
 elif [ "${var}" == "hfds" ] && [ "${inferred}" == true ] ; then
     infiles=${r87_dir}/${experiment}/mon/ocean/${rip}/hfds/latest/hfds-inferred_Omon_${model}_${experiment}_${rip}_*.nc
     longvar=surface_downward_heat_flux_in_sea_water
-    area="--area_file ${ua6_dir}/${fx_experiment}/fx/atmos/${fx_rip}/areacella/latest/areacella_fx_${model}_${fx_experiment}_${fx_rip}.nc"
+    #weights="--weights_file ${ua6_dir}/${fx_experiment}/fx/atmos/${fx_rip}/areacella/latest/areacella_fx_${model}_${fx_experiment}_${fx_rip}.nc"
+    weights=' '
     outvar=hfds-inferred
     outtscale='Oyr'
     outrealm='ocean'
     smooth='--annual'
-    tdetails='cumsum-all'
-    metric='diff'
-    cumsum='--cumsum'
+    #tdetails='cumsum-all'
+    #metric='diff'
+    #cumsum='--cumsum'
 elif [[ "${var}" == 'hfds' ]] ; then
     infiles=${ua6_dir}/${experiment}/mon/ocean/${rip}/hfds/latest/hfds_Omon_${model}_${experiment}_${rip}_*.nc
     longvar=surface_downward_heat_flux_in_sea_water
-    area="--area_file ${ua6_dir}/${fx_experiment}/fx/ocean/${fx_rip}/areacello/latest/areacello_fx_${model}_${fx_experiment}_${fx_rip}.nc"
+    #weights="--weights_file ${ua6_dir}/${fx_experiment}/fx/ocean/${fx_rip}/areacello/latest/areacello_fx_${model}_${fx_experiment}_${fx_rip}.nc"
+    weights=' '
     outvar=hfds
     outtscale='Oyr'
     outrealm='ocean'
     smooth='--annual'
-    tdetails='cumsum-all'
-    metric='diff'
-    cumsum='--cumsum'
+    #tdetails='cumsum-all'
+    #metric='diff'
+    #cumsum='--cumsum'
 elif [[ "${var}" == "rndt" ]] ; then
     infiles=${r87_dir}/${experiment}/mon/atmos/${rip}/rndt/latest/rndt_Amon_${model}_${experiment}_${rip}_*.nc
     longvar='TOA_Incoming_Net_Radiation'
-    area="--area_file ${ua6_dir}/${fx_experiment}/fx/atmos/${fx_rip}/areacella/latest/areacella_fx_${model}_${fx_experiment}_${fx_rip}.nc"
+    weights="--weights_file ${ua6_dir}/${fx_experiment}/fx/atmos/${fx_rip}/areacella/latest/areacella_fx_${model}_${fx_experiment}_${fx_rip}.nc"
     outvar=rndt
     outtscale='Ayr'
     outrealm='atmos'
     smooth='--annual'
-    tdetails='cumsum-all'
-    metric='diff'
-    cumsum='--cumsum'
+    #tdetails='cumsum-all'
+    #metric='diff'
+    #cumsum='--cumsum'
+elif [[ "${var}" == "thetao" ]] ; then
+    infiles=${ua6_dir}/${experiment}/mon/ocean/${rip}/thetao/latest/thetao_Omon_${model}_${experiment}_${rip}_*.nc
+    longvar='sea_water_potential_temperature'
+    weights="--weights_file ${ua6_dir}/${fx_experiment}/fx/ocean/${fx_rip}/volcello/latest/volcello_fx_${model}_${fx_experiment}_${fx_rip}.nc"
+    outvar=thetao
+    outtscale='Oyr'
+    outrealm='ocean'
+    smooth='--annual'
 fi
 
 outdir=${r87_dir}/${experiment}/yr/${outrealm}/${rip}/${var}/latest
 mkdir -p ${outdir}
 outfile=${outdir}/${outvar}-${agg}-hemispheric-metrics_${outtscale}_${model}_${experiment}_${rip}_${tdetails}.nc
 
-command="${python} ${script_dir}/calc_interhemispheric_metric.py ${infiles} ${longvar} ${outfile} --metric ${metric} --aggregation_method ${agg} ${smooth} ${area} ${cumsum}"
+command="${python} ${script_dir}/calc_interhemispheric_metric.py ${infiles} ${longvar} ${outfile} ${metric} --aggregation_method ${agg} ${smooth} ${weights} ${cumsum}"
 # --nh_lat_bounds -3.5 91 --sh_lat_bounds -91 -3.5 --chunk
 
 echo ${command}
-${command}
+#${command}
 
 done
 done
