@@ -209,10 +209,10 @@ def main(inargs):
 
     cube_list = iris.cube.CubeList([nh_agg, sh_agg, globe_agg])
 
-    if inargs.metric == 'diff':
+    if 'diff' in inargs.metric:
         metric = calc_diff(nh_agg, sh_agg, inargs.aggregation_method)
         cube_list.append(metric)
-    elif inargs.metric == 'global-fraction':
+    if 'global-fraction' in inargs.metric:
         nh_metric = calc_frac(nh_agg, globe_agg, inargs.aggregation_method)
         sh_metric = calc_frac(sh_agg, globe_agg, inargs.aggregation_method)
         cube_list.append(nh_metric)
@@ -251,8 +251,8 @@ author:
     parser.add_argument("--aggregation_method", type=str, default='sum', choices=('mean', 'sum'),
                         help="calculate the hemispheric sum or mean")
     
-    parser.add_argument("--metric", type=str, default=None, choices=('diff', 'global-fraction'),
-                        help="output an additional metric")
+    parser.add_argument("--metric", type=str, default=None, nargs='*', choices=('diff', 'global-fraction'),
+                        help="output additional metrics")
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Output annual mean [default=False]")
 
