@@ -44,11 +44,12 @@ exp_labels = {'historical-rcp85': 'historical-rcp85', 'historicalGHG': 'GHG-only
 var_colors = {'ohc': 'blue', 'hfds': 'orange', 'rndt': 'red'}
 exp_colors = {'historical-rcp85': 'black', 'GHG-only': 'red', 'AA-only': 'blue'}
 
-names = {'ohc': 'ocean heat content',
+names = {'ohc-adjusted': 'ocean heat content',
+         'ohc': 'ocean heat content',
          'hfds': 'Downward Heat Flux at Sea Water Surface',
          'rndt': 'TOA Incoming Net Radiation'}
 
-titles = ['netTOA', 'OHU', 'OHC']
+titles = ['netTOA', 'OHU', 'OHC', 'OHC (volume adjusted)']
 
 plot_variables = {'ohc': 'OHC',
                   'hfds': 'OHU',
@@ -142,52 +143,74 @@ def calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, ensemble_
 
     assert nh_attributes == sh_attributes 
 
-    diff = nh_cube.copy()
-    diff.data = nh_anomaly.data - sh_anomaly.data
+    metric = nh_cube.copy()
+    if var == 'ohc-adjusted':
+        globe_data = nh_cube.data + sh_cube.data
+        globe_anomaly = sh_anomaly.data + nh_anomaly.data
+        nh_mean = nh_cube.data.mean()
+        globe_mean = globe_data.mean()
+        constant = 1 - 2*(nh_mean/globe_mean)
+        diff = nh_anomaly.data - sh_anomaly.data
+        metric.data = diff + (globe_anomaly * constant)  
+    else:
+        metric.data = nh_anomaly.data - sh_anomaly.data
 
     new_aux_coord = iris.coords.AuxCoord(ensemble_number, long_name='ensemble_member', units='no_unit')
-    diff.add_aux_coord(new_aux_coord)
+    metric.add_aux_coord(new_aux_coord)
+    metric.cell_methods = ()
 
-    diff.cell_methods = ()
-
-    return diff
+    return metric
 
 
 def get_file_pair(var, model, experiment):
     """Get a file pair of interest"""
 
+    var = 'ohc' if var == 'ohc-adjusted' else var
     dir_experiment = 'rcp85' if experiment == 'historical-rcp85' else experiment 
     mip = 'r1i1' + aa_physics[model] if experiment == 'historicalMisc' else 'r1i1p1'
     time_info = 'all' if var == 'ohc' else 'cumsum-all'
     tscale = 'Ayr' if var == 'rndt' else 'Oyr'
     realm = 'atmos' if var =='rndt' else 'ocean'
+    var = 'ohc' if var == 'ohc-adjusted' else var
 
     mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr/%s/%s/%s/latest/dedrifted'  %(model, dir_experiment, realm, mip, var)
  
     output = {}
     for region in ['nh', 'sh']:
         file_start = '%s*%s-sum'  %(var, region)
-        files = glob.glob('%s/%s_*.nc' %(mydir, file_start))
-        assert len(files) == 1, 'File search failed for %s, %s, %s' %(var, model, experiment)
+        files = glob.glob('%s/%s_*%s.nc' %(mydir, file_start, time_info))
+        assert len(files) == 1, '%s/%s_*%s.nc' %(mydir, file_start, time_info)
         output[region] = files[0]
-
+   
     return output['nh'], output['sh']
 
 
 def set_plot_features(inargs, ax, plotnum):
     """ """
-
-    if inargs.ylim:
-        ylower, yupper = inargs.ylim
+        
+    if inargs.ylim_uptake and plotnum in [0, 1]:
+        ylower, yupper = inargs.ylim_uptake
         plt.ylim(ylower * 1e24, yupper * 1e24)
-  
-    ax.set_xlabel('Year')
-    if plotnum == 0:
+    elif inargs.ylim_ohc and plotnum == 2:
+        ylower, yupper = inargs.ylim_ohc
+        plt.ylim(ylower * 1e24, yupper * 1e24)
+    elif inargs.ylim_ohc_adjusted and plotnum == 3:
+        ylower, yupper = inargs.ylim_ohc_adjusted
+        plt.ylim(ylower * 1e24, yupper * 1e24)
+
+    if plotnum in [2, 3]:
+        ax.set_xlabel('Year')
+    if plotnum in [0, 2]:
         ax.set_ylabel('NH minus SH (Joules)')
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
     ax.yaxis.major.formatter._useMathText = True
-        
-    plt.legend(loc=3)
+    
+    ax.tick_params(top='off') 
+
+    if plotnum == 3:
+        plt.legend(loc=2)
+    else:
+        plt.legend(loc=3)
 
 
 def main(inargs):
@@ -199,9 +222,9 @@ def main(inargs):
     if inargs.plot_type == 'single':
         fig, ax = plt.subplots()
     else:
-        fig = plt.figure(figsize=[30, 7])
-        gs = gridspec.GridSpec(1, 3)
-        axes = [plt.subplot(gs[0]), plt.subplot(gs[1]), plt.subplot(gs[2])]
+        fig = plt.figure(figsize=[20, 14])
+        gs = gridspec.GridSpec(2, 2)
+        axes = [plt.subplot(gs[0]), plt.subplot(gs[1]), plt.subplot(gs[2]), plt.subplot(gs[3])]
 
     for experiment in inargs.experiments:
         plot_experiment = exp_labels[experiment]
@@ -209,7 +232,7 @@ def main(inargs):
         ensemble_spread_dict = {}
         upper_time_bound = '2100-12-31' if experiment == 'historical-rcp85' else '2005-12-31'
         time_constraint = gio.get_time_constraint(['1861-01-01', upper_time_bound])
-        for index, var in enumerate(['rndt', 'hfds', 'ohc']):
+        for index, var in enumerate(['rndt', 'hfds', 'ohc', 'ohc-adjusted']):
             cube_list = iris.cube.CubeList([])
             for file_num, model in enumerate(inargs.models):
                 nh_file, sh_file = get_file_pair(var, model, experiment)
@@ -240,11 +263,10 @@ def main(inargs):
     else:
         if inargs.title:
             plt.suptitle('interhemispheric difference in accumulated heat')
-        for index in range(3):
+        for index in range(4):
             plt.sca(axes[index])
             plt.title(titles[index])
             set_plot_features(inargs, axes[index], index)
-            
             
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
@@ -272,8 +294,12 @@ author:
     parser.add_argument("plot_type", type=str, choices=('single', 'panels'), help="plot type")
     parser.add_argument("outfile", type=str, help="output file")
 
-    parser.add_argument("--ylim", type=float, nargs=2, default=None,
-                        help="y limits for plots (x 10^24)")
+    parser.add_argument("--ylim_uptake", type=float, nargs=2, default=None,
+                        help="y limits for netTOA and OHU plots (x 10^24)")
+    parser.add_argument("--ylim_ohc", type=float, nargs=2, default=None,
+                        help="y limits for OHC plots (x 10^24)")
+    parser.add_argument("--ylim_ohc_adjusted", type=float, nargs=2, default=None,
+                        help="y limits for OHC volume adjusted plots (x 10^24)")
 
     parser.add_argument("--experiments", type=str, nargs='*',
                         choices=('historical-rcp85', 'historicalGHG', 'historicalMisc'),
