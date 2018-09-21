@@ -101,8 +101,8 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
     except iris.exceptions.CoordinateNotFoundError:
         pass
     if grid_type == 'curvilinear':
-        spatial_agg.remove_coord(coord_names[0])
-        spatial_agg.remove_coord(coord_names[1])
+        spatial_agg.remove_coord(coord_names[-2])
+        spatial_agg.remove_coord(coord_names[-1])
 
     return spatial_agg
 
@@ -189,6 +189,7 @@ def main(inargs):
 
     agg_methods = {'sum': iris.analysis.SUM, 'mean': iris.analysis.MEAN}
     for file_number, infile in enumerate(inargs.infiles):
+        print(infile)
         cube, coord_names, aux_coord_names, grid_type = read_data(infile, inargs.variable, calc_annual=inargs.annual,
                                                                   chunk=inargs.chunk)
 
