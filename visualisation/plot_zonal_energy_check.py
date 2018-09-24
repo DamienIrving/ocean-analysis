@@ -48,6 +48,9 @@ titles = {'historical': 'historical', 'historicalGHG': 'GHG-only',
           'historicalMisc': 'AA-only', 'GHG+AA': 'GHG + AA',
           'hist-GHG+AA': 'historical - (GHG + AA)'}
 
+panel_labels = {0: '(a)', 1: '(b)', 2: '(c)', 3: '(d)',
+                4: '(e)', 5: '(f)', 6: '(g)', 7: '(h)'}
+
 seaborn.set(style='whitegrid')
 
 mpl.rcParams['axes.labelsize'] = 24
@@ -200,7 +203,8 @@ def get_anomalies(rndt_file, hfds_file, ohc_file, time_constraint,
 
 def plot_uptake_storage(gs, rndt_anomaly, hfds_anomaly, ohc_anomaly,
                         exp_num=None, linestyle='-', linewidth=None, 
-                        decorate=True, title=None, ylim=True):
+                        decorate=True, title=None, ylim=True,
+                        panel_label=None):
     """Plot the heat uptake and storage"""
 
     ax = plt.subplot(gs)
@@ -225,6 +229,10 @@ def plot_uptake_storage(gs, rndt_anomaly, hfds_anomaly, ohc_anomaly,
         ylower, yupper = ylim
         plt.ylim(ylower * 1e22, yupper * 1e22)
 
+    if panel_label:
+        ax.text(0.02, 0.09, panel_label, transform=ax.transAxes,
+                fontsize=24, va='top')
+
     if decorate:
         if exp_num == 0:
             plt.ylabel('Heat uptake/storage ($J \; lat^{-1}$)')
@@ -239,7 +247,7 @@ def plot_uptake_storage(gs, rndt_anomaly, hfds_anomaly, ohc_anomaly,
 
 def plot_transport(gs, hfbasin_inferred, hfatmos_inferred, hftotal_inferred,
                    exp_num=None, linewidth=None, linestyle='-',
-                   decorate=True, ylim=None):
+                   decorate=True, ylim=None, panel_label=None):
     """Plot the northward heat transport"""
 
     ax = plt.subplot(gs)
@@ -260,6 +268,10 @@ def plot_transport(gs, hfbasin_inferred, hfatmos_inferred, hftotal_inferred,
     if ylim:
         ylower, yupper = ylim
         plt.ylim(ylower * 1e23, yupper * 1e23)
+
+    if panel_label:
+        ax.text(0.02, 0.09, panel_label, transform=ax.transAxes,
+                fontsize=24, va='top')
 
     if decorate:
         plt.xlabel('Latitude')
@@ -330,13 +342,15 @@ def main(inargs):
                                     anomaly_dict[('hfds', exp)][mod_num],
                                     anomaly_dict[('ohc', exp)][mod_num],
                                     linewidth=1.0, linestyle='--',
-                                    decorate=False, ylim=inargs.ylim_storage)
+                                    decorate=False, ylim=inargs.ylim_storage,
+                                    panel_label=panel_labels[plot_index])
                 plot_transport(gs[plot_index + nexp],
                                anomaly_dict[('hfbasin-inferred', exp)][mod_num],
                                anomaly_dict[('hfatmos-inferred', exp)][mod_num],
                                anomaly_dict[('hftotal-inferred', exp)][mod_num],
                                linewidth=1.0, linestyle='--',
-                               decorate=False, ylim=inargs.ylim_transport) 
+                               decorate=False, ylim=inargs.ylim_transport,
+                               panel_label=panel_labels[plot_index + nexp]) 
 
     # Plot ensemble data
     ensemble_dict = {}
@@ -352,13 +366,15 @@ def main(inargs):
                             ensemble_dict[('hfds', exp)],
                             ensemble_dict[('ohc', exp)],
                             linewidth=linewidth, title=titles[exp],
-                            exp_num=plot_index, ylim=inargs.ylim_storage)
+                            exp_num=plot_index, ylim=inargs.ylim_storage,
+                            panel_label=panel_labels[plot_index])
         plot_transport(gs[plot_index + nexp],
                        ensemble_dict[('hfbasin-inferred', exp)],
                        ensemble_dict[('hfatmos-inferred', exp)],
                        ensemble_dict[('hftotal-inferred', exp)],
                        linewidth=linewidth,
-                       exp_num=plot_index, ylim=inargs.ylim_transport) 
+                       exp_num=plot_index, ylim=inargs.ylim_transport,
+                       panel_label=panel_labels[plot_index + nexp]) 
     
     if not inargs.no_title:
         time_text = get_time_text(inargs.time)
