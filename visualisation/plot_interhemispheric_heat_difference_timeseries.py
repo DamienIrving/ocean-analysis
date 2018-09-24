@@ -214,6 +214,10 @@ def set_plot_features(inargs, ax, plotnum):
 
     ax.tick_params(top='off') 
 
+    panel_labels = {0: '(a)', 1: '(b)', 2: '(c)', 3: '(d)'}
+    ax.text(0.93, 0.97, panel_labels[plotnum], transform=ax.transAxes,
+            fontsize=24, va='top')
+
     if plotnum == 3:
         plt.legend(loc=2)
     else:
