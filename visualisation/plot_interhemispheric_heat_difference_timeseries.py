@@ -44,14 +44,15 @@ exp_labels = {'historical-rcp85': 'historical-rcp85', 'historicalGHG': 'GHG-only
 var_colors = {'ohc': 'blue', 'hfds': 'orange', 'rndt': 'red'}
 exp_colors = {'historical-rcp85': 'black', 'GHG-only': 'red', 'AA-only': 'blue'}
 
-names = {'ohc-adjusted': 'ocean heat content',
+names = {'thetao': 'Sea Water Potential Temperature',
          'ohc': 'ocean heat content',
          'hfds': 'Downward Heat Flux at Sea Water Surface',
          'rndt': 'TOA Incoming Net Radiation'}
 
-titles = ['netTOA', 'OHU', 'OHC', 'OHC (volume adjusted)']
+titles = ['netTOA', 'OHU', 'OHC', 'Average Ocean Temperature']
 
-plot_variables = {'ohc': 'OHC',
+plot_variables = {'thetao': ' Average Ocean Temperature',
+                  'ohc': 'OHC',
                   'hfds': 'OHU',
                   'rndt': 'netTOA'}
 
@@ -131,12 +132,14 @@ def get_simulation_attributes(cube):
 def calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, ensemble_number):
     """Calculate the interhemispheric difference timeseries."""
 
-    nh_name = names[var] + ' nh sum'
+    agg = 'mean' if var =='thetao' else 'sum'
+
+    nh_name = names[var] + ' nh ' + agg
     nh_cube = iris.load_cube(nh_file, nh_name & time_constraint)
     nh_attributes = get_simulation_attributes(nh_cube)
     nh_anomaly = calc_anomaly(nh_cube)
 
-    sh_name = names[var] + ' sh sum'
+    sh_name = names[var] + ' sh ' + agg
     sh_cube = iris.load_cube(sh_file, sh_name & time_constraint)
     sh_attributes = get_simulation_attributes(sh_cube)
     sh_anomaly = calc_anomaly(sh_cube)
@@ -168,16 +171,17 @@ def get_file_pair(var, model, experiment):
     var = 'ohc' if var == 'ohc-adjusted' else var
     dir_experiment = 'rcp85' if experiment == 'historical-rcp85' else experiment 
     mip = 'r1i1' + aa_physics[model] if experiment == 'historicalMisc' else 'r1i1p1'
-    time_info = 'all' if var == 'ohc' else 'cumsum-all'
+    time_info = 'all' if var in ['ohc', 'thetao'] else 'cumsum-all'
     tscale = 'Ayr' if var == 'rndt' else 'Oyr'
     realm = 'atmos' if var =='rndt' else 'ocean'
     var = 'ohc' if var == 'ohc-adjusted' else var
+    agg = 'mean' if var == 'thetao' else 'sum'
 
     mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr/%s/%s/%s/latest/dedrifted'  %(model, dir_experiment, realm, mip, var)
  
     output = {}
     for region in ['nh', 'sh']:
-        file_start = '%s*%s-sum'  %(var, region)
+        file_start = '%s*%s-%s'  %(var, region, agg)
         files = glob.glob('%s/%s_*%s.nc' %(mydir, file_start, time_info))
         assert len(files) == 1, '%s/%s_*%s.nc' %(mydir, file_start, time_info)
         output[region] = files[0]
@@ -194,17 +198,20 @@ def set_plot_features(inargs, ax, plotnum):
     elif inargs.ylim_ohc and plotnum == 2:
         ylower, yupper = inargs.ylim_ohc
         plt.ylim(ylower * 1e24, yupper * 1e24)
-    elif inargs.ylim_ohc_adjusted and plotnum == 3:
-        ylower, yupper = inargs.ylim_ohc_adjusted
-        plt.ylim(ylower * 1e24, yupper * 1e24)
+    elif inargs.ylim_temperature and plotnum == 3:
+        ylower, yupper = inargs.ylim_temperature
+        plt.ylim(ylower, yupper)
 
     if plotnum in [2, 3]:
         ax.set_xlabel('Year')
-    if plotnum in [0, 2]:
+
+    if plotnum in [0, 1, 2]:
         ax.set_ylabel('NH minus SH (Joules)')
-    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
-    ax.yaxis.major.formatter._useMathText = True
-    
+        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+        ax.yaxis.major.formatter._useMathText = True
+    else:
+        ax.set_ylabel('NH minus SH (K)')
+
     ax.tick_params(top='off') 
 
     if plotnum == 3:
@@ -222,8 +229,8 @@ def main(inargs):
     if inargs.plot_type == 'single':
         fig, ax = plt.subplots()
     else:
-        fig = plt.figure(figsize=[20, 14])
-        gs = gridspec.GridSpec(2, 2)
+        fig = plt.figure(figsize=[22, 14])
+        gs = gridspec.GridSpec(2, 2, wspace=0.27, hspace=0.25)
         axes = [plt.subplot(gs[0]), plt.subplot(gs[1]), plt.subplot(gs[2]), plt.subplot(gs[3])]
 
     for experiment in inargs.experiments:
@@ -232,7 +239,7 @@ def main(inargs):
         ensemble_spread_dict = {}
         upper_time_bound = '2100-12-31' if experiment == 'historical-rcp85' else '2005-12-31'
         time_constraint = gio.get_time_constraint(['1861-01-01', upper_time_bound])
-        for index, var in enumerate(['rndt', 'hfds', 'ohc', 'ohc-adjusted']):
+        for index, var in enumerate(['rndt', 'hfds', 'ohc', 'thetao']):
             cube_list = iris.cube.CubeList([])
             for file_num, model in enumerate(inargs.models):
                 nh_file, sh_file = get_file_pair(var, model, experiment)
@@ -298,8 +305,8 @@ author:
                         help="y limits for netTOA and OHU plots (x 10^24)")
     parser.add_argument("--ylim_ohc", type=float, nargs=2, default=None,
                         help="y limits for OHC plots (x 10^24)")
-    parser.add_argument("--ylim_ohc_adjusted", type=float, nargs=2, default=None,
-                        help="y limits for OHC volume adjusted plots (x 10^24)")
+    parser.add_argument("--ylim_temperature", type=float, nargs=2, default=None,
+                        help="y limits for ocean temperature plots")
 
     parser.add_argument("--experiments", type=str, nargs='*',
                         choices=('historical-rcp85', 'historicalGHG', 'historicalMisc'),

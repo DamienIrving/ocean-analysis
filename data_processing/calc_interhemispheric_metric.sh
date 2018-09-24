@@ -1,6 +1,6 @@
 
-model=GISS-E2-R
-experiments=(piControl)
+model=NorESM1-M
+experiments=(rcp85)
 rips=(r1i1p1)
 vars=(thetao)
 # hfds ohc rndt
@@ -94,7 +94,7 @@ command="${python} -W ignore ${script_dir}/calc_interhemispheric_metric.py ${inf
 # --nh_lat_bounds -3.5 91 --sh_lat_bounds -91 -3.5 --chunk
 
 echo ${command}
-#${command}
+${command}
 
 done
 done
