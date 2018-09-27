@@ -129,7 +129,7 @@ def get_simulation_attributes(cube):
     return model, experiment, mip
 
 
-def calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, ensemble_number):
+def calc_hemispheric_value(nh_file, sh_file, val_type, var, time_constraint, ensemble_number):
     """Calculate the interhemispheric difference timeseries."""
 
     agg = 'mean' if var =='thetao' else 'sum'
@@ -156,7 +156,12 @@ def calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, ensemble_
         diff = nh_anomaly.data - sh_anomaly.data
         metric.data = diff + (globe_anomaly * constant)  
     else:
-        metric.data = nh_anomaly.data - sh_anomaly.data
+        if val_type == 'diff':
+            metric.data = nh_anomaly.data - sh_anomaly.data
+        elif val_type == 'sh':
+            metric.data = sh_anomaly.data
+        elif val_type == 'nh': 
+            metric.data = nh_anomaly.data
 
     new_aux_coord = iris.coords.AuxCoord(ensemble_number, long_name='ensemble_member', units='no_unit')
     metric.add_aux_coord(new_aux_coord)
@@ -218,10 +223,13 @@ def set_plot_features(inargs, ax, plotnum):
     ax.text(0.93, 0.97, panel_labels[plotnum], transform=ax.transAxes,
             fontsize=24, va='top')
 
-    if plotnum == 3:
+    if plotnum == 3 or inargs.metric in ['sh', 'nh']:
         plt.legend(loc=2)
     else:
         plt.legend(loc=3)
+
+    if inargs.metric in ['sh', 'nh']:
+        ax.axhline(y=0, color='0.5', linestyle='--', linewidth=0.5)
 
 
 def main(inargs):
@@ -247,11 +255,11 @@ def main(inargs):
             cube_list = iris.cube.CubeList([])
             for file_num, model in enumerate(inargs.models):
                 nh_file, sh_file = get_file_pair(var, model, experiment)
-                diff = calc_interhemispheric_diff(nh_file, sh_file, var, time_constraint, file_num)
-                cube_list.append(diff)
+                value = calc_hemispheric_value(nh_file, sh_file, inargs.metric, var, time_constraint, file_num)
+                cube_list.append(value)
                 if inargs.plot_type == 'panels' and inargs.individual:
                     plt.sca(axes[index])
-                    iplt.plot(diff, color=exp_colors[plot_experiment], linewidth=0.3)
+                    iplt.plot(value, color=exp_colors[plot_experiment], linewidth=0.3)
 
             ensemble_agg_dict[var], ensemble_spread_dict[var] = ensemble_aggregation(cube_list, inargs.ensagg)
             
@@ -304,6 +312,9 @@ author:
     parser.add_argument("models", type=str, nargs='*', help="models")
     parser.add_argument("plot_type", type=str, choices=('single', 'panels'), help="plot type")
     parser.add_argument("outfile", type=str, help="output file")
+
+    parser.add_argument("--metric", type=str, default='diff', choices=('diff', 'nh', 'sh'),
+                        help="Metric to plot (hemispheric values or difference) [default=diff]")
 
     parser.add_argument("--ylim_uptake", type=float, nargs=2, default=None,
                         help="y limits for netTOA and OHU plots (x 10^24)")
