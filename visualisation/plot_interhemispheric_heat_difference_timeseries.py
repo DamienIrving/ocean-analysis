@@ -49,7 +49,7 @@ names = {'thetao': 'Sea Water Potential Temperature',
          'hfds': 'Downward Heat Flux at Sea Water Surface',
          'rndt': 'TOA Incoming Net Radiation'}
 
-titles = ['netTOA', 'OHU', 'OHC', 'Average Ocean Temperature']
+titles = {'rndt': 'netTOA', 'hfds': 'OHU', 'ohc': 'OHC', 'thetao': 'Average Ocean Temperature'}
 
 plot_variables = {'thetao': ' Average Ocean Temperature',
                   'ohc': 'OHC',
@@ -60,6 +60,9 @@ aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
               'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
 
 linestyles = {'historical-rcp85': 'solid', 'GHG-only': '--', 'AA-only': ':'}
+
+grid_configs = {1: (1, 1), 2: (1, 2), 3: (1, 3), 4: (2, 2)} 
+
 
 seaborn.set(style='ticks')
 
@@ -194,23 +197,23 @@ def get_file_pair(var, model, experiment):
     return output['nh'], output['sh']
 
 
-def set_plot_features(inargs, ax, plotnum):
+def set_plot_features(inargs, ax, plotnum, var, nvars):
     """ """
         
-    if inargs.ylim_uptake and plotnum in [0, 1]:
+    if inargs.ylim_uptake and var in ['rndt', 'hfds']:
         ylower, yupper = inargs.ylim_uptake
         plt.ylim(ylower * 1e24, yupper * 1e24)
-    elif inargs.ylim_ohc and plotnum == 2:
+    elif inargs.ylim_ohc and var == 'ohc':
         ylower, yupper = inargs.ylim_ohc
         plt.ylim(ylower * 1e24, yupper * 1e24)
-    elif inargs.ylim_temperature and plotnum == 3:
+    elif inargs.ylim_temperature and var == 'thetao':
         ylower, yupper = inargs.ylim_temperature
         plt.ylim(ylower, yupper)
 
-    if plotnum in [2, 3]:
+    if not (nvars == 4 and plotnum in [0, 1]):
         ax.set_xlabel('Year')
 
-    if plotnum in [0, 1, 2]:
+    if var in ['rndt', 'hfds', 'ohc']:
         ax.set_ylabel('NH minus SH (Joules)')
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
         ax.yaxis.major.formatter._useMathText = True
@@ -219,11 +222,12 @@ def set_plot_features(inargs, ax, plotnum):
 
     ax.tick_params(top='off') 
 
-    panel_labels = {0: '(a)', 1: '(b)', 2: '(c)', 3: '(d)'}
-    ax.text(0.93, 0.97, panel_labels[plotnum], transform=ax.transAxes,
-            fontsize=24, va='top')
+    if nvars > 1:
+        panel_labels = {0: '(a)', 1: '(b)', 2: '(c)', 3: '(d)'}
+        ax.text(0.93, 0.97, panel_labels[plotnum], transform=ax.transAxes,
+                fontsize=24, va='top')
 
-    if plotnum == 3 or inargs.metric in ['sh', 'nh']:
+    if var == 'thetao' or inargs.metric in ['sh', 'nh']:
         plt.legend(loc=2)
     else:
         plt.legend(loc=3)
@@ -235,15 +239,20 @@ def set_plot_features(inargs, ax, plotnum):
 def main(inargs):
     """Run the program."""
 
-    #metadata_dict = {}
-    #plt.axvline(x=0, color='0.5', linestyle='--')
-
     if inargs.plot_type == 'single':
         fig, ax = plt.subplots()
     else:
-        fig = plt.figure(figsize=[22, 14])
-        gs = gridspec.GridSpec(2, 2, wspace=0.27, hspace=0.25)
-        axes = [plt.subplot(gs[0]), plt.subplot(gs[1]), plt.subplot(gs[2]), plt.subplot(gs[3])]
+        #fig = plt.figure(figsize=[22, 14])
+        #gs = gridspec.GridSpec(2, 2, wspace=0.27, hspace=0.25)
+        #axes = [plt.subplot(gs[0]), plt.subplot(gs[1]), plt.subplot(gs[2]), plt.subplot(gs[3])]
+        nvars = len(inargs.variables)
+        nrows, ncols = grid_configs[nvars]
+
+        fig = plt.figure(figsize=[11 * nrows, 7 * ncols])
+        gs = gridspec.GridSpec(nrows, ncols, wspace=0.27, hspace=0.25)
+        axes = []
+        for index in range(nvars):
+            axes.append(plt.subplot(gs[index]))
 
     for experiment in inargs.experiments:
         plot_experiment = exp_labels[experiment]
@@ -251,7 +260,7 @@ def main(inargs):
         ensemble_spread_dict = {}
         upper_time_bound = '2100-12-31' if experiment == 'historical-rcp85' else '2005-12-31'
         time_constraint = gio.get_time_constraint(['1861-01-01', upper_time_bound])
-        for index, var in enumerate(['rndt', 'hfds', 'ohc', 'thetao']):
+        for index, var in enumerate(inargs.variables):
             cube_list = iris.cube.CubeList([])
             for file_num, model in enumerate(inargs.models):
                 nh_file, sh_file = get_file_pair(var, model, experiment)
@@ -282,10 +291,11 @@ def main(inargs):
     else:
         if inargs.title:
             plt.suptitle('interhemispheric difference in accumulated heat')
-        for index in range(4):
+        for index, var in enumerate(inargs.variables):
             plt.sca(axes[index])
-            plt.title(titles[index])
-            set_plot_features(inargs, axes[index], index)
+            if nvars > 1:
+                plt.title(titles[var])
+            set_plot_features(inargs, axes[index], index, var, nvars)
             
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
@@ -315,6 +325,11 @@ author:
 
     parser.add_argument("--metric", type=str, default='diff', choices=('diff', 'nh', 'sh'),
                         help="Metric to plot (hemispheric values or difference) [default=diff]")
+
+    parser.add_argument("--variables", type=str, nargs='*',
+                        choices=('rndt', 'hfds', 'ohc', 'thetao'),
+                        default=('rndt', 'hfds', 'ohc', 'thetao'),
+                        help="variables to plot")
 
     parser.add_argument("--ylim_uptake", type=float, nargs=2, default=None,
                         help="y limits for netTOA and OHU plots (x 10^24)")
