@@ -204,7 +204,7 @@ def get_anomalies(rndt_file, hfds_file, ohc_file, time_constraint,
 def plot_uptake_storage(gs, rndt_anomaly, hfds_anomaly, ohc_anomaly,
                         exp_num=None, linestyle='-', linewidth=None, 
                         decorate=True, title=None, ylim=True,
-                        panel_label=None):
+                        panel_label=None, legloc=1):
     """Plot the heat uptake and storage"""
 
     ax = plt.subplot(gs)
@@ -239,7 +239,7 @@ def plot_uptake_storage(gs, rndt_anomaly, hfds_anomaly, ohc_anomaly,
         plt.xlim(-90, 90)
 
         #plt.axhline(y=0, color='0.5', linestyle='--')
-        plt.legend()
+        plt.legend(loc=legloc)
 
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
     ax.yaxis.major.formatter._useMathText = True
@@ -247,7 +247,7 @@ def plot_uptake_storage(gs, rndt_anomaly, hfds_anomaly, ohc_anomaly,
 
 def plot_transport(gs, hfbasin_inferred, hfatmos_inferred, hftotal_inferred,
                    exp_num=None, linewidth=None, linestyle='-',
-                   decorate=True, ylim=None, panel_label=None):
+                   decorate=True, ylim=None, panel_label=None, legloc=1):
     """Plot the northward heat transport"""
 
     ax = plt.subplot(gs)
@@ -280,7 +280,7 @@ def plot_transport(gs, hfbasin_inferred, hfatmos_inferred, hftotal_inferred,
         plt.xlim(-90, 90)
 
         #plt.axhline(y=0, color='0.5', linestyle='--')
-        plt.legend()
+        plt.legend(loc=legloc)
 
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
     ax.yaxis.major.formatter._useMathText = True
@@ -342,15 +342,13 @@ def main(inargs):
                                     anomaly_dict[('hfds', exp)][mod_num],
                                     anomaly_dict[('ohc', exp)][mod_num],
                                     linewidth=1.0, linestyle='--',
-                                    decorate=False, ylim=inargs.ylim_storage,
-                                    panel_label=panel_labels[plot_index])
+                                    decorate=False, ylim=inargs.ylim_storage)
                 plot_transport(gs[plot_index + nexp],
                                anomaly_dict[('hfbasin-inferred', exp)][mod_num],
                                anomaly_dict[('hfatmos-inferred', exp)][mod_num],
                                anomaly_dict[('hftotal-inferred', exp)][mod_num],
                                linewidth=1.0, linestyle='--',
-                               decorate=False, ylim=inargs.ylim_transport,
-                               panel_label=panel_labels[plot_index + nexp]) 
+                               decorate=False, ylim=inargs.ylim_transport) 
 
     # Plot ensemble data
     ensemble_dict = {}
@@ -360,6 +358,8 @@ def main(inargs):
     
     linewidth = None if nmodels == 1 else 4.0
     model_label = 'ensemble' if nmodels > 1 else inargs.models[0]
+    storage_letter = panel_labels[plot_index] if inargs.panel_letters else None
+    transport_letter = panel_labels[plot_index + nexp] if inargs.panel_letters else None
     for plot_index, exp in enumerate(inargs.experiments):
         plot_uptake_storage(gs[plot_index],
                             ensemble_dict[('rndt', exp)],
@@ -367,14 +367,16 @@ def main(inargs):
                             ensemble_dict[('ohc', exp)],
                             linewidth=linewidth, title=titles[exp],
                             exp_num=plot_index, ylim=inargs.ylim_storage,
-                            panel_label=panel_labels[plot_index])
+                            panel_label=storage_letter,
+                            legloc=inargs.legloc_storage)
         plot_transport(gs[plot_index + nexp],
                        ensemble_dict[('hfbasin-inferred', exp)],
                        ensemble_dict[('hfatmos-inferred', exp)],
                        ensemble_dict[('hftotal-inferred', exp)],
                        linewidth=linewidth,
                        exp_num=plot_index, ylim=inargs.ylim_transport,
-                       panel_label=panel_labels[plot_index + nexp]) 
+                       panel_label=transport_letter,
+                       legloc=inargs.legloc_transport) 
     
     if not inargs.no_title:
         time_text = get_time_text(inargs.time)
@@ -425,6 +427,14 @@ author:
                         help="y limits for transport plots (x 10^23)")
     parser.add_argument("--no_title", action="store_true", default=False,
                         help="switch for turning off plot title [default: False]")
+
+    parser.add_argument("--panel_letters", action="store_true", default=False,
+                        help="include a letter on each panel [default: False]")
+
+    parser.add_argument("--legloc_storage", type=int, default=1,
+                        help="legend location for storage plots")
+    parser.add_argument("--legloc_transport", type=int, default=1,
+                        help="legend location for transport plots")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
