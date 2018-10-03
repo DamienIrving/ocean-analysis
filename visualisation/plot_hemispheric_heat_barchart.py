@@ -101,8 +101,6 @@ def main(inargs):
     
     for var_index, var_files in enumerate([inargs.toa_files, inargs.ohu_files, inargs.ohc_files]):
         var = file_variables[var_index]
-        if var_files:
-             plotted_variables
         for model_files in var_files:
             for file_pair in [model_files[i:i + 2] for i in range(0, len(model_files), 2)]:
                 sh_file, nh_file = file_pair  
