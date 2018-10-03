@@ -7,7 +7,7 @@ Description:  Plot ensemble interhemispheric heat difference timeseries for OHC,
 
 # Import general Python modules
 
-import sys, os, pdb, glob
+import sys, os, pdb
 import argparse
 import numpy
 import iris
@@ -15,9 +15,10 @@ from iris.experimental.equalise_cubes import equalise_attributes
 import iris.plot as iplt
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-
-import seaborn
 import matplotlib as mpl
+import seaborn
+
+import cmdline_provenance as cmdprov
 
 # Import my modules
 
@@ -32,17 +33,15 @@ modules_dir = os.path.join(repo_dir, 'modules')
 sys.path.append(modules_dir)
 try:
     import general_io as gio
-    import convenient_universal as uconv
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
 
 # Define functions
 
-exp_labels = {'historical-rcp85': 'historical-rcp85', 'historicalGHG': 'GHG-only', 'historicalMisc': 'AA-only'}
-
 var_colors = {'ohc': 'blue', 'hfds': 'orange', 'rndt': 'red'}
 exp_colors = {'historical-rcp85': 'black', 'GHG-only': 'red', 'AA-only': 'blue'}
+exp_start = {'historical-rcp85': 0, 'GHG-only': 2, 'AA-only': 4}
 
 names = {'thetao': 'Sea Water Potential Temperature',
          'ohc': 'ocean heat content',
@@ -56,13 +55,9 @@ plot_variables = {'thetao': ' Average Ocean Temperature',
                   'hfds': 'OHU',
                   'rndt': 'netTOA'}
 
-aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
-              'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
-
 linestyles = {'historical-rcp85': 'solid', 'GHG-only': '--', 'AA-only': ':'}
 
 grid_configs = {1: (1, 1), 2: (1, 2), 3: (1, 3), 4: (2, 2)} 
-
 
 seaborn.set(style='ticks')
 
@@ -132,7 +127,7 @@ def get_simulation_attributes(cube):
     return model, experiment, mip
 
 
-def calc_hemispheric_value(nh_file, sh_file, val_type, var, time_constraint, ensemble_number):
+def calc_hemispheric_value(sh_file, nh_file, val_type, var, time_constraint, ensemble_number):
     """Calculate the interhemispheric difference timeseries."""
 
     agg = 'mean' if var =='thetao' else 'sum'
@@ -170,31 +165,7 @@ def calc_hemispheric_value(nh_file, sh_file, val_type, var, time_constraint, ens
     metric.add_aux_coord(new_aux_coord)
     metric.cell_methods = ()
 
-    return metric
-
-
-def get_file_pair(var, model, experiment):
-    """Get a file pair of interest"""
-
-    var = 'ohc' if var == 'ohc-adjusted' else var
-    dir_experiment = 'rcp85' if experiment == 'historical-rcp85' else experiment 
-    mip = 'r1i1' + aa_physics[model] if experiment == 'historicalMisc' else 'r1i1p1'
-    time_info = 'all' if var in ['ohc', 'thetao'] else 'cumsum-all'
-    tscale = 'Ayr' if var == 'rndt' else 'Oyr'
-    realm = 'atmos' if var =='rndt' else 'ocean'
-    var = 'ohc' if var == 'ohc-adjusted' else var
-    agg = 'mean' if var == 'thetao' else 'sum'
-
-    mydir = '/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/yr/%s/%s/%s/latest/dedrifted'  %(model, dir_experiment, realm, mip, var)
- 
-    output = {}
-    for region in ['nh', 'sh']:
-        file_start = '%s*%s-%s'  %(var, region, agg)
-        files = glob.glob('%s/%s_*%s.nc' %(mydir, file_start, time_info))
-        assert len(files) == 1, '%s/%s_*%s.nc' %(mydir, file_start, time_info)
-        output[region] = files[0]
-   
-    return output['nh'], output['sh']
+    return metric, nh_cube.attributes['history']
 
 
 def set_plot_features(inargs, ax, plotnum, var, nvars):
@@ -236,72 +207,75 @@ def set_plot_features(inargs, ax, plotnum, var, nvars):
         ax.axhline(y=0, color='0.5', linestyle='--', linewidth=0.5)
 
 
+def get_plot_vars(inargs):
+    """Count the number of variables to plot"""
+    
+    vars = ['rndt', 'hfds', 'ohc', 'thetao']
+    plot_vars = []
+    plot_files = []
+    for var_index, file_list in enumerate([inargs.toa_files, inargs.ohu_files, inargs.ohc_files, inargs.thetao_files]):
+        if file_list:
+            plot_vars.append(vars[var_index])
+            plot_files.append(file_list)
+            
+    return plot_vars, plot_files
+
+
 def main(inargs):
     """Run the program."""
 
-    if inargs.plot_type == 'single':
-        fig, ax = plt.subplots()
-    else:
-        #fig = plt.figure(figsize=[22, 14])
-        #gs = gridspec.GridSpec(2, 2, wspace=0.27, hspace=0.25)
-        #axes = [plt.subplot(gs[0]), plt.subplot(gs[1]), plt.subplot(gs[2]), plt.subplot(gs[3])]
-        nvars = len(inargs.variables)
-        nrows, ncols = grid_configs[nvars]
+    plot_vars, plot_files = get_plot_vars(inargs)
+    nvars = len(plot_vars)
+    nrows, ncols = grid_configs[nvars]
 
-        fig = plt.figure(figsize=[11 * nrows, 7 * ncols])
-        gs = gridspec.GridSpec(nrows, ncols, wspace=0.27, hspace=0.25)
-        axes = []
-        for index in range(nvars):
-            axes.append(plt.subplot(gs[index]))
+    fig = plt.figure(figsize=[11 * nrows, 7 * ncols])
+    gs = gridspec.GridSpec(nrows, ncols, wspace=0.27, hspace=0.25)
+    axes = []
+    for index in range(nvars):
+        axes.append(plt.subplot(gs[index]))
 
-    for experiment in inargs.experiments:
-        plot_experiment = exp_labels[experiment]
+    time_constraint = gio.get_time_constraint(inargs.time)
+    for experiment in ['historical-rcp85', 'GHG-only', 'AA-only']:
         ensemble_agg_dict = {}
         ensemble_spread_dict = {}
-        upper_time_bound = '2100-12-31' if experiment == 'historical-rcp85' else '2005-12-31'
-        time_constraint = gio.get_time_constraint(['1861-01-01', upper_time_bound])
-        for index, var in enumerate(inargs.variables):
+        for var_index, var_files in enumerate(plot_files):
+            var = plot_vars[var_index]
             cube_list = iris.cube.CubeList([])
-            for file_num, model in enumerate(inargs.models):
-                nh_file, sh_file = get_file_pair(var, model, experiment)
-                value = calc_hemispheric_value(nh_file, sh_file, inargs.metric, var, time_constraint, file_num)
+            for model_num, model_files in enumerate(var_files):
+                start = exp_start[experiment]
+                sh_file, nh_file = model_files[start: start+2]
+                value, history = calc_hemispheric_value(sh_file, nh_file, inargs.metric, var, time_constraint, model_num)
                 cube_list.append(value)
-                if inargs.plot_type == 'panels' and inargs.individual:
-                    plt.sca(axes[index])
-                    iplt.plot(value, color=exp_colors[plot_experiment], linewidth=0.3)
+                if inargs.individual:
+                    plt.sca(axes[var_index])
+                    iplt.plot(value, color=exp_colors[experiment], linewidth=0.3)
 
             ensemble_agg_dict[var], ensemble_spread_dict[var] = ensemble_aggregation(cube_list, inargs.ensagg)
             
-            if inargs.plot_type == 'single':
-                plot_label = plot_variables[var] if experiment == 'historical-rcp85' else None
-                iplt.plot(ensemble_agg_dict[var], label=plot_label, color=var_colors[var], linestyle=linestyles[plot_experiment])
-            else:
-                plt.sca(axes[index])
-                iplt.plot(ensemble_agg_dict[var], label=plot_experiment, color=exp_colors[plot_experiment])
-                if ensemble_spread_dict[var]:
-                    time_values = ensemble_spread_dict[var][0, ::].coord('time').points - 54567.5    # ensemble_spread_dict[var][0, ::].coord('time').points[-7]
-                    upper_bound = ensemble_spread_dict[var][0, ::].data
-                    lower_bound = ensemble_spread_dict[var][-1, ::].data
-                    iplt.plt.fill_between(time_values, upper_bound, lower_bound, facecolor=exp_colors[plot_experiment], alpha=0.15)
+            plt.sca(axes[var_index])
+            iplt.plot(ensemble_agg_dict[var], label=experiment, color=exp_colors[experiment])
+            if ensemble_spread_dict[var]:
+                time_values = ensemble_spread_dict[var][0, ::].coord('time').points - 54567.5 
+                            # ensemble_spread_dict[var][0, ::].coord('time').points[-7]
+                upper_bound = ensemble_spread_dict[var][0, ::].data
+                lower_bound = ensemble_spread_dict[var][-1, ::].data
+                iplt.plt.fill_between(time_values, upper_bound, lower_bound, facecolor=exp_colors[experiment], alpha=0.15)
                     
-    if inargs.plot_type == 'single':
-        if inargs.title:
-            plt.title('interhemispheric difference in accumulated heat')
-        set_plot_features(inargs, ax)
-    else:
-        if inargs.title:
-            plt.suptitle('interhemispheric difference in accumulated heat')
-        for index, var in enumerate(inargs.variables):
-            plt.sca(axes[index])
-            if nvars > 1:
-                plt.title(titles[var])
-            set_plot_features(inargs, axes[index], index, var, nvars)
+    if inargs.title:
+        plt.suptitle('interhemispheric difference in accumulated heat')
+    for index, var in enumerate(plot_vars):
+        plt.sca(axes[index])
+        if nvars > 1:
+            plt.title(titles[var])
+        set_plot_features(inargs, axes[index], index, var, nvars)
             
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
 
-    gio.write_metadata(inargs.outfile)
+    log_text = cmdprov.new_log(infile_history={nh_file: history}, git_repo=repo_dir)
+    log_file = re.sub('.png', '.met', inargs.outfile)
+    cmdprov.write_log(log_file, log_text)
 
 
 if __name__ == '__main__':
@@ -319,29 +293,26 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("models", type=str, nargs='*', help="models")
-    parser.add_argument("plot_type", type=str, choices=('single', 'panels'), help="plot type")
     parser.add_argument("outfile", type=str, help="output file")
 
     parser.add_argument("--metric", type=str, default='diff', choices=('diff', 'nh', 'sh'),
                         help="Metric to plot (hemispheric values or difference) [default=diff]")
 
-    parser.add_argument("--variables", type=str, nargs='*',
-                        choices=('rndt', 'hfds', 'ohc', 'thetao'),
-                        default=('rndt', 'hfds', 'ohc', 'thetao'),
-                        help="variables to plot")
+    parser.add_argument("--toa_files", type=str, nargs=6, action='append', default=[],
+                        help="netTOA files in this order: hist-rcp NH, hist-rcp SH, GHG NH, GHG SH, AA NH, AA SH")                     
+    parser.add_argument("--ohu_files", type=str, nargs=6, action='append', default=[],
+                        help="OHU files in this order: hist-rcp NH, hist-rcp SH, GHG NH, GHG SH, AA NH, AA SH")
+    parser.add_argument("--ohc_files", type=str, nargs=6, action='append', default=[],
+                        help="OHC files in this order: hist-rcp NH, hist-rcp SH, GHG NH, GHG SH, AA NH, AA SH")
+    parser.add_argument("--thetao_files", type=str, nargs=6, action='append', default=[],
+                        help="thetao files in this order: hist-rcp NH, hist-rcp SH, GHG NH, GHG SH, AA NH, AA SH")
 
     parser.add_argument("--ylim_uptake", type=float, nargs=2, default=None,
                         help="y limits for netTOA and OHU plots (x 10^24)")
     parser.add_argument("--ylim_ohc", type=float, nargs=2, default=None,
                         help="y limits for OHC plots (x 10^24)")
     parser.add_argument("--ylim_temperature", type=float, nargs=2, default=None,
-                        help="y limits for ocean temperature plots")
-
-    parser.add_argument("--experiments", type=str, nargs='*',
-                        choices=('historical-rcp85', 'historicalGHG', 'historicalMisc'),
-                        default=('historical-rcp85', 'historicalGHG', 'historicalMisc'),
-                        help="experiments to plot")                               
+                        help="y limits for ocean temperature plots")                              
 
     parser.add_argument("--ensagg", type=str, default='median', choices=('mean', 'median'),
                         help="Ensemble mean or median [default=median]")
@@ -353,6 +324,10 @@ author:
                         help="Include a plot title [default=False]")
     parser.add_argument("--individual", action="store_true", default=False,
                         help="Show curves for individual models [default=False]")
+
+    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        default=('1861-01-01', '2005-12-31'),
+                        help="Time period [default = entire]")
 
     args = parser.parse_args()             
     main(args)
