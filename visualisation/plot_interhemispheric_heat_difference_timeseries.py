@@ -7,7 +7,7 @@ Description:  Plot ensemble interhemispheric heat difference timeseries for OHC,
 
 # Import general Python modules
 
-import sys, os, pdb
+import sys, os, pdb, re
 import argparse
 import numpy
 import iris
@@ -228,14 +228,18 @@ def main(inargs):
     nvars = len(plot_vars)
     nrows, ncols = grid_configs[nvars]
 
-    fig = plt.figure(figsize=[11 * nrows, 7 * ncols])
+    fig = plt.figure(figsize=[11 * ncols, 7 * nrows])
     gs = gridspec.GridSpec(nrows, ncols, wspace=0.27, hspace=0.25)
     axes = []
     for index in range(nvars):
         axes.append(plt.subplot(gs[index]))
 
-    time_constraint = gio.get_time_constraint(inargs.time)
+    time_constraints = {'historical-rcp85': gio.get_time_constraint(inargs.rcp_time),
+                        'GHG-only': gio.get_time_constraint(inargs.historical_time),
+                        'AA-only': gio.get_time_constraint(inargs.historical_time)}
+
     for experiment in ['historical-rcp85', 'GHG-only', 'AA-only']:
+        time_constraint = time_constraints[experiment]
         ensemble_agg_dict = {}
         ensemble_spread_dict = {}
         for var_index, var_files in enumerate(plot_files):
@@ -325,8 +329,11 @@ author:
     parser.add_argument("--individual", action="store_true", default=False,
                         help="Show curves for individual models [default=False]")
 
-    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+    parser.add_argument("--historical_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2005-12-31'),
+                        help="Time period [default = entire]")
+    parser.add_argument("--rcp_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        default=('1861-01-01', '2100-12-31'),
                         help="Time period [default = entire]")
 
     args = parser.parse_args()             
