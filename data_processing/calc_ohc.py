@@ -83,11 +83,11 @@ def calc_ohc_vertical_integral(temperature_cube, volume_data, density, specific_
     return ohc
 
 
-def read_spatial_file(spatial_file):
-    """Read optional areacello or volcello file."""
+def read_area_file(area_file):
+    """Read optional areacello file."""
 
-    if spatial_file:
-        cube = iris.load_cube(spatial_file)
+    if area_file:
+        cube = iris.load_cube(area_file)
     else:
         cube = None
 
@@ -104,7 +104,7 @@ def get_depth_text(temperature_cube, min_depth, max_depth):
     return depth_text
 
 
-def get_outfile_name(temperature_file, grid, annual=False, execute=True):
+def get_outfile_name(temperature_file, grid, annual=False, max_depth=False, execute=True):
     """Define the OHC file name using the temperature file name as a template."""
 
     ohc_file = temperature_file.replace('thetao', 'ohc')
@@ -118,6 +118,9 @@ def get_outfile_name(temperature_file, grid, annual=False, execute=True):
     if grid:
         ohc_file = ohc_file.replace('.nc', '_'+grid+'.nc')
 
+    if max_depth:
+        ohc_file = ohc_file.replace('.nc', '_0-'+str(int(max_depth))+'m.nc')
+
     ohc_file_components = ohc_file.split('/')
     ohc_file_components.pop(-1)
     ohc_dir = "/".join(ohc_file_components)
@@ -130,10 +133,10 @@ def get_outfile_name(temperature_file, grid, annual=False, execute=True):
     return ohc_file
 
 
-def get_volume(volume_file, temperature_cube, metadata_dict):
+def get_volume(volume_file, temperature_cube, level_constraint, metadata_dict):
     """Get the volume array"""
 
-    volume_cube = read_spatial_file(volume_file)
+    volume_cube = iris.load_cube(volume_file, 'ocean_volume' & level_constraint)
     metadata_dict[volume_file] = volume_cube.attributes['history']
     volume_data = spatial_weights.volume_array(temperature_cube, volume_cube=volume_cube) 
         
@@ -154,13 +157,13 @@ def main(inargs):
             temperature_cube = timeseries.convert_to_annual(temperature_cube, chunk=inargs.chunk)
 
         if inargs.regrid:
-            area_cube = read_spatial_file(inargs.regrid)
+            area_cube = read_area_file(inargs.regrid)
             temperature_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(temperature_cube, weights=area_cube.data)
             volume_data = spatial_weights.volume_array(temperature_cube)
             grid = 'y72x144'
         else:
             assert inargs.volume_file, "Must provide volume file if not regridding data"
-            volume_data, metadata_dict = get_volume(inargs.volume_file, temperature_cube, metadata_dict)
+            volume_data, metadata_dict = get_volume(inargs.volume_file, temperature_cube, level_subset, metadata_dict)
             coord_names = [coord.name() for coord in temperature_cube.dim_coords]
             grid = None
 
@@ -169,7 +172,7 @@ def main(inargs):
         ohc_cube = calc_ohc_vertical_integral(temperature_cube, volume_data, inargs.density, inargs.specific_heat,
                                               coord_names, chunk=inargs.chunk)
         ohc_cube = add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, inargs)
-        ohc_file = get_outfile_name(temperature_file, grid, annual=inargs.annual)    
+        ohc_file = get_outfile_name(temperature_file, grid, annual=inargs.annual, max_depth=inargs.max_depth)    
 
         iris.save(ohc_cube, ohc_file)
         print(ohc_file)
