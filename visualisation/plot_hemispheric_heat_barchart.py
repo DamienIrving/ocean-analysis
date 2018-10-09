@@ -72,7 +72,8 @@ def generate_heat_row_dicts(column_list, sh_value, nh_value, model, experiment, 
 
     experiment_names = {'historical': 'historical',
                         'historicalGHG': 'GHG-only',
-                        'historicalMisc': 'AA-only'}
+                        'historicalMisc': 'AA-only',
+                        'historical-rcp85': 'historical-rcp85'}
     variable_names = {'rndt': 'netTOA', 'hfds': 'OHU', 'ohc': 'OHC'}
     hemispheres = ['SH', 'NH']
     
@@ -153,11 +154,11 @@ author:
 
     parser.add_argument("outfile", type=str, help="output file")
 
-    parser.add_argument("--toa_files", type=str, nargs=6, action='append', default=[],
+    parser.add_argument("--toa_files", type=str, nargs='*', action='append', default=[],
                         help="netTOA files in this order: hist SH, hist NH, GHG SH, GHG NH, AA SH, AA NH")                     
-    parser.add_argument("--ohu_files", type=str, nargs=6, action='append', default=[],
+    parser.add_argument("--ohu_files", type=str, nargs='*', action='append', default=[],
                         help="OHU files in this order: hist SH, hist NH, GHG SH, GHG NH, AA SH, AA NH")
-    parser.add_argument("--ohc_files", type=str, nargs=6, action='append', default=[],
+    parser.add_argument("--ohc_files", type=str, nargs='*', action='append', default=[],
                         help="OHC files in this order: hist SH, hist NH, GHG SH, GHG NH, AA SH, AA NH")
 
     parser.add_argument("--dpi", type=float, default=None,
