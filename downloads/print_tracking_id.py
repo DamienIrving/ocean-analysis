@@ -17,7 +17,9 @@ warnings.filterwarnings('ignore')
 def main(inargs):
     """Run the program."""
 
-    files = glob.glob('/g/data/r87/dbi599/DRSv2/CMIP5/%s/%s/mon/*/%s/%s/latest/*.nc'  %(inargs.model, inargs.experiment, inargs.rip, inargs.var) )
+    search_dir = 'ua6' if inargs.ua6 else 'r87/dbi599'
+
+    files = glob.glob('/g/data/%s/DRSv2/CMIP5/%s/%s/mon/*/%s/%s/latest/*.nc'  %(search_dir, inargs.model, inargs.experiment, inargs.rip, inargs.var) )
     files.sort()
     for infile in files:
         cube = iris.load(infile)[0]
@@ -51,6 +53,8 @@ author:
   
     parser.add_argument("--id_only", action="store_true", default=False,
                         help="Output the tracking id only")
+    parser.add_argument("--ua6", action="store_true", default=False,
+                        help="Search the ua6 directory instead of r87/dbi599")
     
     args = parser.parse_args()             
     main(args)
