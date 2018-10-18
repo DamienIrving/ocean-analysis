@@ -1,5 +1,5 @@
 
-model=CSIRO-Mk3-6-0
+model=NorESM1-M
 
 experiments=(piControl)
 rips=(r1i1p1)
@@ -165,15 +165,15 @@ fi
 for experiment in "${experiments[@]}"; do
 for rip in "${rips[@]}"; do
 
-ref_file=${ua6_dir}/historical/mon/atmos/r1i1p1/rsdt/latest/rsdt_Amon_${model}_historical_r1i1p1_185001-200512.nc
-
-mkdir -p /g/data/r87/dbi599/DRSv2/CMIP5/${model}/${experiment}/yr/${realm}/${rip}/${var}/latest/
+ref_file="${ua6_dir}/historical/mon/atmos/r1i1p1/rsdt/latest/rsdt_Amon_${model}_historical_r1i1p1_185001-200512.nc toa_incoming_shortwave_flux"
 
 input_file=${ua6_dir}/${experiment}/${input_tscale}/${realm}/${rip}/${var}/latest/${file_var}_${prefix}${input_tscale}_${model}_${experiment}_${rip}_*.nc
 
-output_file=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest/${file_var}-zonal-${spatial_agg}_${prefix}yr_${model}_${experiment}_${rip}_${tdetails}.nc
+output_dir=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest/
+mkdir -p ${output_dir}
+output_file=${output_dir}/${file_var}-zonal-${spatial_agg}_${prefix}yr_${model}_${experiment}_${rip}_${tdetails}.nc
 
-command="${python} -W ignore ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} ${spatial_agg} ${output_file} ${temporal_agg}"
+command="${python} -W ignore ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} ${spatial_agg} ${output_dir} ${temporal_agg} --ref_file ${ref_file}"
 # --area ${areacello_file} --realm ocean --sftlf_file ${sftlf_file} --cumsum --ref_file ${ref_file}
 
 echo ${command}
