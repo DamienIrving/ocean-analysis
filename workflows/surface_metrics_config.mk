@@ -37,8 +37,9 @@ EXPERIMENT=historical
 RUN=r1i1p1
 FX_RUN=r0i0p0
 
+TARGET=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/sos/latest/sos-global-griddev_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
-TARGET=/g/data/r87/dbi599/figures/heat-cycle/htc-hfds-ohc_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.png
+#${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/atmos/${RUN}/pe/latest/pe-nh-griddev_Ayr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
 #${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/atmos/${RUN}/pe/latest
 #global_metrics
