@@ -1,4 +1,4 @@
-development/.ipynb*
 *~
 __pycache__
 dask-worker-space
+.ipynb_checkpoints
