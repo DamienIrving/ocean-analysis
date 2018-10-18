@@ -245,10 +245,10 @@ def convert_to_annual(cube, full_months=False, aggregation='mean', chunk=False):
             cube = _chunked_year_aggregation(cube, aggregator)
         else:
             cube = cube.aggregated_by(['year'], aggregator)
-
+  
         if full_months:
             cube = cube.extract(iris.Constraint(month='Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec'))
-  
+
     cube.remove_coord('year')
     cube.remove_coord('month')
 
