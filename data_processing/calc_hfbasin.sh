@@ -1,7 +1,7 @@
 
-model=CSIRO-Mk3-6-0
+model=NorESM1-M
 
-experiment=piControl
+experiment=historicalMisc
 fxexperiment=historical
 rips=(r1i1p1)
 regions=(global)
