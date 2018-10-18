@@ -39,7 +39,7 @@ VARIABLE_MAPS_TAS_ZONAL_PLOT=${VARIABLE_MAPS_DIR}/${VAR}-maps-global-tas-trend-z
 CLIMATOLOGY_FILE=${DEDRIFTED_VARIABLE_DIR}/${VAR}-clim_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 CLIMATOLOGY_MAPS_FILE=${VARIABLE_MAPS_DIR}/${VAR}-maps-clim_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_all.nc
 
-OHC_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/ohc/latest
+OHC_DIR=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/mon/ocean/${RUN}/ohc/latest/dedrifted
 
 VOLUME_FILE=${ORIG_VOL_DIR}/${MODEL}/${EXPERIMENT}/fx/ocean/${FX_RUN}/volcello/latest/volcello_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
 BASIN_FILE=${ORIG_BASIN_DIR}/${MODEL}/${EXPERIMENT}/fx/ocean/${FX_RUN}/basin/latest/basin_fx_${MODEL}_${EXPERIMENT}_${FX_RUN}.nc
