@@ -19,16 +19,16 @@ FIG_TYPE=png
 
 ORIG_THETAO_DIR=${UA6_CMIP5_DIR}
 ORIG_AREAO_DIR=${UA6_CMIP5_DIR}
-ORIG_VOL_DIR=${MY_CMIP5_DIR}
+ORIG_VOL_DIR=${UA6_CMIP5_DIR}
 
 MODEL=GISS-E2-R
-EXPERIMENT=historicalMisc
-RUN=r1i1p310
+EXPERIMENT=historicalGHG
+RUN=r1i1p1
 FX_EXPERIMENT=historical
 FX_RUN=r0i0p0
 
 # Analysis details (specific)
 
 TARGET=${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/ohc/latest/dedrifted/ohc-trend-wrt-tropics_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_1850-2005.nc
-#${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/ohc/latest
-#${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/ohc/latest/ohc-trend-wrt-tropics_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_1850-2005.nc
+#${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/ohc/latest/dedrifted
+#${MY_CMIP5_DIR}/${MODEL}/${EXPERIMENT}/yr/ocean/${RUN}/ohc/latest/dedrifted/ohc-trend-wrt-tropics_Oyr_${MODEL}_${EXPERIMENT}_${RUN}_1850-2005.nc
