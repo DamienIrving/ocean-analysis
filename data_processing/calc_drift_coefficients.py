@@ -71,8 +71,8 @@ def calc_coefficients(cube, coord_names, convert_annual=False):
 
     """
     
-    #masked_array = True if type(cube.data) == numpy.ma.core.MaskedArray else False
-    masked_array = True
+    masked_array = True if type(cube.data) == numpy.ma.core.MaskedArray else False
+    #masked_array = True
     if 'depth' in coord_names:
         assert coord_names[1] == 'depth', 'coordinate order must be time, depth, ...'
         out_shape = list(cube.shape)
@@ -82,7 +82,6 @@ def calc_coefficients(cube, coord_names, convert_annual=False):
             if convert_annual:
                 cube_slice = timeseries.convert_to_annual(cube_slice)
             time_axis = cube_slice.coord('time').points.astype(numpy.float32)
-            pdb.set_trace()
             coefficients[:,i,::] = numpy.ma.apply_along_axis(polyfit, 0, cube_slice.data, time_axis, masked_array)
         fill_value = cube_slice.data.fill_value 
         coefficients = numpy.ma.masked_values(coefficients, fill_value)
