@@ -1,7 +1,7 @@
 """
 Filename:     plot_interhemispheric_heat_difference_timeseries.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Plot ensemble interhemispheric heat difference timeseries for OHC, hfds and rndt
+Description:  Plot ensemble interhemispheric difference timeseries
 
 """
 
@@ -40,8 +40,8 @@ except ImportError:
 # Define functions
 
 var_colors = {'ohc': 'blue', 'hfds': 'orange', 'rndt': 'red'}
-exp_colors = {'historical-rcp85': 'black', 'GHG-only': 'red', 'AA-only': 'blue'}
-exp_start = {'historical-rcp85': 0, 'GHG-only': 2, 'AA-only': 4}
+exp_colors = {'historical-rcp85': 'black', 'historical': 'black', 'GHG-only': 'red', 'AA-only': 'blue'}
+exp_start = {'historical-rcp85': 0, 'historical': 0, 'GHG-only': 2, 'AA-only': 4}
 
 names = {'thetao': 'Sea Water Potential Temperature',
          'ohc': 'ocean heat content',
@@ -55,7 +55,7 @@ plot_variables = {'thetao': ' Average Ocean Temperature',
                   'hfds': 'OHU',
                   'rndt': 'netTOA'}
 
-linestyles = {'historical-rcp85': 'solid', 'GHG-only': '--', 'AA-only': ':'}
+linestyles = {'historical-rcp85': 'solid', 'historical': 'solid', 'GHG-only': '--', 'AA-only': ':'}
 
 grid_configs = {1: (1, 1), 2: (1, 2), 3: (1, 3), 4: (2, 2)} 
 
@@ -136,11 +136,13 @@ def calc_hemispheric_value(sh_file, nh_file, val_type, var, time_constraint, ens
     nh_cube = iris.load_cube(nh_file, nh_name & time_constraint)
     nh_attributes = get_simulation_attributes(nh_cube)
     nh_anomaly = calc_anomaly(nh_cube)
+    nh_anomaly.data = nh_anomaly.data.astype(numpy.float32)
 
     sh_name = names[var] + ' sh ' + agg
     sh_cube = iris.load_cube(sh_file, sh_name & time_constraint)
     sh_attributes = get_simulation_attributes(sh_cube)
     sh_anomaly = calc_anomaly(sh_cube)
+    sh_anomaly.data = sh_anomaly.data.astype(numpy.float32)
 
     assert nh_attributes == sh_attributes 
 
@@ -235,6 +237,7 @@ def main(inargs):
         axes.append(plt.subplot(gs[index]))
 
     time_constraints = {'historical-rcp85': gio.get_time_constraint(inargs.rcp_time),
+                        'historical': gio.get_time_constraint(inargs.historical_time),
                         'GHG-only': gio.get_time_constraint(inargs.historical_time),
                         'AA-only': gio.get_time_constraint(inargs.historical_time)}
 
