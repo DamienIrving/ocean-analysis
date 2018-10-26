@@ -32,6 +32,7 @@ from dateutil import parser
 from collections import defaultdict
 import re
 import iris
+import cftime
 import cf_units
 
 # Import my modules
@@ -288,7 +289,13 @@ def get_time_constraint(time_list):
         else:  
             start_year, start_month, start_day = start_date.split('-') 
             end_year, end_month, end_day = end_date.split('-')
-            time_constraint = iris.Constraint(time=lambda t: iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)) <= t.point <= iris.time.PartialDateTime(year=int(end_year), month=int(end_month), day=int(end_day)))
+            start_constraint = iris.Constraint(time=lambda t: cftime.DatetimeNoLeap(int(start_year), int(start_month), int(start_day)) <= t.point)
+            end_constraint = iris.Constraint(time=lambda t: t.point <= cftime.DatetimeNoLeap(int(end_year), int(end_month), int(end_day)))
+            time_constraint = start_constraint & end_constraint
+
+            #time_constraint = iris.Constraint(time=lambda t: cftime.DatetimeNoLeap(int(start_year), int(start_month), int(start_day)) <= t.point <= cftime.DatetimeNoLeap(int(end_year), int(end_month), int(end_day)))
+            #time_constraint = iris.Constraint(time=lambda t: iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)) <= t.point <= iris.time.PartialDateTime(year=int(end_year), month=int(end_month), day=int(end_day)))
+            # time_constraint = iris.Constraint(time=lambda t: iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)) <= t.point and iris.time.PartialDateTime(year=int(end_year), month=int(end_month), day=int(end_day)) >= t.point)
     else:
         time_constraint = iris.Constraint()
 
