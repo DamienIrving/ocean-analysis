@@ -62,6 +62,17 @@ def polyfit(data, time_axis, masked_array):
         return numpy.polynomial.polynomial.polyfit(time_axis, data, 3)
 
 
+def is_masked_array(array):
+    """Determine whether an array is masked or not."""
+
+    masked = False
+    if type(array) == numpy.ma.core.MaskedArray:
+        if array.mask.shape:
+            masked = True
+
+    return masked
+
+
 def calc_coefficients(cube, coord_names, convert_annual=False):
     """Calculate the polynomial coefficients.
 
@@ -71,18 +82,17 @@ def calc_coefficients(cube, coord_names, convert_annual=False):
 
     """
     
-    masked_array = True if type(cube.data) == numpy.ma.core.MaskedArray else False
-    #masked_array = True
+    masked_array = is_masked_array(cube.data)
     if 'depth' in coord_names:
         assert coord_names[1] == 'depth', 'coordinate order must be time, depth, ...'
         out_shape = list(cube.shape)
         out_shape[0] = 4
         coefficients = numpy.zeros(out_shape, dtype=numpy.float32)
-        for i, cube_slice in enumerate(cube.slices_over('depth')):
+        time_axis = cube.coord('time').points.astype(numpy.float32)
+        for d, cube_slice in enumerate(cube.slices_over('depth')):
             if convert_annual:
                 cube_slice = timeseries.convert_to_annual(cube_slice)
-            time_axis = cube_slice.coord('time').points.astype(numpy.float32)
-            coefficients[:,i,::] = numpy.ma.apply_along_axis(polyfit, 0, cube_slice.data, time_axis, masked_array)
+            coefficients[:,d, ::] = numpy.ma.apply_along_axis(polyfit, 0, cube_slice.data, time_axis, masked_array)
         fill_value = cube_slice.data.fill_value 
         coefficients = numpy.ma.masked_values(coefficients, fill_value)
     else:
