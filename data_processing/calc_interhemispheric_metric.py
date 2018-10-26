@@ -118,7 +118,7 @@ def rename_cube(cube, quantity):
     else:
         standard_name = '_'.join([cube.long_name.replace(' ', '_'), quantity.replace(' ', '_')])
     long_name = ' '.join([cube.long_name, quantity])  
-    var_name = '-'.join([cube.var_name, quantity.replace(' ', '-')])
+    var_name = '_'.join([cube.var_name, quantity.replace(' ', '_')])
 
     iris.std_names.STD_NAMES[standard_name] = {'canonical_units': cube.units}
     cube.standard_name = standard_name
