@@ -274,28 +274,32 @@ def get_subset_kwargs(namespace):
 
 def get_time_constraint(time_list):
     """Get the time constraint used for reading an iris cube."""
-    
+
+    assert type(time_list) in (list, tuple)
+
     if time_list:
-
-        start_date, end_date = time_list
-
         date_pattern = '([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})'
+        start_date = time_list[0]
+        start_year, start_month, start_day = start_date.split('-')
         assert re.search(date_pattern, start_date)
-        assert re.search(date_pattern, end_date)
 
-        if (start_date == end_date):
-            year, month, day = start_date.split('-')    
-            time_constraint = iris.Constraint(time=iris.time.PartialDateTime(year=int(year), month=int(month), day=int(day)))
-        else:  
-            start_year, start_month, start_day = start_date.split('-') 
-            end_year, end_month, end_day = end_date.split('-')
-            start_constraint = iris.Constraint(time=lambda t: cftime.DatetimeNoLeap(int(start_year), int(start_month), int(start_day)) <= t.point)
-            end_constraint = iris.Constraint(time=lambda t: t.point <= cftime.DatetimeNoLeap(int(end_year), int(end_month), int(end_day)))
-            time_constraint = start_constraint & end_constraint
+        if len(time_list) == 1:
+            time_constraint = iris.Constraint(time=lambda t: cftime.DatetimeNoLeap(int(start_year), int(start_month), int(start_day)) <= t.point)
+        else:
+            end_date = time_list[1]
+            assert re.search(date_pattern, end_date)
 
-            #time_constraint = iris.Constraint(time=lambda t: cftime.DatetimeNoLeap(int(start_year), int(start_month), int(start_day)) <= t.point <= cftime.DatetimeNoLeap(int(end_year), int(end_month), int(end_day)))
-            #time_constraint = iris.Constraint(time=lambda t: iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)) <= t.point <= iris.time.PartialDateTime(year=int(end_year), month=int(end_month), day=int(end_day)))
-            # time_constraint = iris.Constraint(time=lambda t: iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)) <= t.point and iris.time.PartialDateTime(year=int(end_year), month=int(end_month), day=int(end_day)) >= t.point)
+            if (start_date == end_date):
+                time_constraint = iris.Constraint(time=iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)))
+            else:  
+                end_year, end_month, end_day = end_date.split('-')
+                start_constraint = iris.Constraint(time=lambda t: cftime.DatetimeNoLeap(int(start_year), int(start_month), int(start_day)) <= t.point)
+                end_constraint = iris.Constraint(time=lambda t: t.point <= cftime.DatetimeNoLeap(int(end_year), int(end_month), int(end_day)))
+                time_constraint = start_constraint & end_constraint
+
+                #time_constraint = iris.Constraint(time=lambda t: cftime.DatetimeNoLeap(int(start_year), int(start_month), int(start_day)) <= t.point <= cftime.DatetimeNoLeap(int(end_year), int(end_month), int(end_day)))
+                #time_constraint = iris.Constraint(time=lambda t: iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)) <= t.point <= iris.time.PartialDateTime(year=int(end_year), month=int(end_month), day=int(end_day)))
+                #time_constraint = iris.Constraint(time=lambda t: iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)) <= t.point and iris.time.PartialDateTime(year=int(end_year), month=int(end_month), day=int(end_day)) >= t.point)
     else:
         time_constraint = iris.Constraint()
 
