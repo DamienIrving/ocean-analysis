@@ -40,8 +40,8 @@ except ImportError:
 # Define functions
 
 var_colors = {'ohc': 'blue', 'hfds': 'orange', 'rndt': 'red'}
-exp_colors = {'historical-rcp85': 'black', 'historical': 'black', 'GHG-only': 'red', 'AA-only': 'blue'}
-exp_start = {'historical-rcp85': 0, 'historical': 0, 'GHG-only': 2, 'AA-only': 4}
+exp_colors = {'historical-rcp85': 'black', 'historical': 'black', 'GHG-only': 'red',
+              'AA-only': 'blue', '1pctCO2': 'orange'}
 
 names = {'thetao': 'Sea Water Potential Temperature',
          'ohc': 'ocean heat content',
@@ -65,7 +65,7 @@ mpl.rcParams['axes.labelsize'] = 24
 mpl.rcParams['axes.titlesize'] = 28
 mpl.rcParams['xtick.labelsize'] = 24
 mpl.rcParams['ytick.labelsize'] = 24
-mpl.rcParams['legend.fontsize'] = 24
+mpl.rcParams['legend.fontsize'] = 20
 
 
 def equalise_time_axes(cube_list):
@@ -239,9 +239,10 @@ def main(inargs):
     time_constraints = {'historical-rcp85': gio.get_time_constraint(inargs.rcp_time),
                         'historical': gio.get_time_constraint(inargs.historical_time),
                         'GHG-only': gio.get_time_constraint(inargs.historical_time),
-                        'AA-only': gio.get_time_constraint(inargs.historical_time)}
+                        'AA-only': gio.get_time_constraint(inargs.historical_time),
+                        '1pctCO2': gio.get_time_constraint(inargs.pctCO2_time)}
 
-    for experiment in ['historical-rcp85', 'GHG-only', 'AA-only']:
+    for experiment_num, experiment in enumerate(inargs.experiment_list):
         time_constraint = time_constraints[experiment]
         ensemble_agg_dict = {}
         ensemble_spread_dict = {}
@@ -249,7 +250,7 @@ def main(inargs):
             var = plot_vars[var_index]
             cube_list = iris.cube.CubeList([])
             for model_num, model_files in enumerate(var_files):
-                start = exp_start[experiment]
+                start = experiment_num * 2
                 sh_file, nh_file = model_files[start: start+2]
                 value, history = calc_hemispheric_value(sh_file, nh_file, inargs.metric, var, time_constraint, model_num)
                 cube_list.append(value)
@@ -301,18 +302,20 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("outfile", type=str, help="output file")
+    parser.add_argument("experiment_list", type=str, nargs='*', choices=('historical', 'historical-rcp85', 'GHG-only', 'AA-only', '1pctCO2'),
+                        help="experiments to plot")
 
     parser.add_argument("--metric", type=str, default='diff', choices=('diff', 'nh', 'sh'),
                         help="Metric to plot (hemispheric values or difference) [default=diff]")
 
-    parser.add_argument("--toa_files", type=str, nargs=6, action='append', default=[],
-                        help="netTOA files in this order: hist-rcp NH, hist-rcp SH, GHG NH, GHG SH, AA NH, AA SH")                     
-    parser.add_argument("--ohu_files", type=str, nargs=6, action='append', default=[],
-                        help="OHU files in this order: hist-rcp NH, hist-rcp SH, GHG NH, GHG SH, AA NH, AA SH")
-    parser.add_argument("--ohc_files", type=str, nargs=6, action='append', default=[],
-                        help="OHC files in this order: hist-rcp NH, hist-rcp SH, GHG NH, GHG SH, AA NH, AA SH")
-    parser.add_argument("--thetao_files", type=str, nargs=6, action='append', default=[],
-                        help="thetao files in this order: hist-rcp NH, hist-rcp SH, GHG NH, GHG SH, AA NH, AA SH")
+    parser.add_argument("--toa_files", type=str, nargs='*', action='append', default=[],
+                        help="netTOA files in this order: exp1 NH, exp1 SH, exp2 NH, exp2 SH, etc")                     
+    parser.add_argument("--ohu_files", type=str, nargs='*', action='append', default=[],
+                        help="OHU files in this order: exp1 NH, exp1 SH, exp2 NH, exp2 SH, etc")
+    parser.add_argument("--ohc_files", type=str, nargs='*', action='append', default=[],
+                        help="OHC files in this order: exp1 NH, exp1 SH, exp2 NH, exp2 SH, etc")
+    parser.add_argument("--thetao_files", type=str, nargs='*', action='append', default=[],
+                        help="thetao files in this order: exp1 NH, exp1 SH, exp2 NH, exp2 SH, etc")
 
     parser.add_argument("--ylim_uptake", type=float, nargs=2, default=None,
                         help="y limits for netTOA and OHU plots (x 10^24)")
@@ -334,10 +337,13 @@ author:
 
     parser.add_argument("--historical_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2005-12-31'),
-                        help="Time period [default = entire]")
+                        help="Time period for historical experiments [default = entire]")
     parser.add_argument("--rcp_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2100-12-31'),
-                        help="Time period [default = entire]")
+                        help="Time period for rcp experiments [default = entire]")
+    parser.add_argument("--pctCO2_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        default=('1861-01-01', '2000-12-31'),
+                        help="Time period for 1pctCO2 experiment [default = entire]")
 
     args = parser.parse_args()             
     main(args)
