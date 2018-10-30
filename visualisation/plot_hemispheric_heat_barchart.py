@@ -44,7 +44,7 @@ mpl.rcParams['ytick.labelsize'] = 16
 mpl.rcParams['legend.fontsize'] = 16
 
 
-def calc_hemispheric_heat(sh_file, nh_file, var, time_constraint):
+def calc_hemispheric_heat(sh_file, nh_file, var, experiment, time_constraint):
     """Calculate the interhemispheric difference timeseries."""
 
     names = {'ohc': 'ocean heat content',
@@ -60,11 +60,11 @@ def calc_hemispheric_heat(sh_file, nh_file, var, time_constraint):
     nh_cube = iris.load_cube(nh_file, nh_name & time_constraint)
     nh_value = nh_cube.data[-1] - nh_cube.data[0]
     
-    experiment = nh_cube.attributes['experiment_id']
+    assert experiment == nh_cube.attributes['experiment_id']
     model = nh_cube.attributes['model_id']
     history = nh_cube.attributes['history']
     
-    return sh_value, nh_value, experiment, model, history
+    return sh_value, nh_value, model, history
 
 
 def generate_heat_row_dicts(column_list, sh_value, nh_value, model, experiment, var, ylabel):
@@ -73,7 +73,8 @@ def generate_heat_row_dicts(column_list, sh_value, nh_value, model, experiment, 
     experiment_names = {'historical': 'historical',
                         'historicalGHG': 'GHG-only',
                         'historicalMisc': 'AA-only',
-                        'historical-rcp85': 'historical-rcp85'}
+                        'historical-rcp85': 'historical-rcp85',
+                        '1pctCO2': '1pctCO2'}
     variable_names = {'rndt': 'netTOA', 'hfds': 'OHU', 'ohc': 'OHC'}
     hemispheres = ['SH', 'NH']
     
@@ -104,28 +105,52 @@ def get_ylabel(toa_files, ohu_files, ohc_files):
     return ylabel
 
 
+def get_colors(exp_list):
+    """Get bar colors."""
+
+    colors = {'historical': '0.5',
+              'historical-rcp85': '0.5',
+              'historicalGHG': 'red',
+              'historicalMisc': 'blue',
+              '1pctCO2': 'orange'}
+
+    color_list = []
+    for experiment in exp_list:
+        color_list.append(colors[experiment])
+
+    return color_list
+
+
 def main(inargs):
     """Run the program."""
 
+    time_constraints = {'historical': gio.get_time_constraint(inargs.hist_time),
+                        'historical-rcp85': gio.get_time_constraint(inargs.hist_time),
+                        'historicalGHG': gio.get_time_constraint(inargs.hist_time),
+                        'historicalMisc': gio.get_time_constraint(inargs.hist_time),
+                        '1pctCO2': gio.get_time_constraint(inargs.pctCO2_time)}
+
     file_variables = ['rndt', 'hfds', 'ohc']
-    time_constraint = gio.get_time_constraint(inargs.time)
     column_list = []
     ylabel = get_ylabel(inargs.toa_files, inargs.ohu_files, inargs.ohc_files)
     
     for var_index, var_files in enumerate([inargs.toa_files, inargs.ohu_files, inargs.ohc_files]):
         var = file_variables[var_index]
         for model_files in var_files:
-            for file_pair in [model_files[i:i + 2] for i in range(0, len(model_files), 2)]:
+            for exp_index, file_pair in enumerate([model_files[i:i + 2] for i in range(0, len(model_files), 2)]):
+                experiment = inargs.experiment_list[exp_index]
+                time_constraint = time_constraints[experiment]
                 sh_file, nh_file = file_pair  
-                sh_value, nh_value, experiment, model, history = calc_hemispheric_heat(sh_file, nh_file, var, time_constraint)
+                sh_value, nh_value, model, history = calc_hemispheric_heat(sh_file, nh_file, var, experiment, time_constraint)
                 column_list = generate_heat_row_dicts(column_list, sh_value, nh_value, model, experiment, var, ylabel)
     heat_df = pandas.DataFrame(column_list)
 
+    color_list = get_colors(inargs.experiment_list)
     seaborn.set_style("whitegrid")
     g = seaborn.catplot(x="hemisphere", y=ylabel,
                         hue="experiment", col="variable",
                         data=heat_df, kind="bar",
-                        palette=['0.5', 'red', 'blue'])
+                        palette=color_list)
     g.set_titles("{col_name}")
 
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
@@ -155,18 +180,26 @@ author:
     parser.add_argument("outfile", type=str, help="output file")
 
     parser.add_argument("--toa_files", type=str, nargs='*', action='append', default=[],
-                        help="netTOA files in this order: hist SH, hist NH, GHG SH, GHG NH, AA SH, AA NH")                     
+                        help="netTOA files in this order: exp1 NH, exp1 SH, exp2 NH, exp2 SH, etc")                     
     parser.add_argument("--ohu_files", type=str, nargs='*', action='append', default=[],
-                        help="OHU files in this order: hist SH, hist NH, GHG SH, GHG NH, AA SH, AA NH")
+                        help="OHU files in this order: exp1 NH, exp1 SH, exp2 NH, exp2 SH, etc")
     parser.add_argument("--ohc_files", type=str, nargs='*', action='append', default=[],
-                        help="OHC files in this order: hist SH, hist NH, GHG SH, GHG NH, AA SH, AA NH")
+                        help="OHC files in this order: exp1 NH, exp1 SH, exp2 NH, exp2 SH, etc")
+
+    parser.add_argument("--experiment_list", type=str, nargs='*',
+                        choices=('historical', 'historical-rcp85', 'historicalGHG', 'historicalMisc', '1pctCO2'),
+                        help="experiments to plot")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
 
-    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+    parser.add_argument("--hist_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2005-12-31'),
-                        help="Time period [default = entire]")
+                        help="Time period for historical experiments [default = 1861-2005]")
+    parser.add_argument("--pctCO2_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        default=('1861-01-01', '2000-12-31'),
+                        help="Time period for 1pctCO2 experiment [default = 1861-2000]")
+
 
     args = parser.parse_args()             
     main(args)
