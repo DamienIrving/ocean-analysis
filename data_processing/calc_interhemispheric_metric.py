@@ -84,15 +84,19 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
 
     # Calculate spatial aggregate
     coord_names.remove('time')
+    if aggregation_method == iris.analysis.SUM:
+        cube.data = cube.data * weights_array
+        weights = None
+        units = str(cube.units)
+        if weights_array.ndim == 2:
+            cube.units = units.replace('m-2', '')
+    else:
+        weights = weights_array
+    
     if chunk:
-        spatial_agg = uconv.chunked_collapse_by_time(cube, coord_names, aggregation_method, weights=weights_array)
+        spatial_agg = uconv.chunked_collapse_by_time(cube, coord_names, aggregation_method, weights=weights)
     else: 
-        spatial_agg = cube.collapsed(coord_names, aggregation_method, weights=weights_array)
-
-    if weights_cube and (aggregation_method == iris.analysis.SUM):
-        units = str(spatial_agg.units)
-        if weights_cube.ndim == 2:
-            spatial_agg.units = units.replace('m-2', '')
+        spatial_agg = cube.collapsed(coord_names, aggregation_method, weights=weights)
 
     spatial_agg.remove_coord('latitude')
     spatial_agg.remove_coord('longitude')
