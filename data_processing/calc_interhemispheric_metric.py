@@ -88,7 +88,7 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
         cube.data = cube.data * weights_array
         weights = None
         units = str(cube.units)
-        if weights_array.ndim == 2:
+        if weights_cube.ndim == 2:
             cube.units = units.replace('m-2', '')
     else:
         weights = weights_array
