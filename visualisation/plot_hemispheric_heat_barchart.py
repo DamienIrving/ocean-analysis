@@ -44,7 +44,7 @@ mpl.rcParams['ytick.labelsize'] = 16
 mpl.rcParams['legend.fontsize'] = 16
 
 
-def calc_hemispheric_heat(sh_file, nh_file, var, experiment, time_constraint):
+def calc_hemispheric_heat(file_group, regions, var, experiment, time_constraint):
     """Calculate the interhemispheric difference timeseries."""
 
     names = {'ohc': 'ocean heat content',
@@ -52,22 +52,21 @@ def calc_hemispheric_heat(sh_file, nh_file, var, experiment, time_constraint):
              'rndt': 'TOA Incoming Net Radiation',
              'thetao': 'Sea Water Potential Temperature'}
 
-    sh_name = names[var] + ' sh sum'
-    sh_cube = iris.load_cube(sh_file, sh_name & time_constraint)
-    sh_value = sh_cube.data[-1] - sh_cube.data[0]
-
-    nh_name = names[var] + ' nh sum'
-    nh_cube = iris.load_cube(nh_file, nh_name & time_constraint)
-    nh_value = nh_cube.data[-1] - nh_cube.data[0]
+    values = []
+    for filenum, region in enumerate(regions):
+        var_name = '%s %s sum'  %(names[var], region)
+        cube = iris.load_cube(file_group[filenum], var_name & time_constraint)
+        values.append(cube.data[-1] - cube.data[0])
     
-    assert experiment == nh_cube.attributes['experiment_id']
-    model = nh_cube.attributes['model_id']
-    history = nh_cube.attributes['history']
+        assert experiment == cube.attributes['experiment_id']
     
-    return sh_value, nh_value, model, history
+    model = cube.attributes['model_id']
+    history = cube.attributes['history']
+    
+    return values, model, history
 
 
-def generate_heat_row_dicts(column_list, sh_value, nh_value, model, experiment, var, ylabel):
+def generate_heat_row_dicts(column_list, values, regions, model, experiment, var, ylabel):
     """Generate dict that will form a row of a pandas dataframe."""
 
     experiment_names = {'historical': 'historical',
@@ -76,12 +75,11 @@ def generate_heat_row_dicts(column_list, sh_value, nh_value, model, experiment, 
                         'historical-rcp85': 'historical-rcp85',
                         '1pctCO2': '1pctCO2'}
     variable_names = {'rndt': 'netTOA', 'hfds': 'OHU', 'ohc': 'OHC'}
-    hemispheres = ['SH', 'NH']
     
-    for index, value in enumerate([sh_value, nh_value]):
+    for index, value in enumerate(values):
         row_dict = {'model': model,
                     'experiment': experiment_names[experiment],
-                    'hemisphere': hemispheres[index],
+                    'hemisphere': regions[index],
                     'variable': variable_names[var],
                     ylabel: value}
         column_list.append(row_dict)
@@ -133,19 +131,19 @@ def main(inargs):
     file_variables = ['rndt', 'hfds', 'ohc']
     column_list = []
     ylabel = get_ylabel(inargs.toa_files, inargs.ohu_files, inargs.ohc_files)
+    nregions = len(inargs.regions)
     
     for var_index, var_files in enumerate([inargs.toa_files, inargs.ohu_files, inargs.ohc_files]):
         var = file_variables[var_index]
         for model_files in var_files:
-            for exp_index, file_pair in enumerate([model_files[i:i + 2] for i in range(0, len(model_files), 2)]):
-                experiment = inargs.experiment_list[exp_index]
-                time_constraint = time_constraints[experiment]
-                sh_file, nh_file = file_pair  
-                sh_value, nh_value, model, history = calc_hemispheric_heat(sh_file, nh_file, var, experiment, time_constraint)
-                column_list = generate_heat_row_dicts(column_list, sh_value, nh_value, model, experiment, var, ylabel)
+            for exp_index, file_group in enumerate([model_files[i:i + nregions] for i in range(0, len(model_files), nregions)]):
+                experiment = inargs.experiments[exp_index]
+                time_constraint = time_constraints[experiment]  
+                values, model, history = calc_hemispheric_heat(file_group, inargs.regions, var, experiment, time_constraint)
+                column_list = generate_heat_row_dicts(column_list, values, inargs.regions, model, experiment, var, ylabel)
     heat_df = pandas.DataFrame(column_list)
 
-    color_list = get_colors(inargs.experiment_list)
+    color_list = get_colors(inargs.experiments)
     seaborn.set_style("whitegrid")
     g = seaborn.catplot(x="hemisphere", y=ylabel,
                         hue="experiment", col="variable",
@@ -157,7 +155,7 @@ def main(inargs):
     print('dpi =', dpi)
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
 
-    log_text = cmdprov.new_log(infile_history={nh_file: history}, git_repo=repo_dir)
+    log_text = cmdprov.new_log(infile_history={file_group[-1]: history}, git_repo=repo_dir)
     log_file = re.sub('.png', '.met', inargs.outfile)
     cmdprov.write_log(log_file, log_text)
 
@@ -180,15 +178,18 @@ author:
     parser.add_argument("outfile", type=str, help="output file")
 
     parser.add_argument("--toa_files", type=str, nargs='*', action='append', default=[],
-                        help="netTOA files in this order: exp1 NH, exp1 SH, exp2 NH, exp2 SH, etc")                     
+                        help="netTOA files in this order: exp1 globe, exp1 NH, exp1 SH, exp2 globe, exp2 NH, exp2 SH, etc")                     
     parser.add_argument("--ohu_files", type=str, nargs='*', action='append', default=[],
-                        help="OHU files in this order: exp1 NH, exp1 SH, exp2 NH, exp2 SH, etc")
+                        help="OHU files in this order: exp1 globe, exp1 NH, exp1 SH, exp2 globe, exp2 NH, exp2 SH, etc")
     parser.add_argument("--ohc_files", type=str, nargs='*', action='append', default=[],
-                        help="OHC files in this order: exp1 NH, exp1 SH, exp2 NH, exp2 SH, etc")
+                        help="OHC files in this order: exp1 globe, exp1 NH, exp1 SH, exp2 globe, exp2 NH, exp2 SH, etc")
 
-    parser.add_argument("--experiment_list", type=str, nargs='*',
+    parser.add_argument("--experiments", type=str, nargs='*',
                         choices=('historical', 'historical-rcp85', 'historicalGHG', 'historicalMisc', '1pctCO2'),
                         help="experiments to plot")
+    parser.add_argument("--regions", type=str, nargs='*',
+                        choices=('globe', 'sh', 'nh'),
+                        help="regions to plot (in order Globe, SH, NH)")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
