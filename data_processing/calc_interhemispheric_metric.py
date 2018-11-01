@@ -77,19 +77,17 @@ def calc_spatial_agg(cube, coord_names, aux_coord_names, grid_type,
             weights_cube = grids.extract_latregion_rectilinear(weights_cube, lat_bounds)
         weights_array = uconv.broadcast_array(weights_cube.data, [1, weights_cube.ndim], cube.shape)
     elif type(weights_cube) == str:
-        assert weights_cube.ndim == 2
         weights_array = spatial_weights.area_array(cube)
     else:
         weights_array = None
 
     # Calculate spatial aggregate
     coord_names.remove('time')
-    if aggregation_method == iris.analysis.SUM:
+    if (aggregation_method == iris.analysis.SUM) and weights_cube:
+        units = str(cube.units)
+        cube.units = units.replace('m-2', '')
         cube.data = cube.data * weights_array
         weights = None
-        units = str(cube.units)
-        if weights_cube.ndim == 2:
-            cube.units = units.replace('m-2', '')
     else:
         weights = weights_array
     
@@ -187,7 +185,10 @@ def main(inargs):
     """Run the program."""
 
     if inargs.weights_file:
-        weights_cube = iris.load_cube(inargs.weights_file)
+        if inargs.weights_file[-3:] == '.nc':
+            weights_cube = iris.load_cube(inargs.weights_file)
+        else:
+            weights_cube = 'calculate'
     else:
         weights_cube = None
 
