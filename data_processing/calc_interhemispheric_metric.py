@@ -214,18 +214,8 @@ def main(inargs):
 
         cube_list = iris.cube.CubeList([nh_agg, sh_agg, globe_agg])
 
-        if 'diff' in inargs.metric:
-            metric = calc_diff(nh_agg, sh_agg, inargs.aggregation_method)
-            cube_list.append(metric)
-        if 'global-fraction' in inargs.metric:
-            nh_metric = calc_frac(nh_agg, globe_agg, inargs.aggregation_method)
-            sh_metric = calc_frac(sh_agg, globe_agg, inargs.aggregation_method)
-            cube_list.append(nh_metric)
-            cube_list.append(sh_metric)
-
-        if inargs.cumsum:
-            cube_list = iris.cube.CubeList(map(uconv.convert_to_joules, cube_list))
-            cube_list = iris.cube.CubeList(map(cumsum, cube_list)) 
+        if inargs.joules:
+            cube_list = iris.cube.CubeList(map(uconv.convert_to_joules, cube_list)) 
 
         if file_number == 0:
             final_cube_list = cube_list
@@ -233,6 +223,9 @@ def main(inargs):
             for var_num in range(len(cube_list)):
                 cube_pair = iris.cube.CubeList([final_cube_list[var_num], cube_list[var_num]])
                 final_cube_list[var_num] = combine_cubes(cube_pair)
+
+    if inargs.cumsum:
+        final_cube_list = iris.cube.CubeList(map(cumsum, final_cube_list))
 
     new_log = cmdprov.new_log(infile_history={infile: cube.attributes['history']}, git_repo=repo_dir)
     final_cube_list = update_metadata(final_cube_list, new_log)
@@ -264,8 +257,6 @@ author:
     parser.add_argument("--aggregation_method", type=str, default='sum', choices=('mean', 'sum'),
                         help="calculate the hemispheric sum or mean")
     
-    parser.add_argument("--metric", type=str, default=[], nargs='*', choices=('diff', 'global-fraction'),
-                        help="output additional metrics")
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Output annual mean [default=False]")
 
@@ -273,6 +264,9 @@ author:
                         help="Northern Hemisphere latitude bounds [default = entire hemisphere]")
     parser.add_argument("--sh_lat_bounds", type=float, nargs=2, metavar=('LOWER', 'UPPER'), default=(-91.0, 0.0),
                         help="Southern Hemisphere latitude bounds [default = entire hemisphere]")
+
+    parser.add_argument("--joules", action="store_true", default=False,
+                        help="Convert units from Watts to Joules [default: False]")
 
     parser.add_argument("--cumsum", action="store_true", default=False,
                         help="Output the cumulative sum [default: False]")
