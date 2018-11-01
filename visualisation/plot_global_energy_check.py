@@ -185,6 +185,20 @@ def ensemble_agg(cube_list):
     return ensemble_agg
 
 
+def sort_inputs(inargs):
+    """ """
+
+    region_characteristics = []
+    infiles = []
+    region_options = [('globe', True), ('nh', True), ('sh', True), ('globe', False)]
+    for index, file_group in enumerate([inargs.globe_files, inargs.nh_files, inargs.sh_files, inargs.orig_files]):
+        if file_group:
+            region_characteristics.append(region_options[index])
+            infiles.append(file_group)
+
+    return region_characteristics, infiles
+
+
 def main(inargs):
     """Run the program."""
 
@@ -193,8 +207,7 @@ def main(inargs):
     results_dict = {}
     fig, ax = plt.subplots()
 
-    region_characteristics = [('globe', True), ('nh', True), ('sh', True), ('globe', False)]
-    infiles = [inargs.globe_files, inargs.nh_files, inargs.sh_files, inargs.orig_files]
+    region_characteristics, infiles = sort_inputs(inargs)
     for region_index, region_group in enumerate(infiles):
         if region_group:
             hemisphere, dedrifted = region_characteristics[region_index]
@@ -258,11 +271,11 @@ author:
 
     parser.add_argument("outfile", type=str, help="output file")                               
     
-    parser.add_argument("--globe_files", type=str, nargs=3, action='append', 
+    parser.add_argument("--globe_files", type=str, nargs=3, action='append', default=[],
                         help="globally integrated OHC file, hfds file and netTOA file (in that order) (dedrifted)")
-    parser.add_argument("--nh_files", type=str, nargs=3, action='append',
+    parser.add_argument("--nh_files", type=str, nargs=3, action='append', default=[],
                         help="NH integrated OHC file, hfds file and netTOA file (in that order) (dedrifted)")
-    parser.add_argument("--sh_files", type=str, nargs=3, action='append', 
+    parser.add_argument("--sh_files", type=str, nargs=3, action='append', default=[],
                         help="SH integrated OHC file, hfds file and netTOA file (in that order) (dedrifted)")
 
     parser.add_argument("--hfbasin_file", type=str, default=None, 
