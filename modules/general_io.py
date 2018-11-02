@@ -276,7 +276,8 @@ def get_time_constraint(time_list):
     """Get the time constraint used for reading an iris cube."""
 
     if time_list:
-        assert type(time_list) in (list, tuple)
+        if not type(time_list) in (list, tuple):
+            time_list = [time_list]
         date_pattern = '([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})'
         start_date = time_list[0]
         start_year, start_month, start_day = start_date.split('-')

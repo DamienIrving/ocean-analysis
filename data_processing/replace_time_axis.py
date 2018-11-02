@@ -31,15 +31,28 @@ except ImportError:
 
 # Define functions
 
+def switch_data(cube, time_cube):
+    """Switch the data rather than the time axis."""
+
+    new_cube = time_cube.copy()
+    new_cube.data = cube.data
+    new_cube.attributes = cube.attributes
+
+    return new_cube
+
+
 def main(inargs):
     """Run the program."""
 
-    time_constraint = gio.get_time_constraint([inargs.start_date])
+    time_constraint = gio.get_time_constraint(inargs.start_date)
     cube = iris.load_cube(inargs.infile)
     time_cube = iris.load_cube(inargs.timefile, time_constraint)
 
-    len_time = cube.coord('time').shape[0]
-    cube.replace_coord(time_cube.coord('time')[0:len_time])
+    if inargs.switch_data:
+        cube = switch_data(cube, time_cube)
+    else:
+        len_time = cube.coord('time').shape[0]
+        cube.replace_coord(time_cube.coord('time')[0:len_time])
 
     cube.attributes['history'] = cmdprov.new_log(infile_history={inargs.infile: cube.attributes['history']}, git_repo=repo_dir)
     iris.save(cube, inargs.outfile)
@@ -66,7 +79,8 @@ author:
 
     parser.add_argument("--start_date", type=str, default=None,
                         help="Start date for new time axis [default = entire]")
-    
+    parser.add_argument("--switch_data", action="store_true", default=False,
+                        help="Switch out the data from the timefile instead [default: False]")
 
     args = parser.parse_args()             
     main(args)
