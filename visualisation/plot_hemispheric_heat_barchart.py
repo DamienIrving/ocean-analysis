@@ -10,6 +10,7 @@ Description:  Plot barchart comparing heat uptake/storage in either hemisphere
 import sys, os, pdb
 import re
 import argparse
+import itertools
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.ticker as tkr
@@ -43,6 +44,13 @@ mpl.rcParams['xtick.labelsize'] = 16
 mpl.rcParams['ytick.labelsize'] = 16
 mpl.rcParams['legend.fontsize'] = 16
 
+experiment_names = {'historical': 'historical',
+                    'historicalGHG': 'GHG-only',
+                    'historicalMisc': 'AA-only',
+                    'historical-rcp85': 'historical-rcp85',
+                    '1pctCO2': '1pctCO2'}
+variable_names = {'rndt': 'netTOA', 'hfds': 'OHU', 'ohc': 'OHC'}
+
 
 def calc_hemispheric_heat(file_group, regions, var, experiment, time_constraint):
     """Calculate the interhemispheric difference timeseries."""
@@ -68,13 +76,6 @@ def calc_hemispheric_heat(file_group, regions, var, experiment, time_constraint)
 
 def generate_heat_row_dicts(column_list, values, regions, model, experiment, var, ylabel):
     """Generate dict that will form a row of a pandas dataframe."""
-
-    experiment_names = {'historical': 'historical',
-                        'historicalGHG': 'GHG-only',
-                        'historicalMisc': 'AA-only',
-                        'historical-rcp85': 'historical-rcp85',
-                        '1pctCO2': '1pctCO2'}
-    variable_names = {'rndt': 'netTOA', 'hfds': 'OHU', 'ohc': 'OHC'}
     
     for index, value in enumerate(values):
         row_dict = {'model': model,
@@ -119,6 +120,20 @@ def get_colors(exp_list):
     return color_list
 
 
+def write_values(df, ylabel, variables, experiments, hemispheres, outfile):
+    """Write values to file"""
+
+    fout = open(outfile.replace('.png', '.txt'), 'w')
+    for variable, experiment, hemisphere in itertools.product(variables, experiments, hemispheres):
+        variable = variable_names[variable]
+        experiment = experiment_names[experiment]
+        selection = df.loc[(df['experiment'] == experiment) & (df['hemisphere'] == hemisphere) & (df['variable'] == variable)]
+        ave = selection[ylabel].mean()
+        label = '%s, %s, %s:'  %(variable, experiment, hemisphere)
+        fout.write(label + ' ' + str(ave) + '\n')
+    fout.close()
+
+
 def main(inargs):
     """Run the program."""
 
@@ -142,6 +157,8 @@ def main(inargs):
                 values, model, history = calc_hemispheric_heat(file_group, inargs.regions, var, experiment, time_constraint)
                 column_list = generate_heat_row_dicts(column_list, values, inargs.regions, model, experiment, var, ylabel)
     heat_df = pandas.DataFrame(column_list)
+
+    write_values(heat_df, ylabel, file_variables, inargs.experiments, inargs.regions, inargs.outfile)
 
     color_list = get_colors(inargs.experiments)
     seaborn.set_style("whitegrid")
