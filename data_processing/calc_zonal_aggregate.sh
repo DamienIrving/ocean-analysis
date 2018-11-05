@@ -180,7 +180,7 @@ for rip in "${rips[@]}"; do
 
 ref_file="${ua6_dir}/historical/mon/atmos/r1i1p1/rsdt/latest/rsdt_Amon_${model}_historical_r1i1p1_185001-200512.nc toa_incoming_shortwave_flux"
 
-input_file=${indir}/${experiment}/${input_tscale}/${realm}/${rip}/${var}/latest/${file_var}_${prefix}${input_tscale}_${model}_${experiment}_${rip}_*.nc
+input_file=${indir}/${experiment}/${input_tscale}/${realm}/${rip}/${var}/latest/${file_var}_${prefix}${input_tscale}_${model}_${experiment}_${rip}_??????-??????.nc
 
 output_dir=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest
 mkdir -p ${output_dir}

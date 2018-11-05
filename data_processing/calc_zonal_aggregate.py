@@ -197,15 +197,16 @@ def main(inargs):
             zonal_aggregate = cube.collapsed('longitude', aggregation_functions[inargs.aggregation])
             zonal_aggregate.remove_coord('longitude')
 
-        if inargs.cumsum:
+        if inargs.joules:
             zonal_aggregate = uconv.convert_to_joules(zonal_aggregate)
-            zonal_aggregate = cumsum(zonal_aggregate)
-
+            
         zonal_aggregate.data = zonal_aggregate.data.astype(numpy.float32)
 
         if inargs.outfile[-3:] == '.nc':
             output_cubelist.append(zonal_aggregate)
-        elif inargs.outfile[-1] == '/':        
+        elif inargs.outfile[-1] == '/': 
+            if inargs.cumsum:
+                zonal_aggregate = cumsum(zonal_aggregate)       
             infile = filename.split('/')[-1]
             infile = re.sub(cube.var_name + '_', cube.var_name + '-' + 'zonal-' + inargs.aggregation + '_', infile)
             if inargs.annual:
@@ -216,16 +217,20 @@ def main(inargs):
             metadata_dict[filename] = cube.attributes['history'] 
             zonal_aggregate.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
 
-            iris.save(zonal_aggregate, outfile, netcdf_format='NETCDF3_CLASSIC')
+            iris.save(zonal_aggregate, outfile)   #netcdf_format='NETCDF3_CLASSIC')
             print('output:', outfile)
             del zonal_aggregate
 
-        if inargs.outfile[-3:] == '.nc':
-            equalise_attributes(output_cubelist)
-            output_cubelist = output_cubelist.concatenate_cube()
-            metadata_dict[filename] = cube.attributes['history']
-            output_cubelist.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
-            iris.save(output_cubelist, inargs.outfile, netcdf_format='NETCDF3_CLASSIC')
+    if inargs.outfile[-3:] == '.nc':
+        equalise_attributes(output_cubelist)
+        output_cubelist = output_cubelist.concatenate_cube()
+
+        if inargs.cumsum:
+            output_cubelist = cumsum(output_cubelist)
+
+        metadata_dict[filename] = cube.attributes['history']
+        output_cubelist.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+        iris.save(output_cubelist, inargs.outfile)  # netcdf_format='NETCDF3_CLASSIC')
 
 
 if __name__ == '__main__':
@@ -265,6 +270,8 @@ author:
 
     parser.add_argument("--cumsum", action="store_true", default=False,
                         help="Output the cumulative sum [default: False]")
+    parser.add_argument("--joules", action="store_true", default=False,
+                        help="Convert units from Watts to Joules [default: False]")
 
     args = parser.parse_args()
     assert bool(args.sftlf_file) == bool(args.realm), "To select a realm, specify --realm and --sftlf_file"             
