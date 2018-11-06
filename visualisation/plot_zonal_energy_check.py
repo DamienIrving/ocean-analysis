@@ -83,7 +83,9 @@ def ensemble_grid():
 def ensemble_mean(cube_list):
     """Calculate the ensemble mean."""
 
-    if len(cube_list) > 1:
+    if not cube_list:
+        ensemble_mean = None
+    elif len(cube_list) > 1:
         equalise_attributes(cube_list)
         ensemble_cube = cube_list.merge_cube()
         ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
@@ -296,23 +298,35 @@ def get_time_text(time_bounds):
     return time_text
 
 
+def get_nmodels(inargs):
+    """Get the number of models"""
+
+    nmodels = None
+    for exp_files in [inargs.ghg_files, inargs.aa_files, inargs.hist_files, inargs.pctCO2_files]:
+        if exp_files:
+            if nmodels:
+                assert nmodels == len(exp_files)
+            nmodels = len(exp_files) 
+
+    return nmodels
+
+
 def main(inargs):
     """Run program"""
 
-    assert len(inargs.ghg_files) == len(inargs.aa_files) == len(inargs.hist_files)
-    nmodels = len(inargs.ghg_files)
+    nmodels = get_nmodels(inargs)
     ensemble_ref_cube = ensemble_grid() if nmodels > 1 else None
 
     var_list = ['rndt', 'hfds', 'ohc', 'hfbasin-inferred', 'hfatmos-inferred', 'hftotal-inferred']
-    exp_list = ['historicalGHG', 'historicalMisc', 'historical', 'GHG+AA', 'hist-GHG+AA']
+    exp_list = ['historicalGHG', 'historicalMisc', 'historical', 'GHG+AA', 'hist-GHG+AA', '1pctCO2']
     time_constraint = gio.get_time_constraint(inargs.time)
 
     anomaly_dict = {}
     for combo in itertools.product(var_list, exp_list):
         anomaly_dict[combo] = iris.cube.CubeList([])
 
-    # Get data for the three experiments
-    for exp_files in [inargs.ghg_files, inargs.aa_files, inargs.hist_files]:
+    # Get data for the experiments
+    for exp_files in [inargs.ghg_files, inargs.aa_files, inargs.hist_files, inargs.pctCO2_files]:
         for model_num, model_files in enumerate(exp_files):
             rndt_file, hfds_file, ohc_file = model_files
             metadata_dict = {}
@@ -322,13 +336,14 @@ def main(inargs):
                                                         metadata_dict)
             
     # Calculate the GHG + AA variables
-    for mod_num in range(nmodels):
-        for var in var_list:
-            data_sum = anomaly_dict[(var, 'historicalGHG')][mod_num] + \
-                       anomaly_dict[(var, 'historicalMisc')][mod_num]
-            data_diff = anomaly_dict[(var, 'historical')][mod_num] - data_sum        
-            anomaly_dict[(var, 'GHG+AA')].append(data_sum)
-            anomaly_dict[(var, 'hist-GHG+AA')].append(data_diff)
+    if inargs.ghg_files and inargs.aa_files:
+        for mod_num in range(nmodels):
+            for var in var_list:
+                data_sum = anomaly_dict[(var, 'historicalGHG')][mod_num] + \
+                           anomaly_dict[(var, 'historicalMisc')][mod_num]
+                data_diff = anomaly_dict[(var, 'historical')][mod_num] - data_sum        
+                anomaly_dict[(var, 'GHG+AA')].append(data_sum)
+                anomaly_dict[(var, 'hist-GHG+AA')].append(data_diff)
         
     # Plot individual model data
     nexp = len(inargs.experiments)
@@ -357,7 +372,6 @@ def main(inargs):
         ensemble_dict[combo] = ensemble_mean(cube_list)
     
     linewidth = None if nmodels == 1 else 4.0
-    model_label = 'ensemble' if nmodels > 1 else inargs.models[0]
     storage_letter = panel_labels[plot_index] if inargs.panel_letters else None
     transport_letter = panel_labels[plot_index + nexp] if inargs.panel_letters else None
     for plot_index, exp in enumerate(inargs.experiments):
@@ -405,16 +419,19 @@ author:
 
     parser.add_argument("outfile", type=str, help="name of output file")
 
-    parser.add_argument("--hist_files", type=str, required=True, nargs=3, action='append',
+    parser.add_argument("--hist_files", type=str, nargs=3, action='append', default=[],
                         help="historical experiment netTOA, OHU and OHC files for a given model (in that order)")
-    parser.add_argument("--ghg_files", type=str, required=True, nargs=3, action='append',
+    parser.add_argument("--ghg_files", type=str, nargs=3, action='append', default=[],
                         help="historicalGHG experiment netTOA, OHU and OHC files for a given model (in that order)")
-    parser.add_argument("--aa_files", type=str, required=True, nargs=3, action='append',
+    parser.add_argument("--aa_files", type=str, nargs=3, action='append', default=[],
                         help="historicalAA experiment netTOA, OHU and OHC files for a given model (in that order)")
+    parser.add_argument("--pctCO2_files", type=str, nargs=3, action='append', default=[],
+                        help="1pctCO2 experiment netTOA, OHU and OHC files for a given model (in that order)")
+
 
     parser.add_argument("--experiments", type=str, nargs='*',
                         choices=('historical', 'historicalGHG', 'historicalMisc',
-                                 'GHG+AA', 'hist-GHG+AA'),
+                                 'GHG+AA', 'hist-GHG+AA', '1pctCO2'),
                         help="experiments to plot")                                  
 
     parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
