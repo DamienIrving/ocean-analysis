@@ -11,7 +11,7 @@ spatial_agg='sum'
 #sum mean
 
 
-vars=(ohc)
+vars=(rndt hfds)
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/data_processing
@@ -186,7 +186,7 @@ output_dir=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest
 mkdir -p ${output_dir}
 output_file=${output_dir}/${file_var}-zonal-${spatial_agg}_${prefix}yr_${model}_${experiment}_${rip}_${tdetails}.nc
 
-command="${python} -W ignore ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} ${spatial_agg} ${output_file} ${temporal_agg} --ref_file ${ref_file} ${joules} ${area}"
+command="${python} -W ignore ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} ${spatial_agg} ${output_file} ${temporal_agg} --ref_file ${ref_file} ${joules} ${area} ${cumsum}"
 # --realm ocean --sftlf_file ${sftlf_file} --ref_file ${ref_file}
 
 echo ${command}
