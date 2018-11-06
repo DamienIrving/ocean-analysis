@@ -50,7 +50,7 @@ experiment_names = {'historical': 'historical',
                     'historical-rcp85': 'historical-rcp85',
                     '1pctCO2': '1pctCO2'}
 variable_names = {'rndt': 'netTOA', 'hfds': 'OHU', 'ohc': 'OHC'}
-
+region_names = {'sh': 'SH', 'nh': 'NH', 'globe': 'Globe'}
 
 def calc_hemispheric_heat(file_group, regions, var, experiment, time_constraint):
     """Calculate the interhemispheric difference timeseries."""
@@ -80,7 +80,7 @@ def generate_heat_row_dicts(column_list, values, regions, model, experiment, var
     for index, value in enumerate(values):
         row_dict = {'model': model,
                     'experiment': experiment_names[experiment],
-                    'hemisphere': regions[index],
+                    'hemisphere': region_names[regions[index]],
                     'variable': variable_names[var],
                     ylabel: value}
         column_list.append(row_dict)
@@ -127,6 +127,7 @@ def write_values(df, ylabel, variables, experiments, hemispheres, outfile):
     for variable, experiment, hemisphere in itertools.product(variables, experiments, hemispheres):
         variable = variable_names[variable]
         experiment = experiment_names[experiment]
+        hemisphere = region_names[hemisphere]
         selection = df.loc[(df['experiment'] == experiment) & (df['hemisphere'] == hemisphere) & (df['variable'] == variable)]
         ave = selection[ylabel].mean()
         label = '%s, %s, %s:'  %(variable, experiment, hemisphere)
