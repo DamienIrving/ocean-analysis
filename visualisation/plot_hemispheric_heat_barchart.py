@@ -90,7 +90,7 @@ def generate_heat_row_dicts(column_list, values, regions, model, experiment, var
 
 def get_ylabel(toa_files, ohu_files, ohc_files):
     """Get the label for the yaxis"""
-    
+
     toa_plot = False if toa_files == [] else True
     ohu_plot = False if ohu_files == [] else True
     ohc_plot = False if ohc_files == [] else True
@@ -99,7 +99,7 @@ def get_ylabel(toa_files, ohu_files, ohc_files):
     if not ohc_plot:
         ylabel = 'heat uptake (J)'
     elif not (toa_plot or ohu_plot):
-        ylabel = 'heat storage (J)'
+        ylabel = 'change in OHC (J)'
 
     return ylabel
 
