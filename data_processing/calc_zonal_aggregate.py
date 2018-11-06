@@ -223,6 +223,7 @@ def main(inargs):
 
     if inargs.outfile[-3:] == '.nc':
         equalise_attributes(output_cubelist)
+        iris.util.unify_time_units(output_cubelist)
         output_cubelist = output_cubelist.concatenate_cube()
 
         if inargs.cumsum:
