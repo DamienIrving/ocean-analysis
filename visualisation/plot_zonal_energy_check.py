@@ -46,7 +46,7 @@ aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
               'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
 titles = {'historical': 'historical', 'historicalGHG': 'GHG-only',
           'historicalMisc': 'AA-only', 'GHG+AA': 'GHG + AA',
-          'hist-GHG+AA': 'historical - (GHG + AA)'}
+          'hist-GHG+AA': 'historical - (GHG + AA)', '1pctCO2': '1pctCO2'}
 
 panel_labels = {0: '(a)', 1: '(b)', 2: '(c)', 3: '(d)',
                 4: '(e)', 5: '(f)', 6: '(g)', 7: '(h)'}
@@ -57,7 +57,7 @@ mpl.rcParams['axes.labelsize'] = 24
 mpl.rcParams['axes.titlesize'] = 28
 mpl.rcParams['xtick.labelsize'] = 24
 mpl.rcParams['ytick.labelsize'] = 24
-mpl.rcParams['legend.fontsize'] = 20
+mpl.rcParams['legend.fontsize'] = 16
 
 
 def ensemble_grid():
@@ -372,9 +372,8 @@ def main(inargs):
         ensemble_dict[combo] = ensemble_mean(cube_list)
     
     linewidth = None if nmodels == 1 else 4.0
-    storage_letter = panel_labels[plot_index] if inargs.panel_letters else None
-    transport_letter = panel_labels[plot_index + nexp] if inargs.panel_letters else None
     for plot_index, exp in enumerate(inargs.experiments):
+        storage_letter = panel_labels[plot_index] if inargs.panel_letters else None
         plot_uptake_storage(gs[plot_index],
                             ensemble_dict[('rndt', exp)],
                             ensemble_dict[('hfds', exp)],
@@ -383,6 +382,7 @@ def main(inargs):
                             exp_num=plot_index, ylim=inargs.ylim_storage,
                             panel_label=storage_letter,
                             legloc=inargs.legloc_storage)
+        transport_letter = panel_labels[plot_index + nexp] if inargs.panel_letters else None
         plot_transport(gs[plot_index + nexp],
                        ensemble_dict[('hfbasin-inferred', exp)],
                        ensemble_dict[('hfatmos-inferred', exp)],
