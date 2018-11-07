@@ -1,7 +1,7 @@
 
-model=CCSM4
+model=GISS-E2-R
 
-experiments=(historicalGHG)
+experiments=(1pctCO2)
 rips=(r1i1p1)
 
 fx_rip=r0i0p0
@@ -11,7 +11,7 @@ spatial_agg='sum'
 #sum mean
 
 
-vars=(rndt hfds)
+vars=(hfds)
 
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/data_processing
@@ -22,6 +22,12 @@ r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}
 sftlf_file=${ua6_dir}/${fx_experiment}/fx/atmos/${fx_rip}/sftlf/latest/sftlf_fx_${model}_${fx_experiment}_${fx_rip}.nc
 areacello_file=${ua6_dir}/${fx_experiment}/fx/ocean/${fx_rip}/areacello/latest/areacello_fx_${model}_${fx_experiment}_${fx_rip}.nc
 areacella_file=${ua6_dir}/${fx_experiment}/fx/atmos/${fx_rip}/areacella/latest/areacella_fx_${model}_${fx_experiment}_${fx_rip}.nc
+
+ref_file=' '
+if [[ "${model}" =~ ^('CCSM4'|'NorESM1-M')$ ]]; then
+    ref_file="--ref_file ${ua6_dir}/historical/mon/atmos/r1i1p1/rsdt/latest/rsdt_Amon_${model}_historical_r1i1p1_185001-200512.nc toa_incoming_shortwave_flux"
+fi
+
 
 for var in "${vars[@]}"; do
 
@@ -178,16 +184,14 @@ fi
 for experiment in "${experiments[@]}"; do
 for rip in "${rips[@]}"; do
 
-ref_file="${ua6_dir}/historical/mon/atmos/r1i1p1/rsdt/latest/rsdt_Amon_${model}_historical_r1i1p1_185001-200512.nc toa_incoming_shortwave_flux"
-
 input_file=${indir}/${experiment}/${input_tscale}/${realm}/${rip}/${var}/latest/${file_var}_${prefix}${input_tscale}_${model}_${experiment}_${rip}_??????-??????.nc
 
 output_dir=${r87_dir}/${experiment}/yr/${realm}/${rip}/${var}/latest
 mkdir -p ${output_dir}
 output_file=${output_dir}/${file_var}-zonal-${spatial_agg}_${prefix}yr_${model}_${experiment}_${rip}_${tdetails}.nc
 
-command="${python} -W ignore ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} ${spatial_agg} ${output_file} ${temporal_agg} --ref_file ${ref_file} ${joules} ${area} ${cumsum}"
-# --realm ocean --sftlf_file ${sftlf_file} --ref_file ${ref_file}
+command="${python} -W ignore ${script_dir}/calc_zonal_aggregate.py ${input_file} ${standard_name} ${spatial_agg} ${output_file} ${temporal_agg} ${ref_file} ${joules} ${area} ${cumsum}"
+# --realm ocean --sftlf_file ${sftlf_file}
 
 echo ${command}
 ${command}
