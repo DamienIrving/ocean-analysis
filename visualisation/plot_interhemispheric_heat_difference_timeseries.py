@@ -162,6 +162,8 @@ def calc_hemispheric_value(sh_file, nh_file, val_type, var, time_constraint, ens
             metric.data = sh_anomaly.data
         elif val_type == 'nh': 
             metric.data = nh_anomaly.data
+        elif val_type == 'sum': 
+            metric.data = nh_anomaly.data + sh_anomaly.data
 
     new_aux_coord = iris.coords.AuxCoord(ensemble_number, long_name='ensemble_member', units='no_unit')
     metric.add_aux_coord(new_aux_coord)
@@ -203,9 +205,9 @@ def set_plot_features(inargs, ax, plotnum, var, nvars):
     if var == 'thetao' or inargs.metric in ['sh', 'nh']:
         plt.legend(loc=2)
     else:
-        plt.legend(loc=3)
+        plt.legend(loc=2)
 
-    if inargs.metric in ['sh', 'nh']:
+    if inargs.hline:
         ax.axhline(y=0, color='0.5', linestyle='--', linewidth=0.5)
 
 
@@ -305,7 +307,7 @@ author:
     parser.add_argument("experiment_list", type=str, nargs='*', choices=('historical', 'historical-rcp85', 'GHG-only', 'AA-only', '1pctCO2'),
                         help="experiments to plot")
 
-    parser.add_argument("--metric", type=str, default='diff', choices=('diff', 'nh', 'sh'),
+    parser.add_argument("--metric", type=str, default='diff', choices=('diff', 'nh', 'sh', 'sum'),
                         help="Metric to plot (hemispheric values or difference) [default=diff]")
 
     parser.add_argument("--toa_files", type=str, nargs='*', action='append', default=[],
@@ -344,6 +346,9 @@ author:
     parser.add_argument("--pctCO2_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2000-12-31'),
                         help="Time period for 1pctCO2 experiment [default = entire]")
+
+    parser.add_argument("--hline", action="store_true", default=False,
+                        help="Plot a horizontal guideline [default: false]")
 
     args = parser.parse_args()             
     main(args)
