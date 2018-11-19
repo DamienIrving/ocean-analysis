@@ -44,9 +44,6 @@ var_colors = {'ohc': 'blue', 'hfds': 'orange', 'rndt': 'red'}
 exp_colors = {'historical-rcp85': 'black', 'historical': 'black', 'GHG-only': 'red',
               'AA-only': 'blue', '1pctCO2': 'orange'}
 
-names = {'thetao': 'Sea Water Potential Temperature',
-         'rndt': 'TOA Incoming Net Radiation'}
-
 titles = {'rndt': 'netTOA', 'thetao': 'Average Ocean Temperature'}
 
 plot_variables = {'thetao': ' Average Ocean Temperature',
@@ -126,13 +123,13 @@ def get_simulation_attributes(cube):
 def calc_ita(sh_file, nh_file, time_constraint, ensemble_number):
     """Calculate the interhemispheric temperature asymmetry."""
 
-    nh_name = names[var] + ' nh ' + agg
+    nh_name = 'Sea Water Potential Temperature nh mean'
     nh_cube = iris.load_cube(nh_file, nh_name & time_constraint)
     nh_attributes = get_simulation_attributes(nh_cube)
     nh_anomaly = calc_anomaly(nh_cube)
     nh_anomaly.data = nh_anomaly.data.astype(numpy.float32)
 
-    sh_name = names[var] + ' sh ' + agg
+    sh_name = 'Sea Water Potential Temperature sh mean'
     sh_cube = iris.load_cube(sh_file, sh_name & time_constraint)
     sh_attributes = get_simulation_attributes(sh_cube)
     sh_anomaly = calc_anomaly(sh_cube)
@@ -157,8 +154,8 @@ def temporal_plot(ax, ensemble_agg, ensemble_spread, experiment):
     iplt.plot(ensemble_agg, label=experiment, color=exp_colors[experiment])
     if ensemble_spread:
         time_values = ensemble_spread[0, ::].coord('time').points - 54567.5  
-        upper_bound = ensemble_spread_dict[var][0, ::].data
-        lower_bound = ensemble_spread_dict[var][-1, ::].data
+        upper_bound = ensemble_spread[0, ::].data
+        lower_bound = ensemble_spread[-1, ::].data
         iplt.plt.fill_between(time_values, upper_bound, lower_bound,
                               facecolor=exp_colors[experiment], alpha=0.15)
 
@@ -170,8 +167,11 @@ def temporal_plot_features(ax):
     ax.set_xlabel('Year')
     ax.set_ylabel('NH minus SH (K)')
     ax.tick_params(top='off') 
-    ax.text(0.93, 0.97, '(a)', transform=ax.transAxes, fontsize=24, va='top')
+    ax.text(0.92, 0.08, '(a)', transform=ax.transAxes, fontsize=24, va='top')
     ax.axhline(y=0, color='0.5', linestyle='--', linewidth=0.5)
+    ylim = ax.get_ylim()
+
+    return ylim
 
 
 def eei_plot(ax, eei_cube, ita_cube, experiment):
@@ -180,15 +180,30 @@ def eei_plot(ax, eei_cube, ita_cube, experiment):
     plt.sca(ax)
     x_data = eei_cube.data
     y_data = ita_cube.data
-    plt.scatter(x, y, c=exp_colors[experiment])
+    plt.scatter(x_data, y_data, c=exp_colors[experiment])
 
-def eei_plot_features(ax):
+
+def eei_plot_features(ax, ylim):
     """Set the scatter plot features"""
 
-    ax.legend(loc=2)
+    ax.set_ylim(ylim)
     ax.set_xlabel('EEI (Joules)')
-    ax.set_ylabel('NH minus SH (K)') 
-    ax.text(0.93, 0.97, '(b)', transform=ax.transAxes, fontsize=24, va='top')
+    #ax.set_ylabel('NH minus SH (K)') 
+    ax.text(0.92, 0.08, '(b)', transform=ax.transAxes, fontsize=24, va='top')
+    ax.axhline(y=0, color='0.5', linestyle='--', linewidth=0.5)
+    ax.axvline(x=0, color='0.5', linestyle='--', linewidth=0.5)
+
+
+def calc_eei(toa_file, time_constraint, ensemble_number):
+    """Calculate the earth energy imbalance."""
+
+    eei_cube = iris.load_cube(toa_file, 'TOA Incoming Net Radiation globe sum' & time_constraint)
+
+    new_aux_coord = iris.coords.AuxCoord(ensemble_number, long_name='ensemble_member', units='no_unit')
+    eei_cube.add_aux_coord(new_aux_coord)
+    eei_cube.cell_methods = ()
+
+    return eei_cube, eei_cube.attributes['history']
 
 
 def main(inargs):
@@ -208,16 +223,16 @@ def main(inargs):
         time_constraint = time_constraints[experiment]
         ita_cube_list = iris.cube.CubeList([])
         eei_cube_list = iris.cube.CubeList([])
-        for model_num in range(0, len(inargs.toa_files)):
-            toa_file = inargs.toa_files[model_num]
-            thetao_sh_file = inargs.thetao_sh_files[model_num]
-            thetao_nh_file = inargs.thetao_nh_files[model_num]
+        for model_num in range(0, len(inargs.toa_files[experiment_num])):
+            toa_file = inargs.toa_files[experiment_num][model_num]
+            thetao_sh_file = inargs.thetao_sh_files[experiment_num][model_num]
+            thetao_nh_file = inargs.thetao_nh_files[experiment_num][model_num]
 
-            ita_cube, ita_history = calc_hemispheric_value(thetao_sh_file, thetao_nh_file, time_constraint, model_num)
+            ita_cube, ita_history = calc_ita(thetao_sh_file, thetao_nh_file, time_constraint, model_num)
             ita_cube_list.append(ita_cube)
-            eei_cube = iris.load_cube(toa_file, time_constraint)
-            eei_history = eei_cube.attributes['history']
-            eei_cube_list.append(eei_cube) 
+
+            eei_cube, eei_history = calc_eei(toa_file, time_constraint, model_num)
+            eei_cube_list.append(eei_cube)
 
         ita_ensemble_agg = ensemble_aggregation(ita_cube_list, inargs.ensagg)
         ita_ensemble_spread = ensemble_aggregation(ita_cube_list, 'percentile')    
@@ -226,8 +241,8 @@ def main(inargs):
         temporal_plot(ax1, ita_ensemble_agg, ita_ensemble_spread, experiment)
         eei_plot(ax2, eei_ensemble_agg, ita_ensemble_agg, experiment)   
 
-    temporal_plot_features(ax1)
-    eei_plot_features(ax2)
+    ylim = temporal_plot_features(ax1)
+    eei_plot_features(ax2, ylim)
     
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
@@ -263,7 +278,7 @@ author:
                         help="global sum netTOA files for a given experiment")                     
     parser.add_argument("--thetao_sh_files", type=str, nargs='*', action='append',
                         help="SH mean thetao files for a given experiment")
-    parser.add_argument("--thetao_sh_files", type=str, nargs='*', action='append',
+    parser.add_argument("--thetao_nh_files", type=str, nargs='*', action='append',
                         help="NH mean thetao files for a given experiment")
 
     parser.add_argument("--ensagg", type=str, default='median', choices=('mean', 'median'),
