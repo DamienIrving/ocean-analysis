@@ -165,7 +165,7 @@ def temporal_plot_features(ax):
 
     ax.legend(loc=2)
     ax.set_xlabel('year')
-    ax.set_ylabel('interhemispheric\ntemperature difference (K)')
+    ax.set_ylabel('interhemispheric ocean\ntemperature difference (K)')
     ax.tick_params(top='off') 
     ax.text(0.92, 0.08, '(a)', transform=ax.transAxes, fontsize=24, va='top')
     ax.axhline(y=0, color='0.5', linestyle='--', linewidth=0.5)
@@ -189,7 +189,7 @@ def eei_plot_features(ax, ylim):
 
     plt.sca(ax)
     ax.set_ylim(ylim)
-    ax.set_xlabel('global netTOA (J)')
+    ax.set_xlabel('accumulated excess heat (J)')
     #ax.set_ylabel('NH minus SH (K)') 
     ax.text(0.92, 0.08, '(b)', transform=ax.transAxes, fontsize=24, va='top')
     ax.axhline(y=0, color='0.5', linestyle='--', linewidth=0.5)
