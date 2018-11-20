@@ -51,10 +51,10 @@ plot_variables = {'thetao': ' Average Ocean Temperature',
 
 seaborn.set(style='ticks')
 
-mpl.rcParams['axes.labelsize'] = 24
-mpl.rcParams['axes.titlesize'] = 28
-mpl.rcParams['xtick.labelsize'] = 24
-mpl.rcParams['ytick.labelsize'] = 24
+mpl.rcParams['axes.labelsize'] = 20
+mpl.rcParams['axes.titlesize'] = 24
+mpl.rcParams['xtick.labelsize'] = 20
+mpl.rcParams['ytick.labelsize'] = 20
 mpl.rcParams['legend.fontsize'] = 20
 
 
@@ -164,8 +164,8 @@ def temporal_plot_features(ax):
     """Set the temporal plot features"""
 
     ax.legend(loc=2)
-    ax.set_xlabel('Year')
-    ax.set_ylabel('NH minus SH (K)')
+    ax.set_xlabel('year')
+    ax.set_ylabel('interhemispheric\ntemperature difference (K)')
     ax.tick_params(top='off') 
     ax.text(0.92, 0.08, '(a)', transform=ax.transAxes, fontsize=24, va='top')
     ax.axhline(y=0, color='0.5', linestyle='--', linewidth=0.5)
@@ -180,18 +180,22 @@ def eei_plot(ax, eei_cube, ita_cube, experiment):
     plt.sca(ax)
     x_data = eei_cube.data
     y_data = ita_cube.data
-    plt.scatter(x_data, y_data, c=exp_colors[experiment])
+    plt.scatter(x_data, y_data, c=exp_colors[experiment],
+                edgecolor='white', linewidths=0.2)
 
 
 def eei_plot_features(ax, ylim):
     """Set the scatter plot features"""
 
+    plt.sca(ax)
     ax.set_ylim(ylim)
-    ax.set_xlabel('EEI (Joules)')
+    ax.set_xlabel('global netTOA (J)')
     #ax.set_ylabel('NH minus SH (K)') 
     ax.text(0.92, 0.08, '(b)', transform=ax.transAxes, fontsize=24, va='top')
     ax.axhline(y=0, color='0.5', linestyle='--', linewidth=0.5)
     ax.axvline(x=0, color='0.5', linestyle='--', linewidth=0.5)
+    plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0), useMathText=True)
+    ax.yaxis.major.formatter._useMathText = True
 
 
 def calc_eei(toa_file, time_constraint, ensemble_number):
