@@ -27,6 +27,9 @@ mpl.rcParams['xtick.labelsize'] = 'medium'
 mpl.rcParams['ytick.labelsize'] = 'medium'
 mpl.rcParams['legend.fontsize'] = 'large'
 
+contour_width =  1
+contour_color = '0.3'
+
 # Import my modules
 
 cwd = os.getcwd()
@@ -36,27 +39,20 @@ for directory in cwd.split('/')[1:]:
     if directory == 'ocean-analysis':
         break
 
-#modules_dir = os.path.join(repo_dir, 'modules')
-#sys.path.append(modules_dir)
-#try:
-#    import general_io as gio
-#    import convenient_universal as uconv
-#except ImportError:
-#    raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
-
-
 # Define functions
 
-def set_units(cube, scale_factor=1):
+def set_units(cube, scale_factor=1, nyrs=1):
     """Set the units.
     Args:
       cube (iris.cube.Cube): Data cube
       scale_factor (int): Scale the data
         e.g. a scale factor of 3 will mean the data are 
         mutliplied by 10^3 (and units will be 10^-3)
+      nyrs (int): Trend units is per nyrs
     """
 
-    trend_data = cube.data * 10**scale_factor
+    trend_data = cube.data * nyrs * 10**scale_factor
+    
 
     unit_scale = ''
     if scale_factor != 0:
@@ -67,13 +63,17 @@ def set_units(cube, scale_factor=1):
 
     units = str(cube.units)
     units = units.replace(" ", " \enspace ")
-    units = units.replace("-1", "^{-1}")
-    units = '$%s \enspace %s$'  %(unit_scale, units)
+    if nyrs == 1:
+        units = units.replace("-1", "^{-1}")
+        units = '$%s \enspace %s$'  %(unit_scale, units)
+    else:
+        units = units.replace("yr-1", "$per %s years" %(str(nyrs)))
+        units = '$%s \enspace %s'  %(unit_scale, units)
 
     return trend_data, units
 
 
-def create_plot(contourf_cube, contour_cube, scale_factor):
+def create_plot(contourf_cube, contour_cube, scale_factor, nyrs, title):
     """Create the plot."""
     
     fig = plt.figure()   #figsize=[10, 8])
@@ -89,7 +89,7 @@ def create_plot(contourf_cube, contour_cube, scale_factor):
     lats = contourf_cube.coord('latitude').points
     levs = contourf_cube.coord('depth').points 
     
-    contourf_data, units = set_units(contourf_cube, scale_factor=scale_factor)           
+    contourf_data, units = set_units(contourf_cube, scale_factor=scale_factor, nyrs=nyrs)           
     contourf_ticks = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
 
     cf = axMain.contourf(lats, levs, contourf_data,
@@ -99,8 +99,10 @@ def create_plot(contourf_cube, contour_cube, scale_factor):
         contour_data = contour_cube.data
         contour_levels = numpy.arange(0.0, 350.0, 2.5)
 
-        cplot_main = axMain.contour(lats, levs, contour_data, colors='0.3', levels=contour_levels)
-        plt.clabel(cplot_main, contour_levels[0::2], fmt='%2.1f', colors='0.3', fontsize=8)
+        cplot_main = axMain.contour(lats, levs, contour_data, colors=contour_color,
+                                    linewidths=contour_width, levels=contour_levels)
+        #plt.clabel(cplot_main, contour_levels[0::2], fmt='%2.1f', colors=contour_color, fontsize=8)
+        plt.clabel(cplot_main, fmt='%2.1f', colors=contour_color, fontsize=8)
 
     # Deep section
     axMain.set_ylim((500.0, 2000.0))
@@ -114,13 +116,15 @@ def create_plot(contourf_cube, contour_cube, scale_factor):
 
     # Shallow section
     divider = make_axes_locatable(axMain)
-    axShallow = divider.append_axes("top", size="70%", pad=0.1, sharex=axMain)
+    axShallow = divider.append_axes("top", size="70%", pad=0.2, sharex=axMain)
     axShallow.contourf(lats, levs, contourf_data,
                        cmap=cmap, extend='both', levels=contourf_ticks)
 
     if contour_cube:
-        cplot_shallow = axShallow.contour(lats, levs, contour_data, colors='0.3', levels=contour_levels)
-        plt.clabel(cplot_shallow, contour_levels[0::2], fmt='%2.1f', colors='0.3', fontsize=8)
+        cplot_shallow = axShallow.contour(lats, levs, contour_data, colors=contour_color,
+                                          linewidths=contour_width, levels=contour_levels)
+        #plt.clabel(cplot_shallow, contour_levels[0::2], fmt='%2.1f', colors=contour_color, fontsize=8)
+        plt.clabel(cplot_shallow, fmt='%2.1f', colors=contour_color, fontsize=8)
 
     axShallow.set_ylim((0.0, 500.0))
     axShallow.set_xlim((-70, 70))
@@ -129,6 +133,9 @@ def create_plot(contourf_cube, contour_cube, scale_factor):
 
     cbar = plt.colorbar(cf, cbar_ax)
     cbar.set_label(units)
+
+    if title:
+        axShallow.set_title(title)
 
 
 def main(inargs):
@@ -144,7 +151,7 @@ def main(inargs):
     else:
         contour_cube = None
     
-    create_plot(contourf_cube, contour_cube, inargs.scale_factor)
+    create_plot(contourf_cube, contour_cube, inargs.scale_factor, inargs.nyrs, inargs.title)
 
     # Save output
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
@@ -178,8 +185,13 @@ author:
     parser.add_argument("--contour_file", type=str, default=None,
                         help="unfilled contour data file")
 
+    parser.add_argument("--title", type=str, default=None,
+                        help="plot title")
+
     parser.add_argument("--scale_factor", type=int, default=3,
                         help="Scale factor (e.g. scale factor of 3 will multiply trends by 10^3 [default=1]")
+    parser.add_argument("--nyrs", type=int, default=1,
+                        help="Trend is presented per number of years [default=1]")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
