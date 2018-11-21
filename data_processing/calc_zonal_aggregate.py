@@ -148,17 +148,18 @@ def curvilinear_agg(cube, ref_cube, agg_method):
 def main(inargs):
     """Run the program."""
 
+    depth_constraint = gio.iris_vertical_constraint(None, inargs.max_depth)
     metadata_dict = {}
 
     if inargs.basin:
         basin_file, basin_name = inargs.basin
-        basin_cube = iris.load_cube(basin_file, 'region')
+        basin_cube = iris.load_cube(basin_file, 'region' & depth_constraint)
         metadata_dict[basin_file] = basin_cube.attributes['history']
     else:
         basin_cube = None
 
     if inargs.area:
-        area_cube = iris.load_cube(inargs.area, 'cell_area')
+        area_cube = iris.load_cube(inargs.area, 'cell_area' & depth_constraint)
     else:
         area_cube = None
 
@@ -173,7 +174,8 @@ def main(inargs):
 
     output_cubelist = iris.cube.CubeList([])
     for fnum, filename in enumerate(inargs.infiles):
-        cube = iris.load_cube(filename, gio.check_iris_var(inargs.var))
+        print(filename)
+        cube = iris.load_cube(filename, gio.check_iris_var(inargs.var) & depth_constraint)
 
         if inargs.annual:
             cube = timeseries.convert_to_annual(cube, full_months=True, chunk=False)
@@ -263,6 +265,8 @@ author:
                         help="Land fraction file (required if you select a realm")
     parser.add_argument("--basin", type=str, nargs=2, metavar=('BASIN_FILE', 'BASIN_NAME'), default=None,
                         help="indian, pacific or atlantic [default=globe]")
+    parser.add_argument("--max_depth", type=float, default=None, 
+                        help="Maximum depth selection")
     
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Output annual mean [default=False]")
