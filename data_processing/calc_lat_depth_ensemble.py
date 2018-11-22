@@ -61,6 +61,7 @@ def calc_ensemble(cube_list, agg_method):
     ensemble_agg = ensemble_cube.collapsed('ensemble_member', agg_functions[agg_method])
     
     ensemble_agg.data.mask = common_mask
+    ensemble_agg.remove_coord('ensemble_member')
     
     return ensemble_agg
 
@@ -78,6 +79,7 @@ def main(inargs):
     cube_list = iris.cube.CubeList([])
     for fnum, filename in enumerate(inargs.infiles):
         cube = iris.load_cube(filename, gio.check_iris_var(inargs.var))
+        history = cube.attributes['history']
         #coord_names = [coord.name() for coord in cube.dim_coords]
         new_aux_coord = iris.coords.AuxCoord(fnum, long_name='ensemble_member', units='no_unit')
         cube.add_aux_coord(new_aux_coord)
@@ -88,8 +90,8 @@ def main(inargs):
         cube_list.append(cube)
        
     ensemble_agg = calc_ensemble(cube_list, inargs.aggregation)   
-       
-    metadata_dict[filename] = cube.attributes['history']
+   
+    metadata_dict[filename] = history
     ensemble_agg.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     iris.save(ensemble_agg, inargs.outfile)
 
