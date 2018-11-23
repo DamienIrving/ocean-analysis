@@ -52,6 +52,18 @@ def construct_basin_cube(basin_array, global_atts, dim_coords):
     return basin_cube
 
 
+def check_lon_coord(lon_coord):
+    """Check that the lon coord is [0, 360]"""
+
+    lon_coord.points = numpy.where(lon_coord.points < 0.0, lon_coord.points + 360, lon_coord.points)
+    lon_coord.points = numpy.where(lon_coord.points >= 360.0, lon_coord.points - 360, lon_coord.points)
+
+    assert lon_coord.points.min() > 0
+    assert lon_coord.points.max() < 360
+
+    return lon_coord
+
+
 def create_basin_array(cube):
     """Create an ocean basin array.
 
@@ -82,9 +94,7 @@ def create_basin_array(cube):
         lon_array = uconv.broadcast_array(lon_axis, lon_index, cube.shape)
     else:
         # curvilinear grid
-        assert lon_coord.points.min() > 0
-        assert lon_coord.points.max() < 360
-
+        lon_coord = check_lon_coord(lon_coord)
         if cube.ndim == 3:
             lat_array = uconv.broadcast_array(lat_coord.points, [1, 2], cube.shape)
             lon_array = uconv.broadcast_array(lon_coord.points, [1, 2], cube.shape)
