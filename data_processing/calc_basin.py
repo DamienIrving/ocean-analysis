@@ -100,8 +100,8 @@ def create_basin_array(cube):
     basin_array = numpy.where((lon_array >= pacific_bounds[0]) & (lon_array <= pacific_bounds[1]), 3, basin_array)
     basin_array = numpy.where((lon_array >= indian_bounds[0]) & (lon_array <= indian_bounds[1]), 5, basin_array)
 
-    basin_array = numpy.where((basin_array == 3) & (lon_array >= 279) & (lat_array >= 10), 2, basin_array)
-    basin_array = numpy.where((basin_array == 5) & (lon_array >= 121) & (lat_array >= 0), 3, basin_array)
+    basin_array = numpy.where((basin_array == 3) & (lon_array >= 265) & (lat_array >= 12), 2, basin_array)
+    basin_array = numpy.where((basin_array == 5) & (lon_array >= 105) & (lat_array >= -8), 3, basin_array)
 
     basin_array = numpy.where((basin_array == 5) & (lat_array >= 25), 0, basin_array)
 
