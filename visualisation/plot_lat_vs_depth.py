@@ -73,14 +73,10 @@ def set_units(cube, scale_factor=1, nyrs=1):
     return trend_data, units
 
 
-def create_plot(contourf_cube, contour_cube, scale_factor, nyrs, title):
+def create_plot(gs, cbar_ax, contourf_cube, contour_cube, scale_factor, nyrs, title):
     """Create the plot."""
     
-    fig = plt.figure()   #figsize=[10, 8])
-    cbar_ax = fig.add_axes([0.93, 0.2, 0.02, 0.65])
-    gs = gridspec.GridSpec(1, 1)
-
-    axMain = plt.subplot(gs[0])
+    axMain = plt.subplot(gs)
     plt.sca(axMain)
 
     cmap = plt.cm.RdBu_r 
@@ -90,7 +86,7 @@ def create_plot(contourf_cube, contour_cube, scale_factor, nyrs, title):
     levs = contourf_cube.coord('depth').points 
     
     contourf_data, units = set_units(contourf_cube, scale_factor=scale_factor, nyrs=nyrs)           
-    contourf_ticks = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
+    contourf_ticks = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]
 
     cf = axMain.contourf(lats, levs, contourf_data,
                          cmap=cmap, extend='both', levels=contourf_ticks)
@@ -131,27 +127,52 @@ def create_plot(contourf_cube, contour_cube, scale_factor, nyrs, title):
     axShallow.invert_yaxis()
     plt.setp(axShallow.get_xticklabels(), visible=False)
 
-    cbar = plt.colorbar(cf, cbar_ax)
+    cbar = plt.colorbar(cf, cbar_ax)  #, orientation='horizontal')
     cbar.set_label(units)
 
     if title:
         axShallow.set_title(title)
 
 
+def grid_config(nplots):
+    """Determine the grid configuration."""
+
+    assert nplots in [1, 4]
+    if nplots == 1:
+        fig = plt.figure()
+        gs = gridspec.GridSpec(1, 1)
+        cbar_ax = fig.add_axes([0.93, 0.2, 0.02, 0.65])
+    else:
+        fig = plt.figure(figsize=[18, 18])
+        gs = gridspec.GridSpec(2, 2)
+        fig.subplots_adjust(right=0.85)
+        cbar_ax = fig.add_axes([0.9, 0.2, 0.02, 0.6])
+
+    return fig, cbar_ax, gs
+
+
 def main(inargs):
     """Run the program."""
     
     metadata_dict = {}
-    contourf_cube = iris.load_cube(inargs.contourf_file, inargs.variable)
-    metadata_dict[inargs.contourf_file] = contourf_cube.attributes['history']
+    nplots = len(inargs.contourf_files)
+    if inargs.contour_files:
+        assert len(inargs.contour_files) == nplots
+
+    fig, cbar_ax, gs = grid_config(nplots)
+
+    for pnum in range(nplots): 
+        contourf_cube = iris.load_cube(inargs.contourf_files[pnum], inargs.variable)
+        metadata_dict[inargs.contourf_files[pnum]] = contourf_cube.attributes['history']
     
-    if inargs.contour_file:
-        contour_cube = iris.load_cube(inargs.contour_file, inargs.variable)
-        metadata_dict[inargs.contour_file] = contour_cube.attributes['history']
-    else:
-        contour_cube = None
-    
-    create_plot(contourf_cube, contour_cube, inargs.scale_factor, inargs.nyrs, inargs.title)
+        if inargs.contour_files:
+            contour_cube = iris.load_cube(inargs.contour_files[pnum], inargs.variable)
+            metadata_dict[inargs.contour_files[pnum]] = contour_cube.attributes['history']
+        else:
+            contour_cube = None
+
+        title = inargs.titles[pnum] if inargs.titles else None 
+        create_plot(gs[pnum], cbar_ax, contourf_cube, contour_cube, inargs.scale_factor, inargs.nyrs, title)
 
     # Save output
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
@@ -178,15 +199,15 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("contourf_file", type=str, help="Filled contour data file") 
+    parser.add_argument("contourf_files", nargs='*', type=str, help="Filled contour data file") 
     parser.add_argument("variable", type=str, help="Variable")
     parser.add_argument("outfile", type=str, help="Output file name")
 
-    parser.add_argument("--contour_file", type=str, default=None,
+    parser.add_argument("--contour_files", nargs='*', type=str, default=None,
                         help="unfilled contour data file")
 
-    parser.add_argument("--title", type=str, default=None,
-                        help="plot title")
+    parser.add_argument("--titles", nargs='*', type=str, default=None,
+                        help="plot titles")
 
     parser.add_argument("--scale_factor", type=int, default=3,
                         help="Scale factor (e.g. scale factor of 3 will multiply trends by 10^3 [default=1]")
