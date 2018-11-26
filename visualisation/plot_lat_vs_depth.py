@@ -73,7 +73,7 @@ def set_units(cube, scale_factor=1, nyrs=1):
     return trend_data, units
 
 
-def create_plot(gs, cbar_ax, contourf_cube, contour_cube, scale_factor, nyrs, title):
+def create_plot(gs, cbar_ax, contourf_cube, contour_cube, scale_factor, nyrs, title, ticks=None):
     """Create the plot."""
     
     axMain = plt.subplot(gs)
@@ -86,7 +86,7 @@ def create_plot(gs, cbar_ax, contourf_cube, contour_cube, scale_factor, nyrs, ti
     levs = contourf_cube.coord('depth').points 
     
     contourf_data, units = set_units(contourf_cube, scale_factor=scale_factor, nyrs=nyrs)           
-    contourf_ticks = [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]
+    contourf_ticks = ticks if ticks else [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]
 
     cf = axMain.contourf(lats, levs, contourf_data,
                          cmap=cmap, extend='both', levels=contourf_ticks)
@@ -103,7 +103,7 @@ def create_plot(gs, cbar_ax, contourf_cube, contour_cube, scale_factor, nyrs, ti
     # Deep section
     axMain.set_ylim((500.0, 2000.0))
     axMain.invert_yaxis()
-    axMain.set_xlim((-70, 70))
+    axMain.set_xlim((-75, 75))
     axMain.xaxis.set_ticks_position('bottom')
     axMain.set_xticks([-80, -60, -40, -20, 0, 20, 40, 60, 80])
     plt.ylabel('Depth (m)')
@@ -123,7 +123,7 @@ def create_plot(gs, cbar_ax, contourf_cube, contour_cube, scale_factor, nyrs, ti
         plt.clabel(cplot_shallow, fmt='%2.1f', colors=contour_color, fontsize=8)
 
     axShallow.set_ylim((0.0, 500.0))
-    axShallow.set_xlim((-70, 70))
+    axShallow.set_xlim((-75, 75))
     axShallow.invert_yaxis()
     plt.setp(axShallow.get_xticklabels(), visible=False)
 
@@ -172,7 +172,8 @@ def main(inargs):
             contour_cube = None
 
         title = inargs.titles[pnum] if inargs.titles else None 
-        create_plot(gs[pnum], cbar_ax, contourf_cube, contour_cube, inargs.scale_factor, inargs.nyrs, title)
+        create_plot(gs[pnum], cbar_ax, contourf_cube, contour_cube, inargs.scale_factor,
+                    inargs.nyrs, title, ticks=inargs.ticks)
 
     # Save output
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
@@ -213,6 +214,9 @@ author:
                         help="Scale factor (e.g. scale factor of 3 will multiply trends by 10^3 [default=1]")
     parser.add_argument("--nyrs", type=int, default=1,
                         help="Trend is presented per number of years [default=1]")
+
+    parser.add_argument("--ticks", type=float, nargs='*', default=None,
+                        help="list of contour levels to plot [default = auto]")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
