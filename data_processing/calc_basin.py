@@ -64,17 +64,14 @@ def check_lon_coord(lon_coord):
     return lon_coord
 
 
-def create_basin_array(cube):
+def create_basin_array(cube, marginal_cube=None):
     """Create an ocean basin array.
 
     For similarity with the CMIP5 basin file, in the output:
       Atlantic Ocean = 2
       Pacific Ocean = 3
       Indian Ocean = 5
-      (land = 0)
-
-    FIXME: When applied to CMIP5 data, some of the marginal seas might
-      not be masked
+      (land = 0, marginal_seas > 5)
 
     """
 
@@ -115,6 +112,12 @@ def create_basin_array(cube):
 
     basin_array = numpy.where((basin_array == 5) & (lat_array >= 25), 0, basin_array)
 
+    basin_array = numpy.where(lat_array >= 70, 4, basin_array)  # arctic ocean
+
+    if marginal_cube:
+        marginal_array = uconv.broadcast_array(marginal_cube.data, [1, 2], cube.shape)
+        basin_array = numpy.where(marginal_array > 5, marginal_array, basin_array)
+
     return basin_array
     
  
@@ -129,7 +132,11 @@ def main(inargs):
     data_cube = data_cube[0, ::]
     data_cube.remove_coord('time')
 
-    basin_array = create_basin_array(data_cube)
+    # marginal sea information
+    basin_cube = iris.load_cube(inargs.basin_file) if inargs.basin_file else None
+
+    # create basin array
+    basin_array = create_basin_array(data_cube, marginal_cube=basin_cube)
     basin_cube = construct_basin_cube(basin_array, data_cube.attributes, data_cube.dim_coords)    
     basin_cube.attributes['history'] = cmdprov.new_log(git_repo=repo_dir)
 
@@ -152,6 +159,9 @@ author:
 
     parser.add_argument("thetao_file", type=str, help="Input sea water potential temperature file (for grid information)")
     parser.add_argument("outfile", type=str, help="Output file name")
+
+    parser.add_argument("--basin_file", type=str, default=None,
+                        help="Original basin file (for masking marginal seas)")
 
     args = parser.parse_args()
     main(args)
