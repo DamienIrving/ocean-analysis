@@ -15,6 +15,7 @@ from iris.experimental.equalise_cubes import equalise_attributes
 import dask
 dask.set_options(get=dask.get)
 import cmdline_provenance as cmdprov
+import multiprocessing_on_dill as multiprocessing
 
 # Import my modules
 
@@ -108,6 +109,33 @@ def lat_aggregate(cube, coord_names, lat_bounds, agg_method):
     return lat_agg
 
 
+def parallel_zonal_agg(cube, coord_names, nlat, new_lat_bounds, agg_method, target_shape):
+    """Calculate the zonal aggregate in parallel."""
+
+    # Start my pool
+    print('CPUs:', multiprocessing.cpu_count())
+    pool = multiprocessing.Pool( multiprocessing.cpu_count() )
+
+    # Build task list
+    tasks = []
+    for lat_index in range(0, nlat):
+        tasks.append( (cube, coord_names, new_lat_bounds[lat_index], agg_method) )
+    
+    # Run tasks
+    results = [pool.apply_async( lat_aggregate, t ) for t in tasks]
+
+    # Process results
+    new_data = numpy.ma.zeros(target_shape)
+    for lat_index, result in enumerate(results):
+        lat_agg = result.get()
+        new_data[..., lat_index] = lat_agg.data
+        
+    pool.close()
+    pool.join()
+
+    return new_data
+
+
 def curvilinear_agg(cube, ref_cube, agg_method):
     """Zonal aggregation for curvilinear data."""
 
@@ -127,11 +155,12 @@ def curvilinear_agg(cube, ref_cube, agg_method):
     new_lat_bounds = ref_cube.coord('latitude').bounds
     nlat = len(new_lat_bounds)
     target_shape.append(nlat)
+    
     new_data = numpy.ma.zeros(target_shape)
-
     for lat_index in range(0, nlat):
         lat_agg = lat_aggregate(cube, coord_names, new_lat_bounds[lat_index], agg_method)
         new_data[..., lat_index] = lat_agg.data
+    #new_data = parallel_zonal_agg(cube, coord_names, nlat, new_lat_bounds, agg_method, target_shape)
 
     target_coords.append((ref_cube.coord('latitude'), target_lat_index))
     new_cube = iris.cube.Cube(new_data,

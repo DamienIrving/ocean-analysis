@@ -7,7 +7,7 @@ for lat_index in range(0, nlat):
 
 """
 
-import multiprocessing
+import multiprocessing_on_dill as multiprocessing
 import numpy
 
 
