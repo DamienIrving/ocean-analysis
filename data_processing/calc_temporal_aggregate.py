@@ -122,23 +122,22 @@ def main(inargs):
 
     depth_constraint = gio.iris_vertical_constraint(inargs.min_depth, inargs.max_depth)
 
-    with iris.FUTURE.context(cell_datetime_objects=True):
-        cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var) & depth_constraint)
-        history = cube[0].attributes['history']
-        atts = cube[0].attributes
-        equalise_attributes(cube)
-        iris.util.unify_time_units(cube)
-        cube = cube.concatenate_cube()
+    cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var) & depth_constraint)
+    history = cube[0].attributes['history']
+    atts = cube[0].attributes
+    equalise_attributes(cube)
+    iris.util.unify_time_units(cube)
+    cube = cube.concatenate_cube()
 
-        cube = gio.check_time_units(cube)
-        cube = cube.extract(time_constraint)
+    cube = gio.check_time_units(cube)
+    cube = cube.extract(time_constraint)
 
-        cube = iris.util.squeeze(cube)
+    cube = iris.util.squeeze(cube)
 
-        if 'salinity' in inargs.var:
-            cube = gio.salinity_unit_check(cube)
+    if 'salinity' in inargs.var:
+        cube = gio.salinity_unit_check(cube)
 
-        infile_metadata = {inargs.infiles[0]: history}
+    infile_metadata = {inargs.infiles[0]: history}
 
     if inargs.annual:
         cube = timeseries.convert_to_annual(cube, full_months=True)
@@ -146,31 +145,32 @@ def main(inargs):
     if inargs.min_depth or inargs.max_depth:
         cube = vertical_mean(cube)
 
-    agg_cube = get_agg_cube(cube, inargs.aggregation)
-
+    if inargs.aggregation:
+        cube = get_agg_cube(cube, inargs.aggregation)
+        
     if inargs.regrid:
-        before_sum = agg_cube.data.sum()
-        before_mean = agg_cube.data.mean()
-        agg_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(agg_cube)
+        before_sum = cube.data.sum()
+        before_mean = cube.data.mean()
+        cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
         if regrid_status:
             print('Warning: Data has been regridded')
             print('Before sum:', '%.2E' % Decimal(before_sum) )
-            print('After sum:', '%.2E' % Decimal(agg_cube.data.sum()) )
+            print('After sum:', '%.2E' % Decimal(cube.data.sum()) )
             print('Before mean:', '%.2E' % Decimal(before_mean) )
-            print('After mean:', '%.2E' % Decimal(agg_cube.data.mean()) )
+            print('After mean:', '%.2E' % Decimal(cube.data.mean()) )
 
     if inargs.subtract_tropics:
-        agg_cube = subtract_tropics(agg_cube)             
+        cube = subtract_tropics(cube)             
 
     if inargs.land_mask:
         sftlf_cube = iris.load_cube(inargs.land_mask, 'land_area_fraction')
-        agg_cube = uconv.apply_land_ocean_mask(agg_cube, sftlf_cube, 'ocean')
+        cube = uconv.apply_land_ocean_mask(cube, sftlf_cube, 'ocean')
 
     atts['history'] = gio.write_metadata(file_info=infile_metadata)
-    agg_cube.attributes = atts
+    cube.attributes = atts
 
     iris.FUTURE.netcdf_no_unlimited = True
-    iris.save(agg_cube, inargs.outfile)
+    iris.save(cube, inargs.outfile)
 
 
 if __name__ == '__main__':
@@ -189,8 +189,10 @@ author:
 
     parser.add_argument("infiles", type=str, nargs='*', help="Input files")
     parser.add_argument("var", type=str, help="Variable standard_name")
-    parser.add_argument("aggregation", type=str, choices=('trend', 'clim'), help="Method for temporal aggregation")
     parser.add_argument("outfile", type=str, help="Output file name")
+
+    parser.add_argument("--aggregation", type=str, choices=('trend', 'clim'), default=None,
+                        help="Method for temporal aggregation [default = None]")
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
