@@ -181,13 +181,14 @@ def eei_plot(ax, eei_cube, ita_cube, experiment):
     x_data = eei_cube.data
     y_data = ita_cube.data
     plt.scatter(x_data, y_data, c=exp_colors[experiment],
-                edgecolor='white', linewidths=0.2)
+                edgecolor='white', label=experiment, linewidths=0.2)
 
 
 def eei_plot_features(ax, ylim):
     """Set the scatter plot features"""
 
     plt.sca(ax)
+    ax.legend(loc=2)
     ax.set_ylim(ylim)
     ax.set_xlabel('accumulated excess heat (J)')
     #ax.set_ylabel('NH minus SH (K)') 
