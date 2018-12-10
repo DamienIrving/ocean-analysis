@@ -12,7 +12,7 @@ import argparse, copy
 import numpy
 import iris
 from iris.experimental.equalise_cubes import equalise_attributes
-
+import cmdline_provenance as cmdprov
 
 # Import my modules
 
@@ -73,7 +73,7 @@ def is_masked_array(array):
     return masked
 
 
-def calc_coefficients(cube, coord_names, convert_annual=False):
+def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False):
     """Calculate the polynomial coefficients.
 
     Can select to convert data to annual timescale first.
@@ -82,7 +82,6 @@ def calc_coefficients(cube, coord_names, convert_annual=False):
 
     """
     
-    masked_array = is_masked_array(cube.data)
     if 'depth' in coord_names:
         assert coord_names[1] == 'depth', 'coordinate order must be time, depth, ...'
         out_shape = list(cube.shape)
@@ -90,6 +89,7 @@ def calc_coefficients(cube, coord_names, convert_annual=False):
         coefficients = numpy.zeros(out_shape, dtype=numpy.float32)
         time_axis = cube.coord('time').points.astype(numpy.float32)
         for d, cube_slice in enumerate(cube.slices_over('depth')):
+            print('Depth:', cube_slice.coord('depth').points[0])
             if convert_annual:
                 cube_slice = timeseries.convert_to_annual(cube_slice)
             coefficients[:,d, ::] = numpy.ma.apply_along_axis(polyfit, 0, cube_slice.data, time_axis, masked_array)
@@ -119,7 +119,8 @@ def set_global_atts(inargs, cube):
     atts = copy.copy(cube.attributes)
     atts['polynomial'] = 'a + bx + cx^2 + dx^3'
     try:
-        atts['history'] = gio.write_metadata(file_info={inargs.infiles[0]: history[0]}) 
+        #atts['history'] = gio.write_metadata(file_info={inargs.infiles[0]: history[0]})   
+        atts['history'] = cmdprov.new_log(infile_history={inargs.infiles[0]: history[0]}, git_repo=repo_dir)
     except IndexError:
         pass
 
@@ -155,15 +156,16 @@ def main(inargs):
     """Run the program."""
 
     # Read the data
-
     cubes = iris.load(inargs.infiles, gio.check_iris_var(inargs.var), callback=save_history)
     global_atts = set_global_atts(inargs, cubes[0])
+    masked_array = is_masked_array(cubes[0].data)
+
     iris.util.unify_time_units(cubes)
     cube, coord_names = concatenate_cube(cubes)
 
     # Coefficients cube
-
-    coefficients, time_start, time_end = calc_coefficients(cube, coord_names, convert_annual=inargs.annual)
+    coefficients, time_start, time_end = calc_coefficients(cube, coord_names, masked_array=masked_array,
+                                                           convert_annual=inargs.annual)
     global_atts['time_unit'] = str(cube.coord('time').units)
     global_atts['time_calendar'] = str(cube.coord('time').units.calendar)
     global_atts['time_start'] = time_start
@@ -228,8 +230,8 @@ example:
 author:
     Damien Irving, irving.damien@gmail.com
 notes:
-    If there's a vertical coordinate is must have the standard_name "depth"
-    The input files may contain multiple variables    
+    To avoid memory errors, for 4D data (time, depth, y, x) you may need
+      to do the annual smoothing beforehand    
 
 """
 
