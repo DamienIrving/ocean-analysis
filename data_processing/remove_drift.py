@@ -237,6 +237,9 @@ def main(inargs):
     for fnum, filename in enumerate(inargs.data_files):
         # Read data
         data_cube = iris.load_cube(filename, gio.check_iris_var(inargs.var))
+        if inargs.annual:
+            assert inargs.timescale == 'annual'
+            data_cube = timeseries.convert_to_annual(data_cube)
         data_cube = check_data_units(data_cube, coefficient_a_cube)
         data_cube = gio.check_time_units(data_cube)
         data_cube.cell_methods = ()
@@ -343,6 +346,9 @@ notes:
 
     parser.add_argument("--dummy", action="store_true", default=False,
                         help="Do not actually subtract the drift [default: False]")
+
+    parser.add_argument("--annual", action="store_true", default=False,
+                        help="Convert data files to annual timescale [default: False]")
 
     args = parser.parse_args()            
 
