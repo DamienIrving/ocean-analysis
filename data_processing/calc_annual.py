@@ -35,7 +35,7 @@ def main(inargs):
     """Run the program."""
 
     cube = iris.load_cube(inargs.infile, inargs.var)
-    cube = timeseries.convert_to_annual(cube)
+    cube = timeseries.convert_to_annual(cube, chunk=inargs.chunk)
 
     log = cmdprov.new_log(infile_history={inargs.infile: cube.attributes['history']}, git_repo=repo_dir) 
     cube.attributes['history'] = log
@@ -64,6 +64,9 @@ author:
     parser.add_argument("infile", type=str, help="Input file")
     parser.add_argument("var", type=str, help="Variable name")
     parser.add_argument("outfile", type=str, help="Output file")
+
+    parser.add_argument("--chunk", type=int, default=None, 
+                        help="Integer number of time steps used in chunking (for monthly data this would be a multiple of 12)")
 
     args = parser.parse_args()            
 

@@ -215,6 +215,10 @@ def main(inargs):
     """Run the program."""
     
     first_data_cube = iris.load_cube(inargs.data_files[0], gio.check_iris_var(inargs.var))
+    if inargs.annual:
+        assert inargs.timescale == 'annual'
+        first_data_cube = timeseries.convert_to_annual(first_data_cube, chunk=12)
+
     coefficient_a_cube = iris.load_cube(inargs.coefficient_file, 'coefficient a')
     coefficient_b_cube = iris.load_cube(inargs.coefficient_file, 'coefficient b')
     coefficient_c_cube = iris.load_cube(inargs.coefficient_file, 'coefficient c')
@@ -239,7 +243,7 @@ def main(inargs):
         data_cube = iris.load_cube(filename, gio.check_iris_var(inargs.var))
         if inargs.annual:
             assert inargs.timescale == 'annual'
-            data_cube = timeseries.convert_to_annual(data_cube)
+            data_cube = timeseries.convert_to_annual(data_cube, chunk=12)
         data_cube = check_data_units(data_cube, coefficient_a_cube)
         data_cube = gio.check_time_units(data_cube)
         data_cube.cell_methods = ()
@@ -287,7 +291,7 @@ def main(inargs):
                              inargs.coefficient_file: coefficient_a_cube.attributes['history']}
             new_cube.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
 
-            assert new_cube.data.dtype == numpy.float32
+            #assert new_cube.data.dtype == numpy.float32
             iris.save(new_cube, outfile, netcdf_format='NETCDF3_CLASSIC')
             print('output:', outfile)
             del new_cube

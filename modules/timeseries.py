@@ -227,7 +227,9 @@ def convert_to_annual(cube, full_months=False, aggregation='mean', chunk=False):
 
     Args:
       cube (iris.cube.Cube)
-      full_months(bool): only include years with data for all 12 months
+      full_months(bool): Only include years with data for all 12 months
+      chunk (int): Integer number of time steps used in chunking
+        (For monthly data this would be a multiple of 12) 
 
     """
 
@@ -242,7 +244,7 @@ def convert_to_annual(cube, full_months=False, aggregation='mean', chunk=False):
             aggregator = iris.analysis.SUM
 
         if chunk:
-            cube = _chunked_year_aggregation(cube, aggregator)
+            cube = _chunked_year_aggregation(cube, aggregator, step=chunk)
         else:
             cube = cube.aggregated_by(['year'], aggregator)
   
@@ -255,12 +257,14 @@ def convert_to_annual(cube, full_months=False, aggregation='mean', chunk=False):
     return cube
 
 
-def _chunked_year_aggregation(cube, agg_method):
+def _chunked_year_aggregation(cube, agg_method, step=12):
     """Chunked conversion to annual timescale.
 
     Args:
       cube (iris.cube.Cube)
       agg_method (iris.analysis.WeightedAggregator): aggregation method
+      step (int): Integer number of time steps used in chunking
+        (For monthly data this would be a multiple of 12) 
 
     """
 
@@ -268,13 +272,12 @@ def _chunked_year_aggregation(cube, agg_method):
 
     chunk_list = iris.cube.CubeList([])
     coord_names = [coord.name() for coord in cube.dim_coords]
-    start_indexes, step = uconv.get_chunks(cube.shape, coord_names, chunk=True, step=120)
+    start_indexes, step = uconv.get_chunks(cube.shape, coord_names, chunk=True, step=step)
     start_year = end_year = -5
     for index in start_indexes:
         start_year = cube[index:index+step, ...].coord('year').points[0]
         assert start_year != end_year
         end_year = cube[index:index+step, ...].coord('year').points[-1]
-
         chunk = cube[index:index+step, ...].aggregated_by(['year'], agg_method)
         chunk_list.append(chunk)
 
