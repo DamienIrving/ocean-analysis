@@ -44,16 +44,24 @@ def check_inputs(inargs):
         assert inargs.lats, 'must provide new lats and lons'
 
 
-def get_dim_vals(user_input):
-    """Get the list of values for a data dimension/axis."""
+def get_dim_vals(user_input, bounds=False):
+    """Get the list of values for a data dimension/axis.
+
+    Args:
+      bounds (bool): input represents the bounds, not centre points
+
+    """
 
     vals = user_input
     if user_input:
         if len(user_input) == 3:
             start, stop, step = user_input
-            vals = list(numpy.arange(start, stop, step))
-
-    return vals
+            vals = list(numpy.arange(start, stop + step, step))
+        if bounds:
+            vals = numpy.array(vals)
+            vals = (vals[1:] + vals[:-1]) / 2
+    
+    return list(vals)
 
 
 def get_sample_points(cube, dim_vals):
@@ -61,6 +69,9 @@ def get_sample_points(cube, dim_vals):
 
     sample_points = []
     coord_names = [coord.name() for coord in cube.dim_coords]
+    if 'time' in coord_names:
+        coord_names.remove('time')
+
     for coord in coord_names:
         if dim_vals[coord]:
             sample_points.append((coord, dim_vals[coord]))
@@ -68,6 +79,16 @@ def get_sample_points(cube, dim_vals):
             sample_points.append((coord, cube.coord(coord).points))
 
     return sample_points
+
+
+def get_depth_bounds(depth_intervals):
+    """Create an array of bounds pairs"""
+
+    depth_bounds = []
+    for index in range(len(depth_intervals) - 1):
+        depth_bounds.append([depth_intervals[index], depth_intervals[index + 1]])
+
+    return numpy.array(depth_bounds)
 
 
 def main(inargs):
@@ -80,18 +101,21 @@ def main(inargs):
     dim_vals = {}
     dim_vals['latitude'] = get_dim_vals(inargs.lats) 
     dim_vals['longitude'] = get_dim_vals(inargs.lons)        
-    dim_vals['depth'] = get_dim_vals(inargs.depths)
-    
+    dim_vals['depth'] = get_dim_vals(inargs.depth_bnds, bounds=True)
+
     # Regrid from curvilinear to rectilinear if necessary
     regrid_status = False
     if inargs.lats:
         horizontal_grid = grids.make_grid(dim_vals['latitude'], dim_vals['longitude'])
-        cube, coord_names, regrid_status = curvilinear_to_rectilinear(cube, target_grid_cube=horizontal_grid)
+        cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube, target_grid_cube=horizontal_grid)
 
     # Regrid to new grid
     if dim_vals['depth'] or not regrid_status:
         sample_points = get_sample_points(cube, dim_vals)
         cube = cube.interpolate(sample_points, iris.analysis.Linear())
+        cube.coord('latitude').guess_bounds()
+        cube.coord('longitude').guess_bounds()
+        cube.coord('depth').bounds = get_depth_bounds(inargs.depth_bnds)
 
     cube.attributes['history'] = log
     iris.save(cube, inargs.outfile)
@@ -121,8 +145,8 @@ author:
                         help="list all latitude points of new grid or three values: start, stop, interval")
     parser.add_argument("--lons", type=float, nargs='*', default=None, 
                         help="list all longitude points of new grid or three values: start, stop, interval")
-    parser.add_argument("--depths", type=float, nargs='*', default=None, 
-                        help="list all depth points of new grid or three values: start, stop, interval")
+    parser.add_argument("--depth_bnds", type=float, nargs='*', default=None, 
+                        help="list of the depth bounds of new grid or three values: start, stop, interval")
 
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Convert data to annual timescale [default: False]")
