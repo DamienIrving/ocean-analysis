@@ -3,6 +3,7 @@
 Functions:
   curvilinear_to_rectilinear  -- Regrid curvilinear data to a rectilinear 
                                  grid if necessary
+  make_grid                   -- Make a dummy cube with desired grid
   get_grid_spacing            -- Return an array of grid spacings
   regrid_1D                   -- Regrid data with only one spatial dimension
 
@@ -54,7 +55,7 @@ def _check_coord_names(cube, coord_names):
     return cube, coord_names
 
 
-def _make_grid(lat_values, lon_values):
+def make_grid(lat_values, lon_values):
     """Make a dummy cube with desired grid."""
        
     latitude = iris.coords.DimCoord(lat_values,
@@ -138,7 +139,7 @@ def curvilinear_to_rectilinear(cube, weights=None, target_grid_cube=None, grid_r
             #grid_res = get_grid_res(cube.coord('latitude').shape)
             lats = numpy.arange(-90, 90.01, grid_res)
             lons = numpy.arange(0, 360, grid_res)
-            target_grid_cube = _make_grid(lats, lons)
+            target_grid_cube = make_grid(lats, lons)
 
         # Interate over slices (experimental regridder only works on 2D slices)
         cube, coord_names = _check_coord_names(cube, coord_names)
