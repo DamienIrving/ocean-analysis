@@ -130,7 +130,8 @@ def main(inargs):
         cube.coord('longitude').guess_bounds()
         cube.coord('depth').bounds = get_depth_bounds(inargs.depth_bnds)
 
-    cube = remove_nans(cube)
+    if numpy.isnan(numpy.min(cube.data)):
+        cube = remove_nans(cube)
 
     cube.attributes['history'] = log
     iris.save(cube, inargs.outfile)
