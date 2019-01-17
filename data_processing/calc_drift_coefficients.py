@@ -56,7 +56,7 @@ def polyfit(data, time_axis, masked_array):
 
     if not masked_array:
         return numpy.polynomial.polynomial.polyfit(time_axis, data, 3)
-    elif data.mask[0]:
+    elif data.mask.sum() > 0:
         return numpy.array([data.fill_value]*4) 
     else:    
         return numpy.polynomial.polynomial.polyfit(time_axis, data, 3)
