@@ -91,6 +91,19 @@ def get_depth_bounds(depth_intervals):
     return numpy.array(depth_bounds)
 
 
+def remove_nans(cube):
+    """Turn NaN masked fill value."""
+
+    nan_locations = numpy.argwhere(numpy.isnan(cube.data))
+    for loc in nan_locations:
+        cube.data[tuple(loc)] = cube.data.fill_value
+        cube.data.mask[tuple(loc)] = True
+
+    print('There was %s NaNs' %(str(len(nan_locations))) )
+
+    return cube
+
+
 def main(inargs):
     """Run the program."""
 
@@ -116,6 +129,8 @@ def main(inargs):
         cube.coord('latitude').guess_bounds()
         cube.coord('longitude').guess_bounds()
         cube.coord('depth').bounds = get_depth_bounds(inargs.depth_bnds)
+
+    cube = remove_nans(cube)
 
     cube.attributes['history'] = log
     iris.save(cube, inargs.outfile)
