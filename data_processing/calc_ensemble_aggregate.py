@@ -55,13 +55,31 @@ def read_infiles(infiles, var, time_constraint, ensnum):
     return cube, history
 
 
+def unify_coordinates(cube_list):
+    """Unify the coordinates across ensemble"""
+
+    iris.util.unify_time_units(cube_list)
+    coord_names = [coord.name() for coord in cube_list[0].dim_coords]
+    for coord_name in coord_names:
+        for cube in cube_list[1:]:
+            cube.coord(coord_name).var_name = cube_list[0].coord(coord_name).var_name
+            cube.coord(coord_name).long_name = cube_list[0].coord(coord_name).long_name
+            cube.coord(coord_name).standard_name = cube_list[0].coord(coord_name).standard_name
+            cube.coord(coord_name).units = cube_list[0].coord(coord_name).units
+            cube.coord(coord_name).coord_system = cube_list[0].coord(coord_name).coord_system
+            cube.replace_coord(cube_list[0].coord(coord_name))
+
+    return cube_list
+
+
 def calc_ensagg(cube_list):
     """Calculate the ensemble mean"""
 
-    iris.util.unify_time_units(cube_list)
+    cube_list = unify_coordinates(cube_list)
     equalise_attributes(cube_list)
     ensemble_cube = cube_list.merge_cube()
     ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
+    ensemble_mean.remove_coord('ensemble_member')
 
     return ensemble_mean
 
