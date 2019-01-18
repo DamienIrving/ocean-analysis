@@ -78,7 +78,7 @@ def calc_ensagg(cube_list):
     cube_list = unify_coordinates(cube_list)
     equalise_attributes(cube_list)
     ensemble_cube = cube_list.merge_cube()
-    ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
+    ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN, mdtol=0)
     ensemble_mean.remove_coord('ensemble_member')
 
     return ensemble_mean
