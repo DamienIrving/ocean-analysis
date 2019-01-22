@@ -11,10 +11,6 @@ import sys, os, pdb
 import argparse
 import numpy
 import iris
-#import dask
-#dask.set_options(get=dask.get)
-#import dask.multiprocessing
-#dask.set_options(get=dask.multiprocessing.get)
 
 # Import my modules
 
