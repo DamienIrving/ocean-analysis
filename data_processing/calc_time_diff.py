@@ -36,7 +36,10 @@ def period_mean(cube, time_period):
 
     time_constraint = gio.get_time_constraint(time_period)
     cube = cube.extract(time_constraint)
-    cube = cube.collapsed('time', iris.analysis.MEAN)
+
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    if 'time' in coord_names:
+        cube = cube.collapsed('time', iris.analysis.MEAN)
     cube.remove_coord('time')
 
     return cube
