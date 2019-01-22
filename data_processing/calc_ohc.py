@@ -11,6 +11,8 @@ import sys, os, pdb
 import argparse
 import numpy
 import iris
+from iris.experimental.equalise_cubes import equalise_attributes
+import cmdline_provenance as cmdprov
 
 # Import my modules
 
@@ -35,7 +37,18 @@ except ImportError:
 
 # Define functions
 
-def add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, inargs):
+history = []
+
+def save_history(cube, field, filename):
+    """Save the history attribute when reading the data.
+    (This is required because the history attribute differs between input files 
+      and is therefore deleted upon equilising attributes)  
+    """ 
+
+    history.append(cube.attributes['history']) 
+
+
+def add_metadata(temperature_cube, temperature_atts, ohc_cube, inargs):
     """Add metadata to the output cube."""
 
     # Variable attributes
@@ -53,7 +66,6 @@ def add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, in
 
     # File attributes
     ohc_cube.attributes = temperature_atts
-    ohc_cube.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
     ohc_cube.attributes['depth_bounds'] = get_depth_text(temperature_cube, inargs.min_depth, inargs.max_depth)
 
     return ohc_cube
@@ -103,35 +115,6 @@ def get_depth_text(temperature_cube, min_depth, max_depth):
     return depth_text
 
 
-def get_outfile_name(temperature_file, grid, annual=False, max_depth=False, execute=True):
-    """Define the OHC file name using the temperature file name as a template."""
-
-    ohc_file = temperature_file.replace('thetao', 'ohc')
-    ohc_file = ohc_file.replace('ua6', 'r87/dbi599')
-    ohc_file = ohc_file.replace('_legacy', '')
-
-    if annual:
-        ohc_file = ohc_file.replace('/mon/', '/yr/')
-        ohc_file = ohc_file.replace('Omon', 'Oyr')
-
-    if grid:
-        ohc_file = ohc_file.replace('.nc', '_'+grid+'.nc')
-
-    if max_depth:
-        ohc_file = ohc_file.replace('.nc', '_0-'+str(int(max_depth))+'m.nc')
-
-    ohc_file_components = ohc_file.split('/')
-    ohc_file_components.pop(-1)
-    ohc_dir = "/".join(ohc_file_components)
-    mkdir_command = 'mkdir -p ' + ohc_dir
-
-    print(mkdir_command)
-    if execute:
-        os.system(mkdir_command)
-
-    return ohc_file
-
-
 def get_volume(volume_file, temperature_cube, level_constraint, metadata_dict):
     """Get the volume array"""
 
@@ -145,36 +128,42 @@ def get_volume(volume_file, temperature_cube, level_constraint, metadata_dict):
 def main(inargs):
     """Run the program."""
 
+    temperature_cube = iris.load(inargs.temperature_files, gio.check_iris_var(inargs.var), callback=save_history)
+    equalise_attributes(temperature_cube)
+    iris.util.unify_time_units(temperature_cube)
+    temperature_cube = temperature_cube.concatenate_cube()
+    coord_names = [coord.name() for coord in temperature_cube.dim_coords]
+    if 'time' in coord_names:
+        temperature_cube = gio.check_time_units(temperature_cube)
+
+    temperature_atts = temperature_cube.attributes
+    metadata_dict = {inargs.temperature_files[0]: history[0]}
+
     level_subset = gio.iris_vertical_constraint(inargs.min_depth, inargs.max_depth)
-    for temperature_file in inargs.temperature_files:
-        temperature_cube = iris.load_cube(temperature_file, inargs.temperature_var & level_subset)
+    temperature_cube = temperature_cube.extract(level_subset)
+
+    if inargs.annual:
+        temperature_cube = timeseries.convert_to_annual(temperature_cube, chunk=inargs.chunk)
+
+    if inargs.regrid:
+        area_cube = read_area_file(inargs.regrid)
+        temperature_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(temperature_cube, weights=area_cube.data)
+        volume_data = spatial_weights.volume_array(temperature_cube)
+        grid = 'y72x144'
+    else:
+        assert inargs.volume_file, "Must provide volume file if not regridding data"
+        volume_data, metadata_dict = get_volume(inargs.volume_file, temperature_cube, level_subset, metadata_dict)
         coord_names = [coord.name() for coord in temperature_cube.dim_coords]
-        if 'time' in coord_names:
-            temperature_cube = gio.check_time_units(temperature_cube)
-        metadata_dict = {temperature_file: temperature_cube.attributes['history']}
-        temperature_atts = temperature_cube.attributes
+        grid = None
 
-        if inargs.annual:
-            temperature_cube = timeseries.convert_to_annual(temperature_cube, chunk=inargs.chunk)
+    ohc_cube = ohc(temperature_cube, volume_data, inargs.density, inargs.specific_heat,
+                   coord_names, vertical_integral=inargs.vertical_integral, chunk=inargs.chunk)
 
-        if inargs.regrid:
-            area_cube = read_area_file(inargs.regrid)
-            temperature_cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(temperature_cube, weights=area_cube.data)
-            volume_data = spatial_weights.volume_array(temperature_cube)
-            grid = 'y72x144'
-        else:
-            assert inargs.volume_file, "Must provide volume file if not regridding data"
-            volume_data, metadata_dict = get_volume(inargs.volume_file, temperature_cube, level_subset, metadata_dict)
-            coord_names = [coord.name() for coord in temperature_cube.dim_coords]
-            grid = None
+    ohc_cube = add_metadata(temperature_cube, temperature_atts, ohc_cube, inargs)
+    log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir) 
+    ohc_cube.attributes['history'] = log
 
-        ohc_cube = ohc(temperature_cube, volume_data, inargs.density, inargs.specific_heat,
-                       coord_names, vertical_integral=inargs.vertical_integral, chunk=inargs.chunk)
-        ohc_cube = add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, inargs)
-        ohc_file = get_outfile_name(temperature_file, grid, annual=inargs.annual, max_depth=inargs.max_depth)    
-
-        iris.save(ohc_cube, ohc_file)
-        print(ohc_file)
+    iris.save(ohc_cube, inargs.outfile)
 
 
 if __name__ == '__main__':
@@ -197,12 +186,13 @@ notes:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("temperature_files", type=str, nargs='*', help="Input temperature data files")
-    parser.add_argument("temperature_var", type=str, help="Input temperature variable name (the standard_name)")
+    parser.add_argument("var", type=str, help="Input temperature variable name (the standard_name)")
+    parser.add_argument("outfile", type=str, help="Output file")
 
     parser.add_argument("--regrid", type=str, default=None,
                         help="Regrid data using this area weighting file.")
     parser.add_argument("--volume_file", type=str, default=None,
-                        help="Cell volume file")
+                        help="Cell volume file (required if not regridding)")
 
     parser.add_argument("--min_depth", type=float, default=None,
                         help="Only include data below this vertical level")
