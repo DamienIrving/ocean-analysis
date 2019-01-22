@@ -11,8 +11,8 @@ import sys, os, pdb
 import argparse
 import numpy
 import iris
-import dask
-dask.set_options(get=dask.get)
+#import dask
+#dask.set_options(get=dask.get)
 #import dask.multiprocessing
 #dask.set_options(get=dask.multiprocessing.get)
 
@@ -63,8 +63,8 @@ def add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, in
     return ohc_cube
 
 
-def calc_ohc_vertical_integral(temperature_cube, volume_data, density, specific_heat, coord_names, chunk=False):
-    """Calculate the ohc vertical integral.
+def ohc(temperature_cube, volume_data, density, specific_heat, coord_names, vertical_integral=False, chunk=False):
+    """Calculate the ocean heat content.
 
     Chunking is an option to avoid memory errors.
 
@@ -72,13 +72,16 @@ def calc_ohc_vertical_integral(temperature_cube, volume_data, density, specific_
 
     temperature_cube.data = temperature_cube.data * volume_data
 
-    if chunk:
-        integral = uconv.chunked_collapse_by_time(temperature_cube, 'depth', iris.analysis.SUM)
+    if vertical_integral:
+        if chunk:
+            tv = uconv.chunked_collapse_by_time(temperature_cube, 'depth', iris.analysis.SUM)
+        else:
+            tv = temperature_cube.collapsed('depth', iris.analysis.SUM)
+        tv.remove_coord('depth')
     else:
-        integral = temperature_cube.collapsed('depth', iris.analysis.SUM)
+        tv = temperature_cube
 
-    ohc = (integral * density * specific_heat) 
-    ohc.remove_coord('depth')
+    ohc = (tv * density * specific_heat) 
     
     return ohc
 
@@ -149,7 +152,9 @@ def main(inargs):
     level_subset = gio.iris_vertical_constraint(inargs.min_depth, inargs.max_depth)
     for temperature_file in inargs.temperature_files:
         temperature_cube = iris.load_cube(temperature_file, inargs.temperature_var & level_subset)
-        temperature_cube = gio.check_time_units(temperature_cube)
+        coord_names = [coord.name() for coord in temperature_cube.dim_coords]
+        if 'time' in coord_names:
+            temperature_cube = gio.check_time_units(temperature_cube)
         metadata_dict = {temperature_file: temperature_cube.attributes['history']}
         temperature_atts = temperature_cube.attributes
 
@@ -167,10 +172,8 @@ def main(inargs):
             coord_names = [coord.name() for coord in temperature_cube.dim_coords]
             grid = None
 
-        assert coord_names[0] == 'time'
-        assert coord_names[1] == 'depth'
-        ohc_cube = calc_ohc_vertical_integral(temperature_cube, volume_data, inargs.density, inargs.specific_heat,
-                                              coord_names, chunk=inargs.chunk)
+        ohc_cube = ohc(temperature_cube, volume_data, inargs.density, inargs.specific_heat,
+                       coord_names, vertical_integral=inargs.vertical_integral, chunk=inargs.chunk)
         ohc_cube = add_metadata(temperature_cube, temperature_atts, ohc_cube, metadata_dict, inargs)
         ohc_file = get_outfile_name(temperature_file, grid, annual=inargs.annual, max_depth=inargs.max_depth)    
 
@@ -212,7 +215,9 @@ notes:
 
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Convert data to annual timescale [default: False]")
-
+    parser.add_argument("--vertical_integral", action="store_true", default=False,
+                        help="Calculate the vertically integrated OHC [default: False]")
+    
     parser.add_argument("--density", type=float, default=1023,
                         help="Density of seawater (in kg.m-3). Default of 1023 kg.m-3 from Hobbs2016.")
     parser.add_argument("--specific_heat", type=float, default=4000,
