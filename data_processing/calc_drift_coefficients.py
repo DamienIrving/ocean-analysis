@@ -87,11 +87,11 @@ def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False
         out_shape = list(cube.shape)
         out_shape[0] = 4
         coefficients = numpy.zeros(out_shape, dtype=numpy.float32)
-        time_axis = cube.coord('time').points.astype(numpy.float32)
         for d, cube_slice in enumerate(cube.slices_over('depth')):
             print('Depth:', cube_slice.coord('depth').points[0])
             if convert_annual:
                 cube_slice = timeseries.convert_to_annual(cube_slice)
+            time_axis = cube_slice.coord('time').points.astype(numpy.float32)
             coefficients[:,d, ::] = numpy.ma.apply_along_axis(polyfit, 0, cube_slice.data, time_axis, masked_array)
         fill_value = cube_slice.data.fill_value 
         coefficients = numpy.ma.masked_values(coefficients, fill_value)
