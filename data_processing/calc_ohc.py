@@ -11,7 +11,6 @@ import sys, os, pdb
 import argparse
 import numpy
 import iris
-from iris.experimental.equalise_cubes import equalise_attributes
 import cmdline_provenance as cmdprov
 
 # Import my modules
@@ -36,17 +35,6 @@ except ImportError:
 
 
 # Define functions
-
-history = []
-
-def save_history(cube, field, filename):
-    """Save the history attribute when reading the data.
-    (This is required because the history attribute differs between input files 
-      and is therefore deleted upon equilising attributes)  
-    """ 
-
-    history.append(cube.attributes['history']) 
-
 
 def add_metadata(temperature_cube, temperature_atts, ohc_cube, inargs):
     """Add metadata to the output cube."""
@@ -128,13 +116,7 @@ def get_volume(volume_file, temperature_cube, level_constraint, metadata_dict):
 def main(inargs):
     """Run the program."""
 
-    temperature_cube = iris.load(inargs.temperature_files, gio.check_iris_var(inargs.var), callback=save_history)
-    equalise_attributes(temperature_cube)
-    iris.util.unify_time_units(temperature_cube)
-    temperature_cube = temperature_cube.concatenate_cube()
-    coord_names = [coord.name() for coord in temperature_cube.dim_coords]
-    if 'time' in coord_names:
-        temperature_cube = gio.check_time_units(temperature_cube)
+    temperature_cube, history = gio.combine_files(inargs.temperature_files, inargs.var)
 
     temperature_atts = temperature_cube.attributes
     metadata_dict = {inargs.temperature_files[0]: history[0]}

@@ -9,7 +9,6 @@ Description:  Calculate difference between two time periods
 import sys, os, pdb
 import argparse
 import iris
-from iris.experimental.equalise_cubes import equalise_attributes
 import cmdline_provenance as cmdprov
 
 # Import my modules
@@ -32,17 +31,6 @@ except ImportError:
 
 # Define functions
 
-history = []
-
-def save_history(cube, field, filename):
-    """Save the history attribute when reading the data.
-    (This is required because the history attribute differs between input files 
-      and is therefore deleted upon equilising attributes)  
-    """ 
-
-    history.append(cube.attributes['history']) 
-
-
 def period_mean(cube, time_period):
     """Calculate the mean for a particular time period."""
 
@@ -57,10 +45,7 @@ def period_mean(cube, time_period):
 def main(inargs):
     """Run the program."""
 
-    cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var), callback=save_history)
-    equalise_attributes(cube)
-    iris.util.unify_time_units(cube)
-    cube = cube.concatenate_cube()
+    cube, history = gio.combine_files(inargs.infiles, inargs.var)
    
     start_cube = period_mean(cube.copy(), inargs.start_period)
     end_cube = period_mean(cube.copy(), inargs.end_period)

@@ -37,17 +37,6 @@ except ImportError:
 
 # Define functions
 
-history = []
-
-def save_history(cube, field, filename):
-    """Save the history attribute when reading the data.
-    (This is required because the history attribute differs between input files 
-      and is therefore deleted upon equilising attributes)  
-    """ 
-
-    history.append(cube.attributes['history'])
-
-
 def get_history_attribute(y_files, data_cube, basin_file, basin_cube):
     """Generate the history attribute for the output file."""
 
@@ -65,12 +54,9 @@ def read_data(infile_list, var, basin_cube, region):
       and you can't select the regioins by name.
 
     """
-    cube = iris.load(infile_list, gio.check_iris_var(var), callback=save_history)
-    atts = cube[0].attributes
-    equalise_attributes(cube)
-    iris.util.unify_time_units(cube)
-    cube = cube.concatenate_cube()
-    cube = gio.check_time_units(cube)
+
+    cube, history = gio.combine_files(infile_list, var)
+
     cube.attributes = atts
     cube.attributes['history'] = history[0]
     model = atts['model_id']

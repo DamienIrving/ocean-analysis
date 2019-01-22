@@ -11,7 +11,6 @@ import sys, os, pdb, re
 import argparse
 import numpy, math
 import iris
-from iris.experimental.equalise_cubes import equalise_attributes
 from decimal import Decimal
 import cmdline_provenance as cmdprov
 
@@ -142,18 +141,13 @@ def new_file_name(filename, inargs):
 def combine_infiles(inargs, time_constraint, depth_constraint):
     """Combine multiple input files into one cube"""
 
-    cube = iris.load(inargs.infiles, gio.check_iris_var(inargs.var) & depth_constraint)
-    history = cube[0].attributes['history']
+    cube, history = gio.combine_files(inargs.infiles, inargs.var)
     atts = cube[0].attributes
-    equalise_attributes(cube)
-    iris.util.unify_time_units(cube)
-    cube = cube.concatenate_cube()
 
-    cube = gio.check_time_units(cube)
-    cube = cube.extract(time_constraint)
+    cube = cube.extract(time_constraint & depth_constraint)
     cube = iris.util.squeeze(cube)
 
-    log = cmdprov.new_log(infile_history={inargs.infiles[0]: atts['history']}, git_repo=repo_dir)
+    log = cmdprov.new_log(infile_history={inargs.infiles[0]: history[0]}, git_repo=repo_dir)
     cube.attributes['history'] = log
 
     return cube

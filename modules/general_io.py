@@ -5,6 +5,7 @@ Functions:
   check_iris_var           -- Check if a variable is in the list of iris standard names
   check_time_units         -- Check time axis units
   check_xarrayDataset      -- Check xarray.Dataset for data format compliance
+  combine_files            -- Create an iris cube from multiple input files
   create_outdir            -- Create the output directory if it doesn't exist already
   get_cmip5_file_details   -- Extract details from a CMIP5 filename
   get_subset_kwargs        -- Get keyword arguments for xarray subsetting
@@ -32,6 +33,7 @@ from dateutil import parser
 from collections import defaultdict
 import re
 import iris
+from iris.experimental.equalise_cubes import equalise_attributes
 import cftime
 import cf_units
 
@@ -113,6 +115,17 @@ var_names = {'precipitation_flux': 'precipitation',
              'Downward_Heat_Flux_at_Sea_Water_Surface_nh_sum_minus_sh_sum': 'interhemispheric difference in surface downward heat flux (NH minus SH)',
              'surface_downward_eastward_stress': 'eastward surface wind stress'
              }
+
+
+history = []
+
+def save_history(cube, field, filename):
+    """Save the history attribute when reading the data.
+    (This is required because the history attribute differs between input files 
+      and is therefore deleted upon equilising attributes)  
+    """ 
+
+    history.append(cube.attributes['history']) 
 
 
 def check_iris_var(var):
@@ -204,6 +217,21 @@ def check_xarrayDataset(dset, var_list):
 
         assert 0 <= lon_values.min() <= 360, \
         'Longitude axis must be 0 to 360E'
+
+
+def combine_files(files, var):
+    """Create an iris cube from multiple input files."""
+
+    cube = iris.load(files, check_iris_var(var), callback=save_history)
+    equalise_attributes(cube)
+    iris.util.unify_time_units(cube)
+    cube = cube.concatenate_cube()
+
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    if 'time' in coord_names:
+        cube = check_time_units(cube)
+
+    return cube, history
 
 
 def create_outdir(outfile):

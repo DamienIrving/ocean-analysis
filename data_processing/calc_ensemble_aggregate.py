@@ -38,21 +38,14 @@ except ImportError:
 def read_infiles(infiles, var, time_constraint, ensnum):
     """Combine multiple input files into one cube"""
 
-    cube = iris.load(infiles, gio.check_iris_var(var))
-    history = cube[0].attributes['history']
-    atts = cube[0].attributes
-    equalise_attributes(cube)
-    iris.util.unify_time_units(cube)
-    cube = cube.concatenate_cube()
-
+    cube, history = gio.combine_files(infiles, var)
     cube = gio.check_time_units(cube)
     cube = cube.extract(time_constraint)
-    cube = iris.util.squeeze(cube)
 
     new_aux_coord = iris.coords.AuxCoord(ensnum, long_name='ensemble_member', units='no_unit')
     cube.add_aux_coord(new_aux_coord)
 
-    return cube, history
+    return cube, history[0]
 
 
 def unify_coordinates(cube_list):
