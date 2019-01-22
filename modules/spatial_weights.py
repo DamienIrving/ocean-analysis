@@ -213,8 +213,6 @@ def volume_from_volume(target_cube, volume_cube):
 
     target_coord_names = [coord.name() for coord in target_cube.dim_coords]
     volume_coord_names = [coord.name() for coord in volume_cube.dim_coords]
-    assert target_coord_names[0:2] == ['time', 'depth'] and len(target_coord_names) == 4
-    assert volume_coord_names[0] == 'depth'
 
     depth_match = numpy.array_equal(volume_cube.coord('depth').points, target_cube.coord('depth').points)
     
@@ -225,7 +223,11 @@ def volume_from_volume(target_cube, volume_cube):
         assert depth_match
         volume_data = volume_cube[::-1, ::].data
 
-    volume_data = uconv.broadcast_array(volume_data, [1, 3], target_cube.shape)
+    if target_coord_names[0] == 'time':
+        assert target_coord_names[1:] == volume_coord_names
+        volume_data = uconv.broadcast_array(volume_data, [1, 3], target_cube.shape)
+
+    assert volume_data.shape == target_cube.shape
 
     return volume_data
 
