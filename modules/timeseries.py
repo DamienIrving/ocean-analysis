@@ -244,7 +244,7 @@ def convert_to_annual(cube, full_months=False, aggregation='mean', chunk=False):
             aggregator = iris.analysis.SUM
 
         if chunk:
-            cube = _chunked_year_aggregation(cube, aggregator, step=chunk)
+            cube = _chunked_year_aggregation(cube, aggregator, step=12)
         else:
             cube = cube.aggregated_by(['year'], aggregator)
   
@@ -269,7 +269,6 @@ def _chunked_year_aggregation(cube, agg_method, step=12):
     """
 
     assert agg_method in [iris.analysis.SUM, iris.analysis.MEAN]
-
     chunk_list = iris.cube.CubeList([])
     coord_names = [coord.name() for coord in cube.dim_coords]
     start_indexes, step = uconv.get_chunks(cube.shape, coord_names, chunk=True, step=step)
