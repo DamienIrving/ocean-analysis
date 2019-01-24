@@ -1,7 +1,7 @@
 
-model=CanESM2
+model=CCSM4
 experiment=historicalMisc
-rip=r1i1p4
+rip=r1i1p10
 variable=thetao
 var_long=sea_water_potential_temperature
 
@@ -16,7 +16,8 @@ script_dir=/home/599/dbi599/ocean-analysis/data_processing
 
 coef_file=${r87_dir}/piControl/yr/ocean/r1i1p1/${variable}/latest/${variable}-coefficients_Oyr_${model}_piControl_r1i1p1_all.nc
 
-coefficient_command="${python} ${script_dir}/calc_drift_coefficients.py ${ua6_dir}/piControl/mon/ocean/r1i1p1/${variable}/latest/${variable}_Omon_${model}_piControl_r1i1p1_*.nc ${var_long} ${coef_file} --annual"
+coefficient_command="${python} ${script_dir}/calc_drift_coefficients.py ${ua6_dir}/piControl/mon/ocean/r1i1p1/${variable}/latest/${variable}_Omon_${model}_piControl_r1i1p1_*.nc ${var_long} ${coef_file} --annual --chunk"
+# --chunk
 
 #echo ${coefficient_command}
 #${coefficient_command}
@@ -24,10 +25,10 @@ coefficient_command="${python} ${script_dir}/calc_drift_coefficients.py ${ua6_di
 
 # Step 2: Remove drift #
 
-data_dir=${ua6_dir}/${experiment}/mon/ocean/${rip}/${variable}/latest
+data_dir=${r87_dir}/${experiment}/mon/ocean/${rip}/${variable}/latest
 dedrift_dir=${r87_dir}/${experiment}/yr/ocean/${rip}/${variable}/latest/dedrifted
 
-dedrift_command="${python} ${script_dir}/remove_drift.py ${ua6_dir}/${experiment}/mon/ocean/${rip}/${variable}/latest/${variable}_Omon_${model}_${experiment}_${rip}_*.nc ${var_long} annual ${coef_file} ${dedrift_dir}/ --annual"
+dedrift_command="${python} ${script_dir}/remove_drift.py ${data_dir}/${variable}_Omon_${model}_${experiment}_${rip}_*.nc ${var_long} annual ${coef_file} ${dedrift_dir}/ --annual --branch_time 342005"
 # --branch_time 342005 (CCSM4) 29200 (CSIRO-Mk3-6-0) 175382.5 (FGOALS-g2) 0 (GISS-E2-R, E2-H) --no_parent_check --no_time_check
 
 echo ${dedrift_command}
@@ -47,7 +48,7 @@ ${diff_command}
 # Step 4: Calculate OHC #
 
 ohc_file=${r87_dir}/${experiment}/yr/ocean/${rip}/ohc/latest/dedrifted/ohc-diff_Oyr_${model}_${experiment}_${rip}_1861-2005.nc
-volume_file=${ua6_dir}/historical/fx/ocean/r0i0p0/volcello/latest/volcello_fx_${model}_historical_r0i0p0.nc
+volume_file=${r87_dir}/historical/fx/ocean/r0i0p0/volcello/latest/volcello-inferred_fx_${model}_historical_r0i0p0.nc
 
 ohc_command="${python} ${script_dir}/calc_ohc.py ${diff_file} ${var_long} ${ohc_file} --volume_file ${volume_file}"
 
