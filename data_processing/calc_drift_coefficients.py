@@ -73,7 +73,7 @@ def is_masked_array(array):
     return masked
 
 
-def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False):
+def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False, chunk_annual=False):
     """Calculate the polynomial coefficients.
 
     Can select to convert data to annual timescale first.
@@ -90,7 +90,7 @@ def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False
         for d, cube_slice in enumerate(cube.slices_over('depth')):
             print('Depth:', cube_slice.coord('depth').points[0])
             if convert_annual:
-                cube_slice = timeseries.convert_to_annual(cube_slice)
+                cube_slice = timeseries.convert_to_annual(cube_slice, chunk=chunk_annual)
             time_axis = cube_slice.coord('time').points.astype(numpy.float32)
             coefficients[:,d, ::] = numpy.ma.apply_along_axis(polyfit, 0, cube_slice.data, time_axis, masked_array)
         fill_value = cube_slice.data.fill_value 
@@ -165,7 +165,7 @@ def main(inargs):
 
     # Coefficients cube
     coefficients, time_start, time_end = calc_coefficients(cube, coord_names, masked_array=masked_array,
-                                                           convert_annual=inargs.annual)
+                                                           convert_annual=inargs.annual, chunk_annual=inargs.chunk)
     global_atts['time_unit'] = str(cube.coord('time').units)
     global_atts['time_calendar'] = str(cube.coord('time').units.calendar)
     global_atts['time_start'] = time_start
@@ -247,7 +247,8 @@ notes:
 
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Convert data to annual timescale [default: False]")
-
+    parser.add_argument("--chunk", action="store_true", default=False,
+                        help="Chunk annual timescale conversion to avoid memory errors [default: False]")
 
     args = parser.parse_args()
     main(args)
