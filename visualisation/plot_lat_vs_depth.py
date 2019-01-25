@@ -41,6 +41,54 @@ for directory in cwd.split('/')[1:]:
 
 # Define functions
 
+def make_grid(depth_values, lat_values):
+    """Make a dummy cube with desired grid."""
+       
+    depth = iris.coords.DimCoord(depth_values,
+                                 standard_name='depth',
+                                 units='m',
+                                 long_name='ocean depth coordinate',
+                                 var_name='lev')
+
+    latitude = iris.coords.DimCoord(lat_values,
+                                    standard_name='latitude',
+                                    units='degrees_north',
+                                    coord_system=iris.coord_systems.GeogCS(iris.fileformats.pp.EARTH_RADIUS))
+
+    dummy_data = numpy.zeros((len(depth_values), len(lat_values)))
+    new_cube = iris.cube.Cube(dummy_data, dim_coords_and_dims=[(depth, 0), (latitude, 1)])
+
+    new_cube.coord('depth').guess_bounds()
+    new_cube.coord('latitude').guess_bounds()
+
+    return new_cube
+
+
+def regrid(cube, ref_cube):
+    """Regrid to reference grid, preserving the data sum"""
+
+    depth_bounds = cube.coord('depth').bounds
+    depth_diffs = numpy.apply_along_axis(lambda x: x[1] - x[0], 1, depth_bounds)
+    cube_scaled = cube / uconv.broadcast_array(depth_diffs, 0, cube.shape)
+
+    lat_bounds = cube.coord('latitude').bounds
+    lat_diffs = numpy.apply_along_axis(lambda x: x[1] - x[0], 1, lat_bounds)
+    cube_scaled = cube_scaled / uconv.broadcast_array(lat_diffs, 1, cube.shape)
+
+    ref_points = [('depth', ref_cube.coord('depth').points), ('latitude', ref_cube.coord('latitude').points)]
+    cube_regridded = cube_scaled.interpolate(ref_points, iris.analysis.Linear())         
+
+    ref_depth_bounds = ref_cube.coord('depth').bounds
+    ref_depth_diffs = numpy.apply_along_axis(lambda x: x[1] - x[0], 1, ref_depth_bounds)
+    new_cube = cube_regridded * uconv.broadcast_array(ref_depth_diffs, 0, cube_regridded.shape)
+
+    ref_lat_bounds = ref_cube.coord('latitude').bounds
+    ref_lat_diffs = numpy.apply_along_axis(lambda x: x[1] - x[0], 1, ref_lat_bounds)
+    new_cube = cube_regridded * uconv.broadcast_array(ref_lat_diffs, 1, cube_regridded.shape)
+
+    return new_cube
+
+
 def set_units(cube, scale_factor=1, nyrs=1):
     """Set the units.
     Args:
@@ -51,9 +99,8 @@ def set_units(cube, scale_factor=1, nyrs=1):
       nyrs (int): Trend units is per nyrs
     """
 
-    trend_data = cube.data * nyrs * 10**scale_factor
+    ajusted_data = cube.data * nyrs * 10**scale_factor
     
-
     unit_scale = ''
     if scale_factor != 0:
         if scale_factor > 0.0:
@@ -63,17 +110,23 @@ def set_units(cube, scale_factor=1, nyrs=1):
 
     units = str(cube.units)
     units = units.replace(" ", " \enspace ")
-    if nyrs == 1:
-        units = units.replace("-1", "^{-1}")
-        units = '$%s \enspace %s$'  %(unit_scale, units)
-    else:
-        units = units.replace("yr-1", "$per %s years" %(str(nyrs)))
-        units = '$%s \enspace %s'  %(unit_scale, units)
 
-    return trend_data, units
+    if 'yr-1' in units:
+        if nyrs == 1:
+            units = units.replace("-1", "^{-1}")
+            units = '$%s \enspace %s$'  %(unit_scale, units)
+        else:
+            units = units.replace("yr-1", "$per %s years" %(str(nyrs)))
+            units = '$%s \enspace %s'  %(unit_scale, units)
+
+    if rescale:
+        units = '$' + units +  '\enspace m^{-1} \enspace lat^{-1}$'
+
+    return adjusted_data, units
 
 
-def create_plot(gs, cbar_ax, contourf_cube, contour_cube, scale_factor, nyrs, title, ticks=None):
+def create_plot(gs, cbar_ax, contourf_cube, contour_cube, scale_factor, nyrs, title,
+                ticks=None, rescale=False):
     """Create the plot."""
     
     axMain = plt.subplot(gs)
@@ -85,7 +138,8 @@ def create_plot(gs, cbar_ax, contourf_cube, contour_cube, scale_factor, nyrs, ti
     lats = contourf_cube.coord('latitude').points
     levs = contourf_cube.coord('depth').points 
     
-    contourf_data, units = set_units(contourf_cube, scale_factor=scale_factor, nyrs=nyrs)           
+    contourf_data, units = set_units(contourf_cube, scale_factor=scale_factor,
+                                     nyrs=nyrs, rescale=rescale)           
     contourf_ticks = ticks if ticks else [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]
 
     cf = axMain.contourf(lats, levs, contourf_data,
@@ -164,6 +218,12 @@ def main(inargs):
     for pnum in range(nplots): 
         contourf_cube = iris.load_cube(inargs.contourf_files[pnum], inargs.variable)
         metadata_dict[inargs.contourf_files[pnum]] = contourf_cube.attributes['history']
+
+        if inargs.rescale:
+            depth_values = numpy.arange(0.5, 5500, 1)
+            lat_values = numpy.arange(-89.5, 90.5, 1)
+            ref_cube = make_grid(depth_values, lat_values)
+            contourf_cube = regrid(contourf_cube, ref_cube)
     
         if inargs.contour_files:
             contour_cube = iris.load_cube(inargs.contour_files[pnum], inargs.variable)
@@ -173,7 +233,7 @@ def main(inargs):
 
         title = inargs.titles[pnum] if inargs.titles else None 
         create_plot(gs[pnum], cbar_ax, contourf_cube, contour_cube, inargs.scale_factor,
-                    inargs.nyrs, title, ticks=inargs.ticks)
+                    inargs.nyrs, title, ticks=inargs.ticks, rescale=inargs.rescale)
 
     # Save output
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
@@ -217,6 +277,9 @@ author:
 
     parser.add_argument("--ticks", type=float, nargs='*', default=None,
                         help="list of contour levels to plot [default = auto]")
+
+    parser.add_argument("--rescale", action="store_true", default=False,
+                        help="Rescale so the output is m-1 lat-1")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
