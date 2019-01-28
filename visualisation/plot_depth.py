@@ -105,14 +105,17 @@ def plot_data(cube, experiment, label=False, linewidth=None):
     plt.plot(xdata, ydata, label=label, color=color, linewidth=linewidth)
 
 
-def ensemble_mean(cube_list):
+def ensemble_aggregate(cube_list, operator):
     """Calculate the ensemble mean."""
+
+    operators = {'mean': iris.analysis.MEAN,
+                 'median': iris.analysis.MEDIAN}
 
     equalise_attributes(cube_list)
     ensemble_cube = cube_list.merge_cube()
-    ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN)
+    ensemble_agg = ensemble_cube.collapsed('ensemble_member', operators[operator])
 
-    return ensemble_mean
+    return ensemble_agg
 
 
 def main(inargs):
@@ -142,14 +145,14 @@ def main(inargs):
 
     fig = plt.figure(figsize=[10, 30])
     enswidth = 2.0
-    ilinewidth = enswidth * 0.25 if inargs.ensmean else enswidth
+    ilinewidth = enswidth * 0.25 if inargs.ensagg else enswidth
     for experiment in ['historical', 'historicalGHG', 'historicalMisc']:
         for num, cube in enumerate(ensemble_dict[experiment]):
-            label = experiment if (num == 1) and not inargs.ensmean else False 
+            label = experiment if (num == 1) and not inargs.ensagg else False 
             plot_data(cube, experiment, label=label, linewidth=ilinewidth)
-        if inargs.ensmean:
-            ensmean_cube = ensemble_mean(ensemble_dict[experiment])
-            plot_data(ensmean_cube, experiment, label=experiment, linewidth=2.0)
+        if inargs.ensagg:
+            ensagg_cube = ensemble_aggregate(ensemble_dict[experiment], inargs.ensagg)
+            plot_data(ensagg_cube, experiment, label=experiment, linewidth=2.0)
 
     plt.gca().invert_yaxis()
     plt.ylim([inargs.max_depth, inargs.min_depth])
@@ -194,8 +197,8 @@ author:
     parser.add_argument("--max_depth", type=float, default=5500,
                         help="Only include data above this vertical level")
 
-    parser.add_argument("--ensmean", action="store_true", default=False,
-                        help="Plot an ensemble mean curve [default: False]")
+    parser.add_argument("--ensagg", type=str, choices=('mean', 'median'), default=None,
+                        help="Plot an ensemble aggregate curve [default: False]")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
