@@ -43,6 +43,11 @@ exp_colors = {'historical': 'black',
               'historicalGHG': 'red',
               'historicalMisc': 'blue'}
 
+operators = {'mean': iris.analysis.MEAN,
+             'median': iris.analysis.MEDIAN,
+             'sum': iris.analysis.SUM}
+
+
 def two_floats(value):
     """For reading floats lile -5e20 from the command line."""
 
@@ -88,7 +93,7 @@ def regrid(cube, ref_cube):
     return new_cube
 
 
-def collapse_dims(cube):
+def collapse_dims(cube, operator):
     """Collapse any non-depth coordinates."""
 
     coord_names = [coord.name() for coord in cube.dim_coords]
@@ -96,7 +101,7 @@ def collapse_dims(cube):
     assert 'time' not in coord_names
     assert coord_names[0] == 'depth'
     if len(coord_names) > 1:
-        depth_cube = cube.collapsed(coord_names[1:], iris.analysis.SUM)
+        depth_cube = cube.collapsed(coord_names[1:], operators[operator])
         for coord in coord_names[1:]:
             depth_cube.remove_coord(coord)
         for coord in aux_coord_names:
@@ -119,9 +124,6 @@ def plot_data(cube, experiment, label=False, linewidth=None):
 def ensemble_aggregate(cube_list, operator):
     """Calculate the ensemble mean."""
 
-    operators = {'mean': iris.analysis.MEAN,
-                 'median': iris.analysis.MEDIAN}
-
     equalise_attributes(cube_list)
     ensemble_cube = cube_list.merge_cube()
     ensemble_agg = ensemble_cube.collapsed('ensemble_member', operators[operator])
@@ -142,7 +144,7 @@ def main(inargs):
 
     for infile in inargs.infiles:
         cube = iris.load_cube(infile, gio.check_iris_var(inargs.var) & depth_constraint)
-        depth_cube = collapse_dims(cube)
+        depth_cube = collapse_dims(cube, inargs.dimagg)
 
         experiment = cube.attributes['experiment_id']
         experiment_list.append(experiment)
@@ -151,7 +153,10 @@ def main(inargs):
         new_aux_coord = iris.coords.AuxCoord(ensemble_number, long_name='ensemble_member', units='no_unit')
         depth_cube.add_aux_coord(new_aux_coord)
 
-        new_depth_cube = regrid(depth_cube, new_grid)
+        if inargs.regrid or inargs.ensagg:
+            new_depth_cube = regrid(depth_cube, new_grid)
+        else:
+            new_depth_cube = depth_cube
         ensemble_dict[experiment].append(new_depth_cube)
 
     fig = plt.figure(figsize=[10, 30])
@@ -205,6 +210,9 @@ author:
     parser.add_argument("var", type=str, help="Variable")
     parser.add_argument("outfile", type=str, help="Output file name")
 
+    parser.add_argument("--dimagg", type=str, choices=('mean', 'sum'), default='mean',
+                        help="Collapse the non-depth dimensions using this operator [default: mean]")
+
     parser.add_argument("--min_depth", type=float, default=0,
                         help="Only include data below this vertical level")
     parser.add_argument("--max_depth", type=float, default=5500,
@@ -212,6 +220,9 @@ author:
 
     parser.add_argument("--xbounds", type=two_floats, default=None,
                         help="""Bounds for x-axis. e.g. "-5e20 5e20" """)
+
+    parser.add_argument("--regrid", action="store_true", default=False,
+                        help="Regrid to an equal depth grid (happens by default if ensagg) [default: False]")
 
     parser.add_argument("--ensagg", type=str, choices=('mean', 'median'), default=None,
                         help="Plot an ensemble aggregate curve [default: False]")
