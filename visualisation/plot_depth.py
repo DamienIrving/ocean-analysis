@@ -43,6 +43,17 @@ exp_colors = {'historical': 'black',
               'historicalGHG': 'red',
               'historicalMisc': 'blue'}
 
+def two_floats(value):
+    """For reading floats lile -5e20 from the command line."""
+
+    values = value.split()
+    if len(values) != 2:
+        raise argparse.ArgumentError
+    values = map(float, values)
+
+    return values
+
+
 def make_grid(depth_values):
     """Make a dummy cube with desired grid."""
        
@@ -157,7 +168,9 @@ def main(inargs):
     plt.gca().invert_yaxis()
     plt.ylim([inargs.max_depth, inargs.min_depth])
     plt.legend()
-    #plt.xlim([-0.1e21, 0.2e21])
+    if inargs.xbounds:
+        xmin, xmax = inargs.xbounds
+        plt.xlim([xmin, xmax])
     plt.grid(True)
     plt.xlabel(str(cube.units))
     plt.ylabel('Depth (m)')
@@ -196,6 +209,9 @@ author:
                         help="Only include data below this vertical level")
     parser.add_argument("--max_depth", type=float, default=5500,
                         help="Only include data above this vertical level")
+
+    parser.add_argument("--xbounds", type=two_floats, default=None,
+                        help="""Bounds for x-axis. e.g. "-5e20 5e20" """)
 
     parser.add_argument("--ensagg", type=str, choices=('mean', 'median'), default=None,
                         help="Plot an ensemble aggregate curve [default: False]")
