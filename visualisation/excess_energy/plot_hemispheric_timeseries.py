@@ -104,6 +104,7 @@ def main(inargs):
     hfds_nh, hfds_sh = read_data(inargs.hfds_files, 'hfds', time_constraint, inargs.ensagg)
     ohc_nh, ohc_sh = read_data(inargs.ohc_files, 'ohc', time_constraint, inargs.ensagg)
             
+    fig = plt.figure(figsize=[11, 10])
     iplt.plot(rndt_nh, label='netTOA, NH', color='red', linestyle='solid')
     iplt.plot(rndt_sh, label='netTOA, SH', color='red', linestyle='dashed')
     iplt.plot(hfds_nh, label='OHU, NH', color='orange', linestyle='solid')
