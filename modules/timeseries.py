@@ -4,6 +4,7 @@ Functions:
   calc_seasonal_cycle         -- Calculate the seasonal cycle
   calc_trend                  -- Calculate the linear trend
   convert_to_annual           -- Convert the data to annual mean
+  equalise_time_axes          -- Make all the time axes in an iris cube list the same
   get_control_time_constraint -- Define the time constraint for the control data
 
 """
@@ -65,6 +66,23 @@ def adjust_control_time(cube, ref_cube, branch_index=None, branch_time=None):
     cube.coord('time').points = cube.coord('time').points - adjustment_factor
 
     return cube
+
+
+def equalise_time_axes(cube_list):
+    """Make all the time axes in an iris cube list the same."""
+
+    iris.util.unify_time_units(cube_list)
+    reference_cube = cube_list[0]
+    new_cube_list = iris.cube.CubeList([])
+    for cube in cube_list:
+        assert len(cube.coord('time').points) == len(reference_cube.coord('time').points)
+        cube.coord('time').points = reference_cube.coord('time').points
+        cube.coord('time').bounds = reference_cube.coord('time').bounds
+        cube.coord('time').units = reference_cube.coord('time').units
+        cube.coord('time').attributes = reference_cube.coord('time').attributes
+        new_cube_list.append(cube)
+    
+    return new_cube_list
 
 
 def get_control_time_constraint(control_cube, ref_cube, time_bounds, branch_time=None):
