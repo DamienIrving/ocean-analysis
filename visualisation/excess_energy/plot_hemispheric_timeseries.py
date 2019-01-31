@@ -50,6 +50,10 @@ def ensemble_aggregate(cube_list, operator):
 
     aggregators = {'mean': iris.analysis.MEAN, 'median': iris.analysis.MEDIAN}
 
+    var_name = cube_list[0].var_name
+    for cube in cube_list:
+        cube.var_name = var_name
+
     if len(cube_list) > 1:
         equalise_attributes(cube_list)
         timeseries.equalise_time_axes(cube_list)
@@ -70,8 +74,7 @@ def calc_anomaly(cube):
     return anomaly
 
 
-
-def read_data(file_pairs, variable, time_constraint, ensagg):
+def read_hemisphere_data(file_pairs, variable, time_constraint, ensagg):
     """Read the data for a particular variable."""
     
     hemispheres = ['nh', 'sh']
@@ -80,6 +83,7 @@ def read_data(file_pairs, variable, time_constraint, ensagg):
         new_aux_coord = iris.coords.AuxCoord(ensnum, long_name='ensemble_member', units='no_unit')
         for hemnum, hemisphere in enumerate(hemispheres):
             infile = file_pair[hemnum]
+            print(infile)
             var =  '%s %s sum' %(names[variable], hemisphere)
             cube = iris.load_cube(infile, var & time_constraint)
             if variable == 'ohc':
@@ -94,23 +98,56 @@ def read_data(file_pairs, variable, time_constraint, ensagg):
     return ensagg_nh_cube, ensagg_sh_cube
 
 
+def read_guide_data(infiles, variable, time_constraint, ensagg):
+    """Read the data for the guidelines."""
+    
+    cube_list = iris.cube.CubeList([])
+    for ensnum, infile in enumerate(infiles):
+        new_aux_coord = iris.coords.AuxCoord(ensnum, long_name='ensemble_member', units='no_unit')
+        print(infile)
+        var =  '%s globe sum' %(names[variable])
+        cube = iris.load_cube(infile, var & time_constraint)
+        if variable == 'ohc':
+            cube = calc_anomaly(cube)
+        cube.add_aux_coord(new_aux_coord)
+        cube.cell_methods = ()
+        cube_list.append(cube)
+
+    ensagg_cube = ensemble_aggregate(cube_list, ensagg)
+    nh_guide = ensagg_cube * 0.41
+    sh_guide = ensagg_cube * 0.59
+
+    return nh_guide, sh_guide
+
+
 def main(inargs):
     """Run the program."""
 
     metadata_dict = {}
     time_constraint = gio.get_time_constraint([inargs.start_date, inargs.end_date])
 
-    rndt_nh, rndt_sh = read_data(inargs.rndt_files, 'rndt', time_constraint, inargs.ensagg)
-    hfds_nh, hfds_sh = read_data(inargs.hfds_files, 'hfds', time_constraint, inargs.ensagg)
-    ohc_nh, ohc_sh = read_data(inargs.ohc_files, 'ohc', time_constraint, inargs.ensagg)
-            
     fig = plt.figure(figsize=[11, 10])
-    iplt.plot(rndt_nh, label='netTOA, NH', color='red', linestyle='solid')
-    iplt.plot(rndt_sh, label='netTOA, SH', color='red', linestyle='dashed')
-    iplt.plot(hfds_nh, label='OHU, NH', color='orange', linestyle='solid')
-    iplt.plot(hfds_sh, label='OHU, SH', color='orange', linestyle='dashed')
-    iplt.plot(ohc_nh, label='OHC, NH', color='blue', linestyle='solid')
-    iplt.plot(ohc_sh, label='OHC, SH', color='blue', linestyle='dashed')
+
+    if inargs.rndt_files:
+        rndt_nh, rndt_sh = read_hemisphere_data(inargs.rndt_files, 'rndt', time_constraint, inargs.ensagg)
+        iplt.plot(rndt_nh, label='netTOA, NH', color='red', linestyle='solid')
+        iplt.plot(rndt_sh, label='netTOA, SH', color='red', linestyle='dashed')
+
+    if inargs.hfds_files:
+        hfds_nh, hfds_sh = read_hemisphere_data(inargs.hfds_files, 'hfds', time_constraint, inargs.ensagg)
+        iplt.plot(hfds_nh, label='OHU, NH', color='orange', linestyle='solid')
+        iplt.plot(hfds_sh, label='OHU, SH', color='orange', linestyle='dashed')
+
+    if inargs.ohc_files:
+        ohc_nh, ohc_sh = read_hemisphere_data(inargs.ohc_files, 'ohc', time_constraint, inargs.ensagg)
+        iplt.plot(ohc_nh, label='OHC, NH', color='blue', linestyle='solid')
+        iplt.plot(ohc_sh, label='OHC, SH', color='blue', linestyle='dashed')
+
+    if inargs.ohc_guide_files:
+        guide_nh, guide_sh = read_guide_data(inargs.ohc_guide_files, 'ohc', time_constraint, inargs.ensagg)
+        iplt.plot(guide_nh, label='OHC guide, NH', color='0.5', linestyle='solid')
+        iplt.plot(guide_sh, label='OHC guide, SH', color='0.5', linestyle='dashed')
+
     plt.legend()
 
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
@@ -148,6 +185,9 @@ author:
     parser.add_argument("--ohc_files", type=str, nargs=2, action='append', default=[],
                         help="OHC file pair for a given model (NH, SH)")
                             
+    parser.add_argument("--ohc_guide_files", type=str, nargs='*', default=None,
+                        help="global files for OHC guidelines to be plotted")
+
     parser.add_argument("--ensagg", type=str, default='median', choices=('mean', 'median'),
                         help="Ensemble mean or median [default=median]")
 
