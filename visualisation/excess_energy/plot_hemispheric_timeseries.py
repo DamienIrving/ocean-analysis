@@ -86,8 +86,7 @@ def read_hemisphere_data(file_pairs, variable, time_constraint, ensagg):
             print(infile)
             var =  '%s %s sum' %(names[variable], hemisphere)
             cube = iris.load_cube(infile, var & time_constraint)
-            if variable == 'ohc':
-                cube = calc_anomaly(cube)
+            cube = calc_anomaly(cube)
             cube.add_aux_coord(new_aux_coord)
             cube.cell_methods = ()
             cube_list[hemisphere].append(cube)
@@ -107,8 +106,7 @@ def read_guide_data(infiles, variable, time_constraint, ensagg):
         print(infile)
         var =  '%s globe sum' %(names[variable])
         cube = iris.load_cube(infile, var & time_constraint)
-        if variable == 'ohc':
-            cube = calc_anomaly(cube)
+        cube = calc_anomaly(cube)
         cube.add_aux_coord(new_aux_coord)
         cube.cell_methods = ()
         cube_list.append(cube)
@@ -149,6 +147,9 @@ def main(inargs):
         iplt.plot(guide_sh, label='OHC guide, SH', color='0.5', linestyle='dashed')
 
     plt.legend()
+    if inargs.ybounds:
+        ymin, ymax = inargs.ybounds
+        plt.ylim([ymin, ymax])
 
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
@@ -187,6 +188,9 @@ author:
                             
     parser.add_argument("--ohc_guide_files", type=str, nargs='*', default=None,
                         help="global files for OHC guidelines to be plotted")
+
+    parser.add_argument("--ybounds", type=gio.two_floats, default=None,
+                        help="""Bounds for x-axis. e.g. "-5e20 5e20" """)
 
     parser.add_argument("--ensagg", type=str, default='median', choices=('mean', 'median'),
                         help="Ensemble mean or median [default=median]")

@@ -18,6 +18,7 @@ Functions:
   set_global_atts          -- Update the global attributes of an xarray.DataArray
   set_outfile_date         -- Take an outfile name and replace existing date with new one
   standard_datetime        -- Convert any arbitrary date/time to standard format: YYYY-MM-DD
+  two_floats               -- Read floats lile -5e20 from the command line
   update_history_att       -- Update the global history attribute of an xarray.DataArray
   vertical_bounds_text     -- Geneate text describing the vertical bounds of a data selection
   write_dates              -- Write a list of dates
@@ -28,6 +29,7 @@ Functions:
 # Import general Python modules
 
 import os, sys, pdb
+import argparse
 import datetime, numpy
 from dateutil import parser
 from collections import defaultdict
@@ -533,6 +535,21 @@ def standard_datetime(dt):
     new_dt = parser.parse(str(dt))
 
     return new_dt.strftime("%Y-%m-%d")
+
+
+def two_floats(value):
+    """Read floats lile -5e20 from the command line.
+
+    Using argparse, set type=two_floats
+
+    """
+
+    values = value.split()
+    if len(values) != 2:
+        raise argparse.ArgumentError
+    values = map(float, values)
+
+    return values
 
 
 def vertical_bounds_text(level_axis, user_top, user_bottom):

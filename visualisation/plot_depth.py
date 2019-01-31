@@ -48,17 +48,6 @@ operators = {'mean': iris.analysis.MEAN,
              'sum': iris.analysis.SUM}
 
 
-def two_floats(value):
-    """For reading floats lile -5e20 from the command line."""
-
-    values = value.split()
-    if len(values) != 2:
-        raise argparse.ArgumentError
-    values = map(float, values)
-
-    return values
-
-
 def make_grid(depth_values):
     """Make a dummy cube with desired grid."""
        
@@ -218,7 +207,7 @@ author:
     parser.add_argument("--max_depth", type=float, default=5500,
                         help="Only include data above this vertical level")
 
-    parser.add_argument("--xbounds", type=two_floats, default=None,
+    parser.add_argument("--xbounds", type=gio.two_floats, default=None,
                         help="""Bounds for x-axis. e.g. "-5e20 5e20" """)
 
     parser.add_argument("--regrid", action="store_true", default=False,
