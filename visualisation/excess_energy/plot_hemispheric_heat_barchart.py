@@ -163,11 +163,16 @@ def main(inargs):
 
     color_list = get_colors(inargs.experiments)
     seaborn.set_style("whitegrid")
+
+    fig, ax = plt.subplots(figsize=(16,10))
     g = seaborn.catplot(x="hemisphere", y=ylabel,
                         hue="experiment", col="variable",
                         data=heat_df, kind="bar",
                         palette=color_list)
     g.set_titles("{col_name}")
+
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+    ax.yaxis.major.formatter._useMathText = True
 
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
