@@ -356,13 +356,13 @@ def main(inargs):
                                     anomaly_dict[('rndt', exp)][mod_num],
                                     anomaly_dict[('hfds', exp)][mod_num],
                                     anomaly_dict[('ohc', exp)][mod_num],
-                                    linewidth=1.0, linestyle='--',
+                                    linewidth=0.8, linestyle='--',
                                     decorate=False, ylim=inargs.ylim_storage)
                 plot_transport(gs[plot_index + nexp],
                                anomaly_dict[('hfbasin-inferred', exp)][mod_num],
                                anomaly_dict[('hfatmos-inferred', exp)][mod_num],
                                anomaly_dict[('hftotal-inferred', exp)][mod_num],
-                               linewidth=1.0, linestyle='--',
+                               linewidth=0.8, linestyle='--',
                                decorate=False, ylim=inargs.ylim_transport) 
 
     # Plot ensemble data
@@ -371,7 +371,7 @@ def main(inargs):
         cube_list = iris.cube.CubeList(filter(None, anomaly_dict[combo]))
         ensemble_dict[combo] = ensemble_mean(cube_list)
     
-    linewidth = None if nmodels == 1 else 4.0
+    linewidth = None if nmodels == 1 else 5.0
     for plot_index, exp in enumerate(inargs.experiments):
         storage_letter = panel_labels[plot_index] if inargs.panel_letters else None
         plot_uptake_storage(gs[plot_index],
