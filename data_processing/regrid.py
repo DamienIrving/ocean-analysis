@@ -104,6 +104,18 @@ def remove_nans(cube):
     return cube
 
 
+def guess_depth_bounds(cube):
+    """Guess the depth coordinate bounds."""
+
+    cube.coord('depth').guess_bounds()
+    bounds = cube.coord('depth').bounds.copy()
+    if bounds[0][0] < 0.0:
+        bounds[0][0] = 0.0
+        cube.coord('depth').bounds = bounds
+
+    return cube
+
+
 def main(inargs):
     """Run the program."""
 
@@ -113,8 +125,11 @@ def main(inargs):
 
     dim_vals = {}
     dim_vals['latitude'] = get_dim_vals(inargs.lats) 
-    dim_vals['longitude'] = get_dim_vals(inargs.lons)        
-    dim_vals['depth'] = get_dim_vals(inargs.depth_bnds, bounds=True)
+    dim_vals['longitude'] = get_dim_vals(inargs.lons)
+    if inargs.levs:
+        dim_vals['depth'] = get_dim_vals(inargs.levs)
+    else:
+        dim_vals['depth'] = get_dim_vals(inargs.depth_bnds, bounds=True)
 
     # Regrid from curvilinear to rectilinear if necessary
     regrid_status = False
@@ -128,7 +143,10 @@ def main(inargs):
         cube = cube.interpolate(sample_points, iris.analysis.Linear())
         cube.coord('latitude').guess_bounds()
         cube.coord('longitude').guess_bounds()
-        cube.coord('depth').bounds = get_depth_bounds(inargs.depth_bnds)
+        if inargs.levs:
+            cube = guess_depth_bounds(cube)
+        else:
+            cube.coord('depth').bounds = get_depth_bounds(inargs.depth_bnds)
 
     if numpy.isnan(numpy.min(cube.data)):
         cube = remove_nans(cube)
@@ -161,6 +179,8 @@ author:
                         help="list all latitude points of new grid or three values: start, stop, interval")
     parser.add_argument("--lons", type=float, nargs='*', default=None, 
                         help="list all longitude points of new grid or three values: start, stop, interval")
+    parser.add_argument("--levs", type=float, nargs='*', default=None, 
+                        help="list all depth points of new grid or three values: start, stop, interval")
     parser.add_argument("--depth_bnds", type=float, nargs='*', default=None, 
                         help="list of the depth bounds of new grid or three values: start, stop, interval")
 
