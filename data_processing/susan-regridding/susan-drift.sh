@@ -1,7 +1,7 @@
 
-# Run regrid.sh fist
+# Run regrid.sh first
 
-model=CCSM4
+model=CanESM2
 experiment=historicalGHG
 rip=r1i1p1
 variable=thetao
@@ -22,5 +22,7 @@ ${coefficient_command}
 data_dir=${r87_dir}/${experiment}/yr/ocean/r1i1p1/${variable}/latest
 
 dedrift_command="${python} ${script_dir}/remove_drift.py ${data_dir}/${variable}_Oyr_${model}_${experiment}_${rip}_*_susan-grid.nc sea_water_potential_temperature annual ${coef_file} ${data_dir}/dedrifted/"
+# --branch_time 342005 (CCSM4)
 
-#echo ${dedrift_command}
+echo ${dedrift_command}
+${dedrift_command}
