@@ -232,8 +232,8 @@ def plot_uptake_storage(gs, rndt_anomaly, hfds_anomaly, ohc_anomaly,
         plt.ylim(ylower * 1e22, yupper * 1e22)
 
     if panel_label:
-        ax.text(0.02, 0.09, panel_label, transform=ax.transAxes,
-                fontsize=24, va='top')
+        ax.text(0.91, 0.10, panel_label, transform=ax.transAxes,
+                fontsize=32, va='top')
 
     if decorate:
         if exp_num == 0:
@@ -272,8 +272,8 @@ def plot_transport(gs, hfbasin_inferred, hfatmos_inferred, hftotal_inferred,
         plt.ylim(ylower * 1e23, yupper * 1e23)
 
     if panel_label:
-        ax.text(0.02, 0.09, panel_label, transform=ax.transAxes,
-                fontsize=24, va='top')
+        ax.text(0.91, 0.1, panel_label, transform=ax.transAxes,
+                fontsize=32, va='top')
 
     if decorate:
         plt.xlabel('Latitude')
