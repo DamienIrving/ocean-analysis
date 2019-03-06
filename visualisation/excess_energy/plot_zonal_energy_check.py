@@ -44,7 +44,7 @@ except ImportError:
 
 aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
               'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
-titles = {'historical': 'historical', 'historicalGHG': 'GHG-only',
+titles = {'historical': 'historical', 'historical-rcp85': 'historical-rcp85', 'historicalGHG': 'GHG-only',
           'historicalMisc': 'AA-only', 'GHG+AA': 'GHG + AA',
           'hist-GHG+AA': 'historical - (GHG + AA)', '1pctCO2': '1pctCO2'}
 
@@ -192,7 +192,7 @@ def get_anomalies(rndt_file, hfds_file, ohc_file, time_constraint,
     hftotal_inferred = total_convergence.copy()
     hftotal_inferred.data = numpy.ma.cumsum(-1 * total_convergence.data)
 
-    experiment = cube.attributes['experiment_id']            
+    experiment = cube.attributes['experiment_id']          
     anomaly_dict[('rndt', experiment)].append(rndt_anomaly)
     anomaly_dict[('hfds', experiment)].append(hfds_anomaly)
     anomaly_dict[('ohc', experiment)].append(ohc_anomaly)
@@ -318,7 +318,7 @@ def main(inargs):
     ensemble_ref_cube = ensemble_grid() if nmodels > 1 else None
 
     var_list = ['rndt', 'hfds', 'ohc', 'hfbasin-inferred', 'hfatmos-inferred', 'hftotal-inferred']
-    exp_list = ['historicalGHG', 'historicalMisc', 'historical', 'GHG+AA', 'hist-GHG+AA', '1pctCO2']
+    exp_list = ['historicalGHG', 'historicalMisc', 'historical', 'GHG+AA', 'hist-GHG+AA', '1pctCO2', 'historical-rcp85']
     time_constraint = gio.get_time_constraint(inargs.time)
 
     anomaly_dict = {}
@@ -430,7 +430,7 @@ author:
 
 
     parser.add_argument("--experiments", type=str, nargs='*',
-                        choices=('historical', 'historicalGHG', 'historicalMisc',
+                        choices=('historical', 'historical-rcp85', 'historicalGHG', 'historicalMisc',
                                  'GHG+AA', 'hist-GHG+AA', '1pctCO2'),
                         help="experiments to plot")                                  
 
