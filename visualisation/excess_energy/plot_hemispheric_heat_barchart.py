@@ -63,6 +63,7 @@ def calc_hemispheric_heat(file_group, regions, var, experiment, time_constraint)
     values = []
     for filenum, region in enumerate(regions):
         var_name = '%s %s sum'  %(names[var], region)
+        print(file_group[filenum])
         cube = iris.load_cube(file_group[filenum], var_name & time_constraint)
         values.append(cube.data[-1] - cube.data[0])
     
@@ -120,10 +121,10 @@ def get_colors(exp_list):
     return color_list
 
 
-def write_values(df, ylabel, variables, experiments, hemispheres, outfile):
+def write_values(df, ylabel, variables, experiments, hemispheres, outfile, figtype):
     """Write values to file"""
 
-    fout = open(outfile.replace('.png', '.txt'), 'w')
+    fout = open(outfile.replace(figtype, '.txt'), 'w')
     for variable, experiment, hemisphere in itertools.product(variables, experiments, hemispheres):
         variable = variable_names[variable]
         experiment = experiment_names[experiment]
@@ -148,7 +149,8 @@ def main(inargs):
     column_list = []
     ylabel = get_ylabel(inargs.toa_files, inargs.ohu_files, inargs.ohc_files)
     nregions = len(inargs.regions)
-    
+    figtype = '.' + inargs.outfile.split('.')[-1]    
+
     for var_index, var_files in enumerate([inargs.toa_files, inargs.ohu_files, inargs.ohc_files]):
         var = file_variables[var_index]
         for model_files in var_files:
@@ -159,7 +161,7 @@ def main(inargs):
                 column_list = generate_heat_row_dicts(column_list, values, inargs.regions, model, experiment, var, ylabel)
     heat_df = pandas.DataFrame(column_list)
 
-    write_values(heat_df, ylabel, file_variables, inargs.experiments, inargs.regions, inargs.outfile)
+    write_values(heat_df, ylabel, file_variables, inargs.experiments, inargs.regions, inargs.outfile, figtype)
 
     color_list = get_colors(inargs.experiments)
     seaborn.set_style("whitegrid")
@@ -179,7 +181,7 @@ def main(inargs):
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
 
     log_text = cmdprov.new_log(infile_history={file_group[-1]: history}, git_repo=repo_dir)
-    log_file = re.sub('.png', '.met', inargs.outfile)
+    log_file = re.sub(figtype, '.met', inargs.outfile)
     cmdprov.write_log(log_file, log_text)
 
 
