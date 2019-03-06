@@ -44,7 +44,7 @@ except ImportError:
 
 aa_physics = {'CanESM2': 'p4', 'CCSM4': 'p10', 'CSIRO-Mk3-6-0': 'p4',
               'GFDL-CM3': 'p1', 'GISS-E2-H': 'p107', 'GISS-E2-R': 'p107', 'NorESM1-M': 'p1'}
-titles = {'historical': 'historical', 'historical-rcp85': 'historical-rcp85', 'historicalGHG': 'GHG-only',
+titles = {'historical': 'historical', 'historical-rcp85': 'RCP 8.5', 'historicalGHG': 'GHG-only',
           'historicalMisc': 'AA-only', 'GHG+AA': 'GHG + AA',
           'hist-GHG+AA': 'historical - (GHG + AA)', '1pctCO2': '1pctCO2'}
 
