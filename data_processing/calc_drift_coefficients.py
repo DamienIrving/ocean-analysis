@@ -51,8 +51,23 @@ def save_history(cube, field, filename):
         pass
 
 
-def polyfit(data, time_axis, masked_array):
+def adjust_outliers(data):
+    """Set outliers in a timeseries to the mean value."""
+
+    std = numpy.ma.std(data)
+    mean = numpy.ma.mean(data)
+    
+    clean_data = numpy.ma.where(data > mean + 3*std, mean, data)
+    clean_data = numpy.ma.where(clean_data < mean - 3*std, mean, clean_data)
+    
+    return clean_data
+
+
+def polyfit(data, time_axis, masked_array, remove_outliers):
     """Fit polynomial to data."""    
+
+    if remove_outliers:
+        data = adjust_outliers(data)
 
     if not masked_array:
         return numpy.polynomial.polynomial.polyfit(time_axis, data, 3)
@@ -73,7 +88,8 @@ def is_masked_array(array):
     return masked
 
 
-def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False, chunk_annual=False):
+def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False, 
+                      chunk_annual=False, remove_outliers=False):
     """Calculate the polynomial coefficients.
 
     Can select to convert data to annual timescale first.
@@ -86,23 +102,25 @@ def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False
         assert coord_names[1] == 'depth', 'coordinate order must be time, depth, ...'
         out_shape = list(cube.shape)
         out_shape[0] = 4
-        coefficients = numpy.zeros(out_shape, dtype=numpy.float32)
+        coefficients = numpy.zeros(out_shape)   #, dtype=numpy.float32)
         for d, cube_slice in enumerate(cube.slices_over('depth')):
             print('Depth:', cube_slice.coord('depth').points[0])
             if convert_annual:
                 cube_slice = timeseries.convert_to_annual(cube_slice, chunk=chunk_annual)
-            time_axis = cube_slice.coord('time').points.astype(numpy.float32)
-            coefficients[:,d, ::] = numpy.ma.apply_along_axis(polyfit, 0, cube_slice.data, time_axis, masked_array)
+            time_axis = cube_slice.coord('time').points  #.astype(numpy.float32)
+            coefficients[:,d, ::] = numpy.ma.apply_along_axis(polyfit, 0, cube_slice.data, time_axis,
+                                                              masked_array, remove_outliers)
         fill_value = cube_slice.data.fill_value 
         coefficients = numpy.ma.masked_values(coefficients, fill_value)
     else:
         if convert_annual:
             cube = timeseries.convert_to_annual(cube)
-        time_axis = cube.coord('time').points.astype(numpy.float32)
+        time_axis = cube.coord('time').points  # .astype(numpy.float32)
         if cube.ndim == 1:
             coefficients = polyfit(cube.data, time_axis, masked_array)
         else:    
-            coefficients = numpy.ma.apply_along_axis(polyfit, 0, cube.data, time_axis, masked_array)
+            coefficients = numpy.ma.apply_along_axis(polyfit, 0, cube.data, time_axis,
+                                                     masked_array, remove_outliers)
             if masked_array:
                 fill_value = cube.data.fill_value 
                 coefficients = numpy.ma.masked_values(coefficients, fill_value)
@@ -165,7 +183,9 @@ def main(inargs):
 
     # Coefficients cube
     coefficients, time_start, time_end = calc_coefficients(cube, coord_names, masked_array=masked_array,
-                                                           convert_annual=inargs.annual, chunk_annual=inargs.chunk)
+                                                           convert_annual=inargs.annual,
+                                                           chunk_annual=inargs.chunk,
+                                                           remove_outliers=inargs.remove_outliers)
     global_atts['time_unit'] = str(cube.coord('time').units)
     global_atts['time_calendar'] = str(cube.coord('time').units.calendar)
     global_atts['time_start'] = time_start
@@ -249,6 +269,8 @@ notes:
                         help="Convert data to annual timescale [default: False]")
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Chunk annual timescale conversion to avoid memory errors [default: False]")
+    parser.add_argument("--remove_outliers", action="store_true", default=False,
+                        help="Remove outliers from each timeseries [default: False]")
 
     args = parser.parse_args()
     main(args)
