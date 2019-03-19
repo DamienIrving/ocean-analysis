@@ -27,6 +27,7 @@ sys.path.append(modules_dir)
 try:
     import timeseries
     import grids
+    import general_io as gio
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -120,6 +121,7 @@ def main(inargs):
     """Run the program."""
 
     cube = iris.load_cube(inargs.infile, inargs.var)
+    cube = gio.check_time_units(cube)
     cube = timeseries.convert_to_annual(cube)
     log = cmdprov.new_log(infile_history={inargs.infile: cube.attributes['history']}, git_repo=repo_dir) 
 
