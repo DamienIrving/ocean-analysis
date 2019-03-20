@@ -246,8 +246,8 @@ def convert_to_annual(cube, full_months=False, aggregation='mean', chunk=False):
     Args:
       cube (iris.cube.Cube)
       full_months(bool): Only include years with data for all 12 months
-      chunk (int): Integer number of time steps used in chunking
-        (For monthly data this would be a multiple of 12) 
+      chunk (bool): Chunk along the time axis
+        (Set by default to a chunk step of 12 assuming monthly data.) 
 
     """
 
