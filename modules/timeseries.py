@@ -281,18 +281,28 @@ def _linear_trend(data, time_axis, remove_outliers):
         return data.fill_value
     else:
         if remove_outliers:
-            data = outlier_removal(data)
+            data = outlier_removal(data, method=remove_outliers)
         return numpy.ma.polyfit(time_axis, data, 1)[0]
 
 
-def outlier_removal(data):
-    """Remove outliers from a timeseries."""
+def outlier_removal(data, method='missing'):
+    """Remove outliers from a timeseries.
+
+    Can replace outliers with a missing value/mask or the mean value.
+
+    """
+
+    assert method in ('missing', 'mean')
 
     std = numpy.ma.std(data)
     mean = numpy.ma.mean(data)
     
-    clean_data = numpy.ma.masked_where(data > mean + 3*std, data)
-    clean_data = numpy.ma.masked_where(clean_data < mean - 3*std, clean_data)
+    if method == 'missing':
+        clean_data = numpy.ma.masked_where(data > mean + 3*std, data)
+        clean_data = numpy.ma.masked_where(clean_data < mean - 3*std, clean_data)
+    elif method == 'mean':
+        clean_data = numpy.where(data > mean + 3*std, mean, data)
+        clean_data = numpy.where(clean_data < mean - 3*std, mean, clean_data)
     
     return clean_data
 

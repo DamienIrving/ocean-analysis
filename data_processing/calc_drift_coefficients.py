@@ -51,30 +51,21 @@ def save_history(cube, field, filename):
         pass
 
 
-def adjust_outliers(data):
-    """Set outliers in a timeseries to the mean value."""
-
-    std = numpy.ma.std(data)
-    mean = numpy.ma.mean(data)
-    
-    clean_data = numpy.ma.where(data > mean + 3*std, mean, data)
-    clean_data = numpy.ma.where(clean_data < mean - 3*std, mean, clean_data)
-    
-    return clean_data
-
-
 def polyfit(data, time_axis, masked_array, remove_outliers):
     """Fit polynomial to data."""    
 
-    if remove_outliers:
-        data = adjust_outliers(data)
-
     if not masked_array:
-        return numpy.polynomial.polynomial.polyfit(time_axis, data, 3)
+        if remove_outliers:
+            data = timeseries.outlier_removal(data, method=remove_outliers)
+        coeffs = numpy.ma.polyfit(time_axis, data, 3)[::-1]
     elif data.mask.sum() > 0:
-        return numpy.array([data.fill_value]*4) 
+        coeffs = numpy.array([data.fill_value]*4) 
     else:    
-        return numpy.polynomial.polynomial.polyfit(time_axis, data, 3)
+        if remove_outliers:
+            data = timeseries.outlier_removal(data, method=remove_outliers)
+        coeffs = numpy.ma.polyfit(time_axis, data, 3)[::-1]
+
+    return coeffs
 
 
 def is_masked_array(array):
@@ -89,7 +80,7 @@ def is_masked_array(array):
 
 
 def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False, 
-                      chunk_annual=False, remove_outliers=False):
+                      chunk_annual=False, remove_outliers=None):
     """Calculate the polynomial coefficients.
 
     Can select to convert data to annual timescale first.
@@ -269,8 +260,8 @@ notes:
                         help="Convert data to annual timescale [default: False]")
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Chunk annual timescale conversion to avoid memory errors [default: False]")
-    parser.add_argument("--remove_outliers", action="store_true", default=False,
-                        help="Remove outliers from each timeseries [default: False]")
+    parser.add_argument("--remove_outliers", type=str, default=None, choices=('missing', 'mean'),
+                        help="Replace outliers in each timeseries with the mean or missing value [default: False]")
 
     args = parser.parse_args()
     main(args)

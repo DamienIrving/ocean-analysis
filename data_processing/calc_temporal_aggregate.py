@@ -157,8 +157,8 @@ author:
 
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Convert data to annual mean [default=False]")
-    parser.add_argument("--remove_outliers", action="store_true", default=False,
-                        help="Remove outliers from trend calculation [default=False]")
+    parser.add_argument("--remove_outliers", type=str, default=None, choices=('missing', 'mean'),
+                        help="Replace outliers in each timeseries with the mean or missing value [default: False]")
     parser.add_argument("--max_depth", type=float, default=None,
                         help="Only include data above this vertical level")
     parser.add_argument("--regrid", action="store_true", default=False,
