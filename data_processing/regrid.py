@@ -122,7 +122,7 @@ def main(inargs):
 
     cube = iris.load_cube(inargs.infile, inargs.var)
     cube = gio.check_time_units(cube)
-    cube = timeseries.convert_to_annual(cube)
+    cube = timeseries.convert_to_annual(cube, chunk=inargs.chunk)
     log = cmdprov.new_log(infile_history={inargs.infile: cube.attributes['history']}, git_repo=repo_dir) 
 
     dim_vals = {}
@@ -188,6 +188,9 @@ author:
 
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Convert data to annual timescale [default: False]")
+    parser.add_argument("--chunk", action="store_true", default=False,
+                        help="Chunk annual timescale conversion to avoid memory errors [default: False]")
+
 
     args = parser.parse_args()            
     check_inputs(args)
