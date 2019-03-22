@@ -241,6 +241,12 @@ def main(inargs):
     for fnum, filename in enumerate(inargs.data_files):
         # Read data
         data_cube = iris.load_cube(filename, gio.check_iris_var(inargs.var))
+        
+        # Reinstate time dim_coord if necessary
+        aux_coord_names = [coord.name() for coord in data_cube.aux_coords]
+        if 'time' in aux_coord_names:
+            data_cube = iris.util.new_axis(data_cube, 'time')
+
         if inargs.annual:
             assert inargs.timescale == 'annual'
             data_cube = timeseries.convert_to_annual(data_cube, chunk=12)
@@ -249,7 +255,7 @@ def main(inargs):
         data_cube.cell_methods = ()
         if not inargs.no_parent_check:
             check_attributes(data_cube.attributes, coefficient_a_cube.attributes)
- 
+
         # Sync the data time axis with the coefficient time axis        
         time_coord = data_cube.coord('time')
         time_coord.convert_units(new_time_unit)
@@ -260,7 +266,10 @@ def main(inargs):
 
         # Remove the drift
         if fnum == 0:
-            drift_signal, start_polynomial = apply_polynomial(time_values, coefficient_a_cube.data, coefficient_b_cube.data, coefficient_c_cube.data, coefficient_d_cube.data, poly_start=None, chunk=inargs.chunk)
+            drift_signal, start_polynomial = apply_polynomial(time_values, coefficient_a_cube.data,
+                                                              coefficient_b_cube.data, coefficient_c_cube.data,
+                                                              coefficient_d_cube.data, poly_start=None,
+                                                              chunk=inargs.chunk)
         else:
             try:
                 start = start_polynomial[0, ::]
