@@ -153,6 +153,11 @@ def main(inargs):
     if numpy.isnan(numpy.min(cube.data)):
         cube = remove_nans(cube)
 
+    # Reinstate time dim_coord if necessary
+    aux_coord_names = [coord.name() for coord in cube.aux_coords]
+    if 'time' in aux_coord_names:
+        cube = iris.util.new_axis(cube, 'time')
+
     cube.attributes['history'] = log
     iris.save(cube, inargs.outfile)
 
