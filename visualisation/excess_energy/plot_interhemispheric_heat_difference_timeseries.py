@@ -55,6 +55,8 @@ plot_variables = {'thetao': ' Average Ocean Temperature',
                   'hfds': 'OHU',
                   'rndt': 'netTOA'}
 
+scale_factors = {'CanESM2': -54567.5, 'CCSM4': -729817.5}
+
 linestyles = {'historical-rcp85': 'solid', 'historical': 'solid', 'GHG-only': '--', 'AA-only': ':'}
 
 grid_configs = {1: (1, 1), 2: (1, 2), 3: (1, 3), 4: (2, 2)} 
@@ -255,6 +257,8 @@ def main(inargs):
                 start = experiment_num * 2
                 sh_file, nh_file = model_files[start: start+2]
                 value, history = calc_hemispheric_value(sh_file, nh_file, inargs.metric, var, time_constraint, model_num)
+                if model_num == 0:
+                    first_model = value.attributes['model_id']
                 cube_list.append(value)
                 if inargs.individual:
                     plt.sca(axes[var_index])
@@ -264,9 +268,8 @@ def main(inargs):
             
             plt.sca(axes[var_index])
             iplt.plot(ensemble_agg_dict[var], label=experiment, color=exp_colors[experiment])
-            if ensemble_spread_dict[var]:
-                time_values = ensemble_spread_dict[var][0, ::].coord('time').points - 54567.5 
-                            # ensemble_spread_dict[var][0, ::].coord('time').points[-7]
+            if inargs.spread and ensemble_spread_dict[var]:
+                time_values = ensemble_spread_dict[var][0, ::].coord('time').points + scale_factors[first_model]
                 upper_bound = ensemble_spread_dict[var][0, ::].data
                 lower_bound = ensemble_spread_dict[var][-1, ::].data
                 iplt.plt.fill_between(time_values, upper_bound, lower_bound, facecolor=exp_colors[experiment], alpha=0.15)
@@ -336,6 +339,8 @@ author:
                         help="Include a plot title [default=False]")
     parser.add_argument("--individual", action="store_true", default=False,
                         help="Show curves for individual models [default=False]")
+    parser.add_argument("--spread", action="store_true", default=False,
+                        help="Plot shading for ensemble spread [default=False]")
 
     parser.add_argument("--historical_time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2005-12-31'),
