@@ -61,8 +61,9 @@ def get_dim_vals(user_input, bounds=False):
         if bounds:
             vals = numpy.array(vals)
             vals = (vals[1:] + vals[:-1]) / 2
-    
-    return list(vals)
+        vals = list(vals)    
+
+    return vals
 
 
 def get_sample_points(cube, dim_vals):
