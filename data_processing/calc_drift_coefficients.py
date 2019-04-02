@@ -108,7 +108,7 @@ def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False
             cube = timeseries.convert_to_annual(cube)
         time_axis = cube.coord('time').points  # .astype(numpy.float32)
         if cube.ndim == 1:
-            coefficients = polyfit(cube.data, time_axis, masked_array)
+            coefficients = polyfit(cube.data, time_axis, masked_array, remove_outliers)
         else:    
             coefficients = numpy.ma.apply_along_axis(polyfit, 0, cube.data, time_axis,
                                                      masked_array, remove_outliers)
