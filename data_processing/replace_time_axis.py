@@ -48,6 +48,9 @@ def main(inargs):
     cube = iris.load_cube(inargs.infile)
     time_cube = iris.load_cube(inargs.timefile, time_constraint)
 
+    if cube.coord('time').shape[0] > time_cube.coord('time').shape[0]:
+        cube = cube[0:time_cube.coord('time').shape[0], ::]
+
     if inargs.switch_data:
         cube = switch_data(cube, time_cube)
     else:
