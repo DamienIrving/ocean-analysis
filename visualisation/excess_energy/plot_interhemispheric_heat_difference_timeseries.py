@@ -136,12 +136,14 @@ def calc_hemispheric_value(sh_file, nh_file, val_type, var, time_constraint, ens
 
     nh_name = names[var] + ' nh ' + agg
     nh_cube = iris.load_cube(nh_file, nh_name & time_constraint)
+    nh_cube.var_name = nh_cube.var_name.replace('_', '-')
     nh_attributes = get_simulation_attributes(nh_cube)
     nh_anomaly = calc_anomaly(nh_cube)
     nh_anomaly.data = nh_anomaly.data.astype(numpy.float32)
 
     sh_name = names[var] + ' sh ' + agg
     sh_cube = iris.load_cube(sh_file, sh_name & time_constraint)
+    sh_cube.var_name = sh_cube.var_name.replace('_', '-')
     sh_attributes = get_simulation_attributes(sh_cube)
     sh_anomaly = calc_anomaly(sh_cube)
     sh_anomaly.data = sh_anomaly.data.astype(numpy.float32)
