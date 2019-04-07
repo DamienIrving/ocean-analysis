@@ -66,13 +66,16 @@ def main(inargs):
     depth_data = spatial_weights.get_depth_array(data_cube, depth_name)
 
     # Area data
-    area_cube = iris.load_cube(inargs.area_file)
-    area_data = uconv.broadcast_array(area_cube.data, [1, 2], depth_data.shape)
-
+    if inargs.area_file:
+        area_cube = iris.load_cube(inargs.area_file)
+        area_data = uconv.broadcast_array(area_cube.data, [1, 2], depth_data.shape)
+    else:
+        area_data = iris.analysis.cartography.area_weights(data_cube)
+    
     volume_data = depth_data * area_data
     volume_data = numpy.ma.asarray(volume_data)
     volume_data.mask = data_cube.data.mask
-    volume_cube = construct_volume_cube(volume_data, area_cube.attributes, data_cube.dim_coords)    
+    volume_cube = construct_volume_cube(volume_data, data_cube.attributes, data_cube.dim_coords)    
     volume_cube.attributes['history'] = gio.write_metadata()
 
     print('Global ocean volume:', volume_cube.data.sum())
@@ -95,9 +98,11 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("area_file", type=str, help="Input file name")
     parser.add_argument("thetao_file", type=str, help="Input sea water potential temperature file (for depth information)")
     parser.add_argument("outfile", type=str, help="Output file name")
+
+    parser.add_argument("--area_file", type=str, default=None,
+                        help="Area file name (required for curvilinear grids, optional otherwise")
 
     args = parser.parse_args()
     main(args)
