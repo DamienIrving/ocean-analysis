@@ -56,7 +56,7 @@ def main(inargs):
     """Run the program."""
 
     # Depth data
-    data_cube = iris.load_cube(inargs.thetao_file, 'sea_water_potential_temperature')
+    data_cube = iris.load_cube(inargs.dummy_file, inargs.dummy_var)
     coord_names = [coord.name() for coord in data_cube.dim_coords]
     assert coord_names[0] == 'time'
     depth_name = coord_names[1]
@@ -70,7 +70,7 @@ def main(inargs):
         area_cube = iris.load_cube(inargs.area_file)
         area_data = uconv.broadcast_array(area_cube.data, [1, 2], depth_data.shape)
     else:
-        area_data = iris.analysis.cartography.area_weights(data_cube)
+        area_data = spatial_weights.area_array(data_cube)
     
     volume_data = depth_data * area_data
     volume_data = numpy.ma.asarray(volume_data)
@@ -98,7 +98,8 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("thetao_file", type=str, help="Input sea water potential temperature file (for depth information)")
+    parser.add_argument("dummy_file", type=str, help="Dummy file (for depth information)")
+    parser.add_argument("dummy_var", type=str, help="Dummy variable")
     parser.add_argument("outfile", type=str, help="Output file name")
 
     parser.add_argument("--area_file", type=str, default=None,
