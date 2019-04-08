@@ -36,8 +36,50 @@ except ImportError:
 
 # Define functions
 
+def area_array(cube):
+    """Create a cell area array."""
+
+    if not cube.coord('latitude').has_bounds():
+        cube.coord('latitude').guess_bounds()
+    if not cube.coord('longitude').has_bounds():
+        cube.coord('longitude').guess_bounds()
+    area_weights = iris.analysis.cartography.area_weights(cube)
+
+    return area_weights
+
+
+def calc_meridional_weights(lat_coord, coord_names, data_shape):
+    """Calculate meridional weights.
+
+    Defined as the zonal distance (m) spanned by each grid box. 
+
+    The length of a degree of latitude is (pi/180)*a, 
+      where a is the radius of the earth.
+
+    Args:
+      lat_coord (iris.coords.DimCoord): One-dimensional latitude coordinate
+      coord_names (list): Names of each data coordinate
+      data_shape (tuple): Shape of data
+
+    Returns:
+      iris.cube: Array of weights with shape matching data_shape
+
+    """
+
+    lat_index = coord_names.index('latitude')
+
+    if not lat_coord.has_bounds():
+        lat_coord.guess_bounds()
+
+    lat_diffs = numpy.apply_along_axis(lambda x: x[1] - x[0], 1, lat_coord.bounds)
+    lat_diffs = uconv.broadcast_array(lat_diffs, lat_index, data_shape)
+    lat_extents = (math.pi / 180.) * iris.analysis.cartography.DEFAULT_SPHERICAL_EARTH_RADIUS * lat_diffs
+
+    return lat_extents
+
+
 def calc_vertical_weights_1D(depth_coord, coord_names, data_shape):
-    """Calculate vertical weights for a 1D depth axis with units = m.
+    """Calculate vertical weights for a 1D depth axis.
 
     Args:
       depth_coord (iris.coords.DimCoord): One-dimensional depth coordinate
@@ -49,12 +91,13 @@ def calc_vertical_weights_1D(depth_coord, coord_names, data_shape):
   
     """
 
-    assert depth_coord.units == 'm'
+    assert depth_coord.units in ['m', 'dbar']
 
     # Calculate weights
     if not depth_coord.has_bounds():
-        depth_coord.guess_bounds()
-    level_bounds = depth_coord.bounds
+        level_bounds = guess_depth_bounds(depth_coord.points)  
+    else:    
+        level_bounds = depth_coord.bounds
     level_diffs = numpy.apply_along_axis(lambda x: x[1] - x[0], 1, level_bounds)
 
     #guess_bounds can produce negative bound at surface
@@ -110,36 +153,6 @@ def calc_vertical_weights_2D(pressure_coord, latitude_coord, coord_names, data_s
     return depth_diffs
 
 
-def calc_meridional_weights(lat_coord, coord_names, data_shape):
-    """Calculate meridional weights.
-
-    Defined as the zonal distance (m) spanned by each grid box. 
-
-    The length of a degree of latitude is (pi/180)*a, 
-      where a is the radius of the earth.
-
-    Args:
-      lat_coord (iris.coords.DimCoord): One-dimensional latitude coordinate
-      coord_names (list): Names of each data coordinate
-      data_shape (tuple): Shape of data
-
-    Returns:
-      iris.cube: Array of weights with shape matching data_shape
-
-    """
-
-    lat_index = coord_names.index('latitude')
-
-    if not lat_coord.has_bounds():
-        lat_coord.guess_bounds()
-
-    lat_diffs = numpy.apply_along_axis(lambda x: x[1] - x[0], 1, lat_coord.bounds)
-    lat_diffs = uconv.broadcast_array(lat_diffs, lat_index, data_shape)
-    lat_extents = (math.pi / 180.) * iris.analysis.cartography.DEFAULT_SPHERICAL_EARTH_RADIUS * lat_diffs
-
-    return lat_extents
-
-
 def calc_zonal_weights(cube, coord_names):
     """Calculate zonal weights.
 
@@ -175,6 +188,23 @@ def calc_zonal_weights(cube, coord_names):
     return lon_extents
 
 
+def get_depth_array(data_cube, depth_name):
+    """Get the depth data array"""
+
+    depth_coord = data_cube.coord(depth_name)
+    coord_names = [coord.name() for coord in data_cube.dim_coords]
+
+    error_msg =  "Unrecognised depth axis units, " +  str(depth_coord.units)
+    assert depth_coord.units in ['m', 'dbar'], error_msg
+    if depth_coord.ndim == 1:
+        depth_interval_array = calc_vertical_weights_1D(depth_coord, coord_names, data_cube.shape)
+    elif depth_coord.ndim == 2:
+        assert coord_names == ['depth', 'latitude', 'longitude'], "2D weights will not work for curvilinear grid"
+        depth_interval_array = calc_vertical_weights_2D(depth_coord, data_cube.coord('latitude'), coord_names, data_cube.shape)
+
+    return depth_interval_array
+
+
 def guess_depth_bounds(points, bound_position=0.5):
     """The guess_bounds method copied from iris.
     
@@ -196,57 +226,21 @@ def guess_depth_bounds(points, bound_position=0.5):
     return bounds
 
 
-def area_array(cube):
-    """Create a cell area array."""
+def volume_array(target_cube, volume_cube=None, area_cube=None):
+    """Create a volume array.
 
-    if not cube.coord('latitude').has_bounds():
-        cube.coord('latitude').guess_bounds()
-    if not cube.coord('longitude').has_bounds():
-        cube.coord('longitude').guess_bounds()
-    area_weights = iris.analysis.cartography.area_weights(cube)
+    Args:
+        target_cube(iris.Cube.cube)
+        area_data (numpy.ndarray)
+        
+    """
 
-    return area_weights
-
-
-def volume_from_volume(target_cube, volume_cube):
-    """Create volume array from volume data cube."""
-
-    target_coord_names = [coord.name() for coord in target_cube.dim_coords]
-    volume_coord_names = [coord.name() for coord in volume_cube.dim_coords]
-
-    depth_match = numpy.array_equal(volume_cube.coord('depth').points, target_cube.coord('depth').points)
-    
-    if depth_match:
-        volume_data = volume_cube.data
+    if volume_cube:
+        volume_data = volume_from_volume(target_cube, volume_cube)
     else:
-        depth_match = numpy.array_equal(volume_cube[::-1, ::].coord('depth').points, target_cube.coord('depth').points)
-        assert depth_match
-        volume_data = volume_cube[::-1, ::].data
-
-    if target_coord_names[0] == 'time':
-        assert target_coord_names[1:] == volume_coord_names
-        volume_data = uconv.broadcast_array(volume_data, [1, 3], target_cube.shape)
-
-    assert volume_data.shape == target_cube.shape
+        volume_data = volume_from_area(target_cube, area_cube=area_cube)
 
     return volume_data
-
-
-def get_depth_array(data_cube, depth_name):
-    """Get the depth data array"""
-
-    depth_coord = data_cube.coord(depth_name)
-    coord_names = [coord.name() for coord in data_cube.dim_coords]
-
-    error_msg =  "Unrecognised depth axis units, " +  str(depth_coord.units)
-    assert depth_coord.units in ['m', 'dbar'], error_msg
-    if depth_coord.units == 'm':
-        depth_interval_array = calc_vertical_weights_1D(depth_coord, coord_names, data_cube.shape)
-    elif depth_coord.units == 'dbar':
-        assert coord_names == ['depth', 'latitude', 'longitude'], "2D weights will not work for curvilinear grid"
-        depth_interval_array = calc_vertical_weights_2D(depth_coord, data_cube.coord('latitude'), coord_names, data_cube.shape)
-
-    return depth_interval_array
 
 
 def volume_from_area(target_cube, area_cube=None):
@@ -269,19 +263,26 @@ def volume_from_area(target_cube, area_cube=None):
     return volume_data
 
 
-def volume_array(target_cube, volume_cube=None, area_cube=None):
-    """Create a volume array.
+def volume_from_volume(target_cube, volume_cube):
+    """Create volume array from volume data cube."""
 
-    Args:
-        target_cube(iris.Cube.cube)
-        area_data (numpy.ndarray)
-        
-    """
+    target_coord_names = [coord.name() for coord in target_cube.dim_coords]
+    volume_coord_names = [coord.name() for coord in volume_cube.dim_coords]
 
-    if volume_cube:
-        volume_data = volume_from_volume(target_cube, volume_cube)
+    depth_match = numpy.array_equal(volume_cube.coord('depth').points, target_cube.coord('depth').points)
+    
+    if depth_match:
+        volume_data = volume_cube.data
     else:
-        volume_data = volume_from_area(target_cube, area_cube=area_cube)
+        depth_match = numpy.array_equal(volume_cube[::-1, ::].coord('depth').points, target_cube.coord('depth').points)
+        assert depth_match
+        volume_data = volume_cube[::-1, ::].data
+
+    if target_coord_names[0] == 'time':
+        assert target_coord_names[1:] == volume_coord_names
+        volume_data = uconv.broadcast_array(volume_data, [1, 3], target_cube.shape)
+
+    assert volume_data.shape == target_cube.shape
 
     return volume_data
 
