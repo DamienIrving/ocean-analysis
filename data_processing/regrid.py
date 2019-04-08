@@ -28,6 +28,7 @@ try:
     import timeseries
     import grids
     import general_io as gio
+    import spatial_weights
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -106,18 +107,6 @@ def remove_nans(cube):
     return cube
 
 
-def guess_depth_bounds(cube):
-    """Guess the depth coordinate bounds."""
-
-    cube.coord('depth').guess_bounds()
-    bounds = cube.coord('depth').bounds.copy()
-    if bounds[0][0] < 0.0:
-        bounds[0][0] = 0.0
-        cube.coord('depth').bounds = bounds
-
-    return cube
-
-
 def main(inargs):
     """Run the program."""
 
@@ -147,7 +136,7 @@ def main(inargs):
         cube.coord('latitude').guess_bounds()
         cube.coord('longitude').guess_bounds()
         if inargs.levs:
-            cube = guess_depth_bounds(cube)
+            cube = spatial_weights.guess_depth_bounds(cube)
         else:
             cube.coord('depth').bounds = get_depth_bounds(inargs.depth_bnds)
 
