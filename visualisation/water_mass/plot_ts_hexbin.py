@@ -152,7 +152,7 @@ def main(inargs):
         vmin, vmax = inargs.colorbar_bounds
         plt.hexbin(df['salinity'].values, df['temperature'].values,
                    C=df['volume'].values, reduce_C_function=numpy.sum,
-                   gridsize=400, bins='log', alpha=0.2,
+                   gridsize=400, bins='log', alpha=inargs.alpha,
                    extent=(smin, smax, tmin, tmax),
                    cmap=inargs.colors[plotnum],
                    vmin=vmin, vmax=vmax)
@@ -160,11 +160,10 @@ def main(inargs):
             cb = plt.colorbar()
         if inargs.labels:
             color = inargs.colors[plotnum][0:-1].lower()
-            legend_elements.append(Line2D([0], [0], marker='o', color='w', markerfacecolor=color, label=inargs.labels[plotnum], alpha=0.2))
+            legend_elements.append(Line2D([0], [0], marker='o', color='w', markerfacecolor=color,
+                                   label=inargs.labels[plotnum], alpha=inargs.alpha))
         plotnum = plotnum + 1
 
-
-    
     title = get_title(tcube, inargs.basin) 
     plt.title(title)
     plt.ylabel('temperature ($C$)')
@@ -225,6 +224,8 @@ author:
                         help='bounds for the temperature (Y) axis')
     parser.add_argument("--colorbar_bounds", type=float, nargs=2, default=(9.8, 16.6),
                         help='bounds for the colorbar')
+
+    parser.add_argument("--alpha", type=float, default=0.2, help="Plot transparency") 
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
