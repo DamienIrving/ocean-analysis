@@ -152,7 +152,7 @@ def main(inargs):
         vmin, vmax = inargs.colorbar_bounds
         plt.hexbin(df['salinity'].values, df['temperature'].values,
                    C=df['volume'].values, reduce_C_function=numpy.sum,
-                   gridsize=400, bins='log', alpha=inargs.alpha,
+                   gridsize=400, bins='log', alpha=inargs.alphas[plotnum],
                    extent=(smin, smax, tmin, tmax),
                    cmap=inargs.colors[plotnum],
                    vmin=vmin, vmax=vmax)
@@ -161,7 +161,7 @@ def main(inargs):
         if inargs.labels:
             color = inargs.colors[plotnum][0:-1].lower()
             legend_elements.append(Line2D([0], [0], marker='o', color='w', markerfacecolor=color,
-                                   label=inargs.labels[plotnum], alpha=inargs.alpha))
+                                   label=inargs.labels[plotnum], alpha=inargs.alphas[plotnum]))
         plotnum = plotnum + 1
 
     title = get_title(tcube, inargs.basin) 
@@ -211,6 +211,8 @@ author:
     parser.add_argument("--colors", nargs='*', type=str,
                         choices=('Greys', 'Reds', 'Blues', 'Greens', 'Oranges', 'Purples', 'viridis'), 
                         help="Color for each temperature/salinity file pair")
+    parser.add_argument("--alphas", nargs='*', type=float, 
+                        help="Transparency for each temperature/salinity pair")
     parser.add_argument("--labels", nargs='*', type=str, default=None, 
                         help="Label for each temperature/salinity pair")
 
@@ -224,8 +226,6 @@ author:
                         help='bounds for the temperature (Y) axis')
     parser.add_argument("--colorbar_bounds", type=float, nargs=2, default=(9.8, 16.6),
                         help='bounds for the colorbar')
-
-    parser.add_argument("--alpha", type=float, default=0.2, help="Plot transparency") 
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
