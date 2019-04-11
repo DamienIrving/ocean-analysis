@@ -537,6 +537,27 @@ def standard_datetime(dt):
     return new_dt.strftime("%Y-%m-%d")
 
 
+def temperature_unit_check(cube, convert_to_celsius=False):
+    """Check CMIP5 temperature units.
+
+    Args:
+      cube (iris.cube.Cube) 
+
+    """
+
+    data_max = cube.data.max()
+    data_min = cube.data.min()
+    
+    assert data_max < 330, 'Data max is %f' %(data_max)
+    assert data_min >= 260 , 'Data min is %f' %(data_min)
+
+    if convert_to_celsius:
+        cube.data = cube.data - 273.15
+        cube.units = 'C'
+
+    return cube
+
+
 def two_floats(value):
     """Read floats lile -5e20 from the command line.
 
