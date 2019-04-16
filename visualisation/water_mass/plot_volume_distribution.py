@@ -151,9 +151,9 @@ def main(inargs):
     vcube = iris.load_cube(inargs.volume_file)
     bcube = iris.load_cube(inargs.basin_file)
 
-    fig, ax = plt.subplots(figsize=(9, 9))
-    nplots = len(inargs.data_files) - 1
-    for plotnum, dfile in enumerate(inargs.data_files):
+
+    hist_dict = {}
+    for filenum, dfile in enumerate(inargs.data_files):
         dcube = iris.load_cube(dfile, inargs.variable)
 
         df = create_df(dcube, inargs.variable, vcube, bcube, basin=inargs.basin)
@@ -163,8 +163,17 @@ def main(inargs):
         dvdt, edges, binnum = scipy.stats.binned_statistic(df[inargs.variable].values, df['volume'].values, statistic='sum', bins=bin_edges)
         xvals = (edges[1:] + edges[:-1]) / 2 
 
-        plt.plot(xvals, dvdt, color=inargs.colors[plotnum], label=inargs.labels[plotnum])
+        hist_dict[inargs.labels[filenum]] = dvdt
+        
+    fig = plt.figure(figsize=(10, 7))
+    base_exp = inargs.labels[0]
+    adjustment_factors = [-0.2, 0.2]
+    for plotnum, experiment in enumerate(inargs.labels[1:]):
+        diff = hist_dict[experiment] - hist_dict[base_exp]
+        #plt.plot(xvals, diff, color=inargs.colors[plotnum + 1], label=experiment)
+        plt.bar(xvals + adjustment_factors[plotnum], diff, width=0.4, color=inargs.colors[plotnum + 1], label=experiment)
 
+    #plt.axhline(y=0.0, color='0.5', linestyle='--')
     title = get_title(dcube, inargs.basin) 
     plt.title(title)
     xlabel, ylabel = get_labels(dcube, inargs.variable)
