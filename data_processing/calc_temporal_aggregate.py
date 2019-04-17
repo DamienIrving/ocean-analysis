@@ -81,15 +81,15 @@ def get_constraints(inargs):
 def process_cube(cube, inargs, sftlf_cube):
     """Process a data cube"""
 
-    if 'salinity' in inargs.var:
-        cube = gio.salinity_unit_check(cube)
-
     if inargs.annual:
         cube = timeseries.convert_to_annual(cube, full_months=True)
 
     if inargs.aggregation:
         cube = get_agg_cube(cube, inargs.aggregation, remove_outliers=inargs.remove_outliers)
-        
+
+    if 'salinity' in inargs.var:
+        cube = gio.salinity_unit_check(cube)
+
     if inargs.regrid:
         before_sum = cube.data.sum()
         before_mean = cube.data.mean()
