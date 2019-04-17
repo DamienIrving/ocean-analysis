@@ -48,7 +48,6 @@ except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
 
-
 # Define functions
 
 ocean_names = {0: 'land', 1: 'southern_ocean', 2: 'atlantic', 
@@ -129,49 +128,86 @@ def get_title(cube, basin):
     return title
 
 
+def plot_diff(hist_dict, inargs, extents, vmin, vmax):
+    """Plot the difference between volume distributions"""
+
+    fig, ax = plt.subplots(figsize=(9, 9))
+    base_exp, experiment = inargs.labels
+    log_diff = numpy.log(hist_dict[experiment]) - numpy.log(hist_dict[base_exp])
+
+    plt.imshow(log_diff.T, origin='lower', extent=extents, aspect='auto', cmap='RdBu_r',
+               vmin=vmin, vmax=vmax)
+
+    cb = plt.colorbar()
+    cb.set_label('log(volume) ($m^3$)')
+
+
+def plot_raw(hist_dict, inargs, extents, vmin, vmax):
+    """Plot the raw volume distribution."""
+
+    fig, ax = plt.subplots(figsize=(9, 9))
+    legend_elements = []
+    for plotnum, label in enumerate(inargs.labels):
+        log_hist = numpy.log(hist_dict[label]).T
+        plt.imshow(log_hist, origin='lower',
+                   extent=extents, aspect='auto', alpha=inargs.alphas[plotnum],
+                   cmap=inargs.colors[plotnum], vmin=vmin, vmax=vmax)
+
+        if plotnum == 0:
+            cb = plt.colorbar()
+            cb.set_label('log(volume) ($m^3$)')
+        
+        color = inargs.colors[plotnum][0:-1].lower()
+        legend_elements.append(Line2D([0], [0], marker='o', color='w', markerfacecolor=color,
+                               label=label, alpha=inargs.alphas[plotnum]))
+
+    ax.legend(handles=legend_elements, loc=4)
+
+
 def main(inargs):
     """Run the program."""
-    
-    metadata_dict = {}
 
     vcube = iris.load_cube(inargs.volume_file)
     bcube = iris.load_cube(inargs.basin_file)
 
-    fig, ax = plt.subplots(figsize=(9, 9))
-    legend_elements = []
-    nplots = len(inargs.temperature_files) - 1
-    plotnum = 0
+    smin, smax = inargs.salinity_bounds
+    tmin, tmax = inargs.temperature_bounds
+    sstep, tstep = inargs.bin_size
+    x_edges = numpy.arange(smin, smax, sstep)
+    y_edges = numpy.arange(tmin, tmax, tstep)
+    x_values = (x_edges[1:] + x_edges[:-1]) / 2
+    y_values = (y_edges[1:] + y_edges[:-1]) / 2
+    extents = [x_values[0], x_values[-1], y_values[0], y_values[-1]]
+
+    if inargs.colorbar_bounds:
+        vmin, vmax = inargs.colorbar_bounds
+    else:
+        vmin = vmax = None
+
+    hist_dict = {}
+    pairnum = 0    
     for tfile, sfile in zip(inargs.temperature_files, inargs.salinity_files):
         tcube = iris.load_cube(tfile)
         scube = iris.load_cube(sfile)
 
         df = create_df(tcube, scube, vcube, bcube, basin=inargs.basin)
+
+        hist_dict[inargs.labels[pairnum]], xedges, yedges = numpy.histogram2d(df['salinity'].values,
+                                                                              df['temperature'].values,
+                                                                              weights=df['volume'].values,
+                                                                              bins=[x_edges, y_edges])
+        pairnum = pairnum + 1
    
-        smin, smax = inargs.salinity_bounds
-        tmin, tmax = inargs.temperature_bounds
-        vmin, vmax = inargs.colorbar_bounds
-        plt.hexbin(df['salinity'].values, df['temperature'].values,
-                   C=df['volume'].values, reduce_C_function=numpy.sum,
-                   gridsize=400, bins='log', alpha=inargs.alphas[plotnum],
-                   extent=(smin, smax, tmin, tmax),
-                   cmap=inargs.colors[plotnum],
-                   vmin=vmin, vmax=vmax)
-        if plotnum == 0:
-            cb = plt.colorbar()
-        if inargs.labels:
-            color = inargs.colors[plotnum][0:-1].lower()
-            legend_elements.append(Line2D([0], [0], marker='o', color='w', markerfacecolor=color,
-                                   label=inargs.labels[plotnum], alpha=inargs.alphas[plotnum]))
-        plotnum = plotnum + 1
+    if inargs.diff:
+        plot_diff(hist_dict, inargs, extents, vmin, vmax)
+    else:
+        plot_raw(hist_dict, inargs, extents, vmin, vmax)
 
     title = get_title(tcube, inargs.basin) 
     plt.title(title)
     plt.ylabel('temperature ($C$)')
     plt.xlabel('salinity ($g kg^{-1}$)')
-    cb.set_label('log(volume) ($m^3$)')
-    if legend_elements:
-        ax.legend(handles=legend_elements, loc=4)
-
+    
     # Save output
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
     print('dpi =', dpi)
@@ -208,23 +244,30 @@ author:
 
     parser.add_argument("--temperature_files", nargs='*', type=str, help="Temperature files") 
     parser.add_argument("--salinity_files", nargs='*', type=str, help="Salinity files")
-    parser.add_argument("--colors", nargs='*', type=str,
-                        choices=('Greys', 'Reds', 'Blues', 'Greens', 'Oranges', 'Purples', 'viridis'), 
-                        help="Color for each temperature/salinity file pair")
-    parser.add_argument("--alphas", nargs='*', type=float, 
-                        help="Transparency for each temperature/salinity pair")
-    parser.add_argument("--labels", nargs='*', type=str, default=None, 
+
+    parser.add_argument("--labels", nargs='*', type=str, required=True, 
                         help="Label for each temperature/salinity pair")
 
     parser.add_argument("--basin", type=str, default='globe',
                         choices=('globe', 'indian', 'north_atlantic', 'south_atlantic', 'north_pacific', 'south_pacific'),
                         help='ocean basin to plot')
 
+    parser.add_argument("--colors", nargs='*', type=str,
+                        choices=('Greys', 'Reds', 'Blues', 'Greens', 'Oranges', 'Purples', 'viridis'), 
+                        help="Color for each temperature/salinity file pair")
+    parser.add_argument("--alphas", nargs='*', type=float, 
+                        help="Transparency for each temperature/salinity pair")
+
+    parser.add_argument("--diff", action="store_true", default=False,
+                        help="Plot the difference between the two file pairs")
+
     parser.add_argument("--salinity_bounds", type=float, nargs=2, default=(32, 37.5),
                         help='bounds for the salinity (X) axis')
     parser.add_argument("--temperature_bounds", type=float, nargs=2, default=(-2, 30),
                         help='bounds for the temperature (Y) axis')
-    parser.add_argument("--colorbar_bounds", type=float, nargs=2, default=(9.8, 16.6),
+    parser.add_argument("--bin_size", type=float, nargs=2, default=(0.05, 0.25),
+                        help='bin size: salinity step, temperature step')
+    parser.add_argument("--colorbar_bounds", type=float, nargs=2, default=None,
                         help='bounds for the colorbar')
 
     parser.add_argument("--dpi", type=float, default=None,
@@ -232,5 +275,8 @@ author:
 
     args = parser.parse_args()             
 
-    assert len(args.temperature_files) == len(args.salinity_files) == len(args.colors)
+    assert len(args.temperature_files) == len(args.salinity_files)
+    if args.diff:
+        assert len(args.temperature_files) == 2
+
     main(args)
