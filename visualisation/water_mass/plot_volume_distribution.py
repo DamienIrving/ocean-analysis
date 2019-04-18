@@ -143,24 +143,35 @@ def get_labels(cube, variable_name):
     return xlabel, ylabel
 
 
-def plot_diff(hist_dict, xvals, inargs):
-    """Plot the difference between volume distributions"""
-
-    fig = plt.figure(figsize=(10, 7))
-    base_label = inargs.labels[0]
-    plt.axhline(y=0.0, color='0.5', linestyle='--')
-    for plotnum, label in enumerate(inargs.labels[1:]):
-        diff = hist_dict[label] - hist_dict[base_label]
-        plt.plot(xvals, diff, 'o-', color=inargs.colors[plotnum + 1], label=label)
-
-
 def plot_raw(hist_dict, xvals, inargs):
     """Plot the raw volume distributions"""
 
-    fig = plt.figure(figsize=(10, 7))
-    for plotnum, label in enumerate(inargs.labels):
-        plt.plot(xvals, hist_dict[label], 'o-', color=inargs.colors[plotnum], label=label)
+    
  
+
+def combine_infiles(infiles, inargs, time_constraint):
+    """Combine multiple input files into one cube"""
+
+    cube, history = gio.combine_files(infiles, inargs.var)
+    atts = cube[0].attributes
+
+    cube = cube.extract(time_constraint)
+    cube = iris.util.squeeze(cube)
+
+    log = cmdprov.new_log(infile_history={infiles[0]: history[0]}, git_repo=repo_dir)
+    cube.attributes['history'] = log
+
+    return cube
+
+
+def linear_trend(data, time_axis):
+    """Calculate the linear trend.
+
+    polyfit returns [b, a] corresponding to y = a + bx
+    """    
+
+    return numpy.polyfit(time_axis, data, 1)[0]
+
 
 def main(inargs):
     """Run the program."""
@@ -168,24 +179,34 @@ def main(inargs):
     vcube = iris.load_cube(inargs.volume_file)
     bcube = iris.load_cube(inargs.basin_file)
 
+    bmin, bmax = inargs.bin_bounds
+    bin_edges = numpy.arange(bmin, bmax + 1, 1)
+    xvals = (bin_edges[1:] + bin_edges[:-1]) / 2
+
+    time_constraint = gio.get_time_constraint(inargs.time_bounds)
+
     hist_dict = {}
-    for filenum, dfile in enumerate(inargs.data_files):
-        dcube = iris.load_cube(dfile, inargs.variable)
+    for groupnum, infiles in enumerate(inargs.data_files):
+        dcube = combine_infiles(infiles, inargs, time_constaint)
+        dcube = timeseries.convert_to_annual(dcube, full_months=True)
 
-        df = create_df(dcube, inargs.variable, vcube, bcube, basin=inargs.basin)
-
-        bmin, bmax = inargs.bin_bounds
-        bin_edges = numpy.arange(bmin, bmax + 1, 1)
-        dvdt, edges, binnum = scipy.stats.binned_statistic(df[inargs.variable].values, df['volume'].values, statistic='sum', bins=bin_edges)
-        xvals = (edges[1:] + edges[:-1]) / 2 
-
-        hist_dict[inargs.labels[filenum]] = dvdt
-
-    if inargs.diff:
-        plot_diff(hist_dict, xvals, inargs)
-    else:
-        plot_raw(hist_dict, xvals, inargs)
-    
+        voldist_timeseries = numpy.array([])
+        for time_slice in dcube.slices_over('time'):
+            df = create_df(dcube, inargs.variable, vcube, bcube, basin=inargs.basin)
+            voldist, edges, binnum = scipy.stats.binned_statistic(df[inargs.variable].values, df['volume'].values, statistic='sum', bins=bin_edges)
+            voldist_timeseries = numpy.vstack([voldist_timeseries, vt]) if voldist_timeseries.size else voldist
+ 
+        if inargs.time_agg == 'trend':
+            ntime = voldist_timeseries.shape[0]
+            seconds = numpy.arange(ntime) * 60 * 60 * 24 * 365.25
+            hist_dict[inargs.labels[filenum]] = numpy.apply_along_axis(linear_trend, 0, voldist_timeseries, seconds)
+        elif inargs.time_agg == 'mean':
+            hist_dict[inargs.labels[filenum]] = voldist_timeseries.mean(axis=0)
+            
+    fig = plt.figure(figsize=(10, 7))
+    plt.axhline(y=0.0, color='0.5', linestyle='--')
+    for plotnum, label in enumerate(inargs.labels):
+        plt.plot(xvals, hist_dict[label], 'o-', color=inargs.colors[plotnum], label=label)
     title = get_title(dcube, inargs.basin) 
     plt.title(title)
     xlabel, ylabel = get_labels(dcube, inargs.variable)
@@ -222,20 +243,24 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("data_files", nargs='*', type=str, help="Data files (e.g. temperature or salinity climatology")
     parser.add_argument("variable", type=str, help="Variable name")
     parser.add_argument("volume_file", type=str, help="Volume file name")
     parser.add_argument("basin_file", type=str, help="Basin file name")
     parser.add_argument("outfile", type=str, help="Output file name")
 
+    parser.add_argument("--data_files", nargs='*', type=str, action='append',
+                        help="Data files for a particular grouping (e.g. a particular variable/experiment)")
+
     parser.add_argument("--colors", nargs='*', type=str,
-                        help="Color for data file")
+                        help="Color for data files group")
     parser.add_argument("--labels", nargs='*', type=str, required=True, 
-                        help="Label for each data file")
+                        help="Label for each data files group")
 
     parser.add_argument("--diff", action="store_true", default=False,
-                        help="Plot the difference between the first data file and all subsequent files")
+                        help="Plot the difference between the first data file group and all subsequent groups")
 
+    parser.add_argument("--time_bounds", type=str, nargs=2, default=None, metavar=('START_DATE', 'END_DATE'),
+                        help="Time period [default = entire]")
     parser.add_argument("--bin_bounds", type=float, nargs=2, required=True,
                         help='bounds for the bins')
 
