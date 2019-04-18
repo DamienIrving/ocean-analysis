@@ -143,14 +143,30 @@ def get_labels(cube, variable_name):
     return xlabel, ylabel
 
 
+def plot_diff(hist_dict, xvals, inargs):
+    """Plot the difference between volume distributions"""
+
+    fig = plt.figure(figsize=(10, 7))
+    base_label = inargs.labels[0]
+    plt.axhline(y=0.0, color='0.5', linestyle='--')
+    for plotnum, label in enumerate(inargs.labels[1:]):
+        diff = hist_dict[label] - hist_dict[base_label]
+        plt.plot(xvals, diff, 'o-', color=inargs.colors[plotnum + 1], label=label)
+
+
+def plot_raw(hist_dict, xvals, inargs):
+    """Plot the raw volume distributions"""
+
+    fig = plt.figure(figsize=(10, 7))
+    for plotnum, label in enumerate(inargs.labels):
+        plt.plot(xvals, hist_dict[label], 'o-', color=inargs.colors[plotnum], label=label)
+ 
+
 def main(inargs):
     """Run the program."""
-    
-    metadata_dict = {}
 
     vcube = iris.load_cube(inargs.volume_file)
     bcube = iris.load_cube(inargs.basin_file)
-
 
     hist_dict = {}
     for filenum, dfile in enumerate(inargs.data_files):
@@ -164,16 +180,12 @@ def main(inargs):
         xvals = (edges[1:] + edges[:-1]) / 2 
 
         hist_dict[inargs.labels[filenum]] = dvdt
-        
-    fig = plt.figure(figsize=(10, 7))
-    base_exp = inargs.labels[0]
-    adjustment_factors = [-0.2, 0.2]
-    for plotnum, experiment in enumerate(inargs.labels[1:]):
-        diff = hist_dict[experiment] - hist_dict[base_exp]
-        #plt.plot(xvals, diff, color=inargs.colors[plotnum + 1], label=experiment)
-        plt.bar(xvals + adjustment_factors[plotnum], diff, width=0.4, color=inargs.colors[plotnum + 1], label=experiment)
 
-    #plt.axhline(y=0.0, color='0.5', linestyle='--')
+    if inargs.diff:
+        plot_diff(hist_dict, xvals, inargs)
+    else:
+        plot_raw(hist_dict, xvals, inargs)
+    
     title = get_title(dcube, inargs.basin) 
     plt.title(title)
     xlabel, ylabel = get_labels(dcube, inargs.variable)
@@ -216,10 +228,13 @@ author:
     parser.add_argument("basin_file", type=str, help="Basin file name")
     parser.add_argument("outfile", type=str, help="Output file name")
 
-    parser.add_argument("--colors", nargs='*', type=str, 
+    parser.add_argument("--colors", nargs='*', type=str,
                         help="Color for data file")
-    parser.add_argument("--labels", nargs='*', type=str, default=None, 
+    parser.add_argument("--labels", nargs='*', type=str, required=True, 
                         help="Label for each data file")
+
+    parser.add_argument("--diff", action="store_true", default=False,
+                        help="Plot the difference between the first data file and all subsequent files")
 
     parser.add_argument("--bin_bounds", type=float, nargs=2, required=True,
                         help='bounds for the bins')
