@@ -548,8 +548,13 @@ def temperature_unit_check(cube, convert_to_celsius=False):
     data_max = cube.data.max()
     data_min = cube.data.min()
     
+    if (data_max < 330) or (data_min >= 240):
+        cube.data = numpy.ma.masked_where(cube.data == -1 * cube.data.fill_value, cube.data)
+        data_max = cube.data.max()
+        data_min = cube.data.min()
+
     assert data_max < 330, 'Data max is %f' %(data_max)
-    assert data_min >= 260 , 'Data min is %f' %(data_min)
+    assert data_min >= 240 , 'Data min is %f' %(data_min)
 
     if convert_to_celsius:
         cube.data = cube.data - 273.15
