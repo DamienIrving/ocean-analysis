@@ -44,9 +44,9 @@ sys.path.append(modules_dir)
 try:
     import general_io as gio
     import convenient_universal as uconv
+    import timeseries
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
-
 
 
 # Define functions
@@ -100,13 +100,13 @@ def create_df(dcube, variable_name, vcube, bcube, basin):
     lat_data = lats.flatten()
     lon_data = lons.flatten()
     depth_data = levs.flatten()
-
+   
     df = pandas.DataFrame(index=range(ddata.shape[0]))
     df[variable_name] = ddata.filled(fill_value=5000)
     df['volume'] = vdata.filled(fill_value=5000)
     df['basin'] = bdata.filled(fill_value=5000)
-    df['latitude'] = lat_data.filled(fill_value=5000)
-    df['longitude'] = lon_data.filled(fill_value=5000)
+    df['latitude'] = lat_data
+    df['longitude'] = lon_data
     df['depth'] = depth_data
 
     df = df[df[variable_name] != 5000]
@@ -128,7 +128,7 @@ def get_title(cube, basin):
     return title
 
 
-def get_labels(cube, variable_name):
+def get_labels(cube, variable_name, time_agg):
     """Get the axis labels"""
 
     if 'temperature' in variable_name:
@@ -137,22 +137,19 @@ def get_labels(cube, variable_name):
         var = 'salinity'
 
     units = str(cube.units)
-    ylabel = '$m^3 / %s$'  %(units)
+    if time_agg == 'trend':
+        ylabel = '$m^3 %s^{-1} yr^{-1}$'  %(units)
+    else:
+        ylabel = '$m^3 %s^{-1}$'  %(units)
     xlabel = '%s (%s)' %(var, units)
 
     return xlabel, ylabel
-
-
-def plot_raw(hist_dict, xvals, inargs):
-    """Plot the raw volume distributions"""
-
-    
  
 
 def combine_infiles(infiles, inargs, time_constraint):
     """Combine multiple input files into one cube"""
 
-    cube, history = gio.combine_files(infiles, inargs.var)
+    cube, history = gio.combine_files(infiles, inargs.variable)
     atts = cube[0].attributes
 
     cube = cube.extract(time_constraint)
@@ -187,32 +184,32 @@ def main(inargs):
 
     hist_dict = {}
     for groupnum, infiles in enumerate(inargs.data_files):
-        dcube = combine_infiles(infiles, inargs, time_constaint)
-        dcube = timeseries.convert_to_annual(dcube, full_months=True)
-
+        dcube = combine_infiles(infiles, inargs, time_constraint)
         voldist_timeseries = numpy.array([])
         for time_slice in dcube.slices_over('time'):
-            df = create_df(dcube, inargs.variable, vcube, bcube, basin=inargs.basin)
+            df = create_df(time_slice, inargs.variable, vcube, bcube, basin=inargs.basin)
             voldist, edges, binnum = scipy.stats.binned_statistic(df[inargs.variable].values, df['volume'].values, statistic='sum', bins=bin_edges)
-            voldist_timeseries = numpy.vstack([voldist_timeseries, vt]) if voldist_timeseries.size else voldist
+            voldist_timeseries = numpy.vstack([voldist_timeseries, voldist]) if voldist_timeseries.size else voldist
  
         if inargs.time_agg == 'trend':
             ntime = voldist_timeseries.shape[0]
-            seconds = numpy.arange(ntime) * 60 * 60 * 24 * 365.25
-            hist_dict[inargs.labels[filenum]] = numpy.apply_along_axis(linear_trend, 0, voldist_timeseries, seconds)
+            years = numpy.arange(ntime)
+            hist_dict[inargs.labels[groupnum]] = numpy.apply_along_axis(linear_trend, 0, voldist_timeseries, years)
         elif inargs.time_agg == 'mean':
-            hist_dict[inargs.labels[filenum]] = voldist_timeseries.mean(axis=0)
-            
-    fig = plt.figure(figsize=(10, 7))
+            hist_dict[inargs.labels[groupnum]] = voldist_timeseries.mean(axis=0)
+    
+    fig, ax = plt.subplots(figsize=(10, 7))
     plt.axhline(y=0.0, color='0.5', linestyle='--')
     for plotnum, label in enumerate(inargs.labels):
         plt.plot(xvals, hist_dict[label], 'o-', color=inargs.colors[plotnum], label=label)
     title = get_title(dcube, inargs.basin) 
     plt.title(title)
-    xlabel, ylabel = get_labels(dcube, inargs.variable)
+    xlabel, ylabel = get_labels(time_slice, inargs.variable, inargs.time_agg)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend(loc=1)
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+    ax.yaxis.major.formatter._useMathText = True
 
     # Save output
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
@@ -222,7 +219,7 @@ def main(inargs):
     # Metadata
     metadata_dict = {inargs.basin_file: bcube.attributes['history'],
                      inargs.volume_file: vcube.attributes['history'],
-                     dfile: dcube.attributes['history']}
+                     infiles[0]: dcube.attributes['history']}
     log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     log_file = re.sub('.png', '.met', inargs.outfile)
     cmdprov.write_log(log_file, log_text)
@@ -237,7 +234,7 @@ author:
 
 """
 
-    description = 'Plot ocean volume distribution.'
+    description = 'Plot ocean volume distribution. Assumes annual timescale input data.'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
@@ -256,14 +253,13 @@ author:
     parser.add_argument("--labels", nargs='*', type=str, required=True, 
                         help="Label for each data files group")
 
-    parser.add_argument("--diff", action="store_true", default=False,
-                        help="Plot the difference between the first data file group and all subsequent groups")
-
     parser.add_argument("--time_bounds", type=str, nargs=2, default=None, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
     parser.add_argument("--bin_bounds", type=float, nargs=2, required=True,
                         help='bounds for the bins')
 
+    parser.add_argument("--time_agg", type=str, required=True,
+                        choices=('trend', 'mean'), help='Temporal aggregation')
     parser.add_argument("--basin", type=str, default='globe',
                         choices=('globe', 'indian', 'north_atlantic', 'south_atlantic', 'north_pacific', 'south_pacific'),
                         help='ocean basin to plot')
