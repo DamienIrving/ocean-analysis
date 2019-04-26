@@ -118,17 +118,23 @@ def create_df(dcube, variable_name, vcube, bcube, basin):
     return df
 
 
-def get_title(cube, basin):
+def get_title(cube, basin, metric):
     """Get the plot title."""
+
+    metric_names = {'dV/dT': 'volume distribution',
+                    'dVdT/dt': 'trend in volume distribution',
+                    'V(T)': 'volume of water colder than T',
+                    'dV/dt': 'transformation rate',
+                    'dVdt/dVdT': 'implied diabatic temperature tendency'}
 
     model = cube.attributes['model_id']
     basin = basin.replace('_', ' ').title()
-    title = '%s volume distribution, %s model' %(basin, model) 
+    title = '%s %s, %s model' %(basin, metric_names[metric], model) 
 
     return title
 
 
-def get_labels(cube, variable_name, time_agg):
+def get_labels(cube, variable_name, metric):
     """Get the axis labels"""
 
     if 'temperature' in variable_name:
@@ -137,10 +143,14 @@ def get_labels(cube, variable_name, time_agg):
         var = 'salinity'
 
     units = str(cube.units)
-    if time_agg == 'trend':
-        ylabel = '$m^3 %s^{-1} yr^{-1}$'  %(units)
-    else:
-        ylabel = '$m^3 %s^{-1}$'  %(units)
+
+    metric_units = {'dV/dT': '$m^3 %s^{-1}$'  %(units),
+                    'dVdT/dt': '$m^3 %s^{-1} yr^{-1}$'  %(units),
+                    'V(T)': '$m^3 %s^{-1}$'  %(units),
+                    'dV/dt': '$m^3 %s^{-1} yr^{-1}$'  %(units),
+                    'dVdt/dVdT': '$%s yr^{-1}$'  %(units)}
+
+    ylabel = metric_units[metric]
     xlabel = '%s (%s)' %(var, units)
 
     return xlabel, ylabel
@@ -170,6 +180,36 @@ def linear_trend(data, time_axis):
     return numpy.polyfit(time_axis, data, 1)[0]
 
 
+def calc_metric(voldist_timeseries, V_timeseries, metric):
+    """Calculate the chosen metric.
+
+    dV/dT = volume distribution
+    dVdT/dt = trend in volume distribution
+    V(T) = volume of water colder than T
+    dV/dt = transformation rate
+    dVdt/dVdT = implied diabatic temperature tendency
+    
+    """
+
+    ntime = voldist_timeseries.shape[0]
+    years = numpy.arange(ntime)
+
+    if metric == 'dV/dT':
+        result = voldist_timeseries.mean(axis=0)
+    elif metric == 'dVdT/dt':
+        result = numpy.apply_along_axis(linear_trend, 0, voldist_timeseries, years)
+    elif metric == 'V(T)':
+        result = V_timeseries.mean(axis=0)
+    elif metric == 'dV/dt':
+        result = numpy.apply_along_axis(linear_trend, 0, V_timeseries, years)
+    elif metric == 'dVdt/dVdT':
+         dVdt = numpy.apply_along_axis(linear_trend, 0, V_timeseries, years)
+         dVdT = voldist_timeseries.mean(axis=0)
+         result = dVdt / dVdT
+
+    return result
+        
+
 def main(inargs):
     """Run the program."""
 
@@ -186,25 +226,22 @@ def main(inargs):
     for groupnum, infiles in enumerate(inargs.data_files):
         dcube = combine_infiles(infiles, inargs, time_constraint)
         voldist_timeseries = numpy.array([])
+        V_timeseries = numpy.array([])
         for time_slice in dcube.slices_over('time'):
             df = create_df(time_slice, inargs.variable, vcube, bcube, basin=inargs.basin)
             voldist, edges, binnum = scipy.stats.binned_statistic(df[inargs.variable].values, df['volume'].values, statistic='sum', bins=bin_edges)
+            V = voldist.cumsum()
             voldist_timeseries = numpy.vstack([voldist_timeseries, voldist]) if voldist_timeseries.size else voldist
- 
-        if inargs.time_agg == 'trend':
-            ntime = voldist_timeseries.shape[0]
-            years = numpy.arange(ntime)
-            hist_dict[inargs.labels[groupnum]] = numpy.apply_along_axis(linear_trend, 0, voldist_timeseries, years)
-        elif inargs.time_agg == 'mean':
-            hist_dict[inargs.labels[groupnum]] = voldist_timeseries.mean(axis=0)
+            V_timeseries = numpy.vstack([V_timeseries, V]) if V_timeseries.size else V
+        hist_dict[inargs.labels[groupnum]] = calc_metric(voldist_timeseries, V_timeseries, inargs.metric)
     
     fig, ax = plt.subplots(figsize=(10, 7))
     plt.axhline(y=0.0, color='0.5', linestyle='--')
     for plotnum, label in enumerate(inargs.labels):
         plt.plot(xvals, hist_dict[label], 'o-', color=inargs.colors[plotnum], label=label)
-    title = get_title(dcube, inargs.basin) 
+    title = get_title(dcube, inargs.basin, inargs.metric) 
     plt.title(title)
-    xlabel, ylabel = get_labels(time_slice, inargs.variable, inargs.time_agg)
+    xlabel, ylabel = get_labels(time_slice, inargs.variable, inargs.metric)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend(loc=1)
@@ -258,8 +295,8 @@ author:
     parser.add_argument("--bin_bounds", type=float, nargs=2, required=True,
                         help='bounds for the bins')
 
-    parser.add_argument("--time_agg", type=str, required=True,
-                        choices=('trend', 'mean'), help='Temporal aggregation')
+    parser.add_argument("--metric", type=str, required=True,
+                        choices=('dV/dT', 'dVdT/dt', 'V(T)', 'dV/dt', 'dVdt/dVdT'), help='Metric')
     parser.add_argument("--basin", type=str, default='globe',
                         choices=('globe', 'indian', 'north_atlantic', 'south_atlantic', 'north_pacific', 'south_pacific'),
                         help='ocean basin to plot')
