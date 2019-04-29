@@ -56,6 +56,12 @@ ocean_names = {0: 'land', 1: 'southern_ocean', 2: 'atlantic',
                6: 'mediterranean', 7: 'black_sea', 8: 'hudson_bay',
                9: 'baltic_sea', 10: 'red_sea'}
 
+metric_names = {'dV/dT': 'volume distribution',
+                'dVdT/dt': 'trend in volume distribution',
+                'V(T)': 'volume of water colder than T',
+                'dV/dt': 'transformation rate',
+                'dVdt/dVdT': 'implied diabatic temperature tendency'}
+
 def get_ocean_name(ocean_num):
     return ocean_names[ocean_num]
 
@@ -90,8 +96,17 @@ def create_df(dcube, variable_name, vcube, bcube, basin):
         dcube = gio.salinity_unit_check(dcube)
 
     assert dcube.ndim == 3
-    lats = uconv.broadcast_array(dcube.coord('latitude').points, [1, 2], dcube.shape)
-    lons = uconv.broadcast_array(dcube.coord('longitude').points, [1, 2], dcube.shape)
+    coord_names = [coord.name() for coord in dcube.dim_coords]
+    assert coord_names[0] == 'depth'
+    
+    if dcube.coord('latitude').ndim == 1:
+        lat_loc = coord_names.index('latitude')
+        lon_loc = coord_names.index('longitude')
+    else:
+        lat_loc = lon_loc = [1, 2]
+
+    lats = uconv.broadcast_array(dcube.coord('latitude').points, lat_loc, dcube.shape)
+    lons = uconv.broadcast_array(dcube.coord('longitude').points, lon_loc, dcube.shape)
     levs = uconv.broadcast_array(dcube.coord('depth').points, 0, dcube.shape)
 
     ddata = dcube.data.flatten()
@@ -118,18 +133,12 @@ def create_df(dcube, variable_name, vcube, bcube, basin):
     return df
 
 
-def get_title(cube, basin, metric):
+def get_title(cube, basin):
     """Get the plot title."""
-
-    metric_names = {'dV/dT': 'volume distribution',
-                    'dVdT/dt': 'trend in volume distribution',
-                    'V(T)': 'volume of water colder than T',
-                    'dV/dt': 'transformation rate',
-                    'dVdt/dVdT': 'implied diabatic temperature tendency'}
 
     model = cube.attributes['model_id']
     basin = basin.replace('_', ' ').title()
-    title = '%s %s, %s model' %(basin, metric_names[metric], model) 
+    title = '%s, %s model' %(basin, model) 
 
     return title
 
@@ -233,20 +242,25 @@ def main(inargs):
             V = voldist.cumsum()
             voldist_timeseries = numpy.vstack([voldist_timeseries, voldist]) if voldist_timeseries.size else voldist
             V_timeseries = numpy.vstack([V_timeseries, V]) if V_timeseries.size else V
-        hist_dict[inargs.labels[groupnum]] = calc_metric(voldist_timeseries, V_timeseries, inargs.metric)
+        for metric in inargs.metrics:
+            hist_dict[(inargs.labels[groupnum], metric)] = calc_metric(voldist_timeseries, V_timeseries, metric)
     
-    fig, ax = plt.subplots(figsize=(10, 7))
-    plt.axhline(y=0.0, color='0.5', linestyle='--')
-    for plotnum, label in enumerate(inargs.labels):
-        plt.plot(xvals, hist_dict[label], 'o-', color=inargs.colors[plotnum], label=label)
-    title = get_title(dcube, inargs.basin, inargs.metric) 
-    plt.title(title)
-    xlabel, ylabel = get_labels(time_slice, inargs.variable, inargs.metric)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.legend(loc=1)
-    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
-    ax.yaxis.major.formatter._useMathText = True
+    nrows, ncols = inargs.subplot_config
+    fig, axes = plt.subplots(nrows, ncols) #figsize=(10, 7)
+    for plotnum, metric in enumerate(inargs.metrics):
+        ax = axes.flatten()[plotnum] if type(axes) == numpy.ndarray else axes
+        ax.axhline(y=0.0, color='0.5', linestyle='--')
+        for labelnum, label in enumerate(inargs.labels):
+            ax.plot(xvals, hist_dict[(label, metric)], 'o-', color=inargs.colors[labelnum], label=label) 
+        ax.set_title(metric_names[metric])
+        xlabel, ylabel = get_labels(time_slice, inargs.variable, metric)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.legend(loc=1)
+        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+        ax.yaxis.major.formatter._useMathText = True
+    title = get_title(dcube, inargs.basin)
+    plt.suptitle(title)
 
     # Save output
     dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
@@ -295,8 +309,11 @@ author:
     parser.add_argument("--bin_bounds", type=float, nargs=2, required=True,
                         help='bounds for the bins')
 
-    parser.add_argument("--metric", type=str, required=True,
-                        choices=('dV/dT', 'dVdT/dt', 'V(T)', 'dV/dt', 'dVdt/dVdT'), help='Metric')
+    parser.add_argument("--metrics", type=str, nargs='*', required=True,
+                        choices=('dV/dT', 'dVdT/dt', 'V(T)', 'dV/dt', 'dVdt/dVdT'), help='Metrics to plot')
+    parser.add_argument("--subplot_config", type=int, nargs=2, default=(1, 1), metavar=('nrows', 'ncols'),
+                        help="Subplot configuration (nrows, ncols) [default = (1, 1)]")
+
     parser.add_argument("--basin", type=str, default='globe',
                         choices=('globe', 'indian', 'north_atlantic', 'south_atlantic', 'north_pacific', 'south_pacific'),
                         help='ocean basin to plot')
@@ -304,5 +321,6 @@ author:
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
 
-    args = parser.parse_args()             
+    args = parser.parse_args()      
+    assert len(args.metrics) <= args.subplot_config[0] * args.subplot_config[1]       
     main(args)
