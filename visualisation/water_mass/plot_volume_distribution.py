@@ -71,7 +71,7 @@ def select_basin(df, basin_name):
 
     if not basin_name == 'globe':
         df['basin'] = df['basin'].apply(get_ocean_name)
-        basin_components = basin_name.split('_')
+        basin_components = basin_name.split('-')
         if len(basin_components) == 1:
             ocean = basin_components[0]
             hemisphere = None
@@ -189,6 +189,12 @@ def linear_trend(data, time_axis):
     return numpy.polyfit(time_axis, data, 1)[0]
 
 
+def non_zero_count(data):
+    """Count the number of non-zero values."""    
+
+    return numpy.count_nonzero(data)
+
+
 def calc_metric(voldist_timeseries, V_timeseries, metric):
     """Calculate the chosen metric.
 
@@ -202,6 +208,7 @@ def calc_metric(voldist_timeseries, V_timeseries, metric):
 
     ntime = voldist_timeseries.shape[0]
     years = numpy.arange(ntime)
+    nonzero_totals = numpy.apply_along_axis(numpy.count_nonzero, 0, voldist_timeseries)
 
     if metric == 'dV/dT':
         result = voldist_timeseries.mean(axis=0)
@@ -212,10 +219,12 @@ def calc_metric(voldist_timeseries, V_timeseries, metric):
     elif metric == 'dV/dt':
         result = numpy.apply_along_axis(linear_trend, 0, V_timeseries, years)
     elif metric == 'dVdt/dVdT':
-         dVdt = numpy.apply_along_axis(linear_trend, 0, V_timeseries, years)
-         dVdT = voldist_timeseries.mean(axis=0)
-         result = dVdt / dVdT
-
+        dVdt = numpy.apply_along_axis(linear_trend, 0, V_timeseries, years)
+        dVdT = voldist_timeseries.mean(axis=0)
+        result = dVdt / dVdT
+    
+    result = numpy.ma.masked_where(nonzero_totals < ntime / 2, result)
+    
     return result
         
 
@@ -263,15 +272,19 @@ def main(inargs):
     fig, axes = plt.subplots(nrows, ncols, figsize=(9*ncols, 6*nrows))
     for plotnum, metric in enumerate(inargs.metrics):
         ax = axes.flatten()[plotnum] if type(axes) == numpy.ndarray else axes
-        ax.axhline(y=0.0, color='0.5', linestyle='--')
         for labelnum, label in enumerate(inargs.labels):
-            ax.plot(xvals, hist_dict[(label, metric)], 'o-', color=inargs.colors[labelnum], label=label) 
+            yvals = hist_dict[(label, metric)]
+            ax.plot(xvals, yvals, 'o-', color=inargs.colors[labelnum], label=label) 
         ax.set_title(metric_names[metric])
         xlabel, ylabel = get_labels(time_slice, inargs.variable, metric)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
+        ax.grid(True)
         set_axis_limits(ax, plotnum, inargs.xlim, inargs.ylim)
-        ax.legend(loc=1)
+        if metric == 'dVdt/dVdT':
+            ax.legend(loc=2)
+        else:
+            ax.legend(loc=1)
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
         ax.yaxis.major.formatter._useMathText = True
     title = get_title(dcube, inargs.basin)
@@ -335,7 +348,7 @@ author:
                         help="Subplot configuration (nrows, ncols) [default = (1, 1)]")
 
     parser.add_argument("--basin", type=str, default='globe',
-                        choices=('globe', 'indian', 'north_atlantic', 'south_atlantic', 'north_pacific', 'south_pacific'),
+                        choices=('globe', 'indian', 'north-atlantic', 'south-atlantic', 'north-pacific', 'south-pacific'),
                         help='ocean basin to plot')
 
     parser.add_argument("--dpi", type=float, default=None,
