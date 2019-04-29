@@ -56,11 +56,11 @@ ocean_names = {0: 'land', 1: 'southern_ocean', 2: 'atlantic',
                6: 'mediterranean', 7: 'black_sea', 8: 'hudson_bay',
                9: 'baltic_sea', 10: 'red_sea'}
 
-metric_names = {'dV/dT': 'volume distribution',
-                'dVdT/dt': 'trend in volume distribution',
-                'V(T)': 'volume of water colder than T',
-                'dV/dt': 'transformation rate',
-                'dVdt/dVdT': 'implied diabatic temperature tendency'}
+metric_names = {'dV/dT': """volume distribution (dV/dT)""",
+                'dVdT/dt': 'trend in volume distribution (dV/dT / dt)',
+                'V(T)': 'volume of water colder than T (V(T))',
+                'dV/dt': 'transformation rate (dV/dt)',
+                'dVdt/dVdT': 'implied diabatic temperature tendency (dV/dt / dV/dT)'}
 
 def get_ocean_name(ocean_num):
     return ocean_names[ocean_num]
@@ -219,6 +219,20 @@ def calc_metric(voldist_timeseries, V_timeseries, metric):
     return result
         
 
+def set_axis_limits(ax, plotnum, xlim_list, ylim_list):
+    """Adjust the default axis limits if necessary"""
+
+    for xlim_item in xlim_list:
+        upper, lower, num = xlim_item
+        if num == plotnum:
+            ax.set_xlim(upper, lower)
+    
+    for ylim_item in ylim_list:
+        upper, lower, num = ylim_item
+        if num == plotnum:
+            ax.set_ylim(upper, lower)
+
+
 def main(inargs):
     """Run the program."""
 
@@ -246,7 +260,7 @@ def main(inargs):
             hist_dict[(inargs.labels[groupnum], metric)] = calc_metric(voldist_timeseries, V_timeseries, metric)
     
     nrows, ncols = inargs.subplot_config
-    fig, axes = plt.subplots(nrows, ncols) #figsize=(10, 7)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(9*ncols, 6*nrows))
     for plotnum, metric in enumerate(inargs.metrics):
         ax = axes.flatten()[plotnum] if type(axes) == numpy.ndarray else axes
         ax.axhline(y=0.0, color='0.5', linestyle='--')
@@ -256,6 +270,7 @@ def main(inargs):
         xlabel, ylabel = get_labels(time_slice, inargs.variable, metric)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
+        set_axis_limits(ax, plotnum, inargs.xlim, inargs.ylim)
         ax.legend(loc=1)
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
         ax.yaxis.major.formatter._useMathText = True
@@ -308,6 +323,11 @@ author:
                         help="Time period [default = entire]")
     parser.add_argument("--bin_bounds", type=float, nargs=2, required=True,
                         help='bounds for the bins')
+
+    parser.add_argument("--xlim", type=float, nargs=3, action='append', default=[],
+                        help='lower_limit, upper_limit, plot_index')
+    parser.add_argument("--ylim", type=float, nargs=3, action='append', default=[],
+                        help='lower_limit, upper_limit, plot_index')
 
     parser.add_argument("--metrics", type=str, nargs='*', required=True,
                         choices=('dV/dT', 'dVdT/dt', 'V(T)', 'dV/dt', 'dVdt/dVdT'), help='Metrics to plot')
