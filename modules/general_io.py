@@ -537,7 +537,7 @@ def standard_datetime(dt):
     return new_dt.strftime("%Y-%m-%d")
 
 
-def temperature_unit_check(cube, convert_to_celsius=False):
+def temperature_unit_check(cube, convert_to_celsius=False, valid_min=265, valid_max=310):
     """Check CMIP5 temperature units.
 
     Args:
@@ -547,14 +547,14 @@ def temperature_unit_check(cube, convert_to_celsius=False):
 
     data_max = cube.data.max()
     data_min = cube.data.min()
-    
-    if (data_max < 330) or (data_min >= 240):
+
+    if (data_max < valid_max) or (data_min >= valid_min):
         cube.data = numpy.ma.masked_where(cube.data == -1 * cube.data.fill_value, cube.data)
         data_max = cube.data.max()
         data_min = cube.data.min()
 
-    assert data_max < 330, 'Data max is %f' %(data_max)
-    assert data_min >= 240 , 'Data min is %f' %(data_min)
+    assert data_max < valid_max, 'Data max is %f' %(data_max)
+    assert data_min >= valid_min , 'Data min is %f' %(data_min)
 
     if convert_to_celsius:
         cube.data = cube.data - 273.15
