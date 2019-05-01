@@ -249,7 +249,8 @@ def main(inargs):
     bcube = iris.load_cube(inargs.basin_file)
 
     bmin, bmax = inargs.bin_bounds
-    bin_edges = numpy.arange(bmin, bmax + 1, 1)
+    bin_step = 1.0
+    bin_edges = numpy.arange(bmin, bmax + bin_step, bin_step)
     xvals = (bin_edges[1:] + bin_edges[:-1]) / 2
 
     time_constraint = gio.get_time_constraint(inargs.time_bounds)
