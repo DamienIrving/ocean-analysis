@@ -144,7 +144,7 @@ def check_iris_var(var):
     return var
 
 
-def check_time_units(cube):
+def check_time_units(cube, new_calendar=None):
     """Check time axis units.
 
     Iris requires "days since YYYY-MM-DD".
@@ -154,12 +154,14 @@ def check_time_units(cube):
 
     """
 
-    missing_day_pattern = 'days since ([0-9]{4})-([0-9]{2})$'
-
     time_units = str(cube.coord('time').units)
+    calendar = new_calendar if new_calendar else cube.coord('time').units.calendar
+    
+    missing_day_pattern = 'days since ([0-9]{4})-([0-9]{2})$'
     if bool(re.search(missing_day_pattern, time_units)):
-        calendar = cube.coord('time').units.calendar
         cube.coord('time').units = cf_units.Unit(time_units+'-01', calendar=calendar)
+    elif new_calendar:
+        cube.coord('time').units = cf_units.Unit(time_units, calendar=calendar)
 
     return cube
 
@@ -221,7 +223,7 @@ def check_xarrayDataset(dset, var_list):
         'Longitude axis must be 0 to 360E'
 
 
-def combine_files(files, var):
+def combine_files(files, var, new_calendar=None):
     """Create an iris cube from multiple input files."""
 
     cube = iris.load(files, check_iris_var(var), callback=save_history)
@@ -231,7 +233,7 @@ def combine_files(files, var):
 
     coord_names = [coord.name() for coord in cube.dim_coords]
     if 'time' in coord_names:
-        cube = check_time_units(cube)
+        cube = check_time_units(cube, new_calendar=new_calendar)
 
     return cube, history
 

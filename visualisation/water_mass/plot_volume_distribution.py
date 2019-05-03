@@ -136,7 +136,10 @@ def create_df(dcube, variable_name, vcube, bcube, basin):
 def get_title(cube, basin):
     """Get the plot title."""
 
-    model = cube.attributes['model_id']
+    try:
+        model = cube.attributes['model_id']
+    except KeyError:
+        model = ''
     basin = basin.replace('_', ' ').title()
     title = '%s, %s model' %(basin, model) 
 
@@ -168,7 +171,7 @@ def get_labels(cube, variable_name, metric):
 def combine_infiles(infiles, inargs, time_constraint):
     """Combine multiple input files into one cube"""
 
-    cube, history = gio.combine_files(infiles, inargs.variable)
+    cube, history = gio.combine_files(infiles, inargs.variable, new_calendar='365_day')
     atts = cube[0].attributes
 
     cube = cube.extract(time_constraint)
