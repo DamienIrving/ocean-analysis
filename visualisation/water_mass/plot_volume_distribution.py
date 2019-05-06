@@ -276,7 +276,7 @@ def main(inargs):
     hist_dict = {}
     for groupnum, infiles in enumerate(inargs.data_files):
         label = inargs.labels[groupnum]
-        ref = label in ref_datasets
+        ref = (label in ref_datasets) and len(inargs.labels) > 1
         vcube, bcube, time_constraint = read_supporting_inputs(inargs, ref=ref)
         dcube = combine_infiles(infiles, inargs, time_constraint)
         voldist_timeseries = numpy.array([])
