@@ -244,22 +244,40 @@ def set_axis_limits(ax, plotnum, xlim_list, ylim_list):
         if num == plotnum:
             ax.set_ylim(upper, lower)
 
+    
+def read_supporting_inputs(inargs, ref=False):
+    """Read the supporting volume, basin and time bounds information."""
+
+    if ref:
+        volume_file = inargs.ref_volume_file
+        basin_file = inargs.ref_basin_file
+        time_bounds = inargs.ref_time_bounds if inargs.ref_time_bounds else inargs.time_bounds
+    else:
+        volume_file = inargs.volume_file
+        basin_file = inargs.basin_file
+        time_bounds = inargs.time_bounds
+
+    vcube = iris.load_cube(volume_file)
+    bcube = iris.load_cube(basin_file)
+    time_constraint = gio.get_time_constraint(time_bounds)
+
+    return vcube, bcube, time_constraint
+
 
 def main(inargs):
     """Run the program."""
-
-    vcube = iris.load_cube(inargs.volume_file)
-    bcube = iris.load_cube(inargs.basin_file)
 
     bmin, bmax = inargs.bin_bounds
     bin_step = 1.0
     bin_edges = numpy.arange(bmin, bmax + bin_step, bin_step)
     xvals = (bin_edges[1:] + bin_edges[:-1]) / 2
 
-    time_constraint = gio.get_time_constraint(inargs.time_bounds)
-
+    ref_datasets = ['EN4']
     hist_dict = {}
     for groupnum, infiles in enumerate(inargs.data_files):
+        label = inargs.labels[groupnum]
+        ref = label in ref_datasets
+        vcube, bcube, time_constraint = read_supporting_inputs(inargs, ref=ref)
         dcube = combine_infiles(infiles, inargs, time_constraint)
         voldist_timeseries = numpy.array([])
         V_timeseries = numpy.array([])
@@ -270,15 +288,16 @@ def main(inargs):
             voldist_timeseries = numpy.vstack([voldist_timeseries, voldist]) if voldist_timeseries.size else voldist
             V_timeseries = numpy.vstack([V_timeseries, V]) if V_timeseries.size else V
         for metric in inargs.metrics:
-            hist_dict[(inargs.labels[groupnum], metric)] = calc_metric(voldist_timeseries, V_timeseries, metric)
+            hist_dict[(label, metric)] = calc_metric(voldist_timeseries, V_timeseries, metric)
     
     nrows, ncols = inargs.subplot_config
     fig, axes = plt.subplots(nrows, ncols, figsize=(9*ncols, 6*nrows))
     for plotnum, metric in enumerate(inargs.metrics):
         ax = axes.flatten()[plotnum] if type(axes) == numpy.ndarray else axes
         for labelnum, label in enumerate(inargs.labels):
-            yvals = hist_dict[(label, metric)]
-            ax.plot(xvals, yvals, 'o-', color=inargs.colors[labelnum], label=label) 
+            if not ((label in ref_datasets) and (metric != 'dV/dT')):
+                yvals = hist_dict[(label, metric)]
+                ax.plot(xvals, yvals, 'o-', color=inargs.colors[labelnum], label=label) 
         ax.set_title(metric_names[metric])
         xlabel, ylabel = get_labels(time_slice, inargs.variable, metric)
         ax.set_xlabel(xlabel)
@@ -354,6 +373,13 @@ author:
     parser.add_argument("--basin", type=str, default='globe',
                         choices=('globe', 'indian', 'north-atlantic', 'south-atlantic', 'north-pacific', 'south-pacific'),
                         help='ocean basin to plot')
+
+    parser.add_argument("--ref_volume_file", type=str, default=None,
+                        help="Reference volume file name")
+    parser.add_argument("--ref_basin_file", type=str, default=None,
+                        help="Reference basin file name")
+    parser.add_argument("--ref_time_bounds", type=str, nargs=2, default=None, metavar=('START_DATE', 'END_DATE'),
+                        help="Time period for reference data [default = time_bounds]")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")
