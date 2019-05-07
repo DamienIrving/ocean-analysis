@@ -211,6 +211,22 @@ def check_time_adjustment(time_values, coefficient_cube, branch_time, fnum):
         assert time_diff == 0
 
 
+def check_data(new_cube, orig_cube, infile):
+    """Check that the new data is valid."""
+
+    orig_max = orig_cube.data.max()
+    orig_min = orig_cube.data.min()
+
+    new_max = new_cube.data.max()
+    new_min = new_cube.data.min()
+   
+    valid_max = orig_max * 1.2 if orig_max > 0.0 else orig_max * 0.8
+    valid_min = orig_min * 1.2 if orig_min < 0.0 else orig_min * 0.8 
+
+    assert new_max < valid_max, 'New data max is %f, %s' %(new_max, infile)
+    assert new_min >= valid_min, 'New data min is %f, %s' %(new_min, infile)
+
+
 def main(inargs):
     """Run the program."""
     
@@ -239,6 +255,8 @@ def main(inargs):
 
     new_cubelist = []
     for fnum, filename in enumerate(inargs.data_files):
+        #if not (('191001-191912' in filename) or (fnum == 0)) :
+        #    continue
         # Read data
         data_cube = iris.load_cube(filename, gio.check_iris_var(inargs.var))
         
@@ -246,7 +264,6 @@ def main(inargs):
         aux_coord_names = [coord.name() for coord in data_cube.aux_coords]
         if 'time' in aux_coord_names:
             data_cube = iris.util.new_axis(data_cube, 'time')
-
         if inargs.annual:
             assert inargs.timescale == 'annual'
             data_cube = timeseries.convert_to_annual(data_cube, chunk=12)
@@ -280,6 +297,8 @@ def main(inargs):
 
         if not inargs.dummy:
             new_cube = data_cube - drift_signal
+            check_data(new_cube, data_cube, filename)
+            #pdb.set_trace()
         else:
             print('fake run - drift signal not subtracted')
             new_cube = data_cube
