@@ -70,7 +70,7 @@ def read_data(file_list, var, grid_point, convert_to_annual=False):
 
 def cubic_fit(infile, grid_point, time_axis):
     """Get the cubic polynomial."""
-    
+
     z, i, j = grid_point
     a_cube = iris.load_cube(infile, 'coefficient a')[z, i, j] 
     b_cube = iris.load_cube(infile, 'coefficient b')[z, i, j]
@@ -126,6 +126,7 @@ def main(inargs):
     plt.ylabel(inargs.variable)
     plt.xlabel(str(new_time_unit))
     plt.legend()
+    plt.title('Grid point: [%i, %i, %i]'  %(z, i, j))
 
     # Save output
     plt.savefig(inargs.outfile, bbox_inches='tight')
