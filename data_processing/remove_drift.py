@@ -219,7 +219,7 @@ def check_data(new_cube, orig_cube, infile):
 
     new_max = new_cube.data.max()
     new_min = new_cube.data.min()
-   
+
     valid_max = orig_max * 1.2 if orig_max > 0.0 else orig_max * 0.8
     valid_min = orig_min * 1.2 if orig_min < 0.0 else orig_min * 0.8 
 
@@ -242,7 +242,7 @@ def main(inargs):
 
     coord_names = [coord.name() for coord in first_data_cube.coords(dim_coords=True)]
     assert coord_names[0] == 'time'
-    if inargs.var in ['sea_water_potential_temperature', 'sea_water_salinity']:
+    if inargs.coefficient_check and (inargs.var in ['sea_water_potential_temperature', 'sea_water_salinity']):
         sanity_summary = coefficient_sanity_check(coefficient_a_cube, coefficient_b_cube, coefficient_c_cube, 
                                                   coefficient_d_cube, inargs.var)
     else:
@@ -255,11 +255,9 @@ def main(inargs):
 
     new_cubelist = []
     for fnum, filename in enumerate(inargs.data_files):
-        #if not (('191001-191912' in filename) or (fnum == 0)) :
-        #    continue
         # Read data
         data_cube = iris.load_cube(filename, gio.check_iris_var(inargs.var))
-        
+
         # Reinstate time dim_coord if necessary
         aux_coord_names = [coord.name() for coord in data_cube.aux_coords]
         if 'time' in aux_coord_names:
@@ -297,8 +295,9 @@ def main(inargs):
 
         if not inargs.dummy:
             new_cube = data_cube - drift_signal
+            #assert new_cube.data.mask.sum() == drift_signal.mask.sum()
+            new_cube.data.mask = drift_signal.mask
             check_data(new_cube, data_cube, filename)
-            #pdb.set_trace()
         else:
             print('fake run - drift signal not subtracted')
             new_cube = data_cube
@@ -373,6 +372,9 @@ notes:
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Split the polynomial calculation up to avoid memory errors [default: False]")
     
+    parser.add_argument("--coefficient_check", action="store_true", default=False,
+                        help="Check for crazy coefficient values [default: False]")
+
     parser.add_argument("--branch_time", type=float, default=None,
                         help="Override the branch time listed in the file metadata")
 
