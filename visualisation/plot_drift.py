@@ -9,6 +9,7 @@ Description:  Visualise the de-drifting process
 
 import sys
 import os
+import re
 import pdb
 import argparse
 
@@ -41,24 +42,25 @@ import general_io as gio
 
 # Define functions
 
-def index_text(index_list, time_axis=False):
-    """Generate the text for the index selection."""
-
-    text =  '[:,' if time_axis else '['
-    for count, index in enumerate(index_list):
-        if count == 0:
-            text = text + str(index)
-        else:
-            text = text + ', ' + str(index)
-
-    return text + ']'  
+#def index_text(index_list, time_axis=False):
+#    """Generate the text for the index selection."""
+#
+#    text =  '[:,' if time_axis else '['
+#    for count, index in enumerate(index_list):
+#        if count == 0:
+#            text = text + str(index)
+#        else:
+#            text = text + ', ' + str(index)
+#
+#    return text + ']'  
     
 
-def read_data(file_list, var, grid_point_index, convert_to_annual=False):
+def read_data(file_list, var, grid_point, convert_to_annual=False):
     """Read input data."""
 
+    z, i, j = grid_point
     cube, history = gio.combine_files(file_list, var)   
-    exec('cube = cube' + grid_point_index)
+    cube = cube[:, z, i, j]
 
     if convert_to_annual:
         cube = timeseries.convert_to_annual(cube)
@@ -69,15 +71,11 @@ def read_data(file_list, var, grid_point_index, convert_to_annual=False):
 def cubic_fit(infile, grid_point, time_axis):
     """Get the cubic polynomial."""
     
-    index = index_text(grid_point)
-    a_cube = iris.load_cube(infile, 'coefficient a')
-    exec('a_cube = a_cube' + index) 
-    b_cube = iris.load_cube(infile, 'coefficient b')
-    exec('b_cube = b_cube' + index)
-    c_cube = iris.load_cube(infile, 'coefficient c')
-    exec('c_cube = c_cube' + index)
-    d_cube = iris.load_cube(infile, 'coefficient d')
-    exec('d_cube = d_cube' + index)
+    z, i, j = grid_point
+    a_cube = iris.load_cube(infile, 'coefficient a')[z, i, j] 
+    b_cube = iris.load_cube(infile, 'coefficient b')[z, i, j]
+    c_cube = iris.load_cube(infile, 'coefficient c')[z, i, j]
+    d_cube = iris.load_cube(infile, 'coefficient d')[z, i, j]
 
     numpy_poly = numpy.poly1d([float(d_cube.data), 
                                float(c_cube.data),
@@ -90,17 +88,16 @@ def cubic_fit(infile, grid_point, time_axis):
 
 def main(inargs):
     """Run the program."""
-    pdb.set_trace()
+
     metadata_dict = {}
-    grid_point_index = index_text(inargs.grid_point, time_axis=True)
 
     # Read data
     control_cube, control_history = read_data(inargs.control_files, inargs.variable,
-                                              grid_point_index, convert_to_annual=True)
+                                              inargs.grid_point, convert_to_annual=True)
     experiment_cube, experiment_history = read_data(inargs.experiment_files, inargs.variable,
-                                                    grid_point_index, convert_to_annual=True)
+                                                    inargs.grid_point, convert_to_annual=True)
     dedrifted_cube, dedrifted_history = read_data(inargs.dedrifted_files, inargs.variable,
-                                                  grid_point_index, convert_to_annual=False)
+                                                  inargs.grid_point, convert_to_annual=False)
 
     metadata_dict[inargs.control_files[0]] = control_history
     metadata_dict[inargs.experiment_files[0]] = experiment_history
@@ -111,8 +108,8 @@ def main(inargs):
     #TODO: coeff metadata    
 
     # Time axis adjustment
-    first_data_cube = iris.load_cube(experiment_files[0], 'sea_water_potential_temperature')
-    exec('first_data_cube = first_data_cube' + grid_point_index)
+    z, i, j = inargs.grid_point
+    first_data_cube = iris.load_cube(inargs.experiment_files[0], 'sea_water_potential_temperature')[:, z, i, j]
     first_data_cube = timeseries.convert_to_annual(first_data_cube)
     time_diff, branch_time, new_time_unit = remove_drift.time_adjustment(first_data_cube, a_cube, 'annual')
 
@@ -125,7 +122,7 @@ def main(inargs):
     plt.plot(control_cube.coord('time').points, control_cube.data, label='control')
     plt.plot(experiment_time_values, experiment_cube.data, label='experiment')
     plt.plot(experiment_time_values, dedrifted_cube.data, label='dedrifted')
-    plt.plot(control_cube.coord('time').points, cubic_fit, label='cubic fit')
+    plt.plot(control_cube.coord('time').points, cubic_data, label='cubic fit')
     plt.ylabel(inargs.variable)
     plt.xlabel(str(new_time_unit))
     plt.legend()
@@ -164,7 +161,7 @@ author:
     parser.add_argument("--dedrifted_files", nargs='*', type=str,
                         help="dedrifted experiment data files")
 
-    parser.add_argument("--grid_point", type=int, nargs='*',
+    parser.add_argument("--grid_point", type=int, nargs=3,
                         help="Array indexes for grid point to plot (e.g. 0 58 35)")
 
     args = parser.parse_args()             
