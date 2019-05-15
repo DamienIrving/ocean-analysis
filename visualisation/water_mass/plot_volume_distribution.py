@@ -12,6 +12,7 @@ import os
 import re
 import pdb
 import argparse
+import operator
 
 import numpy
 import pandas
@@ -87,13 +88,13 @@ def select_basin(df, basin_name):
     return df
 
 
-def create_df(dcube, variable_name, vcube, bcube, basin):
+def create_df(dcube, variable_name, vcube, bcube, basin, abort=True):
     """Create DataFrame"""
 
     if 'temperature' in variable_name:
-        dcube = gio.temperature_unit_check(dcube, convert_to_celsius=True)
+        dcube = gio.temperature_unit_check(dcube, convert_to_celsius=True, abort=abort)
     elif 'salinity' in variable_name:
-        dcube = gio.salinity_unit_check(dcube)
+        dcube = gio.salinity_unit_check(dcube, abort=abort)
 
     assert dcube.ndim == 3
     coord_names = [coord.name() for coord in dcube.dim_coords]
@@ -268,21 +269,21 @@ def main(inargs):
     """Run the program."""
 
     bmin, bmax = inargs.bin_bounds
-    bin_step = 1.0
-    bin_edges = numpy.arange(bmin, bmax + bin_step, bin_step)
+    bin_edges = numpy.arange(bmin, bmax + inargs.bin_width, inargs.bin_width)
     xvals = (bin_edges[1:] + bin_edges[:-1]) / 2
 
     ref_datasets = ['EN4']
     hist_dict = {}
     for groupnum, infiles in enumerate(inargs.data_files):
         label = inargs.labels[groupnum]
+        print(label)
         ref = (label in ref_datasets) and len(inargs.labels) > 1
         vcube, bcube, time_constraint = read_supporting_inputs(inargs, ref=ref)
         dcube = combine_infiles(infiles, inargs, time_constraint)
         voldist_timeseries = numpy.array([])
         V_timeseries = numpy.array([])
         for time_slice in dcube.slices_over('time'):
-            df = create_df(time_slice, inargs.variable, vcube, bcube, basin=inargs.basin)
+            df = create_df(time_slice, inargs.variable, vcube, bcube, basin=inargs.basin, abort=operator.not_(inargs.no_abort))
             voldist, edges, binnum = scipy.stats.binned_statistic(df[inargs.variable].values, df['volume'].values, statistic='sum', bins=bin_edges)
             V = voldist.cumsum()
             voldist_timeseries = numpy.vstack([voldist_timeseries, voldist]) if voldist_timeseries.size else voldist
@@ -359,6 +360,8 @@ author:
                         help="Time period [default = entire]")
     parser.add_argument("--bin_bounds", type=float, nargs=2, required=True,
                         help='bounds for the bins')
+    parser.add_argument("--bin_width", type=float, default=1.0,
+                        help='width of each bin')
 
     parser.add_argument("--xlim", type=float, nargs=3, action='append', default=[],
                         help='lower_limit, upper_limit, plot_index')
@@ -380,6 +383,9 @@ author:
                         help="Reference basin file name")
     parser.add_argument("--ref_time_bounds", type=str, nargs=2, default=None, metavar=('START_DATE', 'END_DATE'),
                         help="Time period for reference data [default = time_bounds]")
+
+    parser.add_argument("--no_abort", action="store_true", default=False,
+                        help="Do not abort if data fails sanity check")
 
     parser.add_argument("--dpi", type=float, default=None,
                         help="Figure resolution in dots per square inch [default=auto]")

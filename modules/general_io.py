@@ -423,7 +423,7 @@ def read_dates(infile):
     return date_list, date_metadata
 
 
-def salinity_unit_check(cube):
+def salinity_unit_check(cube, valid_min=0, valid_max=60, abort=True):
     """Check CMIP5 salinity units.
 
     Most modeling groups store their salinity data
@@ -447,8 +447,14 @@ def salinity_unit_check(cube):
     data_max = cube.data.max()
     data_min = cube.data.min()
     
-    assert data_max < 100.0, 'Data max is %f' %(data_max)
-    assert data_min >= 0.0 , 'Data min is %f' %(data_min)
+    if abort:
+        assert data_max < valid_max, 'Data max is %f' %(data_max)
+        assert data_min >= valid_min , 'Data min is %f' %(data_min)
+    else: 
+        if data_max > valid_max:
+            print('Data max is %f' %(data_max))
+        if data_min < valid_min:
+            print('Data min is %f' %(data_min))
 
     cube.units = 'g/kg'   #cf_units.Unit('unknown')
 
@@ -539,7 +545,7 @@ def standard_datetime(dt):
     return new_dt.strftime("%Y-%m-%d")
 
 
-def temperature_unit_check(cube, convert_to_celsius=False, valid_min=265, valid_max=310):
+def temperature_unit_check(cube, convert_to_celsius=False, valid_min=265, valid_max=310, abort=True):
     """Check CMIP5 temperature units.
 
     Args:
@@ -555,8 +561,14 @@ def temperature_unit_check(cube, convert_to_celsius=False, valid_min=265, valid_
         data_max = cube.data.max()
         data_min = cube.data.min()
 
-    assert data_max < valid_max, 'Data max is %f' %(data_max)
-    assert data_min >= valid_min , 'Data min is %f' %(data_min)
+    if abort:
+        assert data_max < valid_max, 'Data max is %f' %(data_max)
+        assert data_min >= valid_min , 'Data min is %f' %(data_min)
+    else: 
+        if data_max > valid_max:
+            print('Data max is %f' %(data_max))
+        if data_min < valid_min:
+            print('Data min is %f' %(data_min))
 
     if convert_to_celsius:
         cube.data = cube.data - 273.15
