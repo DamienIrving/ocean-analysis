@@ -61,7 +61,11 @@ metric_names = {'dV/dT': """volume distribution (dV/dT)""",
                 'dVdT/dt': 'trend in volume distribution (dV/dT / dt)',
                 'V(T)': 'volume of water colder than T (V(T))',
                 'dV/dt': 'transformation rate (dV/dt)',
-                'dVdt/dVdT': 'implied diabatic temperature tendency (dV/dt / dV/dT)'}
+                'dVdt/dVdT': 'implied diabatic temperature tendency (dV/dt / dV/dT)',
+                'dV/dS': """volume distribution (dV/dS)""",
+                'dVdS/dt': 'trend in volume distribution (dV/dS / dt)',
+                'V(S)': 'volume of water colder than S (V(S))',
+                'dVdt/dVdS': 'implied diabatic temperature tendency (dV/dt / dV/dS)'}
 
 def get_ocean_name(ocean_num):
     return ocean_names[ocean_num]
@@ -157,11 +161,15 @@ def get_labels(cube, variable_name, metric):
 
     units = str(cube.units)
 
-    metric_units = {'dV/dT': '$m^3 %s^{-1}$'  %(units),
-                    'dVdT/dt': '$m^3 %s^{-1} yr^{-1}$'  %(units),
-                    'V(T)': '$m^3 %s^{-1}$'  %(units),
-                    'dV/dt': '$m^3 %s^{-1} yr^{-1}$'  %(units),
-                    'dVdt/dVdT': '$%s yr^{-1}$'  %(units)}
+    metric_units = {'dV/dT': '$m^3\ %s^{-1}$'  %(units),
+                    'dV/dS': '$m^3\ %s^{-1}$'  %(units),
+                    'dVdT/dt': '$m^3\ %s^{-1}\ yr^{-1}$'  %(units),
+                    'dVdS/dt': '$m^3\ %s^{-1}\ yr^{-1}$'  %(units),
+                    'V(T)': '$m^3\ %s^{-1}$'  %(units),
+                    'V(S)': '$m^3\ %s^{-1}$'  %(units),
+                    'dV/dt': '$m^3\ %s^{-1}\ yr^{-1}$'  %(units),
+                    'dVdt/dVdT': '$%s\ yr^{-1}$'  %(units),
+                    'dVdt/dVdS': '$%s\ yr^{-1}$'  %(units)}
 
     ylabel = metric_units[metric]
     xlabel = '%s (%s)' %(var, units)
@@ -208,21 +216,23 @@ def calc_metric(voldist_timeseries, V_timeseries, metric):
     dV/dt = transformation rate
     dVdt/dVdT = implied diabatic temperature tendency
     
+    (Or S instead of T for salinity.)
+
     """
 
     ntime = voldist_timeseries.shape[0]
     years = numpy.arange(ntime)
     nonzero_totals = numpy.apply_along_axis(numpy.count_nonzero, 0, voldist_timeseries)
 
-    if metric == 'dV/dT':
+    if metric in ['dV/dT', 'dV/dS']:
         result = voldist_timeseries.mean(axis=0)
-    elif metric == 'dVdT/dt':
+    elif metric in ['dVdT/dt', 'dVdS/dt']:
         result = numpy.apply_along_axis(linear_trend, 0, voldist_timeseries, years)
-    elif metric == 'V(T)':
+    elif metric in ['V(T)', 'V(S)']:
         result = V_timeseries.mean(axis=0)
     elif metric == 'dV/dt':
         result = numpy.apply_along_axis(linear_trend, 0, V_timeseries, years)
-    elif metric == 'dVdt/dVdT':
+    elif metric in ['dVdt/dVdT', 'dVdt/dVdS']:
         dVdt = numpy.apply_along_axis(linear_trend, 0, V_timeseries, years)
         dVdT = voldist_timeseries.mean(axis=0)
         result = dVdt / dVdT
@@ -296,7 +306,7 @@ def main(inargs):
     for plotnum, metric in enumerate(inargs.metrics):
         ax = axes.flatten()[plotnum] if type(axes) == numpy.ndarray else axes
         for labelnum, label in enumerate(inargs.labels):
-            if not ((label in ref_datasets) and (metric != 'dV/dT')):
+            if not ((label in ref_datasets) and (metric not in ['dV/dT', 'dV/dS'])):
                 yvals = hist_dict[(label, metric)]
                 ax.plot(xvals, yvals, 'o-', color=inargs.colors[labelnum], label=label) 
         ax.set_title(metric_names[metric])
@@ -305,7 +315,7 @@ def main(inargs):
         ax.set_ylabel(ylabel)
         ax.grid(True)
         set_axis_limits(ax, plotnum, inargs.xlim, inargs.ylim)
-        if metric == 'dVdt/dVdT':
+        if metric in ['dVdt/dVdT', 'dVdt/dVdS']:
             ax.legend(loc=2)
         else:
             ax.legend(loc=1)
@@ -368,8 +378,8 @@ author:
     parser.add_argument("--ylim", type=float, nargs=3, action='append', default=[],
                         help='lower_limit, upper_limit, plot_index')
 
-    parser.add_argument("--metrics", type=str, nargs='*', required=True,
-                        choices=('dV/dT', 'dVdT/dt', 'V(T)', 'dV/dt', 'dVdt/dVdT'), help='Metrics to plot')
+    parser.add_argument("--metrics", type=str, nargs='*', required=True, help='Metrics to plot',
+                        choices=('dV/dT', 'dVdT/dt', 'V(T)', 'dV/dt', 'dVdt/dVdT', 'dV/dS', 'dVdS/dt', 'V(S)', 'dVdt/dVdS'))
     parser.add_argument("--subplot_config", type=int, nargs=2, default=(1, 1), metavar=('nrows', 'ncols'),
                         help="Subplot configuration (nrows, ncols) [default = (1, 1)]")
 
