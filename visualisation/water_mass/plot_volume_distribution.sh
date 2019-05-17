@@ -35,8 +35,9 @@ fi
 for basin in "${basins[@]}"; do
 
 outfile=${fig_dir}/${var}-volume-dist_Oyr_${model}_historical-GHG-AA_r1_${basin}_1861-2005.png
+basin_file=${r87_dir}/historical/fx/ocean/r0i0p0/basin/latest/basin-inferred_fx_${model}_historical_r0i0p0.nc
 
-plot="${python} ${vis_dir}/plot_volume_distribution.py ${name} ${volfile} ${r87_dir}/historical/fx/ocean/r0i0p0/basin/latest/basin-inferred_fx_${model}_historical_r0i0p0.nc ${outfile} --data_files /g/data/r87/dbi599/data_en4/processed/${var}_Oyr_EN4-g10_????-????.nc --data_files ${r87_dir}/historical/yr/ocean/r1i1p1/${var}/latest/dedrifted/${var}_Oyr_${model}_historical_r1i1p1_??????-??????.nc --data_files ${r87_dir}/historicalGHG/yr/ocean/r1i1p1/${var}/latest/dedrifted/${var}_Oyr_${model}_historicalGHG_r1i1p1_??????-??????.nc --data_files ${r87_dir}/historicalMisc/yr/ocean/r1i1${aa_p}/${var}/latest/dedrifted/${var}_Oyr_${model}_historicalMisc_r1i1${aa_p}_??????-??????.nc --ref_basin_file /g/data/r87/dbi599/data_en4/processed/basin-inferred_fx_EN4-g10.nc --ref_volume_file /g/data/r87/dbi599/data_en4/processed/volcello-inferred_fx_EN4-g10.nc --basin ${basin} --bin_bounds ${bin_min} ${bin_max} --bin_width ${bin_width} --colors grey black red blue --labels EN4 historical GHG-only AA-only --time_bounds 1861-01-01 2005-12-31 --metrics ${metrics} --subplot_config 2 2"
+plot="${python} ${vis_dir}/plot_volume_distribution.py ${name} ${outfile} --basin_files /g/data/r87/dbi599/data_en4/processed/basin-inferred_fx_EN4-g10.nc ${basin_file} ${basin_file} ${basin_file} --volume_files /g/data/r87/dbi599/data_en4/processed/volcello-inferred_fx_EN4-g10.nc ${volfile} ${volfile} ${volfile} --data_files /g/data/r87/dbi599/data_en4/processed/${var}_Oyr_EN4-g10_????-????.nc --data_files ${r87_dir}/historical/yr/ocean/r1i1p1/${var}/latest/dedrifted/${var}_Oyr_${model}_historical_r1i1p1_??????-??????.nc --data_files ${r87_dir}/historicalGHG/yr/ocean/r1i1p1/${var}/latest/dedrifted/${var}_Oyr_${model}_historicalGHG_r1i1p1_??????-??????.nc --data_files ${r87_dir}/historicalMisc/yr/ocean/r1i1${aa_p}/${var}/latest/dedrifted/${var}_Oyr_${model}_historicalMisc_r1i1${aa_p}_??????-??????.nc --basin ${basin} --bin_bounds ${bin_min} ${bin_max} --bin_width ${bin_width} --colors grey black red blue --labels EN4 historical GHG-only AA-only --time_bounds 1861-01-01 2005-12-31 --metrics ${metrics} --subplot_config 2 2"
 
 echo ${plot}
 ${plot}
@@ -45,8 +46,7 @@ display ${outfile} &
 
 done
 
-#--ref_basin_file /g/data/r87/dbi599/data_en4/processed/basin-inferred_fx_EN4-g10.nc
-#--ref_volume_file /g/data/r87/dbi599/data_en4/processed/volcello-inferred_fx_EN4-g10.nc
+
 #--data_files /g/data/r87/dbi599/data_en4/processed/${var}_Oyr_EN4-g10_????-????.nc
 #--data_files ${r87_dir}/historical/yr/ocean/r1i1p1/${var}/latest/dedrifted/${var}_Oyr_${model}_historical_r1i1p1_??????-??????.nc
 #--data_files ${r87_dir}/historicalGHG/yr/ocean/r1i1p1/${var}/latest/dedrifted/${var}_Oyr_${model}_historicalGHG_r1i1p1_??????-??????.nc

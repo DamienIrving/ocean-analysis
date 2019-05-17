@@ -13,6 +13,7 @@ import re
 import pdb
 import argparse
 import operator
+import collections
 
 import numpy
 import pandas
@@ -256,40 +257,67 @@ def set_axis_limits(ax, plotnum, xlim_list, ylim_list):
             ax.set_ylim(upper, lower)
 
     
-def read_supporting_inputs(inargs, ref=False):
+def read_supporting_inputs(vfile, bfile, inargs, ref=False):
     """Read the supporting volume, basin and time bounds information."""
 
     if ref:
-        volume_file = inargs.ref_volume_file
-        basin_file = inargs.ref_basin_file
         time_bounds = inargs.ref_time_bounds if inargs.ref_time_bounds else inargs.time_bounds
     else:
-        volume_file = inargs.volume_file
-        basin_file = inargs.basin_file
         time_bounds = inargs.time_bounds
 
-    vcube = iris.load_cube(volume_file)
-    bcube = iris.load_cube(basin_file)
+    vcube = iris.load_cube(vfile)
+    bcube = iris.load_cube(bfile)
     time_constraint = gio.get_time_constraint(time_bounds)
 
     return vcube, bcube, time_constraint
 
 
+def initialise_label_counts(label_list):
+    """Get unique label list and label counts."""
+
+    label_counts = {}
+    for label in set(label_list):
+        label_counts[label] = 0
+
+    return label_counts
+
+
+def update_metadata(metadata_dict, vfile, vcube, bfile, bcube, dfile, dcube):
+    """Update the metadata"""
+
+    basin_hist = bcube.attributes['history']
+    current_metadata = list(metadata_dict.values())
+    already_done = basin_hist in current_metadata
+
+    if not already_done:
+        metadata_dict[bfile] = bcube.attributes['history']
+        metadata_dict[vfile] = vcube.attributes['history']
+        metadata_dict[dfile] = dcube.attributes['history']
+
+    return metadata_dict
+
+
 def main(inargs):
     """Run the program."""
 
+    # Process data
     bmin, bmax = inargs.bin_bounds
     bin_edges = numpy.arange(bmin, bmax + inargs.bin_width, inargs.bin_width)
     xvals = (bin_edges[1:] + bin_edges[:-1]) / 2
 
+    label_counts = initialise_label_counts(inargs.labels)
     ref_datasets = ['EN4']
-    hist_dict = {}
+    hist_dict = collections.OrderedDict()
+    metadata_dict = {}
     for groupnum, infiles in enumerate(inargs.data_files):
         label = inargs.labels[groupnum]
         print(label)
+        vfile = inargs.volume_files[groupnum]
+        bfile = inargs.basin_files[groupnum]
         ref = (label in ref_datasets) and len(inargs.labels) > 1
-        vcube, bcube, time_constraint = read_supporting_inputs(inargs, ref=ref)
+        vcube, bcube, time_constraint = read_supporting_inputs(vfile, bfile, inargs, ref=ref)
         dcube = combine_infiles(infiles, inargs, time_constraint)
+        metadata_dict = update_metadata(metadata_dict, vfile, vcube, bfile, bcube, infiles[0], dcube)
         voldist_timeseries = numpy.array([])
         V_timeseries = numpy.array([])
         for time_slice in dcube.slices_over('time'):
@@ -299,16 +327,23 @@ def main(inargs):
             voldist_timeseries = numpy.vstack([voldist_timeseries, voldist]) if voldist_timeseries.size else voldist
             V_timeseries = numpy.vstack([V_timeseries, V]) if V_timeseries.size else V
         for metric in inargs.metrics:
-            hist_dict[(label, metric)] = calc_metric(voldist_timeseries, V_timeseries, metric)
+            hist_dict[(label, metric, label_counts[label])] = calc_metric(voldist_timeseries, V_timeseries, metric)
+        label_counts[label] = label_counts[label] + 1
     
+    # Plot individual model/run results
     nrows, ncols = inargs.subplot_config
     fig, axes = plt.subplots(nrows, ncols, figsize=(9*ncols, 6*nrows))
     for plotnum, metric in enumerate(inargs.metrics):
         ax = axes.flatten()[plotnum] if type(axes) == numpy.ndarray else axes
-        for labelnum, label in enumerate(inargs.labels):
-            if not ((label in ref_datasets) and (metric not in ['dV/dT', 'dV/dS'])):
-                yvals = hist_dict[(label, metric)]
-                ax.plot(xvals, yvals, 'o-', color=inargs.colors[labelnum], label=label) 
+
+        labelnum = 0
+        for key, yvals in hist_dict.items():
+            label, dict_metric, count = key
+            if dict_metric == metric:
+                if not ((label in ref_datasets) and (metric not in ['dV/dT', 'dV/dS'])):
+                    ax.plot(xvals, yvals, 'o-', color=inargs.colors[labelnum], label=label) 
+                labelnum = labelnum + 1
+
         ax.set_title(metric_names[metric])
         xlabel, ylabel = get_labels(time_slice, inargs.variable, metric)
         ax.set_xlabel(xlabel)
@@ -321,6 +356,7 @@ def main(inargs):
             ax.legend(loc=1)
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
         ax.yaxis.major.formatter._useMathText = True
+
     title = get_title(dcube, inargs.basin)
     plt.suptitle(title)
 
@@ -330,9 +366,6 @@ def main(inargs):
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
     
     # Metadata
-    metadata_dict = {inargs.basin_file: bcube.attributes['history'],
-                     inargs.volume_file: vcube.attributes['history'],
-                     infiles[0]: dcube.attributes['history']}
     log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     log_file = re.sub('.png', '.met', inargs.outfile)
     cmdprov.write_log(log_file, log_text)
@@ -354,20 +387,25 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("variable", type=str, help="Variable name")
-    parser.add_argument("volume_file", type=str, help="Volume file name")
-    parser.add_argument("basin_file", type=str, help="Basin file name")
     parser.add_argument("outfile", type=str, help="Output file name")
 
     parser.add_argument("--data_files", nargs='*', type=str, action='append',
                         help="Data files for a particular grouping (e.g. a particular variable/experiment)")
 
-    parser.add_argument("--colors", nargs='*', type=str,
-                        help="Color for data files group")
+    parser.add_argument("--volume_files", nargs='*', type=str,
+                        help="Volume file for each data file group")
+    parser.add_argument("--basin_files", nargs='*', type=str,
+                        help="Basin file for each data file group")
     parser.add_argument("--labels", nargs='*', type=str, required=True, 
-                        help="Label for each data files group")
+                        help="Label for each data file group")
+    parser.add_argument("--colors", nargs='*', type=str,
+                        help="Color for each unique label")
 
     parser.add_argument("--time_bounds", type=str, nargs=2, default=None, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
+    parser.add_argument("--ref_time_bounds", type=str, nargs=2, default=None, metavar=('START_DATE', 'END_DATE'),
+                        help="Time period for reference data [default = time_bounds]")
+
     parser.add_argument("--bin_bounds", type=float, nargs=2, required=True,
                         help='bounds for the bins')
     parser.add_argument("--bin_width", type=float, default=1.0,
@@ -386,13 +424,6 @@ author:
     parser.add_argument("--basin", type=str, default='globe',
                         choices=('globe', 'indian', 'north-atlantic', 'south-atlantic', 'north-pacific', 'south-pacific'),
                         help='ocean basin to plot')
-
-    parser.add_argument("--ref_volume_file", type=str, default=None,
-                        help="Reference volume file name")
-    parser.add_argument("--ref_basin_file", type=str, default=None,
-                        help="Reference basin file name")
-    parser.add_argument("--ref_time_bounds", type=str, nargs=2, default=None, metavar=('START_DATE', 'END_DATE'),
-                        help="Time period for reference data [default = time_bounds]")
 
     parser.add_argument("--no_abort", action="store_true", default=False,
                         help="Do not abort if data fails sanity check")
