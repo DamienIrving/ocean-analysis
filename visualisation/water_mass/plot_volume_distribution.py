@@ -337,11 +337,14 @@ def main(inargs):
         ax = axes.flatten()[plotnum] if type(axes) == numpy.ndarray else axes
 
         labelnum = 0
+        labelled = []
         for key, yvals in hist_dict.items():
             label, dict_metric, count = key
             if dict_metric == metric:
                 if not ((label in ref_datasets) and (metric not in ['dV/dT', 'dV/dS'])):
-                    ax.plot(xvals, yvals, 'o-', color=inargs.colors[labelnum], label=label) 
+                    plot_label = label if not label in labelled else None
+                    ax.plot(xvals, yvals, 'o-', color=inargs.colors[labelnum], label=plot_label)
+                    labelled.append(label) 
                 labelnum = labelnum + 1
 
         ax.set_title(metric_names[metric])
