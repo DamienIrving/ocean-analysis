@@ -213,17 +213,25 @@ def chunked_collapse_by_time(cube, collapse_dims, agg_method, weights=None):
     return collapsed_cube
 
 
-def convert_to_joules(cube):
-    """Convert units from Watts to Joules"""
-    
-    assert 'W' in str(cube.units)
+def flux_to_magnitude(cube):
+    """Convert units from a flux to magnitude.
+
+    Caters for s-1 or Watts (i.e. J s-1).
+
+    """
+    orig_units = str(cube.units)
+    assert ('W' in orig_units) or ('s-1' in orig_units)
     assert 'days' in str(cube.coord('time').units)
     
     time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
     time_span_seconds = time_span_days * 60 * 60 * 24
     
     cube.data = cube.data * broadcast_array(time_span_seconds, 0, cube.shape)
-    cube.units = str(cube.units).replace('W', 'J')
+
+    if 'W' in orig_units:
+        cube.units = orig_units.replace('W', 'J')
+    else:
+        cube.units = orig_units.replace('s-1', '')
     
     return cube
 

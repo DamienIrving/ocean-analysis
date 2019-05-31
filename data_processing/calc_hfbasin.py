@@ -163,7 +163,7 @@ def main(inargs):
     zonal_cube.var_name = var_name   
 
     if inargs.cumsum:
-        zonal_cube = uconv.convert_to_joules(zonal_cube)
+        zonal_cube = uconv.flux_to_magnitude(zonal_cube)
         zonal_aggregate = cumsum(zonal_cube)
         
     iris.save(zonal_cube, inargs.outfile)

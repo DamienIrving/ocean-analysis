@@ -214,8 +214,8 @@ def main(inargs):
 
         cube_list = iris.cube.CubeList([nh_agg, sh_agg, globe_agg])
 
-        if inargs.joules:
-            cube_list = iris.cube.CubeList(map(uconv.convert_to_joules, cube_list)) 
+        if inargs.flux_to_mag:
+            cube_list = iris.cube.CubeList(map(uconv.flux_to_magnitude, cube_list)) 
 
         if file_number == 0:
             final_cube_list = cube_list
@@ -265,8 +265,8 @@ author:
     parser.add_argument("--sh_lat_bounds", type=float, nargs=2, metavar=('LOWER', 'UPPER'), default=(-91.0, 0.0),
                         help="Southern Hemisphere latitude bounds [default = entire hemisphere]")
 
-    parser.add_argument("--joules", action="store_true", default=False,
-                        help="Convert units from Watts to Joules [default: False]")
+    parser.add_argument("--flux_to_mag", action="store_true", default=False,
+                        help="Convert units from a flux to a magnitude [default: False]")
 
     parser.add_argument("--cumsum", action="store_true", default=False,
                         help="Output the cumulative sum [default: False]")

@@ -228,8 +228,8 @@ def main(inargs):
             zonal_aggregate = cube.collapsed('longitude', aggregation_functions[inargs.aggregation])
             zonal_aggregate.remove_coord('longitude')
 
-        if inargs.joules:
-            zonal_aggregate = uconv.convert_to_joules(zonal_aggregate)
+        if inargs.flux_to_mag:
+            zonal_aggregate = uconv.flux_to_magnitude(zonal_aggregate)
             
         zonal_aggregate.data = zonal_aggregate.data.astype(numpy.float32)
 
@@ -304,8 +304,8 @@ author:
 
     parser.add_argument("--cumsum", action="store_true", default=False,
                         help="Output the cumulative sum [default: False]")
-    parser.add_argument("--joules", action="store_true", default=False,
-                        help="Convert units from Watts to Joules [default: False]")
+    parser.add_argument("--flux_to_mag", action="store_true", default=False,
+                        help="Convert units from a flux to a magnitude [default: False]")
 
     args = parser.parse_args()
     assert bool(args.sftlf_file) == bool(args.realm), "To select a realm, specify --realm and --sftlf_file"             
