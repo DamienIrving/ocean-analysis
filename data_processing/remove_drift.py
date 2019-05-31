@@ -297,7 +297,8 @@ def main(inargs):
             new_cube = data_cube - drift_signal
             #assert new_cube.data.mask.sum() == drift_signal.mask.sum()
             new_cube.data.mask = drift_signal.mask
-            check_data(new_cube, data_cube, filename)
+            if not inargs.no_data_check:
+                check_data(new_cube, data_cube, filename)
         else:
             print('fake run - drift signal not subtracted')
             new_cube = data_cube
@@ -369,6 +370,9 @@ notes:
                         help="Do not perform the parent experiment check [default: False]")
     parser.add_argument("--no_time_check", action="store_true", default=False,
                         help="Do not perform the time axis adjustment check [default: False]")
+    parser.add_argument("--no_data_check", action="store_true", default=False,
+                        help="Do not perform check of new dta bounds [default: False]")
+
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Split the polynomial calculation up to avoid memory errors [default: False]")
     
