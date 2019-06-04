@@ -426,7 +426,7 @@ def read_dates(infile):
     return date_list, date_metadata
 
 
-def salinity_unit_check(cube, valid_min=0, valid_max=60, abort=True):
+def salinity_unit_check(cube, valid_min=0, valid_max=75, abort=True):
     """Check CMIP5 salinity units.
 
     Most modeling groups store their salinity data
