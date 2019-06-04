@@ -235,6 +235,9 @@ def combine_files(files, var, new_calendar=None):
     if 'time' in coord_names:
         cube = check_time_units(cube, new_calendar=new_calendar)
 
+    if 'salinity' in var.lower():
+        cube = salinity_unit_check(cube)
+
     return cube, history
 
 
