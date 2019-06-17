@@ -95,7 +95,7 @@ def multiply_by_area(cube, area_cube):
 def lat_aggregate(cube, coord_names, lat_bounds, agg_method):
     """Calculate the latitudinal aggregate for a given latitude band."""
 
-    lat_cube = grids.extract_latregion_curvilinear(cube,lat_bounds)
+    lat_cube = grids.extract_latregion_curvilinear(cube, lat_bounds)
     lat_agg = lat_cube.collapsed(coord_names[-2:], agg_method)
     lat_agg.remove_coord('latitude')
     lat_agg.remove_coord('longitude')
@@ -136,7 +136,7 @@ def parallel_zonal_agg(cube, coord_names, nlat, new_lat_bounds, agg_method, targ
     return new_data
 
 
-def curvilinear_agg(cube, ref_cube, agg_method):
+def curvilinear_agg(cube, ref_cube, agg_method, weights=None):
     """Zonal aggregation for curvilinear data."""
 
     coord_names = [coord.name() for coord in cube.dim_coords]
@@ -192,6 +192,10 @@ def main(inargs):
     else:
         area_cube = None
 
+    if inargs.weights:
+        weights_cube = iris.load_cube(inargs.weights)
+        metadata_dict[inargs.weights] = weights_cube.attributes['history']
+
     if inargs.sftlf_file or inargs.realm:
         assert inargs.sftlf_file and inargs.realm, "Must give --realm and --sftlf_file"
         sftlf_cube = iris.load_cube(inargs.sftlf_file, 'land_area_fraction')
@@ -218,14 +222,22 @@ def main(inargs):
         if inargs.realm:
             cube = uconv.apply_land_ocean_mask(cube, sftlf_cube, inargs.realm)
 
+        if inargs.weights:
+            assert cube.ndim == 3
+            broadcasted_weights = uconv.broadcast_array(weights_cube.data, [1, 2], cube.shape)
+        else:
+            broadcasted_weights = None
+            
         aux_coord_names = [coord.name() for coord in cube.aux_coords]
         if 'latitude' in aux_coord_names:
             # curvilinear grid
             assert ref_cube
-            zonal_aggregate = curvilinear_agg(cube, ref_cube, aggregation_functions[inargs.aggregation])        
+            zonal_aggregate = curvilinear_agg(cube, ref_cube, aggregation_functions[inargs.aggregation])     
+            #TODO: Add weights=broadcasted_weights
         else:
             # rectilinear grid
-            zonal_aggregate = cube.collapsed('longitude', aggregation_functions[inargs.aggregation])
+            zonal_aggregate = cube.collapsed('longitude', aggregation_functions[inargs.aggregation],
+                                             weights=broadcasted_weights)
             zonal_aggregate.remove_coord('longitude')
 
         if inargs.flux_to_mag:
@@ -301,6 +313,8 @@ author:
                         help="Output annual mean [default=False]")
     parser.add_argument("--area", type=str, default=None, 
                         help="""Multiply data by area (using this file) [default = None]""")
+    parser.add_argument("--weights", type=str, default=None, 
+                        help="""Weights file for aggregation [default = None]""")
 
     parser.add_argument("--cumsum", action="store_true", default=False,
                         help="Output the cumulative sum [default: False]")
