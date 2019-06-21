@@ -40,27 +40,34 @@ import remove_drift
 import general_io as gio
 
 
-# Define functions
+# Define functions 
 
-#def index_text(index_list, time_axis=False):
-#    """Generate the text for the index selection."""
-#
-#    text =  '[:,' if time_axis else '['
-#    for count, index in enumerate(index_list):
-#        if count == 0:
-#            text = text + str(index)
-#        else:
-#            text = text + ', ' + str(index)
-#
-#    return text + ']'  
-    
+def select_point(cube, index_list, timeseries=False):
+    """Select a given grid point."""
+
+    if timeseries:
+        assert len(index_list) == cube.ndim - 1
+    else:
+        assert len(index_list) == cube.ndim
+
+    if len(index_list) == 1:
+        a = index_list[0]
+        point = cube[:, a] if timeseries else cube[a]
+    elif len(index_list) == 2:
+        a, b = index_list
+        point = cube[:, a, b] if timeseries else cube[a, b]
+    elif len(index_list) == 3:
+        a, b, c = index_list
+        point = cube[:, a, b, c] if timeseries else cube[a, b, c]
+
+    return point
+ 
 
 def read_data(file_list, var, grid_point, convert_to_annual=False):
     """Read input data."""
 
-    z, i, j = grid_point
     cube, history = gio.combine_files(file_list, var)   
-    cube = cube[:, z, i, j]
+    cube = select_point(cube, grid_point, timeseries=True)
 
     if convert_to_annual:
         cube = timeseries.convert_to_annual(cube)
@@ -71,11 +78,14 @@ def read_data(file_list, var, grid_point, convert_to_annual=False):
 def cubic_fit(infile, grid_point, time_axis):
     """Get the cubic polynomial."""
 
-    z, i, j = grid_point
-    a_cube = iris.load_cube(infile, 'coefficient a')[z, i, j] 
-    b_cube = iris.load_cube(infile, 'coefficient b')[z, i, j]
-    c_cube = iris.load_cube(infile, 'coefficient c')[z, i, j]
-    d_cube = iris.load_cube(infile, 'coefficient d')[z, i, j]
+    a_cube = iris.load_cube(infile, 'coefficient a')
+    a_cube = select_point(a_cube, grid_point) 
+    b_cube = iris.load_cube(infile, 'coefficient b')
+    b_cube = select_point(b_cube, grid_point)
+    c_cube = iris.load_cube(infile, 'coefficient c')
+    c_cube = select_point(c_cube, grid_point)
+    d_cube = iris.load_cube(infile, 'coefficient d')
+    d_cube = select_point(d_cube, grid_point)
 
     numpy_poly = numpy.poly1d([float(d_cube.data), 
                                float(c_cube.data),
@@ -84,6 +94,16 @@ def cubic_fit(infile, grid_point, time_axis):
     cubic_data = numpy_poly(time_axis)
 
     return cubic_data, a_cube
+
+
+def get_title(grid_point):
+    """Get the plot title."""
+
+    title = "Grid point: "
+    for index in grid_point:
+        title = title + str(index) + " "
+
+    return title
 
 
 def main(inargs):
@@ -108,8 +128,8 @@ def main(inargs):
     #TODO: coeff metadata    
 
     # Time axis adjustment
-    z, i, j = inargs.grid_point
-    first_data_cube = iris.load_cube(inargs.experiment_files[0], 'sea_water_potential_temperature')[:, z, i, j]
+    first_data_cube = iris.load_cube(inargs.experiment_files[0], inargs.variable)
+    first_data_cube = select_point(first_data_cube, inargs.grid_point, timeseries=True)
     first_data_cube = timeseries.convert_to_annual(first_data_cube)
     time_diff, branch_time, new_time_unit = remove_drift.time_adjustment(first_data_cube, a_cube, 'annual')
 
@@ -123,10 +143,14 @@ def main(inargs):
     plt.plot(experiment_time_values, experiment_cube.data, label='experiment')
     plt.plot(experiment_time_values, dedrifted_cube.data, label='dedrifted')
     plt.plot(control_cube.coord('time').points, cubic_data, label='cubic fit')
+    if inargs.ylim:
+        ymin, ymax = inargs.ylim
+        plt.ylim(ymin, ymax)
     plt.ylabel(inargs.variable)
     plt.xlabel(str(new_time_unit))
     plt.legend()
-    plt.title('Grid point: [%i, %i, %i]'  %(z, i, j))
+    title = get_title(inargs.grid_point)
+    plt.title(title)
 
     # Save output
     plt.savefig(inargs.outfile, bbox_inches='tight')
@@ -162,8 +186,11 @@ author:
     parser.add_argument("--dedrifted_files", nargs='*', type=str,
                         help="dedrifted experiment data files")
 
-    parser.add_argument("--grid_point", type=int, nargs=3,
+    parser.add_argument("--grid_point", type=int, nargs='*',
                         help="Array indexes for grid point to plot (e.g. 0 58 35)")
+
+    parser.add_argument("--ylim", type=float, nargs=2, metavar=('MIN', 'MAX'), default=None,
+                        help="limits for y axis")
 
     args = parser.parse_args()             
     main(args)
