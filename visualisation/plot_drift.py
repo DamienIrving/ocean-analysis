@@ -143,6 +143,10 @@ def main(inargs):
     plt.plot(experiment_time_values, experiment_cube.data, label='experiment')
     plt.plot(experiment_time_values, dedrifted_cube.data, label='dedrifted')
     plt.plot(control_cube.coord('time').points, cubic_data, label='cubic fit')
+    if inargs.outlier_threshold:
+        data, outlier_idx = timeseries.outlier_removal(control_cube.data, inargs.outlier_threshold)
+        plt.plot(control_cube.coord('time').points[outlier_idx], control_cube.data[outlier_idx],
+                 marker='o', linestyle='none', color='r', alpha=0.3)
     if inargs.ylim:
         ymin, ymax = inargs.ylim
         plt.ylim(ymin, ymax)
@@ -179,12 +183,15 @@ author:
     parser.add_argument("coefficient_file", type=str, help="Drift coefficient file name")
     parser.add_argument("outfile", type=str, help="Output file name")
 
-    parser.add_argument("--control_files", nargs='*', type=str,
+    parser.add_argument("--control_files", nargs='*', type=str, required=True,
                         help="control data files")
-    parser.add_argument("--experiment_files", nargs='*', type=str,
+    parser.add_argument("--experiment_files", nargs='*', type=str, required=True,
                         help="experiment data files")
-    parser.add_argument("--dedrifted_files", nargs='*', type=str,
+    parser.add_argument("--dedrifted_files", nargs='*', type=str, required=True,
                         help="dedrifted experiment data files")
+
+    parser.add_argument("--outlier_threshold", type=float, default=None,
+                        help="Indicate points that were removed from control in drift calculation [default: None]")
 
     parser.add_argument("--grid_point", type=int, nargs='*',
                         help="Array indexes for grid point to plot (e.g. 0 58 35)")

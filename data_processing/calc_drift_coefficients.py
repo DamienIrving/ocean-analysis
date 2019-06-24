@@ -51,18 +51,18 @@ def save_history(cube, field, filename):
         pass
 
 
-def polyfit(data, time_axis, masked_array, remove_outliers):
+def polyfit(data, time_axis, masked_array, outlier_threshold):
     """Fit polynomial to data."""    
 
     if not masked_array:
-        if remove_outliers:
-            data = timeseries.outlier_removal(data, method=remove_outliers)
+        if outlier_threshold:
+            data, outlier_idx = timeseries.outlier_removal(data, outlier_threshold)
         coeffs = numpy.ma.polyfit(time_axis, data, 3)[::-1]
     elif data.mask.sum() > 0:
         coeffs = numpy.array([data.fill_value]*4) 
     else:    
-        if remove_outliers:
-            data = timeseries.outlier_removal(data, method=remove_outliers)
+        if outlier_threshold:
+            data, outlier_idx = timeseries.outlier_removal(data, outlier_threshold)
         coeffs = numpy.ma.polyfit(time_axis, data, 3)[::-1]
 
     return coeffs
@@ -80,7 +80,7 @@ def is_masked_array(array):
 
 
 def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False, 
-                      chunk_annual=False, remove_outliers=None):
+                      chunk_annual=False, outlier_threshold=None):
     """Calculate the polynomial coefficients.
 
     Can select to convert data to annual timescale first.
@@ -100,7 +100,7 @@ def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False
                 cube_slice = timeseries.convert_to_annual(cube_slice, chunk=chunk_annual)
             time_axis = cube_slice.coord('time').points  #.astype(numpy.float32)
             coefficients[:,d, ::] = numpy.ma.apply_along_axis(polyfit, 0, cube_slice.data, time_axis,
-                                                              masked_array, remove_outliers)
+                                                              masked_array, outlier_threshold)
         fill_value = cube_slice.data.fill_value 
         coefficients = numpy.ma.masked_values(coefficients, fill_value)
     else:
@@ -108,10 +108,10 @@ def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False
             cube = timeseries.convert_to_annual(cube)
         time_axis = cube.coord('time').points  # .astype(numpy.float32)
         if cube.ndim == 1:
-            coefficients = polyfit(cube.data, time_axis, masked_array, remove_outliers)
-        else:    
+            coefficients = polyfit(cube.data, time_axis, masked_array, outlier_threshold)
+        else:   
             coefficients = numpy.ma.apply_along_axis(polyfit, 0, cube.data, time_axis,
-                                                     masked_array, remove_outliers)
+                                                     masked_array, outlier_threshold)
             if masked_array:
                 fill_value = cube.data.fill_value 
                 coefficients = numpy.ma.masked_values(coefficients, fill_value)
@@ -176,7 +176,7 @@ def main(inargs):
     coefficients, time_start, time_end = calc_coefficients(cube, coord_names, masked_array=masked_array,
                                                            convert_annual=inargs.annual,
                                                            chunk_annual=inargs.chunk,
-                                                           remove_outliers=inargs.remove_outliers)
+                                                           outlier_threshold=inargs.outlier_threshold)
     global_atts['time_unit'] = str(cube.coord('time').units)
     global_atts['time_calendar'] = str(cube.coord('time').units.calendar)
     global_atts['time_start'] = time_start
@@ -260,8 +260,8 @@ notes:
                         help="Convert data to annual timescale [default: False]")
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Chunk annual timescale conversion to avoid memory errors [default: False]")
-    parser.add_argument("--remove_outliers", type=str, default=None, choices=('missing', 'mean'),
-                        help="Replace outliers in each timeseries with the mean or missing value [default: False]")
+    parser.add_argument("--outlier_threshold", type=float, default=None,
+                        help="Remove points that deviate from the rolling median by greater than this threshold [default: None]")
 
     args = parser.parse_args()
     main(args)

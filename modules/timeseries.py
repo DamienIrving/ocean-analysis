@@ -10,11 +10,13 @@ Functions:
 
 """
 
-import numpy
+import pdb
+
+import numpy as np
+import pandas as pd
 import iris
 import iris.coord_categorisation
 import cf_units
-import pdb
 
 import general_io as gio
 import convenient_universal as uconv
@@ -83,9 +85,9 @@ def calc_trend(cube, running_mean=False, per_yr=False,
     time_axis = cube.coord('time')
     time_axis = convert_to_seconds(time_axis)
 
-    trend = numpy.ma.apply_along_axis(_linear_trend, 0, cube.data, time_axis.points, remove_outliers)
-    if type(cube.data) == numpy.ma.core.MaskedArray:
-        trend = numpy.ma.masked_values(trend, cube.data.fill_value)
+    trend = np.ma.apply_along_axis(_linear_trend, 0, cube.data, time_axis.points, remove_outliers)
+    if type(cube.data) == np.ma.core.MaskedArray:
+        trend = np.ma.masked_values(trend, cube.data.fill_value)
 
     if per_yr:
         trend = trend * 60 * 60 * 24 * 365.25
@@ -252,7 +254,7 @@ def get_control_time_constraint(control_cube, ref_cube, time_bounds, branch_time
 def is_annual(cube):
     """Check whether the data is annual timescale."""
 
-    year_diffs = numpy.diff(cube.coord('year').points)
+    year_diffs = np.diff(cube.coord('year').points)
     if year_diffs.min() < 1:
         annual = False
     else:
@@ -270,8 +272,8 @@ def _linear_trend(data, time_axis, remove_outliers):
 
     masked_flag = False
 
-    if type(data) == numpy.ma.core.MaskedArray:
-        if type(data.mask) == numpy.bool_:
+    if type(data) == np.ma.core.MaskedArray:
+        if type(data.mask) == np.bool_:
             if data.mask:
                 masked_flag = True
         elif data.mask[0]:
@@ -282,29 +284,22 @@ def _linear_trend(data, time_axis, remove_outliers):
     else:
         if remove_outliers:
             data = outlier_removal(data, method=remove_outliers)
-        return numpy.ma.polyfit(time_axis, data, 1)[0]
+        return np.ma.polyfit(time_axis, data, 1)[0]
 
 
-def outlier_removal(data, method='missing'):
-    """Remove outliers from a timeseries.
+def outlier_removal(data, threshold):
+    """Remove outliers from a timeseries."""
 
-    Can replace outliers with a missing value/mask or the mean value.
+    data_series = pd.Series(data)
+    median = data_series.rolling(10).median().fillna(method='bfill').fillna(method='ffill')
 
-    """
+    difference = np.abs(data_series - median)
+    outlier_bools = difference > threshold
 
-    assert method in ('missing', 'mean')
+    clean_data = np.ma.masked_where(outlier_bools.values, data)
+    outlier_idx = list(data_series[outlier_bools].index)
 
-    std = numpy.ma.std(data)
-    mean = numpy.ma.mean(data)
-    
-    if method == 'missing':
-        clean_data = numpy.ma.masked_where(data > mean + 3*std, data)
-        clean_data = numpy.ma.masked_where(clean_data < mean - 3*std, clean_data)
-    elif method == 'mean':
-        clean_data = numpy.where(data > mean + 3*std, mean, data)
-        clean_data = numpy.where(clean_data < mean - 3*std, mean, clean_data)
-    
-    return clean_data
+    return clean_data, outlier_idx
 
 
 def undo_unit_scaling(cube):
