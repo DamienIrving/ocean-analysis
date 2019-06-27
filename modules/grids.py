@@ -171,13 +171,13 @@ def curvilinear_to_rectilinear(cube, weights=None, target_grid_cube=None, grid_r
     return new_cube, coord_names, regrid_status
 
 
-def _create_region_mask(latitude_array, target_shape, lat_bounds):
-    """Create mask from the latitude auxillary coordinate"""
+def _create_region_mask(horiz_array, target_shape, horiz_bounds):
+    """Create mask from a horizontal (i.e. latitude or longitude) auxillary coordinate"""
 
     target_ndim = len(target_shape)
 
-    southern_lat, northern_lat = lat_bounds
-    mask_array = numpy.where((latitude_array >= southern_lat) & (latitude_array < northern_lat), False, True)
+    lower_bound, upper_bound = lat_bounds
+    mask_array = numpy.where((horiz_array >= lower_bound) & (horiz_array < upper_bound), False, True)
 
     mask = uconv.broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
     assert mask.shape == target_shape 
@@ -185,8 +185,8 @@ def _create_region_mask(latitude_array, target_shape, lat_bounds):
     return mask
 
 
-def extract_latregion_curvilinear(cube, lat_bounds):
-    """Extract region of interest from a curvilinear grid.
+def extract_horizontal_region_curvilinear(cube, keep_coord, horiz_bounds):
+    """Extract region (defined by lat or lon bounds) of interest from a curvilinear grid.
 
     Returns the entire original cube with all points masked except those of interest.
 
@@ -194,7 +194,7 @@ def extract_latregion_curvilinear(cube, lat_bounds):
 
     cube = cube.copy() 
  
-    region_mask = _create_region_mask(cube.coord('latitude').points, cube.shape, lat_bounds)
+    region_mask = _create_region_mask(cube.coord(keep_coord).points, cube.shape, horiz_bounds)
     land_ocean_mask = cube.data.mask
     complete_mask = region_mask + land_ocean_mask
 

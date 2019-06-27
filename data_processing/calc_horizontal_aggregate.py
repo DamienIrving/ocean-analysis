@@ -1,7 +1,7 @@
 """
-Filename:     calc_zonal_aggregate.py
+Filename:     calc_horizontal_aggregate.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  calculate the zonal aggregate
+Description:  calculate the horizontal (i.e. latitude or longitude) aggregate
 
 """
 
@@ -92,77 +92,77 @@ def multiply_by_area(cube, area_cube):
     return cube
 
 
-def lat_aggregate(cube, coord_names, lat_bounds, agg_method):
-    """Calculate the latitudinal aggregate for a given latitude band."""
+def horiz_aggregate(cube, coord_names, keep_coord, horiz_bounds, agg_method):
+    """Calculate the horizontal aggregate for a given band."""
 
-    lat_cube = grids.extract_latregion_curvilinear(cube, lat_bounds)
-    lat_agg = lat_cube.collapsed(coord_names[-2:], agg_method)
-    lat_agg.remove_coord('latitude')
-    lat_agg.remove_coord('longitude')
+    horiz_cube = grids.extract_horizontal_region_curvilinear(cube, keep_coord, horiz_bounds)
+    horiz_agg = horiz_cube.collapsed(coord_names[-2:], agg_method)
+    horiz_agg.remove_coord('latitude')
+    horiz_agg.remove_coord('longitude')
     
     for coord_name in coord_names[-2:]:
         try:
-            lat_agg.remove_coord(coord_name)
+            horiz_agg.remove_coord(coord_name)
         except iris.exceptions.CoordinateNotFoundError:
             pass
 
-    return lat_agg
+    return horiz_agg
 
 
-def parallel_zonal_agg(cube, coord_names, nlat, new_lat_bounds, agg_method, target_shape):
-    """Calculate the zonal aggregate in parallel."""
+#def parallel_zonal_agg(cube, coord_names, nlat, new_lat_bounds, agg_method, target_shape):
+#    """Calculate the zonal aggregate in parallel."""
+#
+#    # Start my pool
+#    print('CPUs:', multiprocessing.cpu_count())
+#    pool = multiprocessing.Pool( multiprocessing.cpu_count() )
+#
+#    # Build task list
+#    tasks = []
+#    for lat_index in range(0, nlat):
+#        tasks.append( (cube, coord_names, new_lat_bounds[lat_index], agg_method) )
+#    
+#    # Run tasks
+#    results = [pool.apply_async( lat_aggregate, t ) for t in tasks]
+#
+#    # Process results
+#    new_data = numpy.ma.zeros(target_shape)
+#    for lat_index, result in enumerate(results):
+#        lat_agg = result.get()
+#        new_data[..., lat_index] = lat_agg.data
+#        
+#    pool.close()
+#    pool.join()
+#
+#    return new_data
 
-    # Start my pool
-    print('CPUs:', multiprocessing.cpu_count())
-    pool = multiprocessing.Pool( multiprocessing.cpu_count() )
 
-    # Build task list
-    tasks = []
-    for lat_index in range(0, nlat):
-        tasks.append( (cube, coord_names, new_lat_bounds[lat_index], agg_method) )
-    
-    # Run tasks
-    results = [pool.apply_async( lat_aggregate, t ) for t in tasks]
-
-    # Process results
-    new_data = numpy.ma.zeros(target_shape)
-    for lat_index, result in enumerate(results):
-        lat_agg = result.get()
-        new_data[..., lat_index] = lat_agg.data
-        
-    pool.close()
-    pool.join()
-
-    return new_data
-
-
-def curvilinear_agg(cube, ref_cube, agg_method, weights=None):
-    """Zonal aggregation for curvilinear data."""
+def curvilinear_agg(cube, ref_cube, keep_coord, agg_method, weights=None):
+    """Horizontal aggregation for curvilinear data."""
 
     coord_names = [coord.name() for coord in cube.dim_coords]
 
     assert coord_names[0] == 'time'
     target_shape = [cube.shape[0]]
     target_coords = [(cube.coord('time'), 0)]
-    target_lat_index = 1
+    target_horiz_index = 1
 
     if cube.ndim == 4:
         assert coord_names[1] == 'depth'
         target_shape.append(cube.shape[1])
         target_coords.append((cube.coord('depth'), 1))
-        target_lat_index = 2
+        target_horiz_index = 2
 
-    new_lat_bounds = ref_cube.coord('latitude').bounds
-    nlat = len(new_lat_bounds)
-    target_shape.append(nlat)
+    new_horiz_bounds = ref_cube.coord(keep_coord).bounds
+    nhoriz = len(new_horiz_bounds)
+    target_shape.append(nhoriz)
     
     new_data = numpy.ma.zeros(target_shape)
-    for lat_index in range(0, nlat):
-        lat_agg = lat_aggregate(cube, coord_names, new_lat_bounds[lat_index], agg_method)
-        new_data[..., lat_index] = lat_agg.data
+    for horiz_index in range(0, nhoriz):
+        horiz_agg = horiz_aggregate(cube, coord_names, keep_coord, new_horiz_bounds[horiz_index], agg_method)
+        new_data[..., horiz_index] = horiz_agg.data
     #new_data = parallel_zonal_agg(cube, coord_names, nlat, new_lat_bounds, agg_method, target_shape)
 
-    target_coords.append((ref_cube.coord('latitude'), target_lat_index))
+    target_coords.append((ref_cube.coord(keep_coord), target_horiz_index))
     new_cube = iris.cube.Cube(new_data,
                               standard_name=cube.standard_name,
                               long_name=cube.long_name,
@@ -176,6 +176,9 @@ def curvilinear_agg(cube, ref_cube, agg_method, weights=None):
 
 def main(inargs):
     """Run the program."""
+
+    keep_coord = 'latitude' if inargs.direction == 'zonal' else 'longitude'
+    collapse_coord = 'longitude' if inargs.direction == 'zonal' else 'latitude'
 
     depth_constraint = gio.iris_vertical_constraint(None, inargs.max_depth)
     metadata_dict = {}
@@ -232,37 +235,37 @@ def main(inargs):
         if 'latitude' in aux_coord_names:
             # curvilinear grid
             assert ref_cube
-            zonal_aggregate = curvilinear_agg(cube, ref_cube, aggregation_functions[inargs.aggregation])     
+            horiz_aggregate = curvilinear_agg(cube, ref_cube, keep_coord, aggregation_functions[inargs.aggregation])     
             #TODO: Add weights=broadcasted_weights
         else:
             # rectilinear grid
-            zonal_aggregate = cube.collapsed('longitude', aggregation_functions[inargs.aggregation],
+            horiz_aggregate = cube.collapsed(collapse_coord, aggregation_functions[inargs.aggregation],
                                              weights=broadcasted_weights)
-            zonal_aggregate.remove_coord('longitude')
+            horiz_aggregate.remove_coord(collapse_coord)
 
         if inargs.flux_to_mag:
-            zonal_aggregate = uconv.flux_to_magnitude(zonal_aggregate)
+            horiz_aggregate = uconv.flux_to_magnitude(horiz_aggregate)
             
-        zonal_aggregate.data = zonal_aggregate.data.astype(numpy.float32)
+        horiz_aggregate.data = horiz_aggregate.data.astype(numpy.float32)
 
         if inargs.outfile[-3:] == '.nc':
-            output_cubelist.append(zonal_aggregate)
+            output_cubelist.append(horiz_aggregate)
         elif inargs.outfile[-1] == '/': 
             if inargs.cumsum:
-                zonal_aggregate = cumsum(zonal_aggregate)       
+                horiz_aggregate = cumsum(horiz_aggregate)       
             infile = filename.split('/')[-1]
-            infile = re.sub(cube.var_name + '_', cube.var_name + '-' + 'zonal-' + inargs.aggregation + '_', infile)
+            infile = re.sub(cube.var_name + '_', cube.var_name + '-' + inargs.direction + '-' + inargs.aggregation + '_', infile)
             if inargs.annual:
                 infile = re.sub('Omon', 'Oyr', infile)
                 infile = re.sub('Amon', 'Ayr', infile)
        
             outfile = inargs.outfile + infile
             metadata_dict[filename] = cube.attributes['history'] 
-            zonal_aggregate.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+            horiz_aggregate.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
 
-            iris.save(zonal_aggregate, outfile)   #netcdf_format='NETCDF3_CLASSIC')
+            iris.save(horiz_aggregate, outfile)   #netcdf_format='NETCDF3_CLASSIC')
             print('output:', outfile)
-            del zonal_aggregate
+            del horiz_aggregate
 
     if inargs.outfile[-3:] == '.nc':
         equalise_attributes(output_cubelist)
@@ -286,7 +289,7 @@ author:
 
 """
 
-    description = 'Calculate the zonal aggregate'
+    description = 'Calculate the horizontal (i.e. latitude or longitude) aggregate'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
@@ -294,7 +297,8 @@ author:
                                      
     parser.add_argument("infiles", type=str, nargs='*', help="Input file")
     parser.add_argument("var", type=str, help="Variable")
-    parser.add_argument("aggregation", type=str, choices=('mean', 'sum'), help="Method for zonal aggregation")
+    parser.add_argument("direction", type=str, choices=('zonal', 'meridional'), help="Calculate the zonal or meridional aggregate")
+    parser.add_argument("aggregation", type=str, choices=('mean', 'sum'), help="Method for horizontal aggregation")
     parser.add_argument("outfile", type=str, help="Output file")
 
     parser.add_argument("--ref_file", type=str, nargs=2, metavar=('FILE', 'VARIABLE'), default=None,
