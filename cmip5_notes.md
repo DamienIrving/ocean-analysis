@@ -171,6 +171,20 @@ Other surface variables of interest:
 * Monthly: Omon
 * Yearly: Oyr
 
+### Model overlap
+
+From [Heuzé & Heywood (2015)](https://journals.ametsoc.org/doi/full/10.1175/JCLI-D-14-00381.1):
+
+* ACCESS1.0 has the same atmosphere model code and configuration as HadGEM2 and the same ocean model code as GFDL CM3 and GFDL-ESM2M (but a different configuration).
+* CCSM4 and CESM1 (CAM5) have the same ocean model code but use a different atmosphere model code.
+* CMCC-CM and CMCC-CMS have the same ocean code and configuration and the same atmosphere code with different configurations.
+* GFDL-ESM2G and GFDL-ESM2M share the same atmosphere, land, and sea ice model codes. GFDL-ESM2M and GFDL CM3 share ocean codes that are roughly the same, whereas their atmosphere codes differ.
+* GISS-E2-H and GISS-E2-R have the same atmosphere model code but different oceans.
+* HadGEM2-ES is basically HadGEM2-CC with the addition of tropospheric chemistry.
+* IPSL-CM5A-LR and IPSL-CM5A-MR have the same ocean and atmosphere model codes, but the resolution of the atmosphere is higher in IPSL-CM5A-MR.
+* MIROC5 features a more recent version of the ocean model code than MIROC-ESM-CHEM and a different atmosphere model.
+* MPI-ESM-LR and MPI-ESM-MR share the same ocean and atmosphere model codes; however, MPI-ESM-MR has a higher horizontal resolution in the ocean and vertical resolution in the atmosphere.
+
 
 ### General model details
 
