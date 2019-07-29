@@ -341,6 +341,7 @@ Model details from [Huang and Qiao (2015)](https://link.springer.com/article/10.
 | Model          | ocean grid      | ocean model details |       
 | ---            | ---             | ---                 |   
 | ACCESS1-0      |                 | BO, FS, FWF (Bi et al., 2013) |
+| ACCESS1-3      |                 | BO, FS, FWF (Bi et al., 2013) |
 | BCC-CSM1-1     |                 | BO, FS, FWF (Griffies et al., 2005) |
 | BCC-CSM1-1-m   |                 | BO, FS, FWF (Griffies et al., 2005) |
 | CanESM2        | regular lat/lon | BO, RL, VSF (Merryfield et al., 2013) |
