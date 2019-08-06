@@ -42,7 +42,10 @@ import general_io as gio
 
 # Define functions 
 
-names = {'masso': 'sea_water_mass', 'volo': 'sea_water_volume'}
+names = {'masso': 'sea_water_mass', 'volo': 'sea_water_volume',
+         'soga': 'sea_water_salinity', 'zosga': 'global_average_sea_level_change',
+         'zostoga': 'global_average_thermosteric_sea_level_change',
+         'zossga': 'global_average_steric_sea_level_change'}
 
 def read_global_variable(model, variable, ensemble, project):
     """Read data for a global variable"""
@@ -59,6 +62,8 @@ def read_global_variable(model, variable, ensemble, project):
     
     if file_list:
         cube, history = gio.combine_files(file_list, names[variable])
+        if variable == 'soga':
+            cube = gio.salinity_unit_check(cube)
         cube = timeseries.convert_to_annual(cube)
     else:
         cube = None
@@ -66,10 +71,10 @@ def read_global_variable(model, variable, ensemble, project):
     return cube
 
 
-def plot_global_variable(ax, data, long_name, units, color):
+def plot_global_variable(ax, data, long_name, units, color, label=None):
     """Plot a global variable."""
 
-    ax.plot(data, color=color)
+    ax.plot(data, color=color, label=label)
     ax.set_title(long_name)
     ax.set_xlabel('year')
     ax.set_ylabel(units)
@@ -80,7 +85,14 @@ def main(inargs):
     """Run the program."""
 
     masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project)
-    volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project)  
+    volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project)
+    soga_cube = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project)  
+    zostoga_cube = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project) 
+    if inargs.project == 'cmip5':
+        zosga_cube = read_global_variable(inargs.model, 'zosga', inargs.run, inargs.project) 
+        zossga_cube = read_global_variable(inargs.model, 'zossga', inargs.run, inargs.project)
+    else:
+        zosga_cube = zossga_cube = None
 
     fig = plt.figure(figsize=[16, 15])
     if masso_cube:
@@ -92,8 +104,19 @@ def main(inargs):
     if masso_cube and volo_cube:
         ax3 = fig.add_subplot(3, 2, 3)
         units = str(masso_cube.units) + ' / ' + str(volo_cube.units)
-        plot_global_variable(ax3, masso_cube.data / volo_cube.data, 'density', units, 'grey')
-
+        plot_global_variable(ax3, masso_cube.data / volo_cube.data, 'Density', units, 'grey')
+    if soga_cube:
+        ax4 = fig.add_subplot(3, 2, 4)
+        plot_global_variable(ax4, soga_cube.data, soga_cube.long_name, 'g/kg', 'orange')
+    if zostoga_cube:
+        ax5 = fig.add_subplot(3, 2, 5)
+        if zosga_cube:
+            ax5.plot(zosga_cube.data, color='purple', label=zosga_cube.long_name, linestyle=':')
+        if zossga_cube:
+            ax5.plot(zossga_cube.data, color='purple', label=zossga_cube.long_name, linestyle='-.')
+        plot_global_variable(ax5, zostoga_cube.data, 'Sea Level',
+                             zostoga_cube.units, 'purple', label=zostoga_cube.long_name)
+        ax5.legend()
 
     # Save output
     plt.savefig(inargs.outfile, bbox_inches='tight')
