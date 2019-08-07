@@ -58,13 +58,22 @@ names = {'masso': 'sea_water_mass',
          'wfonocorr': 'water_flux_into_sea_water_without_flux_correction',
          'hfds': 'surface_downward_heat_flux_in_sea_water',
          'hfcorr': 'heat_flux_correction',
-         'hfgeou' : 'upward_geothermal_heat_flux_at_sea_floor'}
+         'hfgeou' : 'upward_geothermal_heat_flux_at_sea_floor',
+         'rsdt': 'toa_incoming_shortwave_flux',
+         'rlut': 'toa_outgoing_longwave_flux',
+         'rsut': 'toa_outgoing_shortwave_flux'}
 
 
 def clef_search(model, variable, ensemble, project):
     """Use Clef to search for data files"""
 
-    table = 'fx' if variable == 'areacello' else 'Omon'
+    if variable in ['areacello', 'areacella']:
+        table = 'fx'
+    elif variable in ['rsdt', 'rsut', 'rlut']:
+        table = 'Amon'
+    else:
+        table = 'Omon'
+
     constraints = {'variable': variable, 'model': model, 'table': table,
                    'experiment': 'piControl', 'ensemble': ensemble}
 
@@ -104,7 +113,8 @@ def read_spatial_flux(model, variable, ensemble, project):
     """Read spatial flux data and convert to global value"""
     
     file_list = clef_search(model, variable, ensemble, project)
-    area_file = clef_search(model, 'areacello', 'r0i0p0', project)[0]
+    area_var = 'areacella' if variable in ['rsdt', 'rlut', 'rsut'] else 'areacello'
+    area_file = clef_search(model, area_var, 'r0i0p0', project)[0]
     
     if file_list and area_file:
         cube, history = gio.combine_files(file_list, names[variable])
@@ -163,10 +173,14 @@ def main(inargs):
     hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project)
     hfcorr_cube = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project)
     hfgeou_cube = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project)
+    hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project)
+    rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project)
+    rlut_cube = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project)
+    rsut_cube = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project)
 
-    fig = plt.figure(figsize=[15, 20])
-    nrows = 4
-    ncols = 2
+    fig = plt.figure(figsize=[21, 15])
+    nrows = 3
+    ncols = 3
     if masso_cube:
         ax1 = fig.add_subplot(nrows, ncols, 1)
         plot_global_variable(ax1, masso_cube.data, masso_cube.long_name, masso_cube.units, 'green')
@@ -208,6 +222,12 @@ def main(inargs):
             ax8.plot(hfcorr_cube.data, color='teal', label=hfgeou_cube.long_name, linestyle='-.')
         plot_global_variable(ax8, hfds_cube.data, 'Annual Heat Flux Into Ocean', hfds_cube.units, 'teal', label=hfds_cube.long_name)
         ax8.legend()
+    if rsdt_cube:
+        ax9 = fig.add_subplot(nrows, ncols, 9)
+        ax9.plot(rsdt_cube.data, color='maroon', label=rsdt_cube.long_name, linestyle=':')
+        ax9.plot(rsut_cube.data, color='maroon', label=rlut_cube.long_name, linestyle='-.')
+        plot_global_variable(ax9, rlut_cube.data, 'Annual TOA Radiative Fluxes', rlut_cube.units, 'maroon', label=rlut_cube.long_name)
+        ax9.legend()
 
     # Save output
     plt.subplots_adjust(top=0.95)
