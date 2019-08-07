@@ -61,7 +61,9 @@ names = {'masso': 'sea_water_mass',
          'hfgeou' : 'upward_geothermal_heat_flux_at_sea_floor',
          'rsdt': 'toa_incoming_shortwave_flux',
          'rlut': 'toa_outgoing_longwave_flux',
-         'rsut': 'toa_outgoing_shortwave_flux'}
+         'rsut': 'toa_outgoing_shortwave_flux',
+         'vsf': 'virtual_salt_flux_into_sea_water',
+         'vsfcorr': 'virtual_salt_flux_correction'}
 
 
 def clef_search(model, variable, ensemble, project):
@@ -177,10 +179,12 @@ def main(inargs):
     rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project)
     rlut_cube = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project)
     rsut_cube = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project)
+    vsf_cube = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project)
+    vsfcorr_cube = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project)
 
-    fig = plt.figure(figsize=[21, 15])
-    nrows = 3
-    ncols = 3
+    fig = plt.figure(figsize=[15, 25])
+    nrows = 5
+    ncols = 2
     if masso_cube:
         ax1 = fig.add_subplot(nrows, ncols, 1)
         plot_global_variable(ax1, masso_cube.data, masso_cube.long_name, masso_cube.units, 'green')
@@ -228,6 +232,12 @@ def main(inargs):
         ax9.plot(rsut_cube.data, color='maroon', label=rlut_cube.long_name, linestyle='-.')
         plot_global_variable(ax9, rlut_cube.data, 'Annual TOA Radiative Fluxes', rlut_cube.units, 'maroon', label=rlut_cube.long_name)
         ax9.legend()
+    if vsf_cube or vsfcorr_cube:
+        ax10 = fig.add_subplot(nrows, ncols, 10)
+        if vsf_cube:
+            plot_global_variable(ax10, vsf_cube.data, 'Annual Virtual Salt Fluxes', vsf_cube.units, 'orange', label=vsf_cube.long_name)
+        if vsfcorr_cube:
+            plot_global_variable(ax10, vsfcorr_cube.data, 'Annual Virtual Salt Fluxes', vsfcorr_cube.units, 'orange', label=vsfcorr_cube.long_name)
 
     # Save output
     plt.subplots_adjust(top=0.95)
