@@ -66,7 +66,21 @@ names = {'masso': 'sea_water_mass',
          'vsfcorr': 'virtual_salt_flux_correction'}
 
 
-def clef_search(model, variable, ensemble, project):
+def get_latest(results):
+    """Select the latest results"""
+
+    if results:
+        latest = results[0]
+        for result in results[1:]:
+            if float(result['version']) > float(latest['version']):
+                latest = result
+    else:
+        latest = []    
+
+    return latest
+
+
+def clef_search(model, variable, ensemble, project, experiment='piControl'):
     """Use Clef to search for data files"""
 
     if variable in ['areacello', 'areacella']:
@@ -77,16 +91,16 @@ def clef_search(model, variable, ensemble, project):
         table = 'Omon'
 
     constraints = {'variable': variable, 'model': model, 'table': table,
-                   'experiment': 'piControl', 'ensemble': ensemble}
+                   'experiment': experiment, 'ensemble': ensemble}
 
     results = clef.code.search(session, project=project, **constraints)
-    assert len(results) < 2
-    if len(results) == 1:
-        filenames = results[0]['filenames']
+    results = get_latest(results)
+    if results:
+        filenames = results['filenames']
         filenames.sort()
-        filedir = results[0]['pdir']
+        filedir = results['pdir']
         file_list = [filedir + '/' + filename for filename in filenames]
-        version = results[0]['version']
+        version = results['version']
         file_version_list = [filedir + '/' + filename + ', ' + str(version) for filename in filenames]
         processed_files.append(file_version_list)
     else:
@@ -116,8 +130,11 @@ def read_spatial_flux(model, variable, ensemble, project):
     
     file_list = clef_search(model, variable, ensemble, project)
     area_var = 'areacella' if variable in ['rsdt', 'rlut', 'rsut'] else 'areacello'
-    area_file = clef_search(model, area_var, 'r0i0p0', project)[0]
-    
+    area_file = clef_search(model, area_var, 'r0i0p0', project)
+    if not area_file:
+        area_file = clef_search(model, area_var, 'r0i0p0', project, experiment='historical')
+    area_file = area_file[0]
+
     if file_list and area_file:
         cube, history = gio.combine_files(file_list, names[variable])
         cube = timeseries.convert_to_annual(cube)
@@ -237,7 +254,7 @@ def main(inargs):
         if vsf_cube:
             plot_global_variable(ax10, vsf_cube.data, 'Annual Virtual Salt Fluxes', vsf_cube.units, 'orange', label=vsf_cube.long_name)
         if vsfcorr_cube:
-            plot_global_variable(ax10, vsfcorr_cube.data, 'Annual Virtual Salt Fluxes', vsfcorr_cube.units, 'orange', label=vsfcorr_cube.long_name)
+            plot_global_variable(ax10, vsfcorr_cube.data, 'Annual Virtual Salt Fluxes', vsfcorr_cube.units, 'yellow', label=vsfcorr_cube.long_name)
 
     # Save output
     plt.subplots_adjust(top=0.95)
