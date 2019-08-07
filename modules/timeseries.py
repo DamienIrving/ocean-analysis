@@ -5,6 +5,7 @@ Functions:
   calc_trend                  -- Calculate the linear trend
   convert_to_annual           -- Convert the data to annual mean
   equalise_time_axes          -- Make all the time axes in an iris cube list the same
+  flux_to_total               -- Convert a flux (i.e. per second quantity) to total
   get_control_time_constraint -- Define the time constraint for the control data
   outlier_removal             -- Remove outliers from a timeseries
 
@@ -202,6 +203,23 @@ def equalise_time_axes(cube_list):
         new_cube_list.append(cube)
     
     return new_cube_list
+
+
+def flux_to_total(cube):
+    """Convert a flux (i.e. per second quantity) to total"""
+
+    assert 'days' in str(cube.coord('time').units)
+    time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
+    time_span_seconds = time_span_days * 60 * 60 * 24
+    cube.data = cube.data * time_span_seconds
+    units = str(cube.units)
+    assert ('s-1' in units) or ('W' in units), 'input units must be a flux per second'
+    if 's-1' in units:    
+        cube.units = units.replace('s-1', '')
+    elif 'W' in units:
+        cube.units = units.replace('W', 'J')
+        
+    return cube
 
 
 def get_control_time_constraint(control_cube, ref_cube, time_bounds, branch_time=None):
