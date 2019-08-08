@@ -19,6 +19,7 @@
 
 ## NCI access
 
+* [Data download process/online form](https://opus.nci.org.au/display/CMIP/Data+Download+Request)
 * The CoE data search tool (ARCCSSive) is documented [here](http://arccssive.readthedocs.io/en/latest/index.html)  
     * At the [GitHub repo](https://github.com/coecms/ARCCSSive) there are extra scripts `compare_ESGF.py` and `search_cmip5.py`   
     * The download requests go to: `/g/data1/ua6/unofficial-ESG-replica/tmp/pxp581/requests/`  
