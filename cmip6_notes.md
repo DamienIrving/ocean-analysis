@@ -9,9 +9,9 @@
 * [FAFMIP website](http://www.fafmip.org/)
 
 ## NCI access
-
-* Most models available early 2019 (IPCC cutoff is Dec 2019)  
+  
 * Project oi10 on NCI
-* Search and request data using the Climate Finder, [CleF](https://clef.readthedocs.io/en/latest/index.html), or they said they'll have a Google Form too
-
+* Search and request data using the Climate Finder, [CleF](https://clef.readthedocs.io/en/latest/index.html)
+  * At the moment `$ clef --request` sends to Paola Petrelli instead of NCI.
+  * Instead, use the [data download online form](https://opus.nci.org.au/display/CMIP/Data+Download+Request) or send the output files from `$clef --request` (which are produced if you say no instead of yes at the end of the process) to help@nci.org.au
 
