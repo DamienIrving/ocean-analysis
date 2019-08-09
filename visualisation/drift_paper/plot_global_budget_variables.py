@@ -171,10 +171,11 @@ def plot_global_variable(ax, data, long_name, units, color, label=None):
     ax.set_xlabel('year')
     ax.set_ylabel(units)
     ax.ticklabel_format(useOffset=False)
+    ax.yaxis.major.formatter._useMathText = True
 
 
-def main(inargs):
-    """Run the program."""
+def plot_raw(inargs):
+    """Plot the raw budget variables."""
 
     masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project)
     volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project)
@@ -256,8 +257,91 @@ def main(inargs):
         if vsfcorr_cube:
             plot_global_variable(ax10, vsfcorr_cube.data, 'Annual Virtual Salt Fluxes', vsfcorr_cube.units, 'yellow', label=vsfcorr_cube.long_name)
 
-    # Save output
-    plt.subplots_adjust(top=0.95)
+
+def delta_mass_from_salinity(s_orig, s_new, m_orig):
+    """Infer a change in mass from salinity"""
+
+    delta_m = m_orig * ((s_orig / s_new) - 1)    
+    
+    return delta_m
+
+
+def plot_ohc(ax, masso_cube, thetaoga_cube, soga_cube, wfo_cube, hfds_cube, nettoa_data):
+    """Plot the OHC timeseries and it's components"""
+
+    assert thetaoga_cube.units == 'K'
+    cp = 4000
+
+    ohc_data = masso_cube.data * thetaoga_cube.data * cp
+    ohc_anomaly_data = ohc_data - ohc_data[0]
+
+    thetaoga_anomaly_data = thetaoga_cube.data - thetaoga_cube.data[0]
+    thermal_data = cp * masso_cube.data[0] * thetaoga_anomaly_data
+
+    masso_anomaly_data = masso_cube.data - masso_cube.data[0]
+    barystatic_data = cp * thetaoga_cube.data[0] * masso_anomaly_data
+
+    hfds_cumsum_data = numpy.cumsum(hfds_cube.data)
+    hfds_cumsum_anomaly = hfds_cumsum_data - hfds_cumsum_data[0]
+
+    wfo_cumsum_data = numpy.cumsum(wfo_cube.data)
+    wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
+    wfo_inferred_barystatic = cp * thetaoga_cube.data[0] * wfo_cumsum_anomaly
+
+    nettoa_cumsum_data = numpy.cumsum(nettoa_data)
+    nettoa_cumsum_anomaly = nettoa_cumsum_data - nettoa_cumsum_data[0]
+
+    s_orig = numpy.ones(soga_cube.data.shape[0]) * soga_cube.data[0]
+    m_orig = numpy.ones(masso_cube.data.shape[0]) * masso_cube.data[0]
+    masso_from_soga = numpy.fromiter(map(delta_mass_from_salinity, s_orig, soga_cube.data, m_orig), float)
+    soga_inferred_barystatic = cp * thetaoga_cube.data[0] * masso_from_soga
+
+    ax.plot(ohc_anomaly_data, color='black', label='OHC anomaly ($\Delta H$)')
+    ax.plot(thermal_data, color='red', label='thermal component ($c_p M_0 \Delta T$)')
+    ax.plot(barystatic_data, color='blue', label='barystatic component ($c_p T_0 \Delta M$)')
+    ax.plot(hfds_cumsum_anomaly + wfo_inferred_barystatic, color='black', linestyle='--', label='inferred OHC anomaly from suface fluxes')
+    ax.plot(hfds_cumsum_anomaly, color='red', linestyle='--', label='cumulative surface heat flux')
+    ax.plot(wfo_inferred_barystatic, color='blue', linestyle='--', label='cumulative surface freshwater flux')
+    ax.plot(nettoa_cumsum_anomaly, color='gold', linestyle='--', label='cumulative net TOA radiative flux')
+    ax.plot(soga_inferred_barystatic, color='teal', linestyle=':', label='global mean salinity anomaly')
+    ax.set_title('Ocean Heat Content Perspective')
+    ax.set_xlabel('year')
+    ax.set_ylabel('J')
+    ax.yaxis.major.formatter._useMathText = True
+    ax.legend()
+
+
+def plot_comparison(inargs):
+    """Plot the budget comparisons."""
+
+    fig = plt.figure(figsize=[10, 10])
+    nrows = 1
+    ncols = 1
+
+    masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project)
+    thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project)
+    soga_cube = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project)
+    wfo_cube = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project)
+    hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project)
+
+    rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project)
+    rlut_cube = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project)
+    rsut_cube = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project)
+    nettoa_data = rsdt_cube.data - rlut_cube.data - rsut_cube.data
+
+    ax1 = fig.add_subplot(nrows, ncols, 1)
+    plot_ohc(ax1, masso_cube, thetaoga_cube, soga_cube, wfo_cube, hfds_cube, nettoa_data)
+
+
+def main(inargs):
+    """Run the program."""
+
+    if inargs.plot_type == 'raw':
+        plot_raw(inargs)
+    else:
+        plot_comparison(inargs)
+
+    plt.subplots_adjust(top=0.92)
     title = '%s (%s), %s, piControl'  %(inargs.model, inargs.project, inargs.run)
     plt.suptitle(title)
     plt.savefig(inargs.outfile, bbox_inches='tight')
@@ -283,7 +367,8 @@ author:
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
- 
+
+    parser.add_argument("plot_type", type=str, choices=('raw', 'comparison'), help="Plot type")
     parser.add_argument("model", type=str, help="Model (use dots not dashes between numbers in model names)")
     parser.add_argument("run", type=str, help="Run (e.g. r1i1p1)")
     parser.add_argument("project", type=str, choices=('cmip5', 'cmip6'), help="Project")
