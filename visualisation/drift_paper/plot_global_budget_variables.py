@@ -266,7 +266,7 @@ def delta_mass_from_salinity(s_orig, s_new, m_orig):
     return delta_m
 
 
-def plot_ohc(ax, masso_cube, thetaoga_cube, soga_cube, wfo_cube, hfds_cube, nettoa_data):
+def plot_ohc(ax, masso_cube, thetaoga_cube, wfo_cube, hfds_cube, masso_from_soga, nettoa_data):
     """Plot the OHC timeseries and it's components"""
 
     assert thetaoga_cube.units == 'K'
@@ -291,9 +291,6 @@ def plot_ohc(ax, masso_cube, thetaoga_cube, soga_cube, wfo_cube, hfds_cube, nett
     nettoa_cumsum_data = numpy.cumsum(nettoa_data)
     nettoa_cumsum_anomaly = nettoa_cumsum_data - nettoa_cumsum_data[0]
 
-    s_orig = numpy.ones(soga_cube.data.shape[0]) * soga_cube.data[0]
-    m_orig = numpy.ones(masso_cube.data.shape[0]) * masso_cube.data[0]
-    masso_from_soga = numpy.fromiter(map(delta_mass_from_salinity, s_orig, soga_cube.data, m_orig), float)
     soga_inferred_barystatic = cp * thetaoga_cube.data[0] * masso_from_soga
 
     ax.plot(ohc_anomaly_data, color='black', label='OHC anomaly ($\Delta H$)')
@@ -304,23 +301,62 @@ def plot_ohc(ax, masso_cube, thetaoga_cube, soga_cube, wfo_cube, hfds_cube, nett
     ax.plot(wfo_inferred_barystatic, color='blue', linestyle='--', label='cumulative surface freshwater flux')
     ax.plot(nettoa_cumsum_anomaly, color='gold', linestyle='--', label='cumulative net TOA radiative flux')
     ax.plot(soga_inferred_barystatic, color='teal', linestyle=':', label='global mean salinity anomaly')
-    ax.set_title('Ocean Heat Content Perspective')
+    ax.set_title('Heat Budget Perspective')
     ax.set_xlabel('year')
-    ax.set_ylabel('J')
+    ax.set_ylabel('Anomaly (J)')
     ax.yaxis.major.formatter._useMathText = True
     ax.legend()
+
+
+def plot_sea_level(ax, zostoga_cube, masso_cube, wfo_cube, masso_from_soga, ocean_area, density=1035):
+    """Plot the sea level timeseries and it's components"""
+
+    masso_anomaly_data = masso_cube.data - masso_cube.data[0]
+    sea_level_anomaly_from_masso = sea_level_from_mass(masso_anomaly_data, ocean_area, density)
+
+    wfo_cumsum_data = numpy.cumsum(wfo_cube.data)
+    wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
+    sea_level_anomaly_from_wfo = sea_level_from_mass(wfo_cumsum_anomaly, ocean_area, density)
+
+    sea_level_anomaly_from_soga = sea_level_from_mass(masso_from_soga, ocean_area, density)
+
+    ax.plot(zostoga_cube.data, color='purple', label='change in thermosteric sea level')
+    ax.plot(sea_level_anomaly_from_masso, color='blue', label='change in global ocean mass')
+    ax.plot(sea_level_anomaly_from_wfo, color='blue', linestyle='--', label='cumulative surface freshwater flux')
+    ax.plot(sea_level_anomaly_from_soga, color='blue', linestyle=':', label='global mean salinity anomaly')
+
+    ax.set_title('Water Budget Perspective')
+    ax.set_xlabel('year')
+    ax.set_ylabel('change in global sea level (m)')
+    ax.yaxis.major.formatter._useMathText = True
+    ax.legend()    
+
+
+def sea_level_from_mass(mass_anomaly_data, ocean_area, density):
+    """Infer a change in sea level from change in mass"""
+    
+    volume_anomaly_data = mass_anomaly_data / density
+    sea_level_anomaly_data = volume_anomaly_data / ocean_area     
+        
+    return sea_level_anomaly_data
 
 
 def plot_comparison(inargs):
     """Plot the budget comparisons."""
 
-    fig = plt.figure(figsize=[10, 10])
+    fig = plt.figure(figsize=[15, 7])
     nrows = 1
-    ncols = 1
+    ncols = 2
 
     masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project)
     thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project)
+    zostoga_cube = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project)
+
     soga_cube = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project)
+    s_orig = numpy.ones(soga_cube.data.shape[0]) * soga_cube.data[0]
+    m_orig = numpy.ones(masso_cube.data.shape[0]) * masso_cube.data[0]
+    masso_from_soga = numpy.fromiter(map(delta_mass_from_salinity, s_orig, soga_cube.data, m_orig), float)
+
     wfo_cube = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project)
     hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project)
 
@@ -329,8 +365,17 @@ def plot_comparison(inargs):
     rsut_cube = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project)
     nettoa_data = rsdt_cube.data - rlut_cube.data - rsut_cube.data
 
+    area_file = clef_search(inargs.model, 'areacello', 'r0i0p0', inargs.project)
+    if not area_file:
+        area_file = clef_search(inargs.model, 'areacello', 'r0i0p0', inargs.project, experiment='historical')
+    areacello_cube = iris.load_cube(area_file[0])
+    ocean_area = areacello_cube.data.sum()
+
     ax1 = fig.add_subplot(nrows, ncols, 1)
-    plot_ohc(ax1, masso_cube, thetaoga_cube, soga_cube, wfo_cube, hfds_cube, nettoa_data)
+    plot_ohc(ax1, masso_cube, thetaoga_cube, wfo_cube, hfds_cube, masso_from_soga, nettoa_data)
+
+    ax2 = fig.add_subplot(nrows, ncols, 2)
+    plot_sea_level(ax2, zostoga_cube, masso_cube, wfo_cube, masso_from_soga, ocean_area)
 
 
 def main(inargs):
