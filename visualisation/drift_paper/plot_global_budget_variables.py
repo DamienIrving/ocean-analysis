@@ -122,7 +122,10 @@ def read_global_variable(model, variable, ensemble, project):
         cube = timeseries.convert_to_annual(cube)
     else:
         cube = None
-        
+    
+    if numpy.isnan(cube.data[0]):
+        cube.data[0] = 0.0
+
     return cube
 
 
@@ -286,48 +289,56 @@ def calc_trend(data, name, units, outlier_threshold=None):
     trend_list.append(trend_text)
 
 
-def plot_ohc(ax, masso_cube, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data):
+def plot_ohc(ax, masso_data, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data, ylim=None):
     """Plot the OHC timeseries and it's components"""
 
-    # Prepare data
+    # Compulsory variables
+
     assert thetaoga_cube.units == 'K'
     cp = 4000
 
-    ohc_data = masso_cube.data * thetaoga_cube.data * cp
+    ohc_data = masso_data * thetaoga_cube.data * cp
     ohc_anomaly_data = ohc_data - ohc_data[0]
 
     thetaoga_anomaly_data = thetaoga_cube.data - thetaoga_cube.data[0]
-    thermal_data = cp * masso_cube.data[0] * thetaoga_anomaly_data
+    thermal_data = cp * masso_data[0] * thetaoga_anomaly_data
 
-    masso_anomaly_data = masso_cube.data - masso_cube.data[0]
+    masso_anomaly_data = masso_data - masso_data[0]
     barystatic_data = cp * thetaoga_cube.data[0] * masso_anomaly_data
-
-    hfds_cumsum_data = numpy.cumsum(hfds_cube.data)
-    hfds_cumsum_anomaly = hfds_cumsum_data - hfds_cumsum_data[0]
-
-    wfo_cumsum_data = numpy.cumsum(wfo_cube.data)
-    wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
-    wfo_inferred_barystatic = cp * thetaoga_cube.data[0] * wfo_cumsum_anomaly
 
     nettoa_cumsum_data = numpy.cumsum(nettoa_data)
     nettoa_cumsum_anomaly = nettoa_cumsum_data - nettoa_cumsum_data[0]
 
-    # Calculate trends
     calc_trend(ohc_anomaly_data, 'OHC', 'J')
     calc_trend(thermal_data, 'thermal OHC', 'J')
     calc_trend(barystatic_data, 'barystatic OHC', 'J')
-    calc_trend(hfds_cumsum_anomaly, 'cumulative hfds', 'J')
     calc_trend(nettoa_cumsum_anomaly, 'cumulative netTOA', 'J')
 
-    # Create plot
     ax.grid(linestyle=':')
     ax.plot(ohc_anomaly_data, color='black', label='OHC anomaly($\Delta H$)')
     ax.plot(thermal_data, color='red', label='thermal OHC anomaly ($c_p M_0 \Delta T$)')
     ax.plot(barystatic_data, color='blue', label='barystatic OHC anomaly ($c_p T_0 \Delta M$)')
-    ax.plot(hfds_cumsum_anomaly + wfo_inferred_barystatic, color='black', linestyle='--', label='inferred OHC anomaly from suface fluxes')
-    ax.plot(hfds_cumsum_anomaly, color='red', linestyle='--', label='cumulative surface heat flux')
-    ax.plot(wfo_inferred_barystatic, color='blue', linestyle='--', label='cumulative surface freshwater flux')
     ax.plot(nettoa_cumsum_anomaly, color='gold', linestyle='--', label='cumulative net TOA radiative flux')
+
+    # Optional data
+
+    if hfds_cube:
+        hfds_cumsum_data = numpy.cumsum(hfds_cube.data)
+        hfds_cumsum_anomaly = hfds_cumsum_data - hfds_cumsum_data[0]
+        calc_trend(hfds_cumsum_anomaly, 'cumulative hfds', 'J')
+        ax.plot(hfds_cumsum_anomaly, color='red', linestyle='--', label='cumulative surface heat flux')
+
+    if wfo_cube:
+        wfo_cumsum_data = numpy.cumsum(wfo_cube.data)
+        wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
+        wfo_inferred_barystatic = cp * thetaoga_cube.data[0] * wfo_cumsum_anomaly
+        ax.plot(wfo_inferred_barystatic, color='blue', linestyle='--', label='cumulative surface freshwater flux')
+    
+    if hfds_cube and wfo_cube:
+        ax.plot(hfds_cumsum_anomaly + wfo_inferred_barystatic, color='black', linestyle='--', label='inferred OHC anomaly from suface fluxes')
+
+    if ylim:
+        ax.set_ylim(ylim[0] * 1e24, ylim[1] * 1e24)
 
     ax.set_title('Heat Budget')
     ax.set_xlabel('year')
@@ -336,38 +347,45 @@ def plot_ohc(ax, masso_cube, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data):
     ax.legend()
 
 
-def plot_sea_level(ax, zostoga_cube, zosga_cube, zossga_cube, masso_cube,
-                   wfo_cube, masso_from_soga, ocean_area, density=1035):
+def plot_sea_level(ax, zostoga_cube, zosga_cube, zossga_cube, masso_data,
+                   wfo_cube, masso_from_soga, ocean_area, density=1035, ylim=None):
     """Plot the sea level timeseries and it's components"""
 
-    # Prepare data
-    masso_anomaly_data = masso_cube.data - masso_cube.data[0]
+    # Compulsory variables
+
+    masso_anomaly_data = masso_data - masso_data[0]
     sea_level_anomaly_from_masso = sea_level_from_mass(masso_anomaly_data, ocean_area, density)
-
-    wfo_cumsum_data = numpy.cumsum(wfo_cube.data)
-    wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
-    sea_level_anomaly_from_wfo = sea_level_from_mass(wfo_cumsum_anomaly, ocean_area, density)
-
     sea_level_anomaly_from_soga = sea_level_from_mass(masso_from_soga, ocean_area, density)
-    zosga_anomaly = zosga_cube.data - zosga_cube.data[0]
-    zossga_anomaly = zossga_cube.data - zossga_cube.data[0]
-    zostoga_anomaly = zostoga_cube.data - zostoga_cube.data[0]
-    zosbary_anomaly = zosga_anomaly - zossga_anomaly
 
-    # Calculate trends
     calc_trend(masso_anomaly_data, 'global ocean mass', 'kg')
-    calc_trend(wfo_cumsum_anomaly, 'cumulative wfo', 'kg')
     calc_trend(sea_level_anomaly_from_masso, 'global ocean mass', 'm')
-    calc_trend(zostoga_anomaly, 'thermosteric sea level', 'm')
-    calc_trend(zosbary_anomaly, 'barystatic sea level', 'm')
-    
-    # Create plot
+
     ax.grid(linestyle=':')
-    ax.plot(zostoga_anomaly, color='purple', linestyle='--', label='change in thermosteric sea level')
-    ax.plot(zosbary_anomaly, color='purple', label='change in barystatic sea level')
     ax.plot(sea_level_anomaly_from_masso, color='blue', label='change in global ocean mass')
-    ax.plot(sea_level_anomaly_from_wfo, color='blue', linestyle='--', label='cumulative surface freshwater flux')
     ax.plot(sea_level_anomaly_from_soga, color='teal', linestyle=':', label='global mean salinity anomaly')
+
+    # Optional variables
+    if wfo_cube:
+        wfo_cumsum_data = numpy.cumsum(wfo_cube.data)
+        wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
+        sea_level_anomaly_from_wfo = sea_level_from_mass(wfo_cumsum_anomaly, ocean_area, density)
+        calc_trend(wfo_cumsum_anomaly, 'cumulative wfo', 'kg')
+        ax.plot(sea_level_anomaly_from_wfo, color='blue', linestyle='--', label='cumulative surface freshwater flux')
+
+    if zostoga_cube:
+        zostoga_anomaly = zostoga_cube.data - zostoga_cube.data[0]
+        calc_trend(zostoga_anomaly, 'thermosteric sea level', 'm')
+        ax.plot(zostoga_anomaly, color='purple', linestyle='--', label='change in thermosteric sea level')
+
+    if zosga_cube and zossga_cube:
+        zosga_anomaly = zosga_cube.data - zosga_cube.data[0]
+        zossga_anomaly = zossga_cube.data - zossga_cube.data[0]
+        zosbary_anomaly = zosga_anomaly - zossga_anomaly
+        calc_trend(zosbary_anomaly, 'barystatic sea level', 'm')
+        ax.plot(zosbary_anomaly, color='purple', label='change in barystatic sea level')
+    
+    if ylim:
+        ax.set_ylim(ylim[0], ylim[1])
 
     ax.set_title('Water Budget')
     ax.set_xlabel('year')
@@ -393,17 +411,25 @@ def plot_comparison(inargs):
     ncols = 2
 
     masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project)
+    volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project)
+    if inargs.volo:
+        masso_data = volo_cube.data * 1035
+    else:
+        masso_data = masso_cube.data
+
     thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project)
     zostoga_cube = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project)
     if inargs.project == 'cmip5':
         zosga_cube = read_global_variable(inargs.model, 'zosga', inargs.run, inargs.project)
         zossga_cube = read_global_variable(inargs.model, 'zossga', inargs.run, inargs.project) 
+    else:
+        zosga_cube = zossga_cube = None
 
     soga_cube = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project)
     s_orig = numpy.ones(soga_cube.data.shape[0]) * soga_cube.data[0]
-    m_orig = numpy.ones(masso_cube.data.shape[0]) * masso_cube.data[0]
+    m_orig = numpy.ones(masso_data.shape[0]) * masso_data[0]
     masso_from_soga = numpy.fromiter(map(delta_masso_from_soga, s_orig, soga_cube.data, m_orig), float)
-    soga_from_masso = numpy.fromiter(map(delta_soga_from_masso, m_orig, masso_cube.data, s_orig), float) 
+    soga_from_masso = numpy.fromiter(map(delta_soga_from_masso, m_orig, masso_data, s_orig), float) 
     calc_trend(soga_from_masso, 'global ocean mass', 'g/kg')
     calc_trend(soga_cube.data, 'global mean salinity', 'g/kg')
 
@@ -422,10 +448,11 @@ def plot_comparison(inargs):
     ocean_area = areacello_cube.data.sum()
 
     ax1 = fig.add_subplot(nrows, ncols, 1)
-    plot_ohc(ax1, masso_cube, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data)
+    plot_ohc(ax1, masso_data, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data, ylim=inargs.ohc_ylim)
 
     ax2 = fig.add_subplot(nrows, ncols, 2)
-    plot_sea_level(ax2, zostoga_cube, zosga_cube, zossga_cube, masso_cube, wfo_cube, masso_from_soga, ocean_area)
+    plot_sea_level(ax2, zostoga_cube, zosga_cube, zossga_cube, masso_data, wfo_cube,
+                   masso_from_soga, ocean_area, ylim=inargs.sealevel_ylim)
 
 
 def main(inargs):
@@ -469,6 +496,14 @@ author:
     parser.add_argument("run", type=str, help="Run (e.g. r1i1p1)")
     parser.add_argument("project", type=str, choices=('cmip5', 'cmip6'), help="Project")
     parser.add_argument("outfile", type=str, help="Output file name")
+
+    parser.add_argument("--volo", action="store_true", default=False,
+                        help="Use volo to calculate masso (useful for boussinesq models)")
+
+    parser.add_argument("--ohc_ylim", type=float, nargs=2, metavar=('LOWER_LIMIT', 'UPPER_LIMIT'), default=None,
+                        help="y-axis limits for OHC plot (*1e24) [default = auto]")
+    parser.add_argument("--sealevel_ylim", type=float, nargs=2, metavar=('LOWER_LIMIT', 'UPPER_LIMIT'), default=None,
+                        help="y-axis limits for sea level plot [default = auto]")
 
     args = parser.parse_args()             
     main(args)
