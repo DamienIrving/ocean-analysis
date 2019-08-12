@@ -62,7 +62,7 @@ def calc_seasonal_cycle(cube):
 
 
 def calc_trend(cube, running_mean=False, per_yr=False,
-               remove_scaling=False, remove_outliers=False):
+               remove_scaling=False, outlier_threshold=None):
     """Calculate linear trend.
 
     Args:
@@ -86,7 +86,7 @@ def calc_trend(cube, running_mean=False, per_yr=False,
     time_axis = cube.coord('time')
     time_axis = convert_to_seconds(time_axis)
 
-    trend = np.ma.apply_along_axis(_linear_trend, 0, cube.data, time_axis.points, remove_outliers)
+    trend = np.ma.apply_along_axis(linear_trend, 0, cube.data, time_axis.points, outlier_treshold)
     if type(cube.data) == np.ma.core.MaskedArray:
         trend = np.ma.masked_values(trend, cube.data.fill_value)
 
@@ -281,7 +281,7 @@ def is_annual(cube):
     return annual
 
 
-def _linear_trend(data, time_axis, remove_outliers):
+def linear_trend(data, time_axis, outlier_threshold):
     """Calculate the linear trend.
 
     polyfit returns [b, a] corresponding to y = a + bx
@@ -300,19 +300,26 @@ def _linear_trend(data, time_axis, remove_outliers):
     if masked_flag:
         return data.fill_value
     else:
-        if remove_outliers:
-            data = outlier_removal(data, method=remove_outliers)
+        if outlier_threshold:
+            clean_data, outlier_idx = outlier_removal(data, outlier_threshold)
         return np.ma.polyfit(time_axis, data, 1)[0]
 
 
-def outlier_removal(data, threshold):
-    """Remove outliers from a timeseries."""
+def outlier_removal(data, outlier_threshold):
+    """Remove outliers from a timeseries.
+
+    Args:
+      data (numpy.array)
+      outlier_threshold (float): remove points that deviate from
+        the rolling median by greater than this threshold
+
+    """
 
     data_series = pd.Series(data)
     median = data_series.rolling(10).median().fillna(method='bfill').fillna(method='ffill')
 
     difference = np.abs(data_series - median)
-    outlier_bools = difference > threshold
+    outlier_bools = difference > outlier_threshold
 
     clean_data = np.ma.masked_where(outlier_bools.values, data)
     outlier_idx = list(data_series[outlier_bools].index)
