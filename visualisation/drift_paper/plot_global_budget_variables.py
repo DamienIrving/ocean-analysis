@@ -167,6 +167,7 @@ def read_spatial_flux(model, variable, ensemble, project):
 def plot_global_variable(ax, data, long_name, units, color, label=None):
     """Plot a global variable."""
 
+    ax.grid(linestyle=':')
     ax.plot(data, color=color, label=label)
     ax.set_title(long_name)
     ax.set_xlabel('year')
@@ -312,10 +313,14 @@ def plot_ohc(ax, masso_cube, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data):
     nettoa_cumsum_anomaly = nettoa_cumsum_data - nettoa_cumsum_data[0]
 
     # Calculate trends
+    calc_trend(ohc_anomaly_data, 'OHC', 'J')
     calc_trend(thermal_data, 'thermal OHC', 'J')
+    calc_trend(barystatic_data, 'barystatic OHC', 'J')
     calc_trend(hfds_cumsum_anomaly, 'cumulative hfds', 'J')
+    calc_trend(nettoa_cumsum_anomaly, 'cumulative netTOA', 'J')
 
     # Create plot
+    ax.grid(linestyle=':')
     ax.plot(ohc_anomaly_data, color='black', label='OHC anomaly($\Delta H$)')
     ax.plot(thermal_data, color='red', label='thermal OHC anomaly ($c_p M_0 \Delta T$)')
     ax.plot(barystatic_data, color='blue', label='barystatic OHC anomaly ($c_p T_0 \Delta M$)')
@@ -323,6 +328,7 @@ def plot_ohc(ax, masso_cube, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data):
     ax.plot(hfds_cumsum_anomaly, color='red', linestyle='--', label='cumulative surface heat flux')
     ax.plot(wfo_inferred_barystatic, color='blue', linestyle='--', label='cumulative surface freshwater flux')
     ax.plot(nettoa_cumsum_anomaly, color='gold', linestyle='--', label='cumulative net TOA radiative flux')
+
     ax.set_title('Heat Budget')
     ax.set_xlabel('year')
     ax.set_ylabel('equivalent change in ocean heat content (J)')
@@ -345,14 +351,19 @@ def plot_sea_level(ax, zostoga_cube, zosga_cube, zossga_cube, masso_cube,
     sea_level_anomaly_from_soga = sea_level_from_mass(masso_from_soga, ocean_area, density)
     zosga_anomaly = zosga_cube.data - zosga_cube.data[0]
     zossga_anomaly = zossga_cube.data - zossga_cube.data[0]
+    zostoga_anomaly = zostoga_cube.data - zostoga_cube.data[0]
     zosbary_anomaly = zosga_anomaly - zossga_anomaly
 
     # Calculate trends
     calc_trend(masso_anomaly_data, 'global ocean mass', 'kg')
     calc_trend(wfo_cumsum_anomaly, 'cumulative wfo', 'kg')
-
+    calc_trend(sea_level_anomaly_from_masso, 'global ocean mass', 'm')
+    calc_trend(zostoga_anomaly, 'thermosteric sea level', 'm')
+    calc_trend(zosbary_anomaly, 'barystatic sea level', 'm')
+    
     # Create plot
-    ax.plot(zostoga_cube.data, color='purple', linestyle='--', label='change in thermosteric sea level')
+    ax.grid(linestyle=':')
+    ax.plot(zostoga_anomaly, color='purple', linestyle='--', label='change in thermosteric sea level')
     ax.plot(zosbary_anomaly, color='purple', label='change in barystatic sea level')
     ax.plot(sea_level_anomaly_from_masso, color='blue', label='change in global ocean mass')
     ax.plot(sea_level_anomaly_from_wfo, color='blue', linestyle='--', label='cumulative surface freshwater flux')
