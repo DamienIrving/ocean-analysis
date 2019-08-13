@@ -120,11 +120,10 @@ def read_global_variable(model, variable, ensemble, project):
         if variable == 'soga':
             cube = gio.salinity_unit_check(cube)
         cube = timeseries.convert_to_annual(cube)
+        if numpy.isnan(cube.data[0]):
+            cube.data[0] = 0.0
     else:
         cube = None
-    
-    if numpy.isnan(cube.data[0]):
-        cube.data[0] = 0.0
 
     return cube
 
