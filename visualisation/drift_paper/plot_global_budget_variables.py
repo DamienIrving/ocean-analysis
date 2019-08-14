@@ -364,7 +364,9 @@ def plot_ohc(ax, masso_data, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data, yl
         ax.plot(wfo_inferred_barystatic, color='blue', linestyle='--', label='cumulative surface freshwater flux')
     
     if hfds_cube and wfo_cube:
-        ax.plot(hfds_cumsum_anomaly + wfo_inferred_barystatic, color='black', linestyle='--', label='inferred OHC anomaly from suface fluxes')
+        total_surface_flux = hfds_cumsum_anomaly + wfo_inferred_barystatic
+        calc_trend(total_surface_flux, 'cumulative surface total flux', 'J')
+        ax.plot(total_surface_flux, color='black', linestyle='--', label='inferred OHC anomaly from suface fluxes')
 
     if ylim:
         ax.set_ylim(ylim[0] * 1e24, ylim[1] * 1e24)
