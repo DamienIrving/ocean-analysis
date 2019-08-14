@@ -107,13 +107,16 @@ def clef_search(model, variable, ensemble, project, experiment='piControl'):
     else:
         file_list = []
 
+    print(file_list)
     return file_list
 
 
-def read_global_variable(model, variable, ensemble, project, manual_file_dict):
+def read_global_variable(model, variable, ensemble, project, manual_file_dict, ignore_list):
     """Read data for a global variable"""
 
-    if variable in manual_file_dict.keys():
+    if variable in ignore_list:
+        file_list = []
+    elif variable in manual_file_dict.keys():
         file_list = manual_file_dict[variable]
     else:
         file_list = clef_search(model, variable, ensemble, project) 
@@ -131,10 +134,12 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict):
     return cube
 
 
-def read_spatial_flux(model, variable, ensemble, project, manual_file_dict):
+def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, ignore_list):
     """Read spatial flux data and convert to global value"""
     
-    if variable in manual_file_dict.keys():
+    if variable in ignore_list:
+        file_list = []
+    elif variable in manual_file_dict.keys():
         file_list = manual_file_dict[variable]
     else:
         file_list = clef_search(model, variable, ensemble, project) 
@@ -189,28 +194,47 @@ def plot_raw(inargs):
     """Plot the raw budget variables."""
 
     manual_file_dict = get_manual_file_dict(inargs.manual_files)
-    masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project, manual_file_dict)
-    volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project, manual_file_dict)
-    thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project, manual_file_dict)
-    soga_cube = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project, manual_file_dict)  
-    zostoga_cube = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project, manual_file_dict) 
+    masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
+                                      manual_file_dict, inargs.ignore_list)
+    volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project,
+                                     manual_file_dict, inargs.ignore_list)
+    thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
+                                         manual_file_dict, inargs.ignore_list)
+    soga_cube = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project,
+                                     manual_file_dict, inargs.ignore_list)  
+    zostoga_cube = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project,
+                                        manual_file_dict, inargs.ignore_list) 
     if inargs.project == 'cmip5':
-        zosga_cube = read_global_variable(inargs.model, 'zosga', inargs.run, inargs.project, manual_file_dict) 
-        zossga_cube = read_global_variable(inargs.model, 'zossga', inargs.run, inargs.project, manual_file_dict)
+        zosga_cube = read_global_variable(inargs.model, 'zosga', inargs.run, inargs.project,
+                                          manual_file_dict, inargs.ignore_list) 
+        zossga_cube = read_global_variable(inargs.model, 'zossga', inargs.run, inargs.project,
+                                           manual_file_dict, inargs.ignore_list)
     else:
         zosga_cube = zossga_cube = None
-    wfo_cube = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project, manual_file_dict)
-    wfonocorr_cube = read_spatial_flux(inargs.model, 'wfonocorr', inargs.run, inargs.project, manual_file_dict)
-    wfcorr_cube = read_spatial_flux(inargs.model, 'wfcorr', inargs.run, inargs.project, manual_file_dict)
-    hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project, manual_file_dict)
-    hfcorr_cube = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project, manual_file_dict)
-    hfgeou_cube = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project, manual_file_dict)
-    hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project, manual_file_dict)
-    rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project, manual_file_dict)
-    rlut_cube = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project, manual_file_dict)
-    rsut_cube = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project, manual_file_dict)
-    vsf_cube = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project, manual_file_dict)
-    vsfcorr_cube = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project, manual_file_dict)
+    wfo_cube = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project,
+                                 manual_file_dict, inargs.ignore_list)
+    wfonocorr_cube = read_spatial_flux(inargs.model, 'wfonocorr', inargs.run, inargs.project,
+                                       manual_file_dict, inargs.ignore_list)
+    wfcorr_cube = read_spatial_flux(inargs.model, 'wfcorr', inargs.run, inargs.project,
+                                    manual_file_dict, inargs.ignore_list)
+    hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project,
+                                  manual_file_dict, inargs.ignore_list)
+    hfcorr_cube = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project,
+                                    manual_file_dict, inargs.ignore_list)
+    hfgeou_cube = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project,
+                                    manual_file_dict, inargs.ignore_list)
+    hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project,
+                                  manual_file_dict, inargs.ignore_list)
+    rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project,
+                                  manual_file_dict, inargs.ignore_list)
+    rlut_cube = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project,
+                                  manual_file_dict, inargs.ignore_list)
+    rsut_cube = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project,
+                                  manual_file_dict, inargs.ignore_list)
+    vsf_cube = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project,
+                                 manual_file_dict, inargs.ignore_list)
+    vsfcorr_cube = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project,
+                                     manual_file_dict, inargs.ignore_list)
 
     fig = plt.figure(figsize=[15, 25])
     nrows = 5
@@ -429,22 +453,29 @@ def plot_comparison(inargs):
     ncols = 2
 
     manual_file_dict = get_manual_file_dict(inargs.manual_files)
-    masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project, manual_file_dict)
-    volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project, manual_file_dict)
+    masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
+                                      manual_file_dict, inargs.ignore_list)
+    volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project,
+                                     manual_file_dict, inargs.ignore_list)
     if inargs.volo:
         masso_data = volo_cube.data * 1035
     else:
         masso_data = masso_cube.data
 
-    thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project, manual_file_dict)
-    zostoga_cube = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project, manual_file_dict)
+    thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
+                                         manual_file_dict, inargs.ignore_list)
+    zostoga_cube = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project,
+                                        manual_file_dict, inargs.ignore_list)
     if inargs.project == 'cmip5':
-        zosga_cube = read_global_variable(inargs.model, 'zosga', inargs.run, inargs.project, manual_file_dict)
-        zossga_cube = read_global_variable(inargs.model, 'zossga', inargs.run, inargs.project, manual_file_dict) 
+        zosga_cube = read_global_variable(inargs.model, 'zosga', inargs.run, inargs.project,
+                                          manual_file_dict, inargs.ignore_list)
+        zossga_cube = read_global_variable(inargs.model, 'zossga', inargs.run, inargs.project,
+                                           manual_file_dict, inargs.ignore_list) 
     else:
         zosga_cube = zossga_cube = None
 
-    soga_cube = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project, manual_file_dict)
+    soga_cube = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project,
+                                     manual_file_dict, inargs.ignore_list)
     s_orig = numpy.ones(soga_cube.data.shape[0]) * soga_cube.data[0]
     m_orig = numpy.ones(masso_data.shape[0]) * masso_data[0]
     masso_from_soga = numpy.fromiter(map(delta_masso_from_soga, s_orig, soga_cube.data, m_orig), float)
@@ -452,12 +483,17 @@ def plot_comparison(inargs):
     calc_trend(soga_from_masso, 'global ocean mass', 'g/kg')
     calc_trend(soga_cube.data, 'global mean salinity', 'g/kg')
 
-    wfo_cube = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project, manual_file_dict)
-    hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project, manual_file_dict)
+    wfo_cube = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project,
+                                 manual_file_dict, inargs.ignore_list)
+    hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project,
+                                  manual_file_dict, inargs.ignore_list)
 
-    rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project, manual_file_dict)
-    rlut_cube = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project, manual_file_dict)
-    rsut_cube = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project, manual_file_dict)
+    rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project,
+                                  manual_file_dict, inargs.ignore_list)
+    rlut_cube = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project,
+                                  manual_file_dict, inargs.ignore_list)
+    rsut_cube = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project,
+                                  manual_file_dict, inargs.ignore_list)
     nettoa_data = rsdt_cube.data - rlut_cube.data - rsut_cube.data
 
     area_file = clef_search(inargs.model, 'areacello', 'r0i0p0', inargs.project)
@@ -519,9 +555,11 @@ author:
     parser.add_argument("--volo", action="store_true", default=False,
                         help="Use volo to calculate masso (useful for boussinesq models)")
 
-    parser.add_argument("--manual_files", type=str, action="append", nargs='*', default=None,
+    parser.add_argument("--manual_files", type=str, action="append", nargs='*', default=[],
                         help="Use these manually entered files instead of the clef search")
-
+    parser.add_argument("--ignore_list", type=str, nargs='*', default=[],
+                        choices=('rsdt', 'rsut', 'rlut'),
+                        help="Variables to ignore")
     parser.add_argument("--ohc_ylim", type=float, nargs=2, metavar=('LOWER_LIMIT', 'UPPER_LIMIT'), default=None,
                         help="y-axis limits for OHC plot (*1e24) [default = auto]")
     parser.add_argument("--sealevel_ylim", type=float, nargs=2, metavar=('LOWER_LIMIT', 'UPPER_LIMIT'), default=None,
