@@ -134,7 +134,7 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict, i
     return cube
 
 
-def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, ignore_list):
+def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, ignore_list, chunk=False):
     """Read spatial flux data and convert to global value"""
     
     if variable in ignore_list:
@@ -152,7 +152,7 @@ def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, igno
 
     if file_list and area_file:
         cube, history = gio.combine_files(file_list, names[variable])
-        cube = timeseries.convert_to_annual(cube)
+        cube = timeseries.convert_to_annual(cube, chunk=chunk)
 
         area_cube = iris.load_cube(area_file)
         area_array = uconv.broadcast_array(area_cube.data, [1, area_cube.ndim], cube.shape)
@@ -212,19 +212,17 @@ def plot_raw(inargs):
     else:
         zosga_cube = zossga_cube = None
     wfo_cube = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project,
-                                 manual_file_dict, inargs.ignore_list)
+                                 manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     wfonocorr_cube = read_spatial_flux(inargs.model, 'wfonocorr', inargs.run, inargs.project,
-                                       manual_file_dict, inargs.ignore_list)
+                                       manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     wfcorr_cube = read_spatial_flux(inargs.model, 'wfcorr', inargs.run, inargs.project,
-                                    manual_file_dict, inargs.ignore_list)
+                                    manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project,
-                                  manual_file_dict, inargs.ignore_list)
+                                  manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     hfcorr_cube = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project,
-                                    manual_file_dict, inargs.ignore_list)
+                                    manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     hfgeou_cube = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project,
-                                    manual_file_dict, inargs.ignore_list)
-    hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project,
-                                  manual_file_dict, inargs.ignore_list)
+                                    manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project,
                                   manual_file_dict, inargs.ignore_list)
     rlut_cube = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project,
@@ -232,9 +230,9 @@ def plot_raw(inargs):
     rsut_cube = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project,
                                   manual_file_dict, inargs.ignore_list)
     vsf_cube = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project,
-                                 manual_file_dict, inargs.ignore_list)
+                                 manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     vsfcorr_cube = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project,
-                                     manual_file_dict, inargs.ignore_list)
+                                     manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
 
     fig = plt.figure(figsize=[15, 25])
     nrows = 5
@@ -484,9 +482,9 @@ def plot_comparison(inargs):
     calc_trend(soga_cube.data, 'global mean salinity', 'g/kg')
 
     wfo_cube = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project,
-                                 manual_file_dict, inargs.ignore_list)
+                                 manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project,
-                                  manual_file_dict, inargs.ignore_list)
+                                  manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
 
     rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project,
                                   manual_file_dict, inargs.ignore_list)
@@ -554,6 +552,8 @@ author:
 
     parser.add_argument("--volo", action="store_true", default=False,
                         help="Use volo to calculate masso (useful for boussinesq models)")
+    parser.add_argument("--chunk", action="store_true", default=False,
+                        help="Chunk annual mean calculation for spatial variables (useful for boussinesq models)")
 
     parser.add_argument("--manual_files", type=str, action="append", nargs='*', default=[],
                         help="Use these manually entered files instead of the clef search")
