@@ -429,7 +429,7 @@ def plot_sea_level(ax_top, ax_middle, ax_bottom, zostoga_cube, zosga_cube, zossg
         sea_level_anomaly_from_wfo = sea_level_from_mass(wfo_cumsum_anomaly, ocean_area, density)
         calc_trend(wfo_cumsum_anomaly, 'cumulative wfo', 'kg')
         ax_top.plot(sea_level_anomaly_from_wfo, color='blue', linestyle='--', label='cumulative surface freshwater flux')
-        plot_dedrift(ax_middle, wfo_cumsum_anomaly, 'blue', linestyle='--')
+        plot_dedrift(ax_middle, sea_level_anomaly_from_wfo, 'blue', linestyle='--')
 
     if zostoga_cube:
         zostoga_anomaly = zostoga_cube.data - zostoga_cube.data[0]
