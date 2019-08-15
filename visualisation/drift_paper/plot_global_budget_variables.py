@@ -484,9 +484,7 @@ def plot_comparison(inargs):
     """Plot the budget comparisons."""
 
     fig = plt.figure(figsize=[20, 16])
-    nrows = 3
-    ncols = 2
-
+    
     manual_file_dict = get_manual_file_dict(inargs.manual_files)
     masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
                                       manual_file_dict, inargs.ignore_list)
@@ -537,14 +535,16 @@ def plot_comparison(inargs):
     areacello_cube = iris.load_cube(area_file[0])
     ocean_area = areacello_cube.data.sum()
 
-    ax1 = fig.add_subplot(nrows, ncols, 1)
-    ax3 = fig.add_subplot(nrows, ncols, 3)
-    ax5 = fig.add_subplot(nrows, ncols, 5)
+    gs = gridspec.GridSpec(4, 2)
+    ax1 = plt.subplot(gs[0:2, 0])
+    ax2 = plt.subplot(gs[0:2, 1])
+    ax3 = plt.subplot(gs[2, 0])
+    ax4 = plt.subplot(gs[2, 1])
+    ax5 = plt.subplot(gs[3, 0])
+    ax6 = plt.subplot(gs[3, 1])
+
     plot_ohc(ax1, ax3, ax5, masso_data, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data, ylim=inargs.ohc_ylim)
 
-    ax2 = fig.add_subplot(nrows, ncols, 2)
-    ax4 = fig.add_subplot(nrows, ncols, 4)
-    ax6 = fig.add_subplot(nrows, ncols, 6)
     plot_sea_level(ax2, ax4, ax6, zostoga_cube, zosga_cube, zossga_cube, masso_data, wfo_cube,
                    masso_from_soga, ocean_area, ylim=inargs.sealevel_ylim)
 
