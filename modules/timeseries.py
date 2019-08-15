@@ -281,6 +281,21 @@ def is_annual(cube):
     return annual
 
 
+def fit_polynomial(data, time_axis, order, outlier_threshold):
+    """Fit a polynomial to data.
+
+    e.g. order 1 polynomial, polyfit returns [b, a] corresponding to y = a + bx
+    
+    """
+
+    if outlier_threshold:
+        data, outlier_idx = outlier_removal(data, outlier_threshold)
+    
+    coefficients = np.ma.polyfit(time_axis, data, order)
+
+    return coefficients
+
+
 def linear_trend(data, time_axis, outlier_threshold):
     """Calculate the linear trend.
 
@@ -300,9 +315,9 @@ def linear_trend(data, time_axis, outlier_threshold):
     if masked_flag:
         return data.fill_value
     else:
-        if outlier_threshold:
-            clean_data, outlier_idx = outlier_removal(data, outlier_threshold)
-        return np.ma.polyfit(time_axis, data, 1)[0]
+        coefficients = fit_polynomial(data, time_axis, 1, outlier_threshold)
+
+        return coefficients[0]
 
 
 def outlier_removal(data, outlier_threshold):
