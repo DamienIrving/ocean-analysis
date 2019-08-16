@@ -167,7 +167,6 @@ def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, igno
         cube.units = units.replace('m-2', '')
         cube.data = cube.data * area_array
         if variable == 'wfo' and ((model, 'piControl', ensemble) in wfo_wrong_sign):
-            pdb.set_trace()
             cube.data = cube.data * -1
 
         # Calculate the global sum
@@ -201,9 +200,8 @@ def plot_global_variable(ax, data, long_name, units, color, label=None):
 def get_start_year(branch_time, control_time_axis):
     """Get the start year for a forced simulation."""
 
-    start_month, error = uconv.find_nearest(control_time_axis, float(branch_time) + 182.5, index=True)
+    start_year, error = uconv.find_nearest(control_time_axis, float(branch_time) + 182.5, index=True)
     assert abs(error) < 200, 'check the branch time - something seems wrong'
-    start_year = start_month // 12
 
     return start_year
 
@@ -589,20 +587,20 @@ def plot_comparison(inargs, manual_file_dict, branch_year_dict):
                    masso_from_soga, ocean_area, ylim=inargs.sealevel_ylim)
 
 
-def get_branch_years(inargs, manual_file_dict):
+def get_branch_years(inargs, manual_file_dict, manual_branch_time):
     """Get the branch year for various experiments"""
 
     
     thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
                                          manual_file_dict, inargs.ignore_list)
     control_time_axis = thetaoga_cube.coord('time').points
-   
     branch_years = {}
     for experiment in ['historical', 'historicalGHG', '1pctCO2']:
         cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
                                     manual_file_dict, inargs.ignore_list, experiment=experiment)
         if cube:
-            branch_years[experiment] = get_start_year(cube.attributes['branch_time'], control_time_axis)
+            branch_time = manual_branch_time if manual_branch_time else cube.attributes['branch_time']
+            branch_years[experiment] = get_start_year(branch_time, control_time_axis)
     
     return branch_years
 
@@ -611,7 +609,7 @@ def main(inargs):
     """Run the program."""
 
     manual_file_dict = get_manual_file_dict(inargs.manual_files)
-    branch_year_dict = get_branch_years(inargs, manual_file_dict)
+    branch_year_dict = get_branch_years(inargs, manual_file_dict, inargs.branch_time)
 
     if inargs.plot_type == 'raw':
         plot_raw(inargs, manual_file_dict, branch_year_dict)
@@ -657,6 +655,8 @@ author:
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Chunk annual mean calculation for spatial variables (useful for boussinesq models)")
 
+    parser.add_argument("--branch_time", type=float, default=None,
+                        help="Override branch time from file attributes with this one")
     parser.add_argument("--manual_files", type=str, action="append", nargs='*', default=[],
                         help="Use these manually entered files instead of the clef search")
     parser.add_argument("--ignore_list", type=str, nargs='*', default=[],
