@@ -248,12 +248,27 @@ def plot_raw(inargs, manual_file_dict, branch_year_dict):
     fig = plt.figure(figsize=[15, 25])
     nrows = 5
     ncols = 2
+    
     if masso_cube:
         ax1 = fig.add_subplot(nrows, ncols, 1)
-        plot_global_variable(ax1, masso_cube.data, masso_cube.long_name, masso_cube.units, 'green')
+        linestyles = itertools.cycle(('-', '--', ':', '-.'))
+        for experiment, branch_year in branch_year_dict.items():
+            cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
+                                        manual_file_dict, inargs.ignore_list, experiment=experiment)
+            xdata = numpy.arange(branch_year, len(cube.data))
+            ax1.plot(xdata, cube.data, color='limegreen', label=experiment, linestyle=next(linestyles))
+        plot_global_variable(ax1, masso_cube.data, masso_cube.long_name, masso_cube.units, 'green', label='piControl')
+        ax1.legend()
     if volo_cube:
         ax2 = fig.add_subplot(nrows, ncols, 2)
-        plot_global_variable(ax2, volo_cube.data, volo_cube.long_name, volo_cube.units, 'red')
+        linestyles = itertools.cycle(('-', '--', ':', '-.'))
+        for experiment, branch_year in branch_year_dict.items():
+            cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project,
+                                        manual_file_dict, inargs.ignore_list, experiment=experiment)
+            xdata = numpy.arange(branch_year, len(cube.data))
+            ax2.plot(xdata, cube.data, color='tomato', label=experiment, linestyle=next(linestyles))
+        plot_global_variable(ax2, volo_cube.data, volo_cube.long_name, volo_cube.units, 'red', label='piControl')
+        ax2.legend()
     if masso_cube and volo_cube:
         ax3 = fig.add_subplot(nrows, ncols, 3)
         units = str(masso_cube.units) + ' / ' + str(volo_cube.units)
