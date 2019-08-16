@@ -12,6 +12,7 @@ import os
 import re
 import pdb
 import argparse
+import itertools
 
 import numpy
 from matplotlib import gridspec
@@ -112,7 +113,7 @@ def clef_search(model, variable, ensemble, project, experiment='piControl'):
     return file_list
 
 
-def read_global_variable(model, variable, ensemble, project, manual_file_dict, ignore_list):
+def read_global_variable(model, variable, ensemble, project, manual_file_dict, ignore_list, experiment='piControl'):
     """Read data for a global variable"""
 
     if variable in ignore_list:
@@ -120,7 +121,7 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict, i
     elif variable in manual_file_dict.keys():
         file_list = manual_file_dict[variable]
     else:
-        file_list = clef_search(model, variable, ensemble, project) 
+        file_list = clef_search(model, variable, ensemble, project, experiment=experiment) 
     
     if file_list:
         cube, history = gio.combine_files(file_list, names[variable])
@@ -191,10 +192,19 @@ def plot_global_variable(ax, data, long_name, units, color, label=None):
     ax.yaxis.major.formatter._useMathText = True
 
 
-def plot_raw(inargs):
+def get_start_year(branch_time, control_time_axis):
+    """Get the start year for a forced simulation."""
+
+    start_month, error = uconv.find_nearest(control_time_axis, branch_time + 182.5, index=True)
+    assert error < 200, 'check the branch time - something seems wrong'
+    start_year = start_month // 12
+
+    return start_year
+
+
+def plot_raw(inargs, manual_file_dict, branch_year_dict):
     """Plot the raw budget variables."""
 
-    manual_file_dict = get_manual_file_dict(inargs.manual_files)
     masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
                                       manual_file_dict, inargs.ignore_list)
     volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project,
@@ -250,7 +260,14 @@ def plot_raw(inargs):
         plot_global_variable(ax3, masso_cube.data / volo_cube.data, 'Density', units, 'grey')
     if thetaoga_cube:
         ax4 = fig.add_subplot(nrows, ncols, 4)
-        plot_global_variable(ax4, thetaoga_cube.data, thetaoga_cube.long_name, thetaoga_cube.units, 'gold')
+        linestyles = itertools.cycle(('-', '--', ':', '-.'))
+        for experiment, branch_year in branch_year_dict.items():
+            cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
+                                        manual_file_dict, inargs.ignore_list, experiment=experiment)
+            xdata = numpy.arange(branch_year, len(cube.data))
+            ax4.plot(xdata, cube.data, color='yellow', label=experiment, linestyle=next(linestyles))
+        plot_global_variable(ax4, thetaoga_cube.data, thetaoga_cube.long_name, thetaoga_cube.units, 'gold', label='piControl')
+        ax4.legend()
     if soga_cube:
         ax5 = fig.add_subplot(nrows, ncols, 5)
         plot_global_variable(ax5, soga_cube.data, soga_cube.long_name, 'g/kg', 'orange')
@@ -481,12 +498,9 @@ def get_manual_file_dict(file_list):
     return file_dict 
 
 
-def plot_comparison(inargs):
+def plot_comparison(inargs, manual_file_dict, branch_year_dict):
     """Plot the budget comparisons."""
-
-    fig = plt.figure(figsize=[20, 16])
     
-    manual_file_dict = get_manual_file_dict(inargs.manual_files)
     masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
                                       manual_file_dict, inargs.ignore_list)
     volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project,
@@ -536,6 +550,7 @@ def plot_comparison(inargs):
     areacello_cube = iris.load_cube(area_file[0])
     ocean_area = areacello_cube.data.sum()
 
+    fig = plt.figure(figsize=[20, 16])
     gs = gridspec.GridSpec(4, 2)
     ax1 = plt.subplot(gs[0:2, 0])
     ax2 = plt.subplot(gs[0:2, 1])
@@ -544,19 +559,45 @@ def plot_comparison(inargs):
     ax5 = plt.subplot(gs[3, 0])
     ax6 = plt.subplot(gs[3, 1])
 
+    linestyles = itertools.cycle(('-', '--', ':', '-.'))
+    for experiment, branch_year in branch_year_dict.items():
+        ax1.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
+        ax2.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
+
     plot_ohc(ax1, ax3, ax5, masso_data, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data, ylim=inargs.ohc_ylim)
 
     plot_sea_level(ax2, ax4, ax6, zostoga_cube, zosga_cube, zossga_cube, masso_data, wfo_cube,
                    masso_from_soga, ocean_area, ylim=inargs.sealevel_ylim)
 
 
+def get_branch_years(inargs, manual_file_dict):
+    """Get the branch year for various experiments"""
+
+    
+    thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
+                                         manual_file_dict, inargs.ignore_list)
+    control_time_axis = thetaoga_cube.coord('time').points
+   
+    branch_years = {}
+    for experiment in ['historical', 'historicalGHG', '1pctCO2']:
+        cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
+                                    manual_file_dict, inargs.ignore_list, experiment=experiment)
+        if cube:
+            branch_years[experiment] = get_start_year(cube.attributes['branch_time'], control_time_axis)
+    
+    return branch_years
+
+
 def main(inargs):
     """Run the program."""
 
+    manual_file_dict = get_manual_file_dict(inargs.manual_files)
+    branch_year_dict = get_branch_years(inargs, manual_file_dict)
+
     if inargs.plot_type == 'raw':
-        plot_raw(inargs)
+        plot_raw(inargs, manual_file_dict, branch_year_dict)
     else:
-        plot_comparison(inargs)
+        plot_comparison(inargs, manual_file_dict, branch_year_dict)
 
     plt.subplots_adjust(top=0.92)
     title = '%s (%s), %s, piControl'  %(inargs.model, inargs.project, inargs.run)
