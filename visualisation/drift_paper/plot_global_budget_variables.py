@@ -14,6 +14,7 @@ import pdb
 import argparse
 
 import numpy
+from matplotlib import gridspec
 import matplotlib.pyplot as plt
 import iris
 import cmdline_provenance as cmdprov
