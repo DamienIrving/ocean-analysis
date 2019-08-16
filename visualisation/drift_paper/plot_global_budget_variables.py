@@ -68,6 +68,9 @@ names = {'masso': 'sea_water_mass',
          'vsf': 'virtual_salt_flux_into_sea_water',
          'vsfcorr': 'virtual_salt_flux_correction'}
 
+wfo_wrong_sign = [('MIROC-ESM-CHEM', 'piControl', 'r1i1p1')]
+
+
 
 def get_latest(results):
     """Select the latest results"""
@@ -163,6 +166,9 @@ def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, igno
         assert 'm-2' in units
         cube.units = units.replace('m-2', '')
         cube.data = cube.data * area_array
+        if variable == 'wfo' and ((model, 'piControl', ensemble) in wfo_wrong_sign):
+            pdb.set_trace()
+            cube.data = cube.data * -1
 
         # Calculate the global sum
         coord_names = [coord.name() for coord in cube.dim_coords]
@@ -195,8 +201,8 @@ def plot_global_variable(ax, data, long_name, units, color, label=None):
 def get_start_year(branch_time, control_time_axis):
     """Get the start year for a forced simulation."""
 
-    start_month, error = uconv.find_nearest(control_time_axis, branch_time + 182.5, index=True)
-    assert error < 200, 'check the branch time - something seems wrong'
+    start_month, error = uconv.find_nearest(control_time_axis, float(branch_time) + 182.5, index=True)
+    assert abs(error) < 200, 'check the branch time - something seems wrong'
     start_year = start_month // 12
 
     return start_year
@@ -255,8 +261,9 @@ def plot_raw(inargs, manual_file_dict, branch_year_dict):
         for experiment, branch_year in branch_year_dict.items():
             cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
                                         manual_file_dict, inargs.ignore_list, experiment=experiment)
-            xdata = numpy.arange(branch_year, len(cube.data))
-            ax1.plot(xdata, cube.data, color='limegreen', label=experiment, linestyle=next(linestyles))
+            if cube:
+                xdata = numpy.arange(branch_year, len(cube.data) + branch_year)
+                ax1.plot(xdata, cube.data, color='limegreen', label=experiment, linestyle=next(linestyles))
         plot_global_variable(ax1, masso_cube.data, masso_cube.long_name, masso_cube.units, 'green', label='piControl')
         ax1.legend()
     if volo_cube:
@@ -265,8 +272,9 @@ def plot_raw(inargs, manual_file_dict, branch_year_dict):
         for experiment, branch_year in branch_year_dict.items():
             cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project,
                                         manual_file_dict, inargs.ignore_list, experiment=experiment)
-            xdata = numpy.arange(branch_year, len(cube.data))
-            ax2.plot(xdata, cube.data, color='tomato', label=experiment, linestyle=next(linestyles))
+            if cube:
+                xdata = numpy.arange(branch_year, len(cube.data) + branch_year)
+                ax2.plot(xdata, cube.data, color='tomato', label=experiment, linestyle=next(linestyles))
         plot_global_variable(ax2, volo_cube.data, volo_cube.long_name, volo_cube.units, 'red', label='piControl')
         ax2.legend()
     if masso_cube and volo_cube:
@@ -279,8 +287,9 @@ def plot_raw(inargs, manual_file_dict, branch_year_dict):
         for experiment, branch_year in branch_year_dict.items():
             cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
                                         manual_file_dict, inargs.ignore_list, experiment=experiment)
-            xdata = numpy.arange(branch_year, len(cube.data))
-            ax4.plot(xdata, cube.data, color='yellow', label=experiment, linestyle=next(linestyles))
+            if cube:
+                xdata = numpy.arange(branch_year, len(cube.data) + branch_year)
+                ax4.plot(xdata, cube.data, color='yellow', label=experiment, linestyle=next(linestyles))
         plot_global_variable(ax4, thetaoga_cube.data, thetaoga_cube.long_name, thetaoga_cube.units, 'gold', label='piControl')
         ax4.legend()
     if soga_cube:
@@ -395,7 +404,7 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, thetaoga_cube,
 
     plot_dedrift(ax_bottom, ohc_anomaly_data, 'black')
     plot_dedrift(ax_middle, thermal_data, 'red')
-    plot_dedrift(ax_bottom, nettoa_cumsum_anomaly, 'gold')
+    plot_dedrift(ax_middle, nettoa_cumsum_anomaly, 'gold')
 
     # Optional data
 
@@ -423,7 +432,7 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, thetaoga_cube,
 
     ax_top.set_title('Heat Budget Drift')
     ax_middle.set_title('De-drifted thermal energy comparison')
-    ax_bottom.set_title('De-drifted planetary energy imbalance comparison')
+    ax_bottom.set_title('De-drifted total OHC comparison')
     ax_bottom.set_xlabel('year')
     ax_top.set_ylabel('equivalent change in ocean heat content (J)')
     ax_middle.set_ylabel('equivalent change in ocean heat content (J)')
@@ -434,7 +443,7 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, thetaoga_cube,
     ax_top.legend()
 
 
-def plot_sea_level(ax_top, ax_middle, ax_bottom, zostoga_cube, zosga_cube, zossga_cube, masso_data,
+def plot_sea_level(ax_top, ax_middle, zostoga_cube, zosga_cube, zossga_cube, masso_data,
                    wfo_cube, masso_from_soga, ocean_area, density=1035, ylim=None):
     """Plot the sea level timeseries and it's components"""
 
@@ -452,8 +461,7 @@ def plot_sea_level(ax_top, ax_middle, ax_bottom, zostoga_cube, zosga_cube, zossg
     ax_top.plot(sea_level_anomaly_from_soga, color='teal', label='global mean salinity anomaly')
 
     plot_dedrift(ax_middle, sea_level_anomaly_from_masso, 'blue')
-    plot_dedrift(ax_bottom, sea_level_anomaly_from_masso, 'blue')
-    plot_dedrift(ax_bottom, sea_level_anomaly_from_soga, 'teal' )
+    plot_dedrift(ax_middle, sea_level_anomaly_from_soga, 'teal' )
 
     # Optional variables
     if wfo_cube:
@@ -481,15 +489,12 @@ def plot_sea_level(ax_top, ax_middle, ax_bottom, zostoga_cube, zosga_cube, zossg
         ax_top.set_ylim(ylim[0], ylim[1])
 
     ax_top.set_title('Water Budget Drift')
-    ax_middle.set_title('De-drifted mass comparison')
-    ax_bottom.set_title('De-drifted salt comparison')
-    ax_bottom.set_xlabel('year')
+    ax_middle.set_title('De-drifted barystatic comparison')
+    ax_middle.set_xlabel('year')
     ax_top.set_ylabel('equivalent change in global sea level (m)')
     ax_middle.set_ylabel('equivalent change in global sea level (m)')
-    ax_bottom.set_ylabel('equivalent change in global sea level (m)')
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
-    ax_bottom.yaxis.major.formatter._useMathText = True
     ax_top.legend()    
 
 
@@ -572,16 +577,15 @@ def plot_comparison(inargs, manual_file_dict, branch_year_dict):
     ax3 = plt.subplot(gs[2, 0])
     ax4 = plt.subplot(gs[2, 1])
     ax5 = plt.subplot(gs[3, 0])
-    ax6 = plt.subplot(gs[3, 1])
 
-    linestyles = itertools.cycle(('-', '--', ':', '-.'))
+    linestyles = itertools.cycle(('-', '-', '--', '--', ':', ':', '-.', '-.'))
     for experiment, branch_year in branch_year_dict.items():
         ax1.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
         ax2.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
 
     plot_ohc(ax1, ax3, ax5, masso_data, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data, ylim=inargs.ohc_ylim)
 
-    plot_sea_level(ax2, ax4, ax6, zostoga_cube, zosga_cube, zossga_cube, masso_data, wfo_cube,
+    plot_sea_level(ax2, ax4, zostoga_cube, zosga_cube, zossga_cube, masso_data, wfo_cube,
                    masso_from_soga, ocean_area, ylim=inargs.sealevel_ylim)
 
 
