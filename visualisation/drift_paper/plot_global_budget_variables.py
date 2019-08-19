@@ -47,7 +47,7 @@ import convenient_universal as uconv
 # Define functions 
 
 processed_files = []
-trend_list = []
+numbers_out_list = []
 
 names = {'masso': 'sea_water_mass',
          'volo': 'sea_water_volume',
@@ -355,8 +355,8 @@ def calc_trend(data, name, units, outlier_threshold=None):
     time_axis = numpy.arange(0, len(data)) 
     trend = timeseries.linear_trend(data, time_axis, outlier_threshold)
 
-    trend_text = '%s: %s %s/yr'  %(name, str(trend), units) 
-    trend_list.append(trend_text)
+    trend_text = '%s trend: %s %s/yr'  %(name, str(trend), units) 
+    numbers_out_list.append(trend_text)
 
 
 def plot_dedrift(ax, orig_data, color, linestyle='-'):
@@ -568,6 +568,8 @@ def plot_comparison(inargs, manual_file_dict, branch_year_dict):
         area_file = clef_search(inargs.model, 'areacello', 'r0i0p0', inargs.project, experiment='historical')
     areacello_cube = iris.load_cube(area_file[0])
     ocean_area = areacello_cube.data.sum()
+    area_text = 'ocean surface area: %s %s'  %(str(ocean_area), areacello_cube.units) 
+    numbers_out_list.append(area_text)
 
     fig = plt.figure(figsize=[20, 16])
     gs = gridspec.GridSpec(4, 2)
@@ -622,7 +624,7 @@ def main(inargs):
     plt.suptitle(title)
     plt.savefig(inargs.outfile, bbox_inches='tight')
     
-    processed_files.append(trend_list)
+    processed_files.append(numbers_out_list)
     flat_list = [item for sublist in processed_files for item in sublist]
     flat_list = list(set(flat_list))
     flat_list.sort()
