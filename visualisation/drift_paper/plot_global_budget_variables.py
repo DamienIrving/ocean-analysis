@@ -91,7 +91,10 @@ def clef_search(model, variable, ensemble, project, experiment='piControl'):
     """Use Clef to search for data files"""
 
     if variable in ['areacello', 'areacella']:
-        table = 'fx'
+        if project == 'cmip6' and variable == 'areacello':
+            table = 'Ofx'
+        else:
+            table = 'fx'
     elif variable in ['rsdt', 'rsut', 'rlut']:
         table = 'Amon'
     else:
@@ -140,9 +143,15 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict, i
     return cube
 
 
-def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, ignore_list, chunk=False):
-    """Read spatial flux data and convert to global value"""
-    
+def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, ignore_list, chunk=False, ref_time_coord=None):
+    """Read spatial flux data and convert to global value.
+
+    Accounts for cases where spatial dimensions are unnamed
+      e.g. coord_names = ['time', --, --]
+    and/or where there is no time axis.
+
+    """
+
     if variable in ignore_list:
         file_list = []
     elif variable in manual_file_dict.keys():
@@ -151,17 +160,22 @@ def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, igno
         file_list = clef_search(model, variable, ensemble, project) 
 
     area_var = 'areacella' if variable in ['rsdt', 'rlut', 'rsut'] else 'areacello'
-    area_file = clef_search(model, area_var, 'r0i0p0', project)
+    area_run = 'r0i0p0' if project == 'cmip5' else ensemble
+    area_file = clef_search(model, area_var, area_run, project)
     if not area_file:
-        area_file = clef_search(model, area_var, 'r0i0p0', project, experiment='historical')
+        area_file = clef_search(model, area_var, area_run, project, experiment='historical')
     area_file = area_file[0]
 
     if file_list and area_file:
         cube, history = gio.combine_files(file_list, names[variable])
-        cube = timeseries.convert_to_annual(cube, chunk=chunk)
+        coord_names = [coord.name() for coord in cube.dim_coords]
 
         area_cube = iris.load_cube(area_file)
-        area_array = uconv.broadcast_array(area_cube.data, [1, area_cube.ndim], cube.shape)
+        if 'time' in coord_names:
+            cube = timeseries.convert_to_annual(cube, chunk=chunk)
+            area_array = uconv.broadcast_array(area_cube.data, [1, area_cube.ndim], cube.shape)
+        else:
+            area_array = area_cube.data
 
         units = str(cube.units)
         assert 'm-2' in units
@@ -171,11 +185,31 @@ def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, igno
             cube.data = cube.data * -1
 
         # Calculate the global sum
-        coord_names = [coord.name() for coord in cube.dim_coords]
-        coord_names.remove('time')
-        cube = cube.collapsed(coord_names, iris.analysis.SUM, weights=None)
-        for coord in coord_names:
-            cube.remove_coord(coord)
+        if 'time' in coord_names:
+            coord_names.remove('time')
+            if coord_names:
+                cube = cube.collapsed(coord_names, iris.analysis.SUM, weights=None)
+                for coord in coord_names:
+                    cube.remove_coord(coord)
+            else:
+                global_sum = numpy.ma.sum(cube.data, axis=(1,2))
+                cube = cube[:, 0, 0].copy()
+                cube.data = global_sum
+        elif coord_names == []:
+            assert ref_time_coord
+            global_sum = numpy.ma.sum(cube.data)
+            data = numpy.ones(len(ref_time_coord.points)) * global_sum
+            cube = iris.cube.Cube(data,
+                                  standard_name=cube.standard_name,
+                                  long_name=cube.long_name,
+                                  var_name=cube.var_name,
+                                  units=cube.units,
+                                  attributes=cube.atttributes,
+                                  dim_coords_and_dims=[(ref_time_coord, 0)])
+        else:
+            cube = cube.collapsed(coord_names, iris.analysis.SUM, weights=None)
+            for coord in coord_names:
+                cube.remove_coord(coord)
 
         # Remove the s-1
         cube = timeseries.flux_to_total(cube)
@@ -238,7 +272,8 @@ def plot_raw(inargs, manual_file_dict, branch_year_dict):
     hfcorr_cube = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project,
                                     manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     hfgeou_cube = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project,
-                                    manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+                                    manual_file_dict, inargs.ignore_list, chunk=inargs.chunk,
+                                    ref_time_coord=masso_cube.coord('time'))
     rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project,
                                   manual_file_dict, inargs.ignore_list)
     rlut_cube = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project,
@@ -316,7 +351,8 @@ def plot_raw(inargs, manual_file_dict, branch_year_dict):
         if hfcorr_cube:
             ax8.plot(hfcorr_cube.data, color='teal', label=hfcorr_cube.long_name, linestyle=':')
         if hfgeou_cube:
-            ax8.plot(hfcorr_cube.data, color='teal', label=hfgeou_cube.long_name, linestyle='-.')
+            pdb.set_trace()
+            ax8.plot(hfgeou_cube.data, color='teal', label=hfgeou_cube.long_name, linestyle='-.')
         plot_global_variable(ax8, hfds_cube.data, 'Annual Heat Flux Into Ocean', hfds_cube.units, 'teal', label=hfds_cube.long_name)
         ax8.legend()
     if rsdt_cube:
@@ -599,9 +635,10 @@ def plot_comparison(inargs, manual_file_dict, branch_year_dict):
                                   manual_file_dict, inargs.ignore_list)
     nettoa_data = rsdt_cube.data - rlut_cube.data - rsut_cube.data
 
-    area_file = clef_search(inargs.model, 'areacello', 'r0i0p0', inargs.project)
+    area_run = 'r0i0p0' if inargs.project == 'cmip5' else inargs.run
+    area_file = clef_search(inargs.model, 'areacello', area_run, inargs.project)
     if not area_file:
-        area_file = clef_search(inargs.model, 'areacello', 'r0i0p0', inargs.project, experiment='historical')
+        area_file = clef_search(inargs.model, 'areacello', area_run, inargs.project, experiment='historical')
     areacello_cube = iris.load_cube(area_file[0])
     ocean_area = areacello_cube.data.sum()
     area_text = 'ocean surface area: %s %s'  %(str(ocean_area), areacello_cube.units) 
