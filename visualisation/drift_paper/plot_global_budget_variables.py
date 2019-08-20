@@ -418,7 +418,7 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, thetaoga_cube,
     ax_middle.plot(thermal_data_dedrifted, color='red')
     
     nettoa_dedrifted = dedrift_data(nettoa_cumsum_anomaly)
-    ax_middle.plot(nettoa_cumsum_anomaly, color='gold')
+    ax_middle.plot(nettoa_dedrifted, color='gold', linestyle='--')
 
     calc_correlation(nettoa_dedrifted, thermal_data_dedrifted, 'cumulative netTOA radiative flux vs thermal OHC anomaly')
 
@@ -510,7 +510,7 @@ def plot_sea_level(ax_top, ax_middle, zostoga_cube, zosga_cube, zossga_cube, mas
         calc_trend(zosbary_anomaly, 'barystatic sea level', 'm')
         ax_top.plot(zosbary_anomaly, color='purple', label='change in barystatic sea level')
         zosbary_dedrifted = dedrift_data(zosbary_anomaly)
-        ax_middle.plot(zosbary_anomaly, color='purple', linestyle='--')
+        ax_middle.plot(zosbary_dedrifted, color='purple')
     
     if ylim:
         ax_top.set_ylim(ylim[0], ylim[1])
@@ -626,11 +626,17 @@ def get_branch_years(inargs, manual_file_dict, manual_branch_time):
                                          manual_file_dict, inargs.ignore_list)
     control_time_axis = thetaoga_cube.coord('time').points
     branch_years = {}
-    for experiment in ['historical', 'historicalGHG', '1pctCO2']:
+    for experiment in ['historical', '1pctCO2']:
         cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
                                     manual_file_dict, inargs.ignore_list, experiment=experiment)
         if cube:
-            branch_time = manual_branch_time if manual_branch_time else cube.attributes['branch_time']
+            if manual_branch_time:
+                branch_time = manual_branch_time
+            else:
+                try:
+                    branch_time = cube.attributes['branch_time']
+                except KeyError:
+                    branch_time = cube.attributes['branch_time_in_parent']
             branch_years[experiment] = get_start_year(branch_time, control_time_axis)
     
     return branch_years
