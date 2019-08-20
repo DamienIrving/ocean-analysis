@@ -504,6 +504,7 @@ def plot_sea_level(ax_top, ax_middle, zostoga_cube, zosga_cube, zossga_cube, mas
         wfo_dedrifted = dedrift_data(sea_level_anomaly_from_wfo)
         ax_middle.plot(wfo_dedrifted, color='blue', linestyle='--')
         calc_correlation(wfo_dedrifted, masso_dedrifted, 'cumulative surface freshwater flux vs change in global ocean mass')
+        calc_correlation(wfo_dedrifted, soga_dedrifted, 'cumulative surface freshwater flux vs global mean salinity anomaly')
 
     if zostoga_cube:
         zostoga_anomaly = zostoga_cube.data - zostoga_cube.data[0]
