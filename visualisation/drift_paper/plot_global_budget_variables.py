@@ -362,6 +362,13 @@ def calc_trend(data, name, units, outlier_threshold=None):
 def calc_correlation(x_data, y_data, label):
     """Calculate the correlation coefficient."""
 
+    nx = len(x_data)
+    ny = len(y_data)
+    if nx > ny:
+        x_data = x_data[0:ny]
+    elif ny > nx:
+        y_data = y_data[0:nx]
+
     corr = numpy.corrcoef(x_data, y_data)
 
     correlation_text = 'correlation, %s: %s'  %(label, str(corr[0][-1])) 
