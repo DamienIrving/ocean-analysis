@@ -241,55 +241,65 @@ def get_start_year(branch_time, control_time_axis):
     return start_year
 
 
-def plot_raw(inargs, manual_file_dict, branch_year_dict):
-    """Plot the raw budget variables."""
+def get_data_dict(inargs, manual_file_dict, branch_year_dict):
+    """Get all the necessary data."""
 
-    masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
-                                      manual_file_dict, inargs.ignore_list)
-    volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project,
-                                     manual_file_dict, inargs.ignore_list)
-    thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
-                                         manual_file_dict, inargs.ignore_list)
-    soga_cube = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project,
-                                     manual_file_dict, inargs.ignore_list)  
-    zostoga_cube = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project,
-                                        manual_file_dict, inargs.ignore_list) 
+    cube_dict = {}
+
+    cube_dict['masso'] = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
+                                              manual_file_dict, inargs.ignore_list)
+    cube_dict['volo'] = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project,
+                                             manual_file_dict, inargs.ignore_list)
+    cube_dict['thetaoga'] = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
+                                                 manual_file_dict, inargs.ignore_list)
+    cube_dict['soga'] = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project,
+                                             manual_file_dict, inargs.ignore_list)  
+    cube_dict['zostoga'] = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project,
+                                                manual_file_dict, inargs.ignore_list) 
     if inargs.project == 'cmip5':
-        zosga_cube = read_global_variable(inargs.model, 'zosga', inargs.run, inargs.project,
-                                          manual_file_dict, inargs.ignore_list) 
-        zossga_cube = read_global_variable(inargs.model, 'zossga', inargs.run, inargs.project,
-                                           manual_file_dict, inargs.ignore_list)
+        cube_dict['zosga'] = read_global_variable(inargs.model, 'zosga', inargs.run, inargs.project,
+                                                  manual_file_dict, inargs.ignore_list) 
+        cube_dict['zossga'] = read_global_variable(inargs.model, 'zossga', inargs.run, inargs.project,
+                                                   manual_file_dict, inargs.ignore_list)
     else:
-        zosga_cube = zossga_cube = None
-    wfo_cube = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project,
-                                 manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    wfonocorr_cube = read_spatial_flux(inargs.model, 'wfonocorr', inargs.run, inargs.project,
-                                       manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    wfcorr_cube = read_spatial_flux(inargs.model, 'wfcorr', inargs.run, inargs.project,
+        cube_dict['zosga'] = cube_dict['zossga'] = None
+
+    cube_dict['wfo'] = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project,
+                                         manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+    cube_dict['wfonocorr'] = read_spatial_flux(inargs.model, 'wfonocorr', inargs.run, inargs.project,
+                                               manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+    cube_dict['wfcorr'] = read_spatial_flux(inargs.model, 'wfcorr', inargs.run, inargs.project,
                                     manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project,
-                                  manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    hfcorr_cube = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project,
-                                    manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    hfgeou_cube = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project,
-                                    manual_file_dict, inargs.ignore_list, chunk=inargs.chunk,
-                                    ref_time_coord=masso_cube.coord('time'))
-    rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project,
-                                  manual_file_dict, inargs.ignore_list)
-    rlut_cube = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project,
-                                  manual_file_dict, inargs.ignore_list)
-    rsut_cube = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project,
-                                  manual_file_dict, inargs.ignore_list)
-    vsf_cube = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project,
-                                 manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    vsfcorr_cube = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project,
-                                     manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+    cube_dict['hfds'] = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project,
+                                          manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+    cube_dict['hfcorr'] = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project,
+                                            manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+    cube_dict['hfgeou'] = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project,
+                                            manual_file_dict, inargs.ignore_list, chunk=inargs.chunk,
+                                            ref_time_coord=cube_dict['masso'].coord('time'))
+    cube_dict['rsdt'] = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project,
+                                          manual_file_dict, inargs.ignore_list)
+    cube_dict['rlut'] = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project,
+                                          manual_file_dict, inargs.ignore_list)
+    cube_dict['rsut'] = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project,
+                                           manual_file_dict, inargs.ignore_list)
+    cube_dict['vsf'] = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project,
+                                         manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+    cube_dict['vsfcorr'] = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project,
+                                             manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+
+    return cube_dict
+
+
+
+def plot_raw(inargs, cube_dict):
+    """Plot the raw budget variables."""
 
     fig = plt.figure(figsize=[15, 25])
     nrows = 5
     ncols = 2
     
-    if masso_cube:
+    if cube_dict['masso']:
         ax1 = fig.add_subplot(nrows, ncols, 1)
         linestyles = itertools.cycle(('-', '--', ':', '-.'))
         for experiment, branch_year in branch_year_dict.items():
@@ -298,9 +308,10 @@ def plot_raw(inargs, manual_file_dict, branch_year_dict):
             if cube:
                 xdata = numpy.arange(branch_year, len(cube.data) + branch_year)
                 ax1.plot(xdata, cube.data, color='limegreen', label=experiment, linestyle=next(linestyles))
-        plot_global_variable(ax1, masso_cube.data, masso_cube.long_name, masso_cube.units, 'green', label='piControl')
+        plot_global_variable(ax1, cube_dict['masso'].data, cube_dict['masso'].long_name,
+                             cube_dict['masso'].units, 'green', label='piControl')
         ax1.legend()
-    if volo_cube:
+    if cube_dict['volo']:
         ax2 = fig.add_subplot(nrows, ncols, 2)
         linestyles = itertools.cycle(('-', '--', ':', '-.'))
         for experiment, branch_year in branch_year_dict.items():
@@ -309,13 +320,14 @@ def plot_raw(inargs, manual_file_dict, branch_year_dict):
             if cube:
                 xdata = numpy.arange(branch_year, len(cube.data) + branch_year)
                 ax2.plot(xdata, cube.data, color='tomato', label=experiment, linestyle=next(linestyles))
-        plot_global_variable(ax2, volo_cube.data, volo_cube.long_name, volo_cube.units, 'red', label='piControl')
+        plot_global_variable(ax2, cube_dict['volo'].data, cube_dict['volo'].long_name,
+                            cube_dict['volo'].units, 'red', label='piControl')
         ax2.legend()
-    if masso_cube and volo_cube:
+    if cube_dict['masso'] and cube_dict['volo']:
         ax3 = fig.add_subplot(nrows, ncols, 3)
-        units = str(masso_cube.units) + ' / ' + str(volo_cube.units)
-        plot_global_variable(ax3, masso_cube.data / volo_cube.data, 'Density', units, 'grey')
-    if thetaoga_cube:
+        units = str(cube_dict['masso'].units) + ' / ' + str(cube_dict['volo'].units)
+        plot_global_variable(ax3, cube_dict['masso'].data / cube_dict['volo'].data, 'Density', units, 'grey')
+    if cube_dict['thetaoga']:
         ax4 = fig.add_subplot(nrows, ncols, 4)
         linestyles = itertools.cycle(('-', '--', ':', '-.'))
         for experiment, branch_year in branch_year_dict.items():
@@ -324,48 +336,54 @@ def plot_raw(inargs, manual_file_dict, branch_year_dict):
             if cube:
                 xdata = numpy.arange(branch_year, len(cube.data) + branch_year)
                 ax4.plot(xdata, cube.data, color='yellow', label=experiment, linestyle=next(linestyles))
-        plot_global_variable(ax4, thetaoga_cube.data, thetaoga_cube.long_name, thetaoga_cube.units, 'gold', label='piControl')
+        plot_global_variable(ax4, cube_dict['thetaoga'].data, cube_dict['thetaoga'].long_name,
+                             cube_dict['thetaoga'].units, 'gold', label='piControl')
         ax4.legend()
-    if soga_cube:
+    if cube_dict['soga']:
         ax5 = fig.add_subplot(nrows, ncols, 5)
-        plot_global_variable(ax5, soga_cube.data, soga_cube.long_name, 'g/kg', 'orange')
-    if zostoga_cube:
+        plot_global_variable(ax5, cube_dict['soga'].data, cube_dict['soga'].long_name, 'g/kg', 'orange')
+    if cube_dict['zostoga']:
         ax6 = fig.add_subplot(nrows, ncols, 6)
         if zosga_cube:
             ax6.plot(zosga_cube.data, color='purple', label=zosga_cube.long_name, linestyle=':')
         if zossga_cube:
             ax6.plot(zossga_cube.data, color='purple', label=zossga_cube.long_name, linestyle='-.')
-        plot_global_variable(ax6, zostoga_cube.data, 'Sea Level',
-                             zostoga_cube.units, 'purple', label=zostoga_cube.long_name)
+        plot_global_variable(ax6, cube_dict['zostoga'].data, 'Sea Level', cube_dict['zostoga'].units,
+                             'purple', label=cube_dict['zostoga'].long_name)
         ax6.legend()
-    if wfo_cube:
+    if cube_dict['wfo']:
         ax7 = fig.add_subplot(nrows, ncols, 7)
-        if wfcorr_cube:
-            ax7.plot(wfcorr_cube.data, color='blue', label=wfcorr_cube.long_name, linestyle=':')
-        if wfonocorr_cube:
-            ax7.plot(wfonocorr_cube.data, color='blue', label=wfonocorr_cube.long_name, linestyle='-.')
-        plot_global_variable(ax7, wfo_cube.data, 'Annual Water Flux Into Ocean', wfo_cube.units, 'blue', label=wfo_cube.long_name)
+        if cube_dict['wfcorr']:
+            ax7.plot(cube_dict['wfcorr'].data, color='blue', label=cube_dict['wfcorr'].long_name, linestyle=':')
+        if cube_dict['wfonocorr']:
+            ax7.plot(cube_dict['wfonocorr'].data, color='blue', label=cube_dict['wfonocorr'].long_name, linestyle='-.')
+        plot_global_variable(ax7, cube_dict['wfo'].data, 'Annual Water Flux Into Ocean', cube_dict['wfo'].units,
+                             'blue', label=cube_dict['wfo'].long_name)
         ax7.legend()
-    if hfds_cube:
+    if cube_dict['hfds']:
         ax8 = fig.add_subplot(nrows, ncols, 8)
-        if hfcorr_cube:
-            ax8.plot(hfcorr_cube.data, color='teal', label=hfcorr_cube.long_name, linestyle=':')
-        if hfgeou_cube:
-            ax8.plot(hfgeou_cube.data, color='teal', label=hfgeou_cube.long_name, linestyle='-.')
-        plot_global_variable(ax8, hfds_cube.data, 'Annual Heat Flux Into Ocean', hfds_cube.units, 'teal', label=hfds_cube.long_name)
+        if cube_dict['hfcorr']:
+            ax8.plot(cube_dict['hfcorr'].data, color='teal', label=cube_dict['hfcorr'].long_name, linestyle=':')
+        if cube_dict['hfgeou']:
+            ax8.plot(cube_dict['hfgeou'].data, color='teal', label=cube_dict['hfgeou'].long_name, linestyle='-.')
+        plot_global_variable(ax8, cube_dict['hfds'].data, 'Annual Heat Flux Into Ocean', cube_dict['hfds'].units,
+                             'teal', label=cube_dict['hfds'].long_name)
         ax8.legend()
-    if rsdt_cube:
+    if cube_dict['rsdt']:
         ax9 = fig.add_subplot(nrows, ncols, 9)
-        ax9.plot(rsdt_cube.data, color='maroon', label=rsdt_cube.long_name, linestyle=':')
-        ax9.plot(rsut_cube.data, color='maroon', label=rlut_cube.long_name, linestyle='-.')
-        plot_global_variable(ax9, rlut_cube.data, 'Annual TOA Radiative Fluxes', rlut_cube.units, 'maroon', label=rlut_cube.long_name)
+        ax9.plot(cube_dict['rsdt'].data, color='maroon', label=cube_dict['rsdt'].long_name, linestyle=':')
+        ax9.plot(cube_dict['rsut'].data, color='maroon', label=cube_dict['rlut'].long_name, linestyle='-.')
+        plot_global_variable(ax9, cube_dict['rlut'].data, 'Annual TOA Radiative Fluxes',
+                             cube_dict['rlut'].units, 'maroon', label=cube_dict['rlut'].long_name)
         ax9.legend()
-    if vsf_cube or vsfcorr_cube:
+    if cube_dict['vsf'] or cube_dict['vsfcorr']:
         ax10 = fig.add_subplot(nrows, ncols, 10)
-        if vsf_cube:
-            plot_global_variable(ax10, vsf_cube.data, 'Annual Virtual Salt Fluxes', vsf_cube.units, 'orange', label=vsf_cube.long_name)
-        if vsfcorr_cube:
-            plot_global_variable(ax10, vsfcorr_cube.data, 'Annual Virtual Salt Fluxes', vsfcorr_cube.units, 'yellow', label=vsfcorr_cube.long_name)
+        if cube_dict['vsf']:
+            plot_global_variable(ax10, cube_dict['vsf'].data, 'Annual Virtual Salt Fluxes',
+                                 cube_dict['vsf'].units, 'orange', label=cube_dict['vsf'].long_name)
+        if cube_dict['vsfcorr']:
+            plot_global_variable(ax10, cube_dict['vsfcorr'].data, 'Annual Virtual Salt Fluxes',
+                                cube_dict['vsfcorr'].units, 'yellow', label=cube_dict['vsfcorr'].long_name)
 
 
 def delta_masso_from_soga(s_orig, s_new, m_orig):
@@ -421,24 +439,22 @@ def dedrift_data(data):
     return dedrifted_data
     
 
-def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, thetaoga_cube,
-             wfo_cube, hfds_cube, nettoa_data, ylim=None):
+def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cube_dict, ylim=None):
     """Plot the OHC timeseries and it's components"""
 
-    # Compulsory variables
-
-    assert thetaoga_cube.units == 'K'
+    assert cube_dict['thetaoga'].units == 'K'
     cp = 4000
 
-    ohc_data = masso_data * thetaoga_cube.data * cp
+    ohc_data = masso_data * cube_dict['thetaoga'].data * cp
     ohc_anomaly_data = ohc_data - ohc_data[0]
 
-    thetaoga_anomaly_data = thetaoga_cube.data - thetaoga_cube.data[0]
+    thetaoga_anomaly_data = cube_dict['thetaoga'].data - cube_dict['thetaoga'].data[0]
     thermal_data = cp * masso_data[0] * thetaoga_anomaly_data
 
     masso_anomaly_data = masso_data - masso_data[0]
-    barystatic_data = cp * thetaoga_cube.data[0] * masso_anomaly_data
+    barystatic_data = cp * cube_dict['thetaoga'].data[0] * masso_anomaly_data
 
+    nettoa_data = cube_dict['rsdt'].data - cube_dict['rlut'].data - cube_dict['rsut'].data
     nettoa_cumsum_data = numpy.cumsum(nettoa_data)
     nettoa_cumsum_anomaly = nettoa_cumsum_data - nettoa_cumsum_data[0]
 
@@ -466,8 +482,11 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, thetaoga_cube,
 
     # Optional data
 
-    if hfds_cube:
-        hfds_cumsum_data = numpy.cumsum(hfds_cube.data)
+    if cube_dict['hfds']:
+        net_surface_heat_flux_data = cube_dict['hfds'].data
+        if cube_dict['hfds'] and cube_dict['hfgeou']:
+            net_surface_heat_flux_data = net_surface_heat_flux_data + cube_dict['hfgeou'].data
+        hfds_cumsum_data = numpy.cumsum(net_surface_heat_flux_data)
         hfds_cumsum_anomaly = hfds_cumsum_data - hfds_cumsum_data[0]
         calc_trend(hfds_cumsum_anomaly, 'cumulative hfds', 'J')
         ax_top.plot(hfds_cumsum_anomaly, color='red', linestyle='--', label='cumulative surface heat flux')
@@ -475,13 +494,13 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, thetaoga_cube,
         ax_middle.plot(hfds_dedrifted, color='red', linestyle='--')
         calc_correlation(hfds_dedrifted, thermal_data_dedrifted, 'cumulative surface heat flux vs thermal OHC anomaly')
 
-    if wfo_cube:
-        wfo_cumsum_data = numpy.cumsum(wfo_cube.data)
+    if cube_dict['wfo']:
+        wfo_cumsum_data = numpy.cumsum(cube_dict['wfo'].data)
         wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
-        wfo_inferred_barystatic = cp * thetaoga_cube.data[0] * wfo_cumsum_anomaly
+        wfo_inferred_barystatic = cp * cube_dict['thetaoga'].data[0] * wfo_cumsum_anomaly
         ax_top.plot(wfo_inferred_barystatic, color='blue', linestyle='--', label='cumulative surface freshwater flux')
 
-    if hfds_cube and wfo_cube:
+    if cube_dict['hfds'] and cube_dict['wfo']:
         total_surface_flux = hfds_cumsum_anomaly + wfo_inferred_barystatic
         calc_trend(total_surface_flux, 'cumulative surface total flux', 'J')
         ax_top.plot(total_surface_flux, color='black', linestyle='--', label='inferred OHC anomaly from suface fluxes')
@@ -504,11 +523,18 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, thetaoga_cube,
     ax_top.legend()
 
 
-def plot_sea_level(ax_top, ax_middle, zostoga_cube, zosga_cube, zossga_cube, masso_data,
-                   wfo_cube, masso_from_soga, ocean_area, density=1035, ylim=None):
+def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density=1035, ylim=None):
     """Plot the sea level timeseries and it's components"""
 
     # Compulsory variables
+
+    s_orig = numpy.ones(cube_dict['soga'].data.shape[0]) * cube_dict['soga'].data[0]
+    m_orig = numpy.ones(masso_data.shape[0]) * masso_data[0]
+    masso_from_soga = numpy.fromiter(map(delta_masso_from_soga, s_orig, cube_dict['soga'].data, m_orig), float)
+    soga_from_masso = numpy.fromiter(map(delta_soga_from_masso, m_orig, masso_data, s_orig), float) 
+
+    calc_trend(soga_from_masso, 'global ocean mass', 'g/kg')
+    calc_trend(cube_dict['soga'].data, 'global mean salinity', 'g/kg')
 
     masso_anomaly_data = masso_data - masso_data[0]
     sea_level_anomaly_from_masso = sea_level_from_mass(masso_anomaly_data, ocean_area, density)
@@ -529,8 +555,8 @@ def plot_sea_level(ax_top, ax_middle, zostoga_cube, zosga_cube, zossga_cube, mas
     calc_correlation(masso_dedrifted, soga_dedrifted, 'change in global ocean mass vs global mean salinity anomaly')
 
     # Optional variables
-    if wfo_cube:
-        wfo_cumsum_data = numpy.cumsum(wfo_cube.data)
+    if cube_dict['wfo']:
+        wfo_cumsum_data = numpy.cumsum(cube_dict['wfo'].data)
         wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
         sea_level_anomaly_from_wfo = sea_level_from_mass(wfo_cumsum_anomaly, ocean_area, density)
         calc_trend(wfo_cumsum_anomaly, 'cumulative wfo', 'kg')
@@ -541,8 +567,8 @@ def plot_sea_level(ax_top, ax_middle, zostoga_cube, zosga_cube, zossga_cube, mas
         calc_correlation(wfo_dedrifted, masso_dedrifted, 'cumulative surface freshwater flux vs change in global ocean mass')
         calc_correlation(wfo_dedrifted, soga_dedrifted, 'cumulative surface freshwater flux vs global mean salinity anomaly')
 
-    if zostoga_cube:
-        zostoga_anomaly = zostoga_cube.data - zostoga_cube.data[0]
+    if cube_dict['zostoga']:
+        zostoga_anomaly = cube_dict['zostoga'].data - cube_dict['zostoga'].data[0]
         calc_trend(zostoga_anomaly, 'thermosteric sea level', 'm')
         ax_top.plot(zostoga_anomaly, color='purple', linestyle='--', label='change in thermosteric sea level')
 
@@ -588,51 +614,13 @@ def get_manual_file_dict(file_list):
     return file_dict 
 
 
-def plot_comparison(inargs, manual_file_dict, branch_year_dict):
+def plot_comparison(inargs, cube_dict):
     """Plot the budget comparisons."""
     
-    masso_cube = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
-                                      manual_file_dict, inargs.ignore_list)
-    volo_cube = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project,
-                                     manual_file_dict, inargs.ignore_list)
     if inargs.volo:
-        masso_data = volo_cube.data * 1035
+        masso_data = cube_dict['volo'].data * 1035
     else:
-        masso_data = masso_cube.data
-
-    thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
-                                         manual_file_dict, inargs.ignore_list)
-    zostoga_cube = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project,
-                                        manual_file_dict, inargs.ignore_list)
-    if inargs.project == 'cmip5':
-        zosga_cube = read_global_variable(inargs.model, 'zosga', inargs.run, inargs.project,
-                                          manual_file_dict, inargs.ignore_list)
-        zossga_cube = read_global_variable(inargs.model, 'zossga', inargs.run, inargs.project,
-                                           manual_file_dict, inargs.ignore_list) 
-    else:
-        zosga_cube = zossga_cube = None
-
-    soga_cube = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project,
-                                     manual_file_dict, inargs.ignore_list)
-    s_orig = numpy.ones(soga_cube.data.shape[0]) * soga_cube.data[0]
-    m_orig = numpy.ones(masso_data.shape[0]) * masso_data[0]
-    masso_from_soga = numpy.fromiter(map(delta_masso_from_soga, s_orig, soga_cube.data, m_orig), float)
-    soga_from_masso = numpy.fromiter(map(delta_soga_from_masso, m_orig, masso_data, s_orig), float) 
-    calc_trend(soga_from_masso, 'global ocean mass', 'g/kg')
-    calc_trend(soga_cube.data, 'global mean salinity', 'g/kg')
-
-    wfo_cube = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project,
-                                 manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    hfds_cube = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project,
-                                  manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-
-    rsdt_cube = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project,
-                                  manual_file_dict, inargs.ignore_list)
-    rlut_cube = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project,
-                                  manual_file_dict, inargs.ignore_list)
-    rsut_cube = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project,
-                                  manual_file_dict, inargs.ignore_list)
-    nettoa_data = rsdt_cube.data - rlut_cube.data - rsut_cube.data
+        masso_data = cube_dict['masso'].data
 
     area_run = 'r0i0p0' if inargs.project == 'cmip5' else inargs.run
     area_file = clef_search(inargs.model, 'areacello', area_run, inargs.project)
@@ -656,16 +644,14 @@ def plot_comparison(inargs, manual_file_dict, branch_year_dict):
         ax1.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
         ax2.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
 
-    plot_ohc(ax1, ax3, ax5, masso_data, thetaoga_cube, wfo_cube, hfds_cube, nettoa_data, ylim=inargs.ohc_ylim)
+    plot_ohc(ax1, ax3, ax5, masso_data, cube_dict, ylim=inargs.ohc_ylim)
 
-    plot_sea_level(ax2, ax4, zostoga_cube, zosga_cube, zossga_cube, masso_data, wfo_cube,
-                   masso_from_soga, ocean_area, ylim=inargs.sealevel_ylim)
+    plot_sea_level(ax2, ax4, masso_data, cube_dict, ocean_area, ylim=inargs.sealevel_ylim)
 
 
 def get_branch_years(inargs, manual_file_dict, manual_branch_time):
     """Get the branch year for various experiments"""
 
-    
     thetaoga_cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
                                          manual_file_dict, inargs.ignore_list)
     control_time_axis = thetaoga_cube.coord('time').points
@@ -691,11 +677,12 @@ def main(inargs):
 
     manual_file_dict = get_manual_file_dict(inargs.manual_files)
     branch_year_dict = get_branch_years(inargs, manual_file_dict, inargs.branch_time)
+    cube_dict = get_data_dict(inargs, manual_file_dict, branch_year_dict)
 
     if inargs.plot_type == 'raw':
-        plot_raw(inargs, manual_file_dict, branch_year_dict)
+        plot_raw(inargs, cube_dict)
     else:
-        plot_comparison(inargs, manual_file_dict, branch_year_dict)
+        plot_comparison(inargs, cube_dict)
 
     plt.subplots_adjust(top=0.92)
     title = '%s (%s), %s, piControl'  %(inargs.model, inargs.project, inargs.run)
