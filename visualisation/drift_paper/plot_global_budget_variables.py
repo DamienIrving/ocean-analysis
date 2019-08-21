@@ -204,7 +204,7 @@ def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, igno
                                   long_name=cube.long_name,
                                   var_name=cube.var_name,
                                   units=cube.units,
-                                  attributes=cube.atttributes,
+                                  attributes=cube.attributes,
                                   dim_coords_and_dims=[(ref_time_coord, 0)])
         else:
             cube = cube.collapsed(coord_names, iris.analysis.SUM, weights=None)
@@ -351,7 +351,6 @@ def plot_raw(inargs, manual_file_dict, branch_year_dict):
         if hfcorr_cube:
             ax8.plot(hfcorr_cube.data, color='teal', label=hfcorr_cube.long_name, linestyle=':')
         if hfgeou_cube:
-            pdb.set_trace()
             ax8.plot(hfgeou_cube.data, color='teal', label=hfgeou_cube.long_name, linestyle='-.')
         plot_global_variable(ax8, hfds_cube.data, 'Annual Heat Flux Into Ocean', hfds_cube.units, 'teal', label=hfds_cube.long_name)
         ax8.legend()
