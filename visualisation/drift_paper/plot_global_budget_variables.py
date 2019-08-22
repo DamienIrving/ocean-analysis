@@ -70,7 +70,8 @@ names = {'masso': 'sea_water_mass',
          'vsfcorr': 'virtual_salt_flux_correction'}
 
 wfo_wrong_sign = [('MIROC-ESM-CHEM', 'piControl', 'r1i1p1'),
-                  ('MIROC-ESM', 'piControl', 'r1i1p1')]
+                  ('MIROC-ESM', 'piControl', 'r1i1p1'),
+                  ('CNRM-CM6-1', 'piControl', 'r1i1p1f2')]
 
 
 
