@@ -143,7 +143,28 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict, i
     return cube
 
 
-def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, ignore_list, chunk=False, ref_time_coord=None):
+def read_area(model, variable, ensemble, project, manual_file_dict):
+    """Read area data."""
+
+    if variable in manual_file_dict.keys():
+        area_file = manual_file_dict[variable]
+    else:
+        area_run = 'r0i0p0' if project == 'cmip5' else ensemble
+        area_files = clef_search(model, variable, area_run, project)
+        if not area_files:
+            area_files = clef_search(model, variable, area_run, project, experiment='historical')
+        area_file = area_files[0]
+
+    if area_file:
+        cube = iris.load_cube(area_file)
+    else:
+        cube = None
+
+    return cube
+
+
+def read_spatial_flux(model, variable, ensemble, project, area_cube,
+                      manual_file_dict, ignore_list, chunk=False, ref_time_coord=None):
     """Read spatial flux data and convert to global value.
 
     Accounts for cases where spatial dimensions are unnamed
@@ -159,18 +180,10 @@ def read_spatial_flux(model, variable, ensemble, project, manual_file_dict, igno
     else:
         file_list = clef_search(model, variable, ensemble, project) 
 
-    area_var = 'areacella' if variable in ['rsdt', 'rlut', 'rsut'] else 'areacello'
-    area_run = 'r0i0p0' if project == 'cmip5' else ensemble
-    area_file = clef_search(model, area_var, area_run, project)
-    if not area_file:
-        area_file = clef_search(model, area_var, area_run, project, experiment='historical')
-    area_file = area_file[0]
-
-    if file_list and area_file:
+    if file_list and area_cube:
         cube, history = gio.combine_files(file_list, names[variable])
         coord_names = [coord.name() for coord in cube.dim_coords]
 
-        area_cube = iris.load_cube(area_file)
         if 'time' in coord_names:
             cube = timeseries.convert_to_annual(cube, chunk=chunk)
             area_array = uconv.broadcast_array(area_cube.data, [1, area_cube.ndim], cube.shape)
@@ -264,35 +277,37 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
     else:
         cube_dict['zosga'] = cube_dict['zossga'] = None
 
-    cube_dict['wfo'] = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project,
+    cube_dict['areacello'] = read_area(inargs.model, 'areacello', inargs.run, inargs.project, manual_file_dict)
+    cube_dict['areacella'] = read_area(inargs.model, 'areacella', inargs.run, inargs.project, manual_file_dict)
+
+    cube_dict['wfo'] = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project, cube_dict['areacello'],
                                          manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    cube_dict['wfonocorr'] = read_spatial_flux(inargs.model, 'wfonocorr', inargs.run, inargs.project,
+    cube_dict['wfonocorr'] = read_spatial_flux(inargs.model, 'wfonocorr', inargs.run, inargs.project, cube_dict['areacello'],
                                                manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    cube_dict['wfcorr'] = read_spatial_flux(inargs.model, 'wfcorr', inargs.run, inargs.project,
-                                    manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    cube_dict['hfds'] = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project,
-                                          manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    cube_dict['hfcorr'] = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project,
+    cube_dict['wfcorr'] = read_spatial_flux(inargs.model, 'wfcorr', inargs.run, inargs.project, cube_dict['areacello'],
                                             manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    cube_dict['hfgeou'] = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project,
+    cube_dict['hfds'] = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project, cube_dict['areacello'],
+                                          manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+    cube_dict['hfcorr'] = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project, cube_dict['areacello'],
+                                            manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+    cube_dict['hfgeou'] = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project, cube_dict['areacello'],
                                             manual_file_dict, inargs.ignore_list, chunk=inargs.chunk,
                                             ref_time_coord=cube_dict['masso'].coord('time'))
-    cube_dict['rsdt'] = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project,
+    cube_dict['rsdt'] = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project, cube_dict['areacella'],
                                           manual_file_dict, inargs.ignore_list)
-    cube_dict['rlut'] = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project,
+    cube_dict['rlut'] = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project, cube_dict['areacella'],
                                           manual_file_dict, inargs.ignore_list)
-    cube_dict['rsut'] = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project,
+    cube_dict['rsut'] = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project, cube_dict['areacella'],
                                            manual_file_dict, inargs.ignore_list)
-    cube_dict['vsf'] = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project,
+    cube_dict['vsf'] = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project, cube_dict['areacello'],
                                          manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    cube_dict['vsfcorr'] = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project,
+    cube_dict['vsfcorr'] = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project, cube_dict['areacello'],
                                              manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
 
     return cube_dict
 
 
-
-def plot_raw(inargs, cube_dict):
+def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
     """Plot the raw budget variables."""
 
     fig = plt.figure(figsize=[15, 25])
@@ -344,10 +359,10 @@ def plot_raw(inargs, cube_dict):
         plot_global_variable(ax5, cube_dict['soga'].data, cube_dict['soga'].long_name, 'g/kg', 'orange')
     if cube_dict['zostoga']:
         ax6 = fig.add_subplot(nrows, ncols, 6)
-        if zosga_cube:
-            ax6.plot(zosga_cube.data, color='purple', label=zosga_cube.long_name, linestyle=':')
-        if zossga_cube:
-            ax6.plot(zossga_cube.data, color='purple', label=zossga_cube.long_name, linestyle='-.')
+        if cube_dict['zosga']:
+            ax6.plot(cube_dict['zosga'].data, color='purple', label=cube_dict['zosga'].long_name, linestyle=':')
+        if cube_dict['zossga']:
+            ax6.plot(cube_dict['zossga'].data, color='purple', label=cube_dict['zossga'].long_name, linestyle='-.')
         plot_global_variable(ax6, cube_dict['zostoga'].data, 'Sea Level', cube_dict['zostoga'].units,
                              'purple', label=cube_dict['zostoga'].long_name)
         ax6.legend()
@@ -439,11 +454,10 @@ def dedrift_data(data):
     return dedrifted_data
     
 
-def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cube_dict, ylim=None):
+def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None):
     """Plot the OHC timeseries and it's components"""
 
     assert cube_dict['thetaoga'].units == 'K'
-    cp = 4000
 
     ohc_data = masso_data * cube_dict['thetaoga'].data * cp
     ohc_anomaly_data = ohc_data - ohc_data[0]
@@ -523,7 +537,7 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cube_dict, ylim=None):
     ax_top.legend()
 
 
-def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density=1035, ylim=None):
+def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density, ylim=None):
     """Plot the sea level timeseries and it's components"""
 
     # Compulsory variables
@@ -572,9 +586,9 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
         calc_trend(zostoga_anomaly, 'thermosteric sea level', 'm')
         ax_top.plot(zostoga_anomaly, color='purple', linestyle='--', label='change in thermosteric sea level')
 
-    if zosga_cube and zossga_cube:
-        zosga_anomaly = zosga_cube.data - zosga_cube.data[0]
-        zossga_anomaly = zossga_cube.data - zossga_cube.data[0]
+    if cube_dict['zosga'] and cube_dict['zossga']:
+        zosga_anomaly = cube_dict['zosga'].data - cube_dict['zosga'].data[0]
+        zossga_anomaly = cube_dict['zossga'].data - cube_dict['zossga'].data[0]
         zosbary_anomaly = zosga_anomaly - zossga_anomaly
         calc_trend(zosbary_anomaly, 'barystatic sea level', 'm')
         ax_top.plot(zosbary_anomaly, color='purple', label='change in barystatic sea level')
@@ -614,21 +628,16 @@ def get_manual_file_dict(file_list):
     return file_dict 
 
 
-def plot_comparison(inargs, cube_dict):
+def plot_comparison(inargs, cube_dict, branch_year_dict):
     """Plot the budget comparisons."""
     
     if inargs.volo:
-        masso_data = cube_dict['volo'].data * 1035
+        masso_data = cube_dict['volo'].data * inargs.density
     else:
         masso_data = cube_dict['masso'].data
 
-    area_run = 'r0i0p0' if inargs.project == 'cmip5' else inargs.run
-    area_file = clef_search(inargs.model, 'areacello', area_run, inargs.project)
-    if not area_file:
-        area_file = clef_search(inargs.model, 'areacello', area_run, inargs.project, experiment='historical')
-    areacello_cube = iris.load_cube(area_file[0])
-    ocean_area = areacello_cube.data.sum()
-    area_text = 'ocean surface area: %s %s'  %(str(ocean_area), areacello_cube.units) 
+    ocean_area = cube_dict['areacello'].data.sum()
+    area_text = 'ocean surface area: %s %s'  %(str(ocean_area), cube_dict['areacello'].units) 
     numbers_out_list.append(area_text)
 
     fig = plt.figure(figsize=[20, 16])
@@ -644,9 +653,9 @@ def plot_comparison(inargs, cube_dict):
         ax1.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
         ax2.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
 
-    plot_ohc(ax1, ax3, ax5, masso_data, cube_dict, ylim=inargs.ohc_ylim)
+    plot_ohc(ax1, ax3, ax5, masso_data, inargs.cpocean, cube_dict, ylim=inargs.ohc_ylim)
 
-    plot_sea_level(ax2, ax4, masso_data, cube_dict, ocean_area, ylim=inargs.sealevel_ylim)
+    plot_sea_level(ax2, ax4, masso_data, cube_dict, ocean_area, inargs.density, ylim=inargs.sealevel_ylim)
 
 
 def get_branch_years(inargs, manual_file_dict, manual_branch_time):
@@ -680,9 +689,9 @@ def main(inargs):
     cube_dict = get_data_dict(inargs, manual_file_dict, branch_year_dict)
 
     if inargs.plot_type == 'raw':
-        plot_raw(inargs, cube_dict)
+        plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict)
     else:
-        plot_comparison(inargs, cube_dict)
+        plot_comparison(inargs, cube_dict, branch_year_dict)
 
     plt.subplots_adjust(top=0.92)
     title = '%s (%s), %s, piControl'  %(inargs.model, inargs.project, inargs.run)
@@ -722,6 +731,11 @@ author:
                         help="Use volo to calculate masso (useful for boussinesq models)")
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Chunk annual mean calculation for spatial variables (useful for boussinesq models)")
+
+    parser.add_argument("--cpocean", type=float, default=4000,
+                        help="Specific heat in ocean in J/(kg K)")
+    parser.add_argument("--density", type=float, default=1026,
+                        help="Reference density in kg / m3")
 
     parser.add_argument("--branch_time", type=float, default=None,
                         help="Override branch time from file attributes with this one")
