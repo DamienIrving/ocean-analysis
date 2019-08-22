@@ -6,6 +6,7 @@
   * There is a [website](http://cmip-esmvaltool.dkrz.de/) to view ESMValTool results
   * The source code is on [GitHub](https://github.com/ESMValGroup/ESMValTool) (you can contribute indices/metrics)
 * Model documentation, errata submission etc at [ES-DOC](https://es-doc.org/cmip6/)
+  * At the [ES-DOC Search](https://search.es-doc.org/) page you can find detailed documentation about each of the models, including the values for static variables like `cpocean` and `rhozero`
 * [FAFMIP website](http://www.fafmip.org/)
 
 ## NCI access
