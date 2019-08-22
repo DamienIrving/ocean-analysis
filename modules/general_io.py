@@ -548,17 +548,24 @@ def standard_datetime(dt):
     return new_dt.strftime("%Y-%m-%d")
 
 
-def temperature_unit_check(cube, convert_to_celsius=False, valid_min=265, valid_max=310, abort=True):
-    """Check CMIP5 temperature units.
+def temperature_unit_check(cube, output_unit, abort=True):
+    """Check CMIP5 ocean temperature units.
 
     Args:
       cube (iris.cube.Cube) 
 
     """
 
+    assert output_unit in ['K', 'C']
+    valid_bounds = {'K': [265, 310], 'C': [-10, 40]}
+    
+    data_mean = cube.data.mean()
+    assert data_mean < 400
+    in_unit = 'K' if data_mean > 200 else 'C'
+
+    valid_min, valid_max = valid_bounds[in_unit]
     data_max = cube.data.max()
     data_min = cube.data.min()
-
     if (data_max < valid_max) or (data_min >= valid_min):
         cube.data = numpy.ma.masked_where(cube.data == -1 * cube.data.fill_value, cube.data)
         data_max = cube.data.max()
@@ -573,9 +580,13 @@ def temperature_unit_check(cube, convert_to_celsius=False, valid_min=265, valid_
         if data_min < valid_min:
             print('Data min is %f' %(data_min))
 
-    if convert_to_celsius:
-        cube.data = cube.data - 273.15
-        cube.units = 'C'
+    if in_unit != output_unit:
+        if output_unit == 'C':
+            cube.data = cube.data - 273.15
+            cube.units = 'C'
+        else:
+            cube.data = cube.data + 273.15
+            cube.units = 'K'
 
     return cube
 

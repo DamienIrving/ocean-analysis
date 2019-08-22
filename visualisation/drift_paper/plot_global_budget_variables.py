@@ -17,6 +17,7 @@ import itertools
 import numpy
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
+import statsmodels.api as sm
 import iris
 import cmdline_provenance as cmdprov
 
@@ -265,8 +266,10 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
                                              manual_file_dict, inargs.ignore_list)
     cube_dict['thetaoga'] = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
                                                  manual_file_dict, inargs.ignore_list)
+    cube_dict['thetaoga'] = gio.temperature_unit_check(cube_dict['thetaoga'], 'K')
     cube_dict['soga'] = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project,
-                                             manual_file_dict, inargs.ignore_list)  
+                                             manual_file_dict, inargs.ignore_list) 
+    cube_dict['thetaoga'] = gio.temperature_unit_check(cube_dict['thetaoga'], 'K')
     cube_dict['zostoga'] = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project,
                                                 manual_file_dict, inargs.ignore_list) 
     if inargs.project == 'cmip5':
@@ -437,10 +440,16 @@ def calc_correlation(x_data, y_data, label):
     elif ny > nx:
         y_data = y_data[0:nx]
 
-    corr = numpy.corrcoef(x_data, y_data)
+    #corr = numpy.corrcoef(x_data, y_data)
+    #correlation_text = 'correlation, %s: %s'  %(label, str(corr[0][-1])) 
+    #numbers_out_list.append(correlation_text)
 
-    correlation_text = 'correlation, %s: %s'  %(label, str(corr[0][-1])) 
-    numbers_out_list.append(correlation_text)
+    model = sm.OLS(y_data, x_data)
+    results = model.fit()
+    coeff = results.params[-1]
+    error = results.bse[-1]
+    regression_text = 'linear regression coefficient, %s: %s +- %s'  %(label, str(coeff), str(error))
+    numbers_out_list.append(regression_text)
 
 
 def dedrift_data(data):
