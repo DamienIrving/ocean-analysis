@@ -339,33 +339,33 @@ NCI also has atmospheric historicalMisc data for the BNU-ESM model, which isn't 
 
 Model details from [Huang and Qiao (2015)](https://link.springer.com/article/10.1007/s13131-015-0631-x).
 
-| Model          | ocean grid      | ocean model details |       
-| ---            | ---             | ---                 |   
-| ACCESS1-0      |                 | BO, FS, FWF (Bi et al., 2013) |
-| ACCESS1-3      |                 | BO, FS, FWF (Bi et al., 2013) |
-| BCC-CSM1-1     |                 | BO, FS, FWF (Griffies et al., 2005) |
-| BCC-CSM1-1-m   |                 | BO, FS, FWF (Griffies et al., 2005) |
-| CanESM2        | regular lat/lon | BO, RL, VSF (Merryfield et al., 2013) |
-| CCSM4          | curvilinear     | BO, FS, VSF (Danabasoglu et al., 2012) |
-| CESM1-BGC      |                 | BO, FS, VSF (Danabasoglu et al., 2012) |
-| CMCC-CM        |                 | BO, FS, FWF (Fogli et al., 2009) |
-| CMCC-CMS       |                 | BO, FS, FWF (Fogli et al., 2009) |
-| CSIRO-Mk3-6-0  | regular lat/lon | BO, RL, VSF (Gordon et al., 2010) |
-| FGOALS-g2      | rotated pole?   | BO, FS, FWF (Li et al., 2013) |
-| GFDL-CM3       | rotated pole    | BO, FS, FWF (Griffies et al., 2011) |
-| GFDL-ESM2G     |                 | BO, FS, FWF (Dunne et al., 2012) |
-| GFDL-ESM2M     | rotated pole    | BO, FS, FWF (Dunne et al., 2012) |
-| GISS-E2-R      | regular lat/lon | NB, FS, FWF (Liu et al., 2003) |
-| GISS-E2-R-CC   |                 | NB, FS, FWF (Liu et al., 2003) |
-| IPSL-CM5A-LR   |                 | BO, FS, FWF (Dufresne et al., 2013) |
-| IPSL-CM5A-MR   |                 | BO, FS, FWF (Dufresne et al., 2013) |
-| IPSL-CM5B-LR   |                 | BO, FS, FWF (Dufresne et al., 2013) |
-| MIROC-ESM      |                 | BO, FS, FWF (Watanable et al., 2011) |
-| MPI-ESM-LR     |                 | BO, FS, FWF (Jungclaus et al., 2013) |
-| MPI-ESM-MR     |                 | BO, FS, FWF (Jungclaus et al., 2013) |
-| MRI-CGCM3      |                 | BO, FS, FWF (Yukimoto et al., 2012) |
-| NorESM1-M      | curvilinear     | NB, FS, VSF (Bentsen et al., 2012) |
-| NorESM1-ME     |                 | NB, FS, VSF (Bentsen et al., 2012) |
+| Model          | ocean model     |  ocean grid     | ocean model details |       
+| ---            | ---             | ---             | ---                 |  
+| ACCESS1-0      | MOM4.1          |                 | BO, FS, FWF (Bi et al., 2013) |
+| ACCESS1-3      | MOM4.1          |                 | BO, FS, FWF (Bi et al., 2013) |
+| BCC-CSM1-1     |                 |                 | BO, FS, FWF (Griffies et al., 2005) |
+| BCC-CSM1-1-m   |                 |                 | BO, FS, FWF (Griffies et al., 2005) |
+| CanESM2        |                 | regular lat/lon | BO, RL, VSF (Merryfield et al., 2013) |
+| CCSM4          |                 | curvilinear     | BO, FS, VSF (Danabasoglu et al., 2012) |
+| CESM1-BGC      |                 |                 | BO, FS, VSF (Danabasoglu et al., 2012) |
+| [CMCC-CM](https://www.cmcc.it/models/cmcc-cm) | OPA8.2 | | BO, FS, FWF [(Fogli et al., 2009)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1517282) |
+| [CMCC-CMS](https://www.cmcc.it/models/cmcc-cm) | OPA8.2 | | BO, FS, FWF [(Fogli et al., 2009)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1517282) |
+| CSIRO-Mk3-6-0  |                 | regular lat/lon | BO, RL, VSF (Gordon et al., 2010) |
+| FGOALS-g2      |                 | rotated pole?   | BO, FS, FWF (Li et al., 2013) |
+| GFDL-CM3       |                 | rotated pole    | BO, FS, FWF (Griffies et al., 2011) |
+| GFDL-ESM2G     |                 |                 | BO, FS, FWF (Dunne et al., 2012) |
+| GFDL-ESM2M     |                 | rotated pole    | BO, FS, FWF (Dunne et al., 2012) |
+| GISS-E2-R      |                 | regular lat/lon | NB, FS, FWF (Liu et al., 2003) |
+| GISS-E2-R-CC   |                 |                 | NB, FS, FWF (Liu et al., 2003) |
+| IPSL-CM5A-LR   |                 |                 | BO, FS, FWF (Dufresne et al., 2013) |
+| IPSL-CM5A-MR   |                 |                 | BO, FS, FWF (Dufresne et al., 2013) |
+| IPSL-CM5B-LR   |                 |                 | BO, FS, FWF (Dufresne et al., 2013) |
+| MIROC-ESM      |                 |                 | BO, FS, FWF (Watanable et al., 2011) |
+| MPI-ESM-LR     |                 |                 | BO, FS, FWF (Jungclaus et al., 2013) |
+| MPI-ESM-MR     |                 |                 | BO, FS, FWF (Jungclaus et al., 2013) |
+| MRI-CGCM3      |                 |                 | BO, FS, FWF (Yukimoto et al., 2012) |
+| NorESM1-M      |                 | curvilinear     | NB, FS, VSF (Bentsen et al., 2012) |
+| NorESM1-ME     |                 |                 | NB, FS, VSF (Bentsen et al., 2012) |
 
 BO = Boussinesq; NB = non-Boussinesq  
 FS = free surface; RL = rigid lid  
