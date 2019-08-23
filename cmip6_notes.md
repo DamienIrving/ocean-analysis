@@ -43,3 +43,25 @@ Ocean model:
 - *Assumed characteristics:* freshwater flux, free surface
 
 Issues:
+* wfo is wrong sign
+
+### EC-Earth3
+
+[Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/) | Reference (to come)
+
+Ocean model:
+- *Name:* NEMO v?
+- *ES-DOC documentation:* missing
+- *Known charteristics:* Boussinesq
+- *Assumed characteristics:* freshwater flux, free surface
+
+### SAM0-UNICON
+
+Website (none) | [Reference](https://journals.ametsoc.org/doi/full/10.1175/JCLI-D-18-0796.1)
+
+Ocean model:
+- *Name:* POP2
+- *ES-DOC documentation:* complete
+- *Known charteristics:* Boussinesq
+- *Assumed characteristics:* freshwater flux, free surface
+
