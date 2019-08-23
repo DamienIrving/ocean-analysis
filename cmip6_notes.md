@@ -16,6 +16,18 @@
   * At the moment `$ clef --request` sends to Paola Petrelli instead of NCI.
   * Instead, use the [data download online form](https://opus.nci.org.au/display/CMIP/Data+Download+Request) or send the output files from `$clef --request` (which are produced if you say no instead of yes at the end of the process) to help@nci.org.au
 
-## Model issues
+## Models
 
-- CNRM-CM6-1 wfo is wrong sign.
+### CNRM-CM6-1
+
+[Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8) | [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019MS001683)
+
+Ocean model:
+- *Name:* NEMO 3.6
+- *ES-DOC documentation:* missing
+- *Known charteristics:* Boussinesq
+- *Assumed characteristics:* freshwater flux, free surface
+
+Issues:
+* wfo is wrong sign
+* masso is not volo * rhozero (i.e. it includes steric influences)
