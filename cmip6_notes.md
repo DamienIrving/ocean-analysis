@@ -31,3 +31,15 @@ Ocean model:
 Issues:
 * wfo is wrong sign
 * masso is not volo * rhozero (i.e. it includes steric influences)
+
+### CNRM-ESM2-1
+
+[Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8) | Reference (to come)
+
+Ocean model:
+- *Name:* NEMO 3.6
+- *ES-DOC documentation:* missing
+- *Known charteristics:* Boussinesq
+- *Assumed characteristics:* freshwater flux, free surface
+
+Issues:
