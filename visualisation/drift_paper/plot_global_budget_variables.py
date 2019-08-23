@@ -58,8 +58,8 @@ names = {'masso': 'sea_water_mass',
          'zostoga': 'global_average_thermosteric_sea_level_change',
          'zossga': 'global_average_steric_sea_level_change',
          'wfo': 'water_flux_into_sea_water',
-         'wfcorr': 'water_flux_correction',
          'wfonocorr': 'water_flux_into_sea_water_without_flux_correction',
+         'wfcorr': 'water_flux_correction',
          'hfds': 'surface_downward_heat_flux_in_sea_water',
          'hfcorr': 'heat_flux_correction',
          'hfgeou' : 'upward_geothermal_heat_flux_at_sea_floor',
@@ -71,8 +71,8 @@ names = {'masso': 'sea_water_mass',
 
 wfo_wrong_sign = [('MIROC-ESM-CHEM', 'piControl', 'r1i1p1'),
                   ('MIROC-ESM', 'piControl', 'r1i1p1'),
-                  ('CNRM-CM6-1', 'piControl', 'r1i1p1f2')]
-
+                  ('CNRM-CM6-1', 'piControl', 'r1i1p1f2'),
+                  ('CNRM-ESM2-1', 'piControl', 'r1i1p1f2')]
 
 
 def get_latest(results):
