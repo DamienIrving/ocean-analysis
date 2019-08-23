@@ -270,7 +270,6 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
     cube_dict['thetaoga'] = gio.temperature_unit_check(cube_dict['thetaoga'], 'K')
     cube_dict['soga'] = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project,
                                              manual_file_dict, inargs.ignore_list) 
-    cube_dict['thetaoga'] = gio.temperature_unit_check(cube_dict['thetaoga'], 'K')
     cube_dict['zostoga'] = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project,
                                                 manual_file_dict, inargs.ignore_list) 
     if inargs.project == 'cmip5':
@@ -353,6 +352,7 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
             cube = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
                                         manual_file_dict, inargs.ignore_list, experiment=experiment)
             if cube:
+                cube = gio.temperature_unit_check(cube, 'K')
                 xdata = numpy.arange(branch_year, len(cube.data) + branch_year)
                 ax4.plot(xdata, cube.data, color='yellow', label=experiment, linestyle=next(linestyles))
         plot_global_variable(ax4, cube_dict['thetaoga'].data, cube_dict['thetaoga'].long_name,
@@ -431,7 +431,7 @@ def calc_trend(data, name, units, outlier_threshold=None):
     numbers_out_list.append(trend_text)
 
 
-def calc_correlation(x_data, y_data, label):
+def calc_regression(x_data, y_data, label):
     """Calculate the correlation coefficient."""
 
     nx = len(x_data)
@@ -444,12 +444,17 @@ def calc_correlation(x_data, y_data, label):
     #corr = numpy.corrcoef(x_data, y_data)
     #correlation_text = 'correlation, %s: %s'  %(label, str(corr[0][-1])) 
     #numbers_out_list.append(correlation_text)
+    
+    validation_coeff = numpy.ma.polyfit(x_data, y_data, 1)[0]
 
+    x_data = sm.add_constant(x_data)
     model = sm.OLS(y_data, x_data)
     results = model.fit()
     coeff = results.params[-1]
-    error = results.bse[-1]
-    regression_text = 'linear regression coefficient, %s: %s +- %s'  %(label, str(coeff), str(error))
+    conf_lower, conf_upper = results.conf_int()[-1]
+    assert validation_coeff < conf_upper
+    assert validation_coeff > conf_lower
+    regression_text = 'linear regression coefficient, %s: %s [%s, %s]'  %(label, str(coeff), str(conf_lower), str(conf_upper))
     numbers_out_list.append(regression_text)
 
 
@@ -502,7 +507,7 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None)
     nettoa_dedrifted = dedrift_data(nettoa_cumsum_anomaly)
     ax_middle.plot(nettoa_dedrifted, color='gold', linestyle='--')
 
-    calc_correlation(nettoa_dedrifted, thermal_data_dedrifted, 'cumulative netTOA radiative flux vs thermal OHC anomaly')
+    calc_regression(nettoa_dedrifted, thermal_data_dedrifted, 'cumulative netTOA radiative flux vs thermal OHC anomaly')
 
     # Optional data
 
@@ -516,7 +521,7 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None)
         ax_top.plot(hfds_cumsum_anomaly, color='red', linestyle='--', label='cumulative surface heat flux')
         hfds_dedrifted = dedrift_data(hfds_cumsum_anomaly)
         ax_middle.plot(hfds_dedrifted, color='red', linestyle='--')
-        calc_correlation(hfds_dedrifted, thermal_data_dedrifted, 'cumulative surface heat flux vs thermal OHC anomaly')
+        calc_regression(hfds_dedrifted, thermal_data_dedrifted, 'cumulative surface heat flux vs thermal OHC anomaly')
 
     if cube_dict['wfo']:
         wfo_cumsum_data = numpy.cumsum(cube_dict['wfo'].data)
@@ -576,7 +581,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
 
     soga_dedrifted = dedrift_data(sea_level_anomaly_from_soga)
     ax_middle.plot(soga_dedrifted, color='teal')
-    calc_correlation(masso_dedrifted, soga_dedrifted, 'change in global ocean mass vs global mean salinity anomaly')
+    calc_regression(masso_dedrifted, soga_dedrifted, 'change in global ocean mass vs global mean salinity anomaly')
 
     # Optional variables
     if cube_dict['wfo']:
@@ -588,8 +593,8 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
 
         wfo_dedrifted = dedrift_data(sea_level_anomaly_from_wfo)
         ax_middle.plot(wfo_dedrifted, color='blue', linestyle='--')
-        calc_correlation(wfo_dedrifted, masso_dedrifted, 'cumulative surface freshwater flux vs change in global ocean mass')
-        calc_correlation(wfo_dedrifted, soga_dedrifted, 'cumulative surface freshwater flux vs global mean salinity anomaly')
+        calc_regression(wfo_dedrifted, masso_dedrifted, 'cumulative surface freshwater flux vs change in global ocean mass')
+        calc_regression(wfo_dedrifted, soga_dedrifted, 'cumulative surface freshwater flux vs global mean salinity anomaly')
 
     if cube_dict['zostoga']:
         zostoga_anomaly = cube_dict['zostoga'].data - cube_dict['zostoga'].data[0]
