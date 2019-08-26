@@ -149,16 +149,15 @@ def read_area(model, variable, ensemble, project, manual_file_dict):
     """Read area data."""
 
     if variable in manual_file_dict.keys():
-        area_file = manual_file_dict[variable]
+        area_files = manual_file_dict[variable]
     else:
         area_run = 'r0i0p0' if project == 'cmip5' else ensemble
         area_files = clef_search(model, variable, area_run, project)
         if not area_files:
             area_files = clef_search(model, variable, area_run, project, experiment='historical')
-        area_file = area_files[0]
 
-    if area_file:
-        cube = iris.load_cube(area_file)
+    if area_files:
+        cube = iris.load_cube(area_files[0])
     else:
         cube = None
 
@@ -182,15 +181,22 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
     else:
         file_list = clef_search(model, variable, ensemble, project) 
 
-    if file_list and area_cube:
+    if file_list:
         cube, history = gio.combine_files(file_list, names[variable])
         coord_names = [coord.name() for coord in cube.dim_coords]
 
-        if 'time' in coord_names:
+        if ('time' in coord_names) and area_cube:
             cube = timeseries.convert_to_annual(cube, chunk=chunk)
             area_array = uconv.broadcast_array(area_cube.data, [1, area_cube.ndim], cube.shape)
-        else:
+        elif area_cube:
             area_array = area_cube.data
+        else:
+            assert variable in ['rsdt', 'rsut', 'rlut']
+            if not cube.coord('latitude').has_bounds():
+                cube.coord('latitude').guess_bounds()
+            if not cube.coord('longitude').has_bounds():
+                cube.coord('longitude').guess_bounds()
+            area_array = iris.analysis.cartography.area_weights(cube)
 
         units = str(cube.units)
         assert 'm-2' in units
@@ -210,7 +216,7 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
                 global_sum = numpy.ma.sum(cube.data, axis=(1,2))
                 cube = cube[:, 0, 0].copy()
                 cube.data = global_sum
-        elif coord_names == []:
+        else: 
             assert ref_time_coord
             global_sum = numpy.ma.sum(cube.data)
             data = numpy.ones(len(ref_time_coord.points)) * global_sum
@@ -221,11 +227,7 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
                                   units=cube.units,
                                   attributes=cube.attributes,
                                   dim_coords_and_dims=[(ref_time_coord, 0)])
-        else:
-            cube = cube.collapsed(coord_names, iris.analysis.SUM, weights=None)
-            for coord in coord_names:
-                cube.remove_coord(coord)
-
+            
         # Remove the s-1
         cube = timeseries.flux_to_total(cube)
     
@@ -261,6 +263,9 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
 
     cube_dict = {}
 
+    cube_dict['areacello'] = read_area(inargs.model, 'areacello', inargs.run, inargs.project, manual_file_dict)
+    cube_dict['areacella'] = read_area(inargs.model, 'areacella', inargs.run, inargs.project, manual_file_dict)
+
     cube_dict['masso'] = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
                                               manual_file_dict, inargs.ignore_list)
     cube_dict['volo'] = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project,
@@ -280,9 +285,6 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
     else:
         cube_dict['zosga'] = cube_dict['zossga'] = None
 
-    cube_dict['areacello'] = read_area(inargs.model, 'areacello', inargs.run, inargs.project, manual_file_dict)
-    cube_dict['areacella'] = read_area(inargs.model, 'areacella', inargs.run, inargs.project, manual_file_dict)
-
     cube_dict['wfo'] = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project, cube_dict['areacello'],
                                          manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     cube_dict['wfonocorr'] = read_spatial_flux(inargs.model, 'wfonocorr', inargs.run, inargs.project, cube_dict['areacello'],
@@ -296,16 +298,17 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
     cube_dict['hfgeou'] = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project, cube_dict['areacello'],
                                             manual_file_dict, inargs.ignore_list, chunk=inargs.chunk,
                                             ref_time_coord=cube_dict['masso'].coord('time'))
+    cube_dict['vsf'] = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project, cube_dict['areacello'],
+                                         manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+    cube_dict['vsfcorr'] = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project, cube_dict['areacello'],
+                                             manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+
     cube_dict['rsdt'] = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project, cube_dict['areacella'],
                                           manual_file_dict, inargs.ignore_list)
     cube_dict['rlut'] = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project, cube_dict['areacella'],
                                           manual_file_dict, inargs.ignore_list)
     cube_dict['rsut'] = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project, cube_dict['areacella'],
                                            manual_file_dict, inargs.ignore_list)
-    cube_dict['vsf'] = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project, cube_dict['areacello'],
-                                         manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-    cube_dict['vsfcorr'] = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project, cube_dict['areacello'],
-                                             manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
 
     return cube_dict
 
