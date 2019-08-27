@@ -229,6 +229,10 @@ def combine_files(files, var, new_calendar=None):
     cube = iris.load(files, check_iris_var(var), callback=save_history)
     equalise_attributes(cube)
     iris.util.unify_time_units(cube)
+    for single_cube in cube:
+        coord_names = [coord.name() for coord in single_cube.dim_coords]
+        if 'time' in coord_names:
+            single_cube.coord('time').attributes = {}
     cube = cube.concatenate_cube()
 
     coord_names = [coord.name() for coord in cube.dim_coords]
