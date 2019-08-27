@@ -81,7 +81,9 @@ def get_latest(results):
     if results:
         latest = results[0]
         for result in results[1:]:
-            if float(result['version']) > float(latest['version']):
+            current_version = result['version'][1:] if 'v' in result['version'] else result['version']
+            latest_version = latest['version'][1:] if 'v' in latest['version'] else latest['version']
+            if float(current_version) > float(latest_version):
                 latest = result
     else:
         latest = []    
