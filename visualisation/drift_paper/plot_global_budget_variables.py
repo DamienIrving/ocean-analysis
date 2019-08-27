@@ -122,6 +122,18 @@ def clef_search(model, variable, ensemble, project, experiment='piControl'):
     return file_list
 
 
+def time_check(cube):
+    """Check the time axis for annual data."""
+
+    iris.coord_categorisation.add_year(cube, 'time')
+    year_list = cube.coord('year').points        
+    diffs = numpy.diff(year_list)
+    assert diffs.max() == 1, "Gaps in time axis, %s" %(cube.long_name)
+    assert diffs.min() == 1, "Duplicate annual values in time axis. %s" %(cube.long_name)
+
+    return cube
+
+
 def read_global_variable(model, variable, ensemble, project, manual_file_dict, ignore_list, experiment='piControl'):
     """Read data for a global variable"""
 
@@ -137,6 +149,7 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict, i
         if variable == 'soga':
             cube = gio.salinity_unit_check(cube)
         cube = timeseries.convert_to_annual(cube)
+        cube = time_check(cube)
         if numpy.isnan(cube.data[0]):
             cube.data[0] = 0.0
     else:
