@@ -234,6 +234,7 @@ def combine_files(files, var, new_calendar=None):
         if 'time' in coord_names:
             single_cube.coord('time').attributes = {}
     cube = cube.concatenate_cube()
+    cube = iris.util.squeeze(cube)
 
     coord_names = [coord.name() for coord in cube.dim_coords]
     if 'time' in coord_names:
