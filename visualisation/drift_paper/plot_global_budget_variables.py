@@ -743,7 +743,10 @@ def main(inargs):
     """Run the program."""
 
     manual_file_dict = get_manual_file_dict(inargs.manual_files)
-    branch_year_dict = get_branch_years(inargs, manual_file_dict, inargs.branch_time)
+    if inargs.forced_experiments:
+        branch_year_dict = get_branch_years(inargs, manual_file_dict, inargs.branch_time)
+    else:
+        branch_year_dict = {}
     cube_dict = get_data_dict(inargs, manual_file_dict, branch_year_dict)
 
     if inargs.plot_type == 'raw':
@@ -789,11 +792,14 @@ author:
                         help="Use volo to calculate masso (useful for boussinesq models)")
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Chunk annual mean calculation for spatial variables (useful for boussinesq models)")
+    parser.add_argument("--forced_experiments", action="store_true", default=False,
+                        help="Plot the forced experiments (raw) or their branch time (comparison)")
 
     parser.add_argument("--cpocean", type=float, default=4000,
                         help="Specific heat in ocean in J/(kg K)")
     parser.add_argument("--density", type=float, default=1026,
                         help="Reference density in kg / m3")
+
 
     parser.add_argument("--branch_time", type=float, default=None,
                         help="Override branch time from file attributes with this one")
