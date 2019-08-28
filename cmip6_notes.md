@@ -24,7 +24,7 @@
 | CNRM-ESM2-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), Reference (to come), ES-DOC (missing) | NEMO 3.6 | BO, *FS*, *FWF* | wfo wrong sign; masso is not volo * rhozero |
 | EC-Earth3 | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference (to come), ES-DOC (missing) | NEMO v? | BO, *FS*, *FWF* | |
 | HadGEM3-GC31-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2017MS001115), ES-DOC (complete) | NEMO 3.6 | BO, *FS*, *FWF* | |
-| IPSL-CM6A-LR | [Website](http://forge.ipsl.jussieu.fr/igcmg/wiki/IPSLCMIP6), Reference, ES-DOC (missing) | NEMO 3.2 | BO, *FS*, *FWF* | |
+| IPSL-CM6A-LR | [Website](http://forge.ipsl.jussieu.fr/igcmg/wiki/IPSLCMIP6), Reference, ES-DOC (missing) | NEMO 3.2 | BO, *FS*, *FWF* | wfo wrong sign; masso is not volo * rhozero |
 | SAM0-UNICON | Website (none), [Reference](https://journals.ametsoc.org/doi/full/10.1175/JCLI-D-18-0796.1), ES-DOC (complete) | POP2 | BO, FS, *FWF* | Constant wfo?? |
 | UKESM1-0-LL | [Website](https://ukesm.ac.uk/cmip6/), Reference (keep an eye on [this special issue](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.UKESM1)), ES-DOC (complete) | NEMO 3.6 | BO, *FS*, *FWF* | |
 
