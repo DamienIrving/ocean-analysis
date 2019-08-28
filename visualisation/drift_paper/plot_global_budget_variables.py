@@ -69,10 +69,7 @@ names = {'masso': 'sea_water_mass',
          'vsf': 'virtual_salt_flux_into_sea_water',
          'vsfcorr': 'virtual_salt_flux_correction'}
 
-wfo_wrong_sign = [('MIROC-ESM-CHEM', 'piControl', 'r1i1p1'),
-                  ('MIROC-ESM', 'piControl', 'r1i1p1'),
-                  ('CNRM-CM6-1', 'piControl', 'r1i1p1f2'),
-                  ('CNRM-ESM2-1', 'piControl', 'r1i1p1f2')]
+wfo_wrong_sign = ['MIROC-ESM-CHEM', 'MIROC-ESM', 'CNRM-CM6-1', 'CNRM-ESM2-1', 'IPSL-CM6A-LR']
 
 
 def get_latest(results):
@@ -197,11 +194,12 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
         file_list = clef_search(model, variable, ensemble, project) 
 
     if file_list:
-        cube, history = gio.combine_files(file_list, names[variable])
+        cube, history = gio.combine_files(file_list, names[variable])     
         coord_names = [coord.name() for coord in cube.dim_coords]
 
         if ('time' in coord_names) and area_cube:
             cube = timeseries.convert_to_annual(cube, chunk=chunk)
+            cube = time_check(cube)
             area_array = uconv.broadcast_array(area_cube.data, [1, area_cube.ndim], cube.shape)
         elif area_cube:
             area_array = area_cube.data
@@ -217,7 +215,7 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
         assert 'm-2' in units
         cube.units = units.replace('m-2', '')
         cube.data = cube.data * area_array
-        if variable == 'wfo' and ((model, 'piControl', ensemble) in wfo_wrong_sign):
+        if (variable == 'wfo') and (model in wfo_wrong_sign):
             cube.data = cube.data * -1
 
         # Calculate the global sum
@@ -242,6 +240,7 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
                                   units=cube.units,
                                   attributes=cube.attributes,
                                   dim_coords_and_dims=[(ref_time_coord, 0)])
+            cube = time_check(cube)
             
         # Remove the s-1
         cube = timeseries.flux_to_total(cube)
@@ -323,7 +322,7 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
     cube_dict['rlut'] = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project, cube_dict['areacella'],
                                           manual_file_dict, inargs.ignore_list)
     cube_dict['rsut'] = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project, cube_dict['areacella'],
-                                           manual_file_dict, inargs.ignore_list)
+                                          manual_file_dict, inargs.ignore_list)
 
     return cube_dict
 
@@ -661,9 +660,35 @@ def get_manual_file_dict(file_list):
     return file_dict 
 
 
+
+def common_time_period(cube_dict):
+    """Get the common time period for comparison."""
+
+    # Find the common time period
+    ref_years = cube_dict['masso'].coord('year').points
+    minlen = len(ref_years)
+    for var, cube in cube_dict.items():
+        if cube and var not in ['masso', 'areacello', 'areacella']:
+            years = cube.coord('year').points
+            nyrs = len(years)
+            if nyrs < minlen:
+                assert ref_years[0:nyrs][0] == years[0], 'mismatch in time axes'
+                assert ref_years[0:nyrs][-1] == years[-1], 'mismatch in time axes'
+                ref_years = years
+                minlen = len(years)
+
+    for var, cube in cube_dict.items():
+        if cube and var not in ['areacello', 'areacella']:
+            cube_dict[var] = cube[0: minlen]
+
+    return cube_dict
+  
+
 def plot_comparison(inargs, cube_dict, branch_year_dict):
     """Plot the budget comparisons."""
     
+    cube_dict = common_time_period(cube_dict)
+
     if inargs.volo:
         masso_data = cube_dict['volo'].data * inargs.density
     else:
