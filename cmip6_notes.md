@@ -18,15 +18,29 @@
 
 ## Models
 
+A number of modelling centres have 
+[collections](https://agupubs.onlinelibrary.wiley.com/topic/vi-categories-19422466/earth-system-modeling-2018-2020/19422466) 
+published with the The Journal of Advances in Modeling Earth Systems, which document various aspects of their CMIP6 models:
+
+* [Chinese Academy of Sciences](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)2169-8996.CASFGOALSESM1) (CAS-FGOALS, CAS-ESM)
+* [Centre National de Recherches Météorologiques](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.CNRMCLIMATE) (CNRM-CM6-1, CNRM-ESM2-1)
+* [Community Earth System Model](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.CESM2) (CESM2, CESM2-WACCM)
+* [UK Earth System Models](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.UKESM1) (HadGEM3-GC3, UKESM1)
+* [Energy Exascale Earth System Model](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)2169-8996.ENERGY1) (E3SM-1-0)
+* [Max Planck Institute for Meteorology Earth System Model](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.MPIESM1) (MPI-ESM)
+* [Geophysical Fluid Dynamics Laboratory](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.CMIPMOD1) (GFDL-CM4)
+
+
 | Model | Information | Ocean model | Ocean model characteristics | Issues |
 | ---   | ---         | ---         | ---                         | ---    |
-| CNRM-CM6-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019MS001683), ES-DOC (missing) | NEMO 3.6 | BO, *FS*, *FWF* | wfo wrong sign; masso is not volo * rhozero |
-| CNRM-ESM2-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), Reference (to come), ES-DOC (missing) | NEMO 3.6 | BO, *FS*, *FWF* | wfo wrong sign; masso is not volo * rhozero |
-| EC-Earth3 | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference (to come), ES-DOC (missing) | NEMO v? | BO, *FS*, *FWF* | |
-| HadGEM3-GC31-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2017MS001115), ES-DOC (complete) | NEMO 3.6 | BO, *FS*, *FWF* | |
-| IPSL-CM6A-LR | [Website](http://forge.ipsl.jussieu.fr/igcmg/wiki/IPSLCMIP6), Reference, ES-DOC (missing) | NEMO 3.2 | BO, *FS*, *FWF* | wfo wrong sign; masso is not volo * rhozero |
-| SAM0-UNICON | Website (none), [Reference](https://journals.ametsoc.org/doi/full/10.1175/JCLI-D-18-0796.1), ES-DOC (complete) | POP2 | BO, FS, *FWF* | Constant wfo?? |
-| UKESM1-0-LL | [Website](https://ukesm.ac.uk/cmip6/), Reference (keep an eye on [this special issue](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.UKESM1)), ES-DOC (complete) | NEMO 3.6 | BO, *FS*, *FWF* | |
+| CNRM-CM6-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019MS001683), ES-DOC | NEMO 3.6 | BO, *FS*, *FWF* | wfo wrong sign; masso is not volo * rhozero |
+| CNRM-ESM2-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), Reference, ES-DOC | NEMO 3.6 | BO, *FS*, *FWF* | wfo wrong sign; masso is not volo * rhozero |
+| EC-Earth3 | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | |
+| GFDL-CM4 | Website, Reference, ES-DOC | MOM 6 | BO, *FS*, *FWF* | Branch time issues |
+| HadGEM3-GC31-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2017MS001115), [ES-DOC](https://explore.es-doc.org/cmip6/models/mohc/hadgem3-gc31-ll) | NEMO 3.6 | BO, *FS*, *FWF* | |
+| IPSL-CM6A-LR | [Website](http://forge.ipsl.jussieu.fr/igcmg/wiki/IPSLCMIP6), Reference, ES-DOC | NEMO 3.2 | BO, *FS*, *FWF* | wfo wrong sign; masso is not volo * rhozero |
+| SAM0-UNICON | Website, [Reference](https://journals.ametsoc.org/doi/full/10.1175/JCLI-D-18-0796.1), ES-DOC | POP2 | BO, FS, *FWF* | Constant wfo?? |
+| UKESM1-0-LL | [Website](https://ukesm.ac.uk/cmip6/), Reference, [ES-DOC](https://explore.es-doc.org/cmip6/models/snu/sam0-unicon) | NEMO 3.6 | BO, *FS*, *FWF* | constant wfo; no volo |
 
 
 
