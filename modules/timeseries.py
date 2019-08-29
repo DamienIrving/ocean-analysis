@@ -8,7 +8,7 @@ Functions:
   flux_to_total               -- Convert a flux (i.e. per second quantity) to total
   get_control_time_constraint -- Define the time constraint for the control data
   outlier_removal             -- Remove outliers from a timeseries
-  no_overlap_runmean          -- Calculat the non-overlapping running mean
+  runmean                     -- Calculae the running mean
 
 """
 
@@ -322,15 +322,21 @@ def linear_trend(data, time_axis, outlier_threshold):
         return coefficients[0]
 
 
-def no_overlap_runmean(data, window_width):
-    """Calculate the non-overlapping running mean."""
+def runmean(data, window_width, overlap=True):
+    """Calculate the running mean.
     
-    nchunks = math.ceil(len(data) / window_width)
-    split_data = [x for x in np.array_split(data, nchunks) if x.size == window_width]
+    If overlap is false, the windows won't overlap.
+    
+    """
+    
+    if overlap:
+        runmean_data = np.convolve(data, numpy.ones((window_width,))/window_width, mode='valid')
+    else:
+        nchunks = math.ceil(len(data) / window_width)
+        split_data = [x for x in np.array_split(data, nchunks) if x.size == window_width]
+        runmean_data = np.array(list(map(np.mean, split_data)))
 
-    runmean = np.array(list(map(np.mean, split_data)))
-
-    return runmean
+    return runmean_data
 
 
 def outlier_removal(data, outlier_threshold, replacement_method='missing'):
