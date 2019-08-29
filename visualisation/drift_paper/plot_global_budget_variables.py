@@ -127,8 +127,9 @@ def time_check(cube):
     iris.coord_categorisation.add_year(cube, 'time')
     year_list = cube.coord('year').points        
     diffs = numpy.diff(year_list)
-    assert diffs.max() == 1, "Gaps in time axis, %s" %(cube.long_name)
-    assert diffs.min() == 1, "Duplicate annual values in time axis. %s" %(cube.long_name)
+    if diffs.size > 0:
+        assert diffs.max() == 1, "Gaps in time axis, %s" %(cube.long_name)
+        assert diffs.min() == 1, "Duplicate annual values in time axis. %s" %(cube.long_name)
 
     return cube
 
