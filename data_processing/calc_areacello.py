@@ -11,6 +11,7 @@ import sys, os, pdb
 import argparse
 import numpy
 import iris
+import cmdline_provenance as cmdprov
 
 # Import my modules
 
@@ -56,17 +57,17 @@ def main(inargs):
     """Run the program."""
 
     # Depth data
+    pdb.set_trace()
     data_cube = iris.load_cube(inargs.dummy_file, inargs.dummy_var)
     coord_names = [coord.name() for coord in data_cube.dim_coords]
-    assert coord_names[0] == 'time'
-    assert len(coord_names) == 3
+    assert coord_names == ['time', 'latitude', 'longitude']
     data_cube = data_cube[0, ::]
     data_cube.remove_coord('time')
 
     area_data = spatial_weights.area_array(data_cube)
     area_data.mask = data_cube.data.mask
     area_cube = construct_area_cube(area_data, data_cube.attributes, data_cube.dim_coords)    
-    area_cube.attributes['history'] = gio.write_metadata()
+    area_cube.attributes['history'] = cmdprov.new_log(git_repo=repo_dir)
 
     print('Global ocean area:', area_cube.data.sum())
     print('(Typical value: 3.6e+14)')    
