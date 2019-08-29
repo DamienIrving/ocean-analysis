@@ -138,8 +138,8 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict, i
 
     if variable in ignore_list:
         file_list = []
-    elif variable in manual_file_dict.keys():
-        file_list = manual_file_dict[variable]
+    elif (variable, experiment) in manual_file_dict.keys():
+        file_list = manual_file_dict[(variable, experiment)]
     else:
         file_list = clef_search(model, variable, ensemble, project, experiment=experiment) 
     
@@ -160,8 +160,8 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict, i
 def read_area(model, variable, ensemble, project, manual_file_dict):
     """Read area data."""
 
-    if variable in manual_file_dict.keys():
-        area_files = manual_file_dict[variable]
+    if (variable, 'piControl') in manual_file_dict.keys():
+        area_files = manual_file_dict[(variable, 'piControl')]
     else:
         area_run = 'r0i0p0' if project == 'cmip5' else ensemble
         area_files = clef_search(model, variable, area_run, project)
@@ -188,13 +188,14 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
 
     if variable in ignore_list:
         file_list = []
-    elif variable in manual_file_dict.keys():
-        file_list = manual_file_dict[variable]
+    elif (variable, 'piControl') in manual_file_dict.keys():
+        file_list = manual_file_dict[(variable, 'piControl')]
     else:
         file_list = clef_search(model, variable, ensemble, project) 
 
-    if file_list:
-        cube, history = gio.combine_files(file_list, names[variable])     
+    cube_list = iris.cube.CubeList([])
+    for infile in file_list:
+        cube = iris.load_cube(infile, gio.check_iris_var(names[variable]))     
         coord_names = [coord.name() for coord in cube.dim_coords]
 
         if ('time' in coord_names) and area_cube:
@@ -218,17 +219,14 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
         if (variable == 'wfo') and (model in wfo_wrong_sign):
             cube.data = cube.data * -1
 
-        # Calculate the global sum
+        cube_list.append(cube)
+
+    if cube_list:    
+        cube = gio.combine_cubes(cube_list)
         if 'time' in coord_names:
-            coord_names.remove('time')
-            if coord_names:
-                cube = cube.collapsed(coord_names, iris.analysis.SUM, weights=None)
-                for coord in coord_names:
-                    cube.remove_coord(coord)
-            else:
-                global_sum = numpy.ma.sum(cube.data, axis=(1,2))
-                cube = cube[:, 0, 0].copy()
-                cube.data = global_sum
+            global_sum = numpy.ma.sum(cube.data, axis=(1,2))
+            cube = cube[:, 0, 0].copy()
+            cube.data = global_sum
         else: 
             assert ref_time_coord
             global_sum = numpy.ma.sum(cube.data)
@@ -241,10 +239,7 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
                                   attributes=cube.attributes,
                                   dim_coords_and_dims=[(ref_time_coord, 0)])
             cube = time_check(cube)
-            
-        # Remove the s-1
         cube = timeseries.flux_to_total(cube)
-    
     else:
         cube = None
 
@@ -333,7 +328,7 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
     fig = plt.figure(figsize=[15, 25])
     nrows = 5
     ncols = 2
-    
+
     if cube_dict['masso']:
         ax1 = fig.add_subplot(nrows, ncols, 1)
         linestyles = itertools.cycle(('-', '--', ':', '-.'))
@@ -448,8 +443,11 @@ def calc_trend(data, name, units, outlier_threshold=None):
     numbers_out_list.append(trend_text)
 
 
-def calc_regression(x_data, y_data, label):
-    """Calculate the correlation coefficient."""
+def calc_regression(x_data, y_data, label, decadal_mean=False):
+    """Calculate the linear regression coefficient."""
+
+    x_data = x_data.copy()
+    y_data = y_data.copy()
 
     nx = len(x_data)
     ny = len(y_data)
@@ -457,11 +455,11 @@ def calc_regression(x_data, y_data, label):
         x_data = x_data[0:ny]
     elif ny > nx:
         y_data = y_data[0:nx]
-
-    #corr = numpy.corrcoef(x_data, y_data)
-    #correlation_text = 'correlation, %s: %s'  %(label, str(corr[0][-1])) 
-    #numbers_out_list.append(correlation_text)
     
+    if decadal_mean:
+        x_data = timeseries.no_overlap_runmean(x_data, 10)
+        y_data = timeseries.no_overlap_runmean(y_data, 10)
+
     validation_coeff = numpy.ma.polyfit(x_data, y_data, 1)[0]
 
     x_data = sm.add_constant(x_data)
@@ -471,7 +469,15 @@ def calc_regression(x_data, y_data, label):
     conf_lower, conf_upper = results.conf_int()[-1]
     assert validation_coeff < conf_upper
     assert validation_coeff > conf_lower
-    regression_text = 'linear regression coefficient, %s: %s [%s, %s]'  %(label, str(coeff), str(conf_lower), str(conf_upper))
+
+    stderr = results.bse[-1]
+    n_orig = int(results.nobs)
+    n_eff = uconv.effective_sample_size(y_data, n_orig)
+    stderr_adjusted = (stderr * numpy.sqrt(n_orig)) / numpy.sqrt(n_eff)
+    
+    regression_text = 'linear regression coefficient, %s: %s [%s, %s] +- %s (or %s)'  %(label, str(coeff), str(conf_lower), str(conf_upper), str(stderr), str(stderr_adjusted))
+    if decadal_mean:
+        regression_text = 'decadal mean ' + regression_text
     numbers_out_list.append(regression_text)
 
 
@@ -525,6 +531,7 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None)
     ax_middle.plot(nettoa_dedrifted, color='gold', linestyle='--')
 
     calc_regression(nettoa_dedrifted, thermal_data_dedrifted, 'cumulative netTOA radiative flux vs thermal OHC anomaly')
+    calc_regression(nettoa_dedrifted, thermal_data_dedrifted, 'cumulative netTOA radiative flux vs thermal OHC anomaly', decadal_mean=True)
 
     # Optional data
 
@@ -532,6 +539,8 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None)
         net_surface_heat_flux_data = cube_dict['hfds'].data
         if cube_dict['hfds'] and cube_dict['hfgeou']:
             net_surface_heat_flux_data = net_surface_heat_flux_data + cube_dict['hfgeou'].data
+        if cube_dict['hfds'] and cube_dict['hfcorr']:
+            net_surface_heat_flux_data = net_surface_heat_flux_data + cube_dict['hfcorr'].data
         hfds_cumsum_data = numpy.cumsum(net_surface_heat_flux_data)
         hfds_cumsum_anomaly = hfds_cumsum_data - hfds_cumsum_data[0]
         calc_trend(hfds_cumsum_anomaly, 'cumulative hfds', 'J')
@@ -539,6 +548,7 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None)
         hfds_dedrifted = dedrift_data(hfds_cumsum_anomaly)
         ax_middle.plot(hfds_dedrifted, color='red', linestyle='--')
         calc_regression(hfds_dedrifted, thermal_data_dedrifted, 'cumulative surface heat flux vs thermal OHC anomaly')
+        calc_regression(hfds_dedrifted, thermal_data_dedrifted, 'cumulative surface heat flux vs thermal OHC anomaly', decadal_mean=True)
 
     if cube_dict['wfo']:
         wfo_cumsum_data = numpy.cumsum(cube_dict['wfo'].data)
@@ -599,6 +609,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
     soga_dedrifted = dedrift_data(sea_level_anomaly_from_soga)
     ax_middle.plot(soga_dedrifted, color='teal')
     calc_regression(masso_dedrifted, soga_dedrifted, 'change in global ocean mass vs global mean salinity anomaly')
+    calc_regression(masso_dedrifted, soga_dedrifted, 'change in global ocean mass vs global mean salinity anomaly', decadal_mean=True)
 
     # Optional variables
     if cube_dict['wfo']:
@@ -611,7 +622,9 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
         wfo_dedrifted = dedrift_data(sea_level_anomaly_from_wfo)
         ax_middle.plot(wfo_dedrifted, color='blue', linestyle='--')
         calc_regression(wfo_dedrifted, masso_dedrifted, 'cumulative surface freshwater flux vs change in global ocean mass')
+        calc_regression(wfo_dedrifted, masso_dedrifted, 'cumulative surface freshwater flux vs change in global ocean mass', decadal_mean=True)
         calc_regression(wfo_dedrifted, soga_dedrifted, 'cumulative surface freshwater flux vs global mean salinity anomaly')
+        calc_regression(wfo_dedrifted, soga_dedrifted, 'cumulative surface freshwater flux vs global mean salinity anomaly', decadal_mean=True)
 
     if cube_dict['zostoga']:
         zostoga_anomaly = cube_dict['zostoga'].data - cube_dict['zostoga'].data[0]
@@ -655,7 +668,8 @@ def get_manual_file_dict(file_list):
     file_dict = {}
     for files in file_list:
         variable = files[0].split('/')[-1].split('_')[0]
-        file_dict[variable] = files
+        experiment = files[0].split('/')[-1].split('_')[3]
+        file_dict[(variable, experiment)] = files
 
     return file_dict 
 
@@ -799,7 +813,6 @@ author:
                         help="Specific heat in ocean in J/(kg K)")
     parser.add_argument("--density", type=float, default=1026,
                         help="Reference density in kg / m3")
-
 
     parser.add_argument("--branch_time", type=float, default=None,
                         help="Override branch time from file attributes with this one")

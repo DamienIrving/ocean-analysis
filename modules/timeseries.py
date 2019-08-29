@@ -8,10 +8,12 @@ Functions:
   flux_to_total               -- Convert a flux (i.e. per second quantity) to total
   get_control_time_constraint -- Define the time constraint for the control data
   outlier_removal             -- Remove outliers from a timeseries
+  no_overlap_runmean          -- Calculat the non-overlapping running mean
 
 """
 
 import pdb
+import math
 
 import numpy as np
 import pandas as pd
@@ -320,15 +322,29 @@ def linear_trend(data, time_axis, outlier_threshold):
         return coefficients[0]
 
 
-def outlier_removal(data, outlier_threshold):
+def no_overlap_runmean(data, window_width):
+    """Calculate the non-overlapping running mean."""
+    
+    nchunks = math.ceil(len(data) / window_width)
+    split_data = [x for x in np.array_split(data, nchunks) if x.size == window_width]
+
+    runmean = np.array(list(map(np.mean, split_data)))
+
+    return runmean
+
+
+def outlier_removal(data, outlier_threshold, replacement_method='missing'):
     """Remove outliers from a timeseries.
 
     Args:
       data (numpy.array)
       outlier_threshold (float): remove points that deviate from
         the rolling median by greater than this threshold
+      replacement_method (str): method for replacing outliers
 
     """
+
+    assert replacement_method in ['missing', 'mean']
 
     data_series = pd.Series(data)
     median = data_series.rolling(10).median().fillna(method='bfill').fillna(method='ffill')
@@ -336,7 +352,10 @@ def outlier_removal(data, outlier_threshold):
     difference = np.abs(data_series - median)
     outlier_bools = difference > outlier_threshold
 
-    clean_data = np.ma.masked_where(outlier_bools.values, data)
+    if replacement_method == 'missing':
+        clean_data = np.ma.where(outlier_bools.values, data.mean(), data)
+    else:
+        clean_data = np.ma.masked_where(outlier_bools.values, data)
     outlier_idx = list(data_series[outlier_bools].index)
 
     return clean_data, outlier_idx

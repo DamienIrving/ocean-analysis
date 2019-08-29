@@ -1,4 +1,4 @@
-"""Collection of convenient functions that will work with my anaconda or uvcdat install.
+"""Collection of convenient functions
 
 Functions:
   adjust_lon_range      -- Express longitude values in desired 360 degree interval
@@ -10,6 +10,7 @@ Functions:
   coordinate_paris      -- Generate lat/lon pairs
   create_basin_array    -- Create an ocean basin array
   dict_filter           -- Filter dictionary according to specified keys
+  effective_sample_size -- Calculate the effective sample size (accounting for autocorrelation)
   find_nearest          -- Find the closest array item to value
   find_duplicates       -- Return list of duplicates in a list
   fix_label             -- Fix formatting of an axis label taken from the command line
@@ -29,6 +30,8 @@ from scipy import stats
 import pdb, re
 import inspect
 import iris
+import statsmodels.api as sm
+from statsmodels.tsa.stattools import acf
 
 
 def adjust_lon_range(lons, radians=True, start=0.0):
@@ -211,6 +214,24 @@ def chunked_collapse_by_time(cube, collapse_dims, agg_method, weights=None):
     collapsed_cube = chunk_list.concatenate()[0]
 
     return collapsed_cube
+
+
+def effective_sample_size(data, n_orig):
+    """Calculate the effective sample size, accounting for autcorrelation.
+
+     Method from Zieba2010, equation 12
+     https://content.sciendo.com/view/journals/mms/17/1/article-p3.xml
+
+     """
+
+    autocorr_func = acf(data, nlags=n_orig-2)
+    
+    k = numpy.arange(1, n_orig - 1)
+    
+    r_k_sum = ((n_orig - k[:]) / float(n_orig)) * autocorr_func[1:] 
+    n_eff = float(n_orig) / (1 + 2 * r_k_sum.sum())
+    
+    return n_eff
 
 
 def flux_to_magnitude(cube):
