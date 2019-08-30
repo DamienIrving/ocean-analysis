@@ -70,7 +70,7 @@ names = {'masso': 'sea_water_mass',
          'vsf': 'virtual_salt_flux_into_sea_water',
          'vsfcorr': 'virtual_salt_flux_correction'}
 
-wfo_wrong_sign = ['MIROC-ESM-CHEM', 'MIROC-ESM', 'CNRM-CM6-1', 'CNRM-ESM2-1', 'IPSL-CM6A-LR']
+wfo_wrong_sign = ['MIROC-ESM-CHEM', 'MIROC-ESM', 'CNRM-CM6-1', 'CNRM-ESM2-1', 'IPSL-CM6A-LR', 'CMCC-CM']
 
 
 def get_latest(results):
@@ -200,9 +200,11 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
         cube = iris.load_cube(infile, gio.check_iris_var(names[variable]))     
         coord_names = [coord.name() for coord in cube.dim_coords]
 
-        if ('time' in coord_names) and area_cube:
+        if 'time' in coord_names:
             cube = timeseries.convert_to_annual(cube, chunk=chunk)
             cube = time_check(cube)
+            
+        if ('time' in coord_names) and area_cube:
             area_array = uconv.broadcast_array(area_cube.data, [1, area_cube.ndim], cube.shape)
         elif area_cube:
             area_array = area_cube.data
@@ -309,7 +311,6 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
                                          manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     cube_dict['vsfcorr'] = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project, cube_dict['areacello'],
                                              manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
-
     cube_dict['rsdt'] = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project, cube_dict['areacella'],
                                           manual_file_dict, inargs.ignore_list)
     cube_dict['rlut'] = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project, cube_dict['areacella'],
@@ -507,20 +508,14 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None)
     masso_anomaly_data = masso_data - masso_data[0]
     barystatic_data = cp * cube_dict['thetaoga'].data[0] * masso_anomaly_data
 
-    nettoa_data = cube_dict['rsdt'].data - cube_dict['rlut'].data - cube_dict['rsut'].data
-    nettoa_cumsum_data = numpy.cumsum(nettoa_data)
-    nettoa_cumsum_anomaly = nettoa_cumsum_data - nettoa_cumsum_data[0]
-
     calc_trend(ohc_anomaly_data, 'OHC', 'J')
     calc_trend(thermal_data, 'thermal OHC', 'J')
     calc_trend(barystatic_data, 'barystatic OHC', 'J')
-    calc_trend(nettoa_cumsum_anomaly, 'cumulative netTOA', 'J')
 
     ax_top.grid(linestyle=':')
     ax_top.plot(ohc_anomaly_data, color='black', label='OHC anomaly($\Delta H$)')
     ax_top.plot(thermal_data, color='red', label='thermal OHC anomaly ($c_p M_0 \Delta T$)')
     ax_top.plot(barystatic_data, color='blue', label='barystatic OHC anomaly ($c_p T_0 \Delta M$)')
-    ax_top.plot(nettoa_cumsum_anomaly, color='gold', linestyle='--', label='cumulative net TOA radiative flux')
 
     ohc_anomaly_cubic_dedrifted = dedrift_data(ohc_anomaly_data, fit='cubic')
     ax_bottom.plot(ohc_anomaly_cubic_dedrifted, color='black')
@@ -528,22 +523,26 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None)
     thermal_data_linear_dedrifted = dedrift_data(thermal_data, fit='linear')
     thermal_data_cubic_dedrifted = dedrift_data(thermal_data, fit='cubic')
     ax_middle.plot(thermal_data_cubic_dedrifted, color='red')
-    
-    nettoa_linear_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='linear')
-    nettoa_cubic_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='cubic')
-    ax_middle.plot(nettoa_cubic_dedrifted, color='gold', linestyle='--')
-
-    calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
-                    'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, annual mean)')
-    calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
-                    'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
-    calc_regression(nettoa_linear_dedrifted, thermal_data_linear_dedrifted,
-                    'cumulative netTOA radiative flux vs thermal OHC anomaly (linear dedrift, annual mean)')
-    calc_regression(nettoa_linear_dedrifted, thermal_data_linear_dedrifted,
-                    'cumulative netTOA radiative flux vs thermal OHC anomaly (linear dedrift, decadal mean)', decadal_mean=True)
-
 
     # Optional data
+
+    if cube_dict['rsdt'] and cube_dict['rlut'] and cube_dict['rsut']:
+        nettoa_data = cube_dict['rsdt'].data - cube_dict['rlut'].data - cube_dict['rsut'].data
+        nettoa_cumsum_data = numpy.cumsum(nettoa_data)
+        nettoa_cumsum_anomaly = nettoa_cumsum_data - nettoa_cumsum_data[0]
+        calc_trend(nettoa_cumsum_anomaly, 'cumulative netTOA', 'J')
+        ax_top.plot(nettoa_cumsum_anomaly, color='gold', linestyle='--', label='cumulative net TOA radiative flux')
+        nettoa_linear_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='linear')
+        nettoa_cubic_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='cubic')
+        ax_middle.plot(nettoa_cubic_dedrifted, color='gold', linestyle='--')
+        calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
+                        'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, annual mean)')
+        calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
+                        'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
+        calc_regression(nettoa_linear_dedrifted, thermal_data_linear_dedrifted,
+                        'cumulative netTOA radiative flux vs thermal OHC anomaly (linear dedrift, annual mean)')
+        calc_regression(nettoa_linear_dedrifted, thermal_data_linear_dedrifted,
+                        'cumulative netTOA radiative flux vs thermal OHC anomaly (linear dedrift, decadal mean)', decadal_mean=True)
 
     if cube_dict['hfds']:
         net_surface_heat_flux_data = cube_dict['hfds'].data
