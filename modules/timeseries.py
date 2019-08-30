@@ -330,7 +330,7 @@ def runmean(data, window_width, overlap=True):
     """
     
     if overlap:
-        runmean_data = np.convolve(data, numpy.ones((window_width,))/window_width, mode='valid')
+        runmean_data = np.convolve(data, np.ones((window_width,))/window_width, mode='valid')
     else:
         nchunks = math.ceil(len(data) / window_width)
         split_data = [x for x in np.array_split(data, nchunks) if x.size == window_width]
