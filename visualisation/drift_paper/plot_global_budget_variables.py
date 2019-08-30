@@ -475,8 +475,6 @@ def calc_regression(x_data, y_data, label, decadal_mean=False):
     stderr_adjusted = (stderr * numpy.sqrt(n_orig)) / numpy.sqrt(n_eff)
     
     regression_text = 'regression coefficient, %s: %s [%s, %s] +- %s (or %s)'  %(label, str(coeff), str(conf_lower), str(conf_upper), str(stderr), str(stderr_adjusted))
-    if decadal_mean:
-        regression_text = 'decadal mean ' + regression_text
     numbers_out_list.append(regression_text)
 
 
@@ -565,6 +563,15 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None)
                         'cumulative surface heat flux vs thermal OHC anomaly (linear dedrift, annual mean)')
         calc_regression(hfds_linear_dedrifted, thermal_data_linear_dedrifted,
                         'cumulative surface heat flux vs thermal OHC anomaly (linear dedrift, decadal mean)', decadal_mean=True)
+        if cube_dict['rsdt'] and cube_dict['rlut'] and cube_dict['rsut']:
+            calc_regression(nettoa_cubic_dedrifted, hfds_cubic_dedrifted,
+                            'cumulative netTOA radiative flux vs cumulative surface heat flux (cubic dedrift, annual mean)')
+            calc_regression(nettoa_cubic_dedrifted, hfds_cubic_dedrifted,
+                            'cumulative netTOA radiative flux vs cumulative surface heat flux (cubic dedrift, decadal mean)', decadal_mean=True)
+            calc_regression(nettoa_linear_dedrifted, hfds_linear_dedrifted,
+                            'cumulative netTOA radiative flux vs cumulative surface heat flux (linear dedrift, annual mean)')
+            calc_regression(nettoa_linear_dedrifted, hfds_linear_dedrifted,
+                            'cumulative netTOA radiative flux vs cumulative surface heat flux (linear dedrift, decadal mean)', decadal_mean=True)
 
     if cube_dict['wfo']:
         wfo_cumsum_data = numpy.cumsum(cube_dict['wfo'].data)
