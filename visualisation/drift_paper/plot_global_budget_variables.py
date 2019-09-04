@@ -415,6 +415,11 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
             plot_global_variable(ax10, cube_dict['vsfcorr'].data, 'Annual Virtual Salt Fluxes',
                                 cube_dict['vsfcorr'].units, 'yellow', label=cube_dict['vsfcorr'].long_name)
 
+    plt.subplots_adjust(top=0.92)
+    title = '%s (%s), %s, piControl'  %(inargs.model, inargs.project, inargs.run)
+    plt.suptitle(title)
+    plt.savefig(inargs.rawfile, bbox_inches='tight')
+
 
 def delta_masso_from_soga(s_orig, s_new, m_orig):
     """Infer a change in mass from salinity"""
@@ -720,7 +725,6 @@ def get_manual_file_dict(file_list):
     return file_dict 
 
 
-
 def common_time_period(cube_dict):
     """Get the common time period for comparison."""
 
@@ -772,8 +776,12 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
         ax2.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
 
     plot_ohc(ax1, ax3, ax5, masso_data, inargs.cpocean, cube_dict, ylim=inargs.ohc_ylim)
-
     plot_sea_level(ax2, ax4, masso_data, cube_dict, ocean_area, inargs.density, ylim=inargs.sealevel_ylim)
+
+    plt.subplots_adjust(top=0.92)
+    title = '%s (%s), %s, piControl'  %(inargs.model, inargs.project, inargs.run)
+    plt.suptitle(title)
+    plt.savefig(inargs.compfile, bbox_inches='tight')
 
 
 def get_branch_years(inargs, manual_file_dict, manual_branch_time):
@@ -807,25 +815,23 @@ def main(inargs):
         branch_year_dict = get_branch_years(inargs, manual_file_dict, inargs.branch_time)
     else:
         branch_year_dict = {}
+
     cube_dict = get_data_dict(inargs, manual_file_dict, branch_year_dict)
-
-    if inargs.plot_type == 'raw':
-        plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict)
-    else:
-        plot_comparison(inargs, cube_dict, branch_year_dict)
-
-    plt.subplots_adjust(top=0.92)
-    title = '%s (%s), %s, piControl'  %(inargs.model, inargs.project, inargs.run)
-    plt.suptitle(title)
-    plt.savefig(inargs.outfile, bbox_inches='tight')
-    
     processed_files.append(numbers_out_list)
     flat_list = [item for sublist in processed_files for item in sublist]
     flat_list = list(set(flat_list))
     flat_list.sort()
     log_text = cmdprov.new_log(git_repo=repo_dir, extra_notes=flat_list)
-    log_file = re.sub('.png', '.met', inargs.outfile)
-    cmdprov.write_log(log_file, log_text)
+
+    if inargs.rawfile:
+        plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict)
+        log_file = re.sub('.png', '.met', inargs.rawfile)
+        cmdprov.write_log(log_file, log_text)
+
+    if inargs.compfile:
+        plot_comparison(inargs, cube_dict, branch_year_dict)
+        log_file = re.sub('.png', '.met', inargs.compfile)
+        cmdprov.write_log(log_file, log_text)
 
 
 if __name__ == '__main__':
@@ -842,11 +848,12 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("plot_type", type=str, choices=('raw', 'comparison'), help="Plot type")
     parser.add_argument("model", type=str, help="Model (use dots not dashes between numbers in model names)")
     parser.add_argument("run", type=str, help="Run (e.g. r1i1p1)")
     parser.add_argument("project", type=str, choices=('cmip5', 'cmip6'), help="Project")
-    parser.add_argument("outfile", type=str, help="Output file name")
+
+    parser.add_argument("--rawfile", type=str, help="Output raw data file name")
+    parser.add_argument("--compfile", type=str, help="Output comparison data file name")
 
     parser.add_argument("--volo", action="store_true", default=False,
                         help="Use volo to calculate masso (useful for boussinesq models)")
