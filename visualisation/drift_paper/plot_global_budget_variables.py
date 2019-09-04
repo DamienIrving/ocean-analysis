@@ -807,6 +807,17 @@ def get_branch_years(inargs, manual_file_dict, manual_branch_time):
     return branch_years
 
 
+def get_log_text(extra_notes_list):
+    """Write the metadata to file."""
+
+    flat_list = [item for sublist in extra_notes_list for item in sublist]
+    flat_list = list(set(flat_list))
+    flat_list.sort()
+    log_text = cmdprov.new_log(git_repo=repo_dir, extra_notes=flat_list)
+
+    return log_text
+
+
 def main(inargs):
     """Run the program."""
 
@@ -817,19 +828,17 @@ def main(inargs):
         branch_year_dict = {}
 
     cube_dict = get_data_dict(inargs, manual_file_dict, branch_year_dict)
-    processed_files.append(numbers_out_list)
-    flat_list = [item for sublist in processed_files for item in sublist]
-    flat_list = list(set(flat_list))
-    flat_list.sort()
-    log_text = cmdprov.new_log(git_repo=repo_dir, extra_notes=flat_list)
 
     if inargs.rawfile:
         plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict)
+        log_text = get_log_text(processed_files)
         log_file = re.sub('.png', '.met', inargs.rawfile)
         cmdprov.write_log(log_file, log_text)
 
     if inargs.compfile:
         plot_comparison(inargs, cube_dict, branch_year_dict)
+        processed_files.append(numbers_out_list)
+        log_text = get_log_text(processed_files)
         log_file = re.sub('.png', '.met', inargs.compfile)
         cmdprov.write_log(log_file, log_text)
 
