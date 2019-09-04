@@ -374,6 +374,10 @@ FWF = freshwater flux; VSF = virtual salt flux
 
 ### Data issues
 
+### ACCESS1-0
+
+* `/g/data1/rr3/publications/CMIP5/output1/CSIRO-BOM/ACCESS1-0/piControl/mon/ocean/Omon/r1i1p1/latest/hfds/hfds_Omon_ACCESS1-0_piControl_r1i1p1_055001-079912.nc` has a bogus time axis value at index 1682
+
 #### CanESM2
 
 * Bad volcello data
