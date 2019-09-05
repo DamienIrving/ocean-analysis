@@ -402,7 +402,7 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
     if cube_dict['rsdt']:
         ax9 = fig.add_subplot(nrows, ncols, 9)
         ax9.plot(cube_dict['rsdt'].data, color='maroon', label=cube_dict['rsdt'].long_name, linestyle=':')
-        ax9.plot(cube_dict['rsut'].data, color='maroon', label=cube_dict['rlut'].long_name, linestyle='-.')
+        ax9.plot(cube_dict['rsut'].data, color='maroon', label=cube_dict['rsut'].long_name, linestyle='-.')
         plot_global_variable(ax9, cube_dict['rlut'].data, 'Annual TOA Radiative Fluxes',
                              cube_dict['rlut'].units, 'maroon', label=cube_dict['rlut'].long_name)
         ax9.legend()
