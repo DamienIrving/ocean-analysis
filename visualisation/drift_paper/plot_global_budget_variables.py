@@ -865,8 +865,8 @@ author:
     parser.add_argument("run", type=str, help="Run (e.g. r1i1p1)")
     parser.add_argument("project", type=str, choices=('cmip5', 'cmip6'), help="Project")
 
-    parser.add_argument("--rawfile", type=str, help="Output raw data file name")
-    parser.add_argument("--compfile", type=str, help="Output comparison data file name")
+    parser.add_argument("--rawfile", type=str, default=None, help="Output raw data file name")
+    parser.add_argument("--compfile", type=str, default=None, help="Output comparison data file name")
 
     parser.add_argument("--volo", action="store_true", default=False,
                         help="Use volo to calculate masso (useful for boussinesq models)")
