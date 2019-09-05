@@ -464,22 +464,26 @@ def calc_regression(x_data, y_data, label, decadal_mean=False):
         x_data = timeseries.runmean(x_data, 10)
         y_data = timeseries.runmean(y_data, 10)
 
-    validation_coeff = numpy.ma.polyfit(x_data, y_data, 1)[0]
+    if (x_data.max() == x_data.min()) or (y_data.max() == y_data.min()):
+        regression_text = 'regression coefficient, %s: ERROR'  %(label)
+    else:
+        validation_coeff = numpy.ma.polyfit(x_data, y_data, 1)[0]
 
-    x_data = sm.add_constant(x_data)
-    model = sm.OLS(y_data, x_data)
-    results = model.fit()
-    coeff = results.params[-1]
-    conf_lower, conf_upper = results.conf_int()[-1]
-    assert validation_coeff < conf_upper
-    assert validation_coeff > conf_lower
+        x_data = sm.add_constant(x_data)
+        model = sm.OLS(y_data, x_data)
+        results = model.fit()
+        coeff = results.params[-1]
+        conf_lower, conf_upper = results.conf_int()[-1]
+        assert validation_coeff < conf_upper
+        assert validation_coeff > conf_lower
 
-    stderr = results.bse[-1]
-    n_orig = int(results.nobs)
-    n_eff = uconv.effective_sample_size(y_data, n_orig)
-    stderr_adjusted = (stderr * numpy.sqrt(n_orig)) / numpy.sqrt(n_eff)
+        stderr = results.bse[-1]
+        n_orig = int(results.nobs)
+        n_eff = uconv.effective_sample_size(y_data, n_orig)
+        stderr_adjusted = (stderr * numpy.sqrt(n_orig)) / numpy.sqrt(n_eff)
     
-    regression_text = 'regression coefficient, %s: %s [%s, %s] +- %s (or %s)'  %(label, str(coeff), str(conf_lower), str(conf_upper), str(stderr), str(stderr_adjusted))
+        regression_text = 'regression coefficient, %s: %s [%s, %s] +- %s (or %s)'  %(label, str(coeff), str(conf_lower), str(conf_upper), str(stderr), str(stderr_adjusted))
+
     numbers_out_list.append(regression_text)
 
 
