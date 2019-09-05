@@ -105,7 +105,7 @@ def main(inargs):
                 value = line.split(':')[-1].split(' ')[1]
                 file_unit = line.split(' ')[-1].strip()
                 match_unit = units[col].strip()
-                if ('regression' in header):
+                if ('regression' in header) and not 'ERROR' in value:
                     df[header] = value
                     lower_ci = line.split('[')[1].split(',')[0]
                     upper_ci = line.split(']')[0].split(' ')[-1]
