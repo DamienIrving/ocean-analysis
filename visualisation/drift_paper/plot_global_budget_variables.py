@@ -70,7 +70,7 @@ names = {'masso': 'sea_water_mass',
          'vsf': 'virtual_salt_flux_into_sea_water',
          'vsfcorr': 'virtual_salt_flux_correction'}
 
-wfo_wrong_sign = ['MIROC-ESM-CHEM', 'MIROC-ESM', 'CNRM-CM6-1', 'CNRM-ESM2-1', 'IPSL-CM6A-LR', 'CMCC-CM']
+wfo_wrong_sign = ['MIROC-ESM-CHEM', 'MIROC-ESM', 'CNRM-CM6-1', 'CNRM-ESM2-1', 'IPSL-CM5A-LR', 'IPSL-CM6A-LR', 'CMCC-CM']
 
 
 def get_latest(results):
@@ -680,6 +680,12 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
                         'cumulative surface freshwater flux vs global mean salinity anomaly (linear dedrift, annual mean)')
         calc_regression(wfo_linear_dedrifted, soga_linear_dedrifted,
                         'cumulative surface freshwater flux vs global mean salinity anomaly (linear dedrift, decadal mean)', decadal_mean=True)
+
+    if cube_dict['wfonocorr']:
+        wfonocorr_cumsum_data = numpy.cumsum(cube_dict['wfonocorr'].data)
+        wfonocorr_cumsum_anomaly = wfonocorr_cumsum_data - wfonocorr_cumsum_data[0]
+        sea_level_anomaly_from_wfonocorr = sea_level_from_mass(wfonocorr_cumsum_anomaly, ocean_area, density)
+        ax_top.plot(sea_level_anomaly_from_wfonocorr, color='blue', linestyle=':', label='cumulative surface freshwater flux (no flux correction)')
 
     if cube_dict['zostoga']:
         zostoga_anomaly = cube_dict['zostoga'].data - cube_dict['zostoga'].data[0]
