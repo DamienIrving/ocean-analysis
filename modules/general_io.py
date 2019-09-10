@@ -223,25 +223,36 @@ def check_xarrayDataset(dset, var_list):
         'Longitude axis must be 0 to 360E'
 
 
-def combine_files(files, var, new_calendar=None):
-    """Create an iris cube from multiple input files."""
+def combine_cubes(cube_list, new_calendar=None):
+    """Combine multiple iris cubes."""
 
-    cube = iris.load(files, check_iris_var(var), callback=save_history)
-    equalise_attributes(cube)
-    iris.util.unify_time_units(cube)
-    for single_cube in cube:
-        coord_names = [coord.name() for coord in single_cube.dim_coords]
-        if 'time' in coord_names:
-            single_cube.coord('time').attributes = {}
-    cube = cube.concatenate_cube()
+    equalise_attributes(cube_list)
+    iris.util.unify_time_units(cube_list)
+    for cube in cube_list:
+        dim_coord_names = [coord.name() for coord in cube.dim_coords]
+        if 'time' in dim_coord_names:
+            cube.coord('time').attributes = {}
+        aux_coord_names = [coord.name() for coord in cube.aux_coords]
+        if 'year' in aux_coord_names:
+            cube.coord('year').attributes = {}
+    cube = cube_list.concatenate_cube()
     cube = iris.util.squeeze(cube)
 
     coord_names = [coord.name() for coord in cube.dim_coords]
     if 'time' in coord_names:
         cube = check_time_units(cube, new_calendar=new_calendar)
 
-    if 'salinity' in var.lower():
+    if 'salinity' in cube.standard_name:
         cube = salinity_unit_check(cube)
+
+    return cube
+
+
+def combine_files(files, var, new_calendar=None):
+    """Create an iris cube from multiple input files."""
+
+    cube_list = iris.load(files, check_iris_var(var), callback=save_history)
+    cube = combine_cubes(cube_list, new_calendar=new_calendar)   
 
     return cube, history
 

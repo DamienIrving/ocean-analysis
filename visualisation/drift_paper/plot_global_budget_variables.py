@@ -402,7 +402,7 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
     if cube_dict['rsdt']:
         ax9 = fig.add_subplot(nrows, ncols, 9)
         ax9.plot(cube_dict['rsdt'].data, color='maroon', label=cube_dict['rsdt'].long_name, linestyle=':')
-        ax9.plot(cube_dict['rsut'].data, color='maroon', label=cube_dict['rlut'].long_name, linestyle='-.')
+        ax9.plot(cube_dict['rsut'].data, color='maroon', label=cube_dict['rsut'].long_name, linestyle='-.')
         plot_global_variable(ax9, cube_dict['rlut'].data, 'Annual TOA Radiative Fluxes',
                              cube_dict['rlut'].units, 'maroon', label=cube_dict['rlut'].long_name)
         ax9.legend()
@@ -464,22 +464,26 @@ def calc_regression(x_data, y_data, label, decadal_mean=False):
         x_data = timeseries.runmean(x_data, 10)
         y_data = timeseries.runmean(y_data, 10)
 
-    validation_coeff = numpy.ma.polyfit(x_data, y_data, 1)[0]
+    if (x_data.max() == x_data.min()) or (y_data.max() == y_data.min()):
+        regression_text = 'regression coefficient, %s: ERROR'  %(label)
+    else:
+        validation_coeff = numpy.ma.polyfit(x_data, y_data, 1)[0]
 
-    x_data = sm.add_constant(x_data)
-    model = sm.OLS(y_data, x_data)
-    results = model.fit()
-    coeff = results.params[-1]
-    conf_lower, conf_upper = results.conf_int()[-1]
-    assert validation_coeff < conf_upper
-    assert validation_coeff > conf_lower
+        x_data = sm.add_constant(x_data)
+        model = sm.OLS(y_data, x_data)
+        results = model.fit()
+        coeff = results.params[-1]
+        conf_lower, conf_upper = results.conf_int()[-1]
+        assert validation_coeff < conf_upper
+        assert validation_coeff > conf_lower
 
-    stderr = results.bse[-1]
-    n_orig = int(results.nobs)
-    n_eff = uconv.effective_sample_size(y_data, n_orig)
-    stderr_adjusted = (stderr * numpy.sqrt(n_orig)) / numpy.sqrt(n_eff)
+        stderr = results.bse[-1]
+        n_orig = int(results.nobs)
+        n_eff = uconv.effective_sample_size(y_data, n_orig)
+        stderr_adjusted = (stderr * numpy.sqrt(n_orig)) / numpy.sqrt(n_eff)
     
-    regression_text = 'regression coefficient, %s: %s [%s, %s] +- %s (or %s)'  %(label, str(coeff), str(conf_lower), str(conf_upper), str(stderr), str(stderr_adjusted))
+        regression_text = 'regression coefficient, %s: %s [%s, %s] +- %s (or %s)'  %(label, str(coeff), str(conf_lower), str(conf_upper), str(stderr), str(stderr_adjusted))
+
     numbers_out_list.append(regression_text)
 
 
@@ -861,8 +865,8 @@ author:
     parser.add_argument("run", type=str, help="Run (e.g. r1i1p1)")
     parser.add_argument("project", type=str, choices=('cmip5', 'cmip6'), help="Project")
 
-    parser.add_argument("--rawfile", type=str, help="Output raw data file name")
-    parser.add_argument("--compfile", type=str, help="Output comparison data file name")
+    parser.add_argument("--rawfile", type=str, default=None, help="Output raw data file name")
+    parser.add_argument("--compfile", type=str, default=None, help="Output comparison data file name")
 
     parser.add_argument("--volo", action="store_true", default=False,
                         help="Use volo to calculate masso (useful for boussinesq models)")
