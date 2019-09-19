@@ -47,6 +47,20 @@ names = {'masso': 'sea_water_mass',
 processed_files = []
 
 
+def dedrift_data(data, fit='linear'):
+    """Remove drift and plot."""
+    
+    assert fit in ['linear', 'cubic']
+    deg = 3 if fit == 'cubic' else 1
+    
+    time_axis = numpy.arange(len(data))
+    coefficients = timeseries.fit_polynomial(data, time_axis, deg, None)
+    drift = numpy.polyval(coefficients, time_axis)
+    dedrifted_data = data - drift
+
+    return dedrifted_data
+
+
 def get_latest(results):
     """Select the latest results"""
 
@@ -148,12 +162,15 @@ def main(inargs):
     volo_models = ['CNRM-CM6-1', 'CNRM-ESM2-1', 'IPSL-CM6A-LR']
     cpocean_dict = {'HadGEM3-GC31-LL': 3991.867957, 'UKESM1-0-LL': 3991.867957}
     rhozero_dict = {'HadGEM3-GC31-LL': 1026, 'UKESM1-0-LL': 1026}
+    colors = iter(['red', 'gold', 'seagreen', 'limegreen', 'blue', 'teal', 'pink', 'maroon'])
 
-    fig = plt.figure(figsize=[14, 5])
-    nrows = 1
+    fig = plt.figure(figsize=[14, 10])
+    nrows = 2
     ncols = 2
-    ax1 = fig.add_subplot(nrows, ncols, 1)
-    ax2 = fig.add_subplot(nrows, ncols, 2)
+    ax_ohc = fig.add_subplot(nrows, ncols, 1)
+    ax_ohcd = fig.add_subplot(nrows, ncols, 2)
+    ax_mass = fig.add_subplot(nrows, ncols, 3)
+    ax_massd = fig.add_subplot(nrows, ncols, 4)
 
     for model, run in zip(inargs.models, inargs.runs):
         if model in volo_models:
@@ -173,25 +190,45 @@ def main(inargs):
         ohc_anomaly = ohc - ohc[0]
         masso_anomaly = masso.data - masso.data[0]
 
+        ohc_dedrifted = dedrift_data(ohc_anomaly)
+        masso_dedrifted = dedrift_data(masso_anomaly)
+        ohc_dedrifted_anomaly = ohc_dedrifted - ohc_dedrifted[0]
+        masso_dedrifted_anomaly = masso_dedrifted - masso_dedrifted[0]
+
         label = '%s (%s)' %(model, run)
-        ax1.plot(ohc_anomaly, color='red')
-        ax2.plot(masso_anomaly, color='red', label=label)
+        color = next(colors)
+        ax_ohc.plot(ohc_anomaly, color=color, label=label)
+        ax_ohcd.plot(ohc_dedrifted_anomaly, color=color, label=label)
+        ax_mass.plot(masso_anomaly, color=color, label=label)
+        ax_massd.plot(masso_dedrifted_anomaly, color=color, label=label)
 
 
-    ax1.set_title('ocean heat content anomaly')
-    ax1.set_xlabel('year')
-    ax1.set_ylabel('J')
-    ax1.grid(linestyle=':')
-    ax1.ticklabel_format(useOffset=False)
-    ax1.yaxis.major.formatter._useMathText = True
+    ax_ohc.set_title('OHC anomaly')
+    ax_ohc.set_ylabel('J')
+    ax_ohc.grid(linestyle=':')
+    ax_ohc.ticklabel_format(useOffset=False)
+    ax_ohc.yaxis.major.formatter._useMathText = True
 
-    ax2.set_title('ocean mass anomaly')
-    ax2.set_xlabel('year')
-    ax2.set_ylabel('kg')
-    ax2.grid(linestyle=':')
-    ax2.ticklabel_format(useOffset=False)
-    ax2.yaxis.major.formatter._useMathText = True
-    ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    ax_ohcd.set_title('OHC anomaly (linear trend removed)')
+    ax_ohcd.set_ylabel('J')
+    ax_ohcd.grid(linestyle=':')
+    ax_ohcd.ticklabel_format(useOffset=False)
+    ax_ohcd.yaxis.major.formatter._useMathText = True
+
+    ax_mass.set_title('ocean mass anomaly')
+    ax_mass.set_xlabel('year')
+    ax_mass.set_ylabel('kg')
+    ax_mass.grid(linestyle=':')
+    ax_mass.ticklabel_format(useOffset=False)
+    ax_mass.yaxis.major.formatter._useMathText = True
+
+    ax_massd.set_title('ocean mass anomaly (linear trend removed)')
+    ax_massd.set_xlabel('year')
+    ax_massd.set_ylabel('kg')
+    ax_massd.grid(linestyle=':')
+    ax_massd.ticklabel_format(useOffset=False)
+    ax_massd.yaxis.major.formatter._useMathText = True
+    ax_massd.legend(loc='center left', bbox_to_anchor=(1, 1))
 
     plt.savefig(inargs.outfile, bbox_inches='tight')  # dpi=400
     log_text = get_log_text(processed_files)
