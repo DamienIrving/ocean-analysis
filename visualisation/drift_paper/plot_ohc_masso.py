@@ -156,6 +156,46 @@ def common_time_period(mass_cube, thetaoga_cube):
     return mass_cube, thetaoga_cube
   
 
+def plot_reference_eei(ax, max_time):
+    """Plot a reference line corresponding to current planetary energy imbalance.
+
+    Based off von Schuckmann et al 2016, who say 
+
+    """
+
+    eei = 0.5 #W/m2 
+    ocean_area = 3.611e14 #m2
+    sec_in_year = 365.25 * 24 * 60 * 60
+
+    joules_per_year = eei * ocean_area * sec_in_year
+    ref_eei_timeseries = joules_per_year * numpy.arange(max_time)
+
+    ymin, ymax = ax.get_ylim()
+    ax.plot(ref_eei_timeseries, color='0.5', linestyle='dashed')
+    ax.set_ylim(ymin, ymax)
+
+
+def plot_reference_mass(ax, max_time):
+    """Plot a reference line corresponding to current barystatic sea level rise.
+
+    Based off Cazenave et al (2018) https://www.earth-syst-sci-data.net/10/1551/2018/
+    - Sea level rise since 2005 is 3.1 mm/year, 42% of which is steric
+      (i.e. 1.8 mm/year is barystatic) 
+
+    """
+
+    sea_level_trend = 0.0018 #m/year
+    ocean_area = 3.611e14 #m2
+    density = 1027 # kg/m3
+
+    kg_per_year = sea_level_trend * ocean_area * density
+    ref_mass_timeseries = kg_per_year * numpy.arange(max_time)
+
+    ymin, ymax = ax.get_ylim()
+    ax.plot(ref_mass_timeseries, color='0.5', linestyle='dashed')
+    ax.set_ylim(ymin, ymax)
+
+
 def main(inargs):
     """Run the program."""
 
@@ -164,7 +204,7 @@ def main(inargs):
     rhozero_dict = {'HadGEM3-GC31-LL': 1026, 'UKESM1-0-LL': 1026}
     colors = iter(['red', 'gold', 'seagreen', 'limegreen', 'blue', 'teal', 'pink', 'maroon'])
 
-    fig = plt.figure(figsize=[14, 10])
+    fig = plt.figure(figsize=[14, 8])
     nrows = 2
     ncols = 2
     ax_ohc = fig.add_subplot(nrows, ncols, 1)
@@ -172,6 +212,7 @@ def main(inargs):
     ax_mass = fig.add_subplot(nrows, ncols, 3)
     ax_massd = fig.add_subplot(nrows, ncols, 4)
 
+    max_time = 0
     for model, run in zip(inargs.models, inargs.runs):
         if model in volo_models:
             volo = read_global_variable(model, 'volo', run)
@@ -202,14 +243,18 @@ def main(inargs):
         ax_mass.plot(masso_anomaly, color=color, label=label)
         ax_massd.plot(masso_dedrifted_anomaly, color=color, label=label)
 
+        if len(ohc) > max_time:
+            max_time = len(ohc)
+
 
     ax_ohc.set_title('OHC anomaly')
     ax_ohc.set_ylabel('J')
     ax_ohc.grid(linestyle=':')
     ax_ohc.ticklabel_format(useOffset=False)
     ax_ohc.yaxis.major.formatter._useMathText = True
+    plot_reference_eei(ax_ohc, max_time)
 
-    ax_ohcd.set_title('OHC anomaly (linear trend removed)')
+    ax_ohcd.set_title('OHC anomaly (detrended)')
     ax_ohcd.set_ylabel('J')
     ax_ohcd.grid(linestyle=':')
     ax_ohcd.ticklabel_format(useOffset=False)
@@ -221,8 +266,9 @@ def main(inargs):
     ax_mass.grid(linestyle=':')
     ax_mass.ticklabel_format(useOffset=False)
     ax_mass.yaxis.major.formatter._useMathText = True
+    plot_reference_mass(ax_mass, max_time)
 
-    ax_massd.set_title('ocean mass anomaly (linear trend removed)')
+    ax_massd.set_title('ocean mass anomaly (detrended)')
     ax_massd.set_xlabel('year')
     ax_massd.set_ylabel('kg')
     ax_massd.grid(linestyle=':')
