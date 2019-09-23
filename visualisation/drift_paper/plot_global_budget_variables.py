@@ -501,7 +501,7 @@ def dedrift_data(data, fit='cubic'):
     return dedrifted_data
     
 
-def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None):
+def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
     """Plot the OHC timeseries and it's components"""
 
     assert cube_dict['thetaoga'].units == 'K'
@@ -524,8 +524,8 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None)
     ax_top.plot(thermal_data, color='red', label='thermal OHC anomaly ($c_p M_0 \Delta T$)')
     ax_top.plot(barystatic_data, color='blue', label='barystatic OHC anomaly ($c_p T_0 \Delta M$)')
 
-    ohc_anomaly_cubic_dedrifted = dedrift_data(ohc_anomaly_data, fit='cubic')
-    ax_bottom.plot(ohc_anomaly_cubic_dedrifted, color='black')
+    #ohc_anomaly_cubic_dedrifted = dedrift_data(ohc_anomaly_data, fit='cubic')
+    #ax_bottom.plot(ohc_anomaly_cubic_dedrifted, color='black')
 
     thermal_data_linear_dedrifted = dedrift_data(thermal_data, fit='linear')
     thermal_data_cubic_dedrifted = dedrift_data(thermal_data, fit='cubic')
@@ -582,32 +582,33 @@ def plot_ohc(ax_top, ax_middle, ax_bottom, masso_data, cp, cube_dict, ylim=None)
             calc_regression(nettoa_linear_dedrifted, hfds_linear_dedrifted,
                             'cumulative netTOA radiative flux vs cumulative surface heat flux (linear dedrift, decadal mean)', decadal_mean=True)
 
-    if cube_dict['wfo']:
-        wfo_cumsum_data = numpy.cumsum(cube_dict['wfo'].data)
-        wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
-        wfo_inferred_barystatic = cp * cube_dict['thetaoga'].data[0] * wfo_cumsum_anomaly
-        ax_top.plot(wfo_inferred_barystatic, color='blue', linestyle='--', label='cumulative surface freshwater flux')
+#    if cube_dict['wfo']:
+#        wfo_cumsum_data = numpy.cumsum(cube_dict['wfo'].data)
+#        wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
+#        wfo_inferred_barystatic = cp * cube_dict['thetaoga'].data[0] * wfo_cumsum_anomaly
+#        ax_top.plot(wfo_inferred_barystatic, color='blue', linestyle='--', label='cumulative surface freshwater flux')
 
-    if cube_dict['hfds'] and cube_dict['wfo']:
-        total_surface_flux = hfds_cumsum_anomaly + wfo_inferred_barystatic
-        calc_trend(total_surface_flux, 'cumulative surface total flux', 'J')
-        ax_top.plot(total_surface_flux, color='black', linestyle='--', label='inferred OHC anomaly from suface fluxes')
-        surface_flux_cubic_dedrifted = dedrift_data(total_surface_flux, fit='cubic')
-        ax_bottom.plot(surface_flux_cubic_dedrifted, color='black', linestyle='--')
+#    if cube_dict['hfds'] and cube_dict['wfo']:
+#        total_surface_flux = hfds_cumsum_anomaly + wfo_inferred_barystatic
+#        calc_trend(total_surface_flux, 'cumulative surface total flux', 'J')
+#        ax_top.plot(total_surface_flux, color='black', linestyle='--', label='inferred OHC anomaly from suface fluxes')
+#        surface_flux_cubic_dedrifted = dedrift_data(total_surface_flux, fit='cubic')
+#        ax_bottom.plot(surface_flux_cubic_dedrifted, color='black', linestyle='--')
 
     if ylim:
         ax_top.set_ylim(ylim[0] * 1e24, ylim[1] * 1e24)
 
     ax_top.set_title('Heat Budget Drift')
     ax_middle.set_title('De-drifted thermal energy comparison')
-    ax_bottom.set_title('De-drifted total OHC comparison')
-    ax_bottom.set_xlabel('year')
+    ax_middle.set_xlabel('year')
+#    ax_bottom.set_title('De-drifted total OHC comparison')
+#    ax_bottom.set_xlabel('year')
     ax_top.set_ylabel('equivalent change in ocean heat content (J)')
     ax_middle.set_ylabel('equivalent change in ocean heat content (J)')
-    ax_bottom.set_ylabel('equivalent change in ocean heat content (J)')
+#    ax_bottom.set_ylabel('equivalent change in ocean heat content (J)')
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
-    ax_bottom.yaxis.major.formatter._useMathText = True
+#    ax_bottom.yaxis.major.formatter._useMathText = True
     ax_top.legend()
 
 
@@ -652,6 +653,12 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
                     'change in global ocean mass vs global mean salinity anomaly (linear dedrift, decadal mean)', decadal_mean=True)
 
     # Optional variables
+    if cube_dict['wfonocorr']:
+        wfonocorr_cumsum_data = numpy.cumsum(cube_dict['wfonocorr'].data)
+        wfonocorr_cumsum_anomaly = wfonocorr_cumsum_data - wfonocorr_cumsum_data[0]
+        sea_level_anomaly_from_wfonocorr = sea_level_from_mass(wfonocorr_cumsum_anomaly, ocean_area, density)
+        ax_top.plot(sea_level_anomaly_from_wfonocorr, color='blue', linestyle=':', label='cumulative surface freshwater flux (no flux correction)')
+
     if cube_dict['wfo']:
         wfo_cumsum_data = numpy.cumsum(cube_dict['wfo'].data)
         wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
@@ -681,25 +688,19 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
         calc_regression(wfo_linear_dedrifted, soga_linear_dedrifted,
                         'cumulative surface freshwater flux vs global mean salinity anomaly (linear dedrift, decadal mean)', decadal_mean=True)
 
-    if cube_dict['wfonocorr']:
-        wfonocorr_cumsum_data = numpy.cumsum(cube_dict['wfonocorr'].data)
-        wfonocorr_cumsum_anomaly = wfonocorr_cumsum_data - wfonocorr_cumsum_data[0]
-        sea_level_anomaly_from_wfonocorr = sea_level_from_mass(wfonocorr_cumsum_anomaly, ocean_area, density)
-        ax_top.plot(sea_level_anomaly_from_wfonocorr, color='blue', linestyle=':', label='cumulative surface freshwater flux (no flux correction)')
-
-    if cube_dict['zostoga']:
-        zostoga_anomaly = cube_dict['zostoga'].data - cube_dict['zostoga'].data[0]
-        calc_trend(zostoga_anomaly, 'thermosteric sea level', 'm')
-        ax_top.plot(zostoga_anomaly, color='purple', linestyle='--', label='change in thermosteric sea level')
-
-    if cube_dict['zosga'] and cube_dict['zossga']:
-        zosga_anomaly = cube_dict['zosga'].data - cube_dict['zosga'].data[0]
-        zossga_anomaly = cube_dict['zossga'].data - cube_dict['zossga'].data[0]
-        zosbary_anomaly = zosga_anomaly - zossga_anomaly
-        calc_trend(zosbary_anomaly, 'barystatic sea level', 'm')
-        ax_top.plot(zosbary_anomaly, color='purple', label='change in barystatic sea level')
-        zosbary_cubic_dedrifted = dedrift_data(zosbary_anomaly, fit='cubic')
-        ax_middle.plot(zosbary_cubic_dedrifted, color='purple')
+#    if cube_dict['zostoga']:
+#        zostoga_anomaly = cube_dict['zostoga'].data - cube_dict['zostoga'].data[0]
+#        calc_trend(zostoga_anomaly, 'thermosteric sea level', 'm')
+#        ax_top.plot(zostoga_anomaly, color='purple', linestyle='--', label='change in thermosteric sea level')
+#
+#    if cube_dict['zosga'] and cube_dict['zossga']:
+#        zosga_anomaly = cube_dict['zosga'].data - cube_dict['zosga'].data[0]
+#        zossga_anomaly = cube_dict['zossga'].data - cube_dict['zossga'].data[0]
+#        zosbary_anomaly = zosga_anomaly - zossga_anomaly
+#        calc_trend(zosbary_anomaly, 'barystatic sea level', 'm')
+#        ax_top.plot(zosbary_anomaly, color='purple', label='change in barystatic sea level')
+#        zosbary_cubic_dedrifted = dedrift_data(zosbary_anomaly, fit='cubic')
+#        ax_middle.plot(zosbary_cubic_dedrifted, color='purple')
     
     if ylim:
         ax_top.set_ylim(ylim[0], ylim[1])
@@ -772,20 +773,20 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
     area_text = 'ocean surface area: %s %s'  %(str(ocean_area), cube_dict['areacello'].units) 
     numbers_out_list.append(area_text)
 
-    fig = plt.figure(figsize=[20, 16])
-    gs = gridspec.GridSpec(4, 2)
+    fig = plt.figure(figsize=[20, 12])
+    gs = gridspec.GridSpec(3, 2)
     ax1 = plt.subplot(gs[0:2, 0])
     ax2 = plt.subplot(gs[0:2, 1])
     ax3 = plt.subplot(gs[2, 0])
     ax4 = plt.subplot(gs[2, 1])
-    ax5 = plt.subplot(gs[3, 0])
+#    ax5 = plt.subplot(gs[3, 0])
 
     linestyles = itertools.cycle(('-', '-', '--', '--', ':', ':', '-.', '-.'))
     for experiment, branch_year in branch_year_dict.items():
         ax1.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
         ax2.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
 
-    plot_ohc(ax1, ax3, ax5, masso_data, inargs.cpocean, cube_dict, ylim=inargs.ohc_ylim)
+    plot_ohc(ax1, ax3, masso_data, inargs.cpocean, cube_dict, ylim=inargs.ohc_ylim)
     plot_sea_level(ax2, ax4, masso_data, cube_dict, ocean_area, inargs.density, ylim=inargs.sealevel_ylim)
 
     plt.subplots_adjust(top=0.92)
