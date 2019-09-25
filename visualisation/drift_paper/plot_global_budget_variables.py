@@ -520,16 +520,17 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
     calc_trend(barystatic_data, 'barystatic OHC', 'J')
 
     ax_top.grid(linestyle=':')
-    ax_top.plot(ohc_anomaly_data, color='black', label='OHC anomaly($\Delta H$)')
-    ax_top.plot(thermal_data, color='red', label='thermal OHC anomaly ($c_p M_0 \Delta T$)')
-    ax_top.plot(barystatic_data, color='blue', label='barystatic OHC anomaly ($c_p T_0 \Delta M$)')
+    ax_top.plot(ohc_anomaly_data, color='black', label='OHC anomaly')
+    ax_top.plot(thermal_data, color='red', label='thermal OHC anomaly')
+    ax_top.plot(barystatic_data, color='blue', label='barystatic OHC anomaly')
 
     #ohc_anomaly_cubic_dedrifted = dedrift_data(ohc_anomaly_data, fit='cubic')
     #ax_bottom.plot(ohc_anomaly_cubic_dedrifted, color='black')
 
     thermal_data_linear_dedrifted = dedrift_data(thermal_data, fit='linear')
     thermal_data_cubic_dedrifted = dedrift_data(thermal_data, fit='cubic')
-    ax_middle.plot(thermal_data_cubic_dedrifted, color='red')
+    ax_middle.grid(linestyle=':')
+    ax_middle.plot(thermal_data_cubic_dedrifted, color='red', label='thermal OHC anomaly')
 
     # Optional data
 
@@ -541,7 +542,7 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         ax_top.plot(nettoa_cumsum_anomaly, color='gold', linestyle='--', label='cumulative net TOA radiative flux')
         nettoa_linear_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='linear')
         nettoa_cubic_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='cubic')
-        ax_middle.plot(nettoa_cubic_dedrifted, color='gold', linestyle='--')
+        ax_middle.plot(nettoa_cubic_dedrifted, color='gold', linestyle='--', label='cumulative net TOA radiative flux')
         calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
                         'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, annual mean)')
         calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
@@ -563,7 +564,7 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         ax_top.plot(hfds_cumsum_anomaly, color='red', linestyle='--', label='cumulative surface heat flux')
         hfds_linear_dedrifted = dedrift_data(hfds_cumsum_anomaly, fit='linear')
         hfds_cubic_dedrifted = dedrift_data(hfds_cumsum_anomaly, fit='cubic')
-        ax_middle.plot(hfds_cubic_dedrifted, color='red', linestyle='--')
+        ax_middle.plot(hfds_cubic_dedrifted, color='red', linestyle='--', label='cumulative surface heat flux')
         calc_regression(hfds_cubic_dedrifted, thermal_data_cubic_dedrifted,
                         'cumulative surface heat flux vs thermal OHC anomaly (cubic dedrift, annual mean)')
         calc_regression(hfds_cubic_dedrifted, thermal_data_cubic_dedrifted,
@@ -610,6 +611,7 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
     ax_middle.yaxis.major.formatter._useMathText = True
 #    ax_bottom.yaxis.major.formatter._useMathText = True
     ax_top.legend()
+    ax_middle.legend()
 
 
 def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density, ylim=None):
@@ -633,16 +635,17 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
     calc_trend(sea_level_anomaly_from_masso, 'global ocean mass', 'm')
 
     ax_top.grid(linestyle=':')
-    ax_top.plot(sea_level_anomaly_from_masso, color='blue', label='change in global ocean mass')
+    ax_top.plot(sea_level_anomaly_from_masso, color='blue', label='global ocean mass anomaly')
     ax_top.plot(sea_level_anomaly_from_soga, color='teal', label='global mean salinity anomaly')
 
     masso_linear_dedrifted = dedrift_data(sea_level_anomaly_from_masso, fit='linear')
     masso_cubic_dedrifted = dedrift_data(sea_level_anomaly_from_masso, fit='cubic')
-    ax_middle.plot(masso_cubic_dedrifted, color='blue')
+    ax_middle.grid(linestyle=':')
+    ax_middle.plot(masso_cubic_dedrifted, color='blue', label='global ocean mass anomaly')
 
     soga_linear_dedrifted = dedrift_data(sea_level_anomaly_from_soga, fit='linear')
     soga_cubic_dedrifted = dedrift_data(sea_level_anomaly_from_soga, fit='cubic')
-    ax_middle.plot(soga_cubic_dedrifted, color='teal')
+    ax_middle.plot(soga_cubic_dedrifted, color='teal', label='global mean salinity anomaly')
     calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
                     'change in global ocean mass vs global mean salinity anomaly (cubic dedrift, annual mean)')
     calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
@@ -668,7 +671,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
 
         wfo_linear_dedrifted = dedrift_data(sea_level_anomaly_from_wfo, fit='linear')
         wfo_cubic_dedrifted = dedrift_data(sea_level_anomaly_from_wfo, fit='cubic')
-        ax_middle.plot(wfo_cubic_dedrifted, color='blue', linestyle='--')
+        ax_middle.plot(wfo_cubic_dedrifted, color='blue', linestyle='--', label='cumulative surface freshwater flux')
         
         calc_regression(wfo_cubic_dedrifted, masso_cubic_dedrifted,
                         'cumulative surface freshwater flux vs change in global ocean mass (cubic dedrift, annual mean)')
@@ -712,7 +715,8 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
     ax_middle.set_ylabel('equivalent change in global sea level (m)')
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
-    ax_top.legend()    
+    ax_top.legend()
+    ax_middle.legend()    
 
 
 def sea_level_from_mass(mass_anomaly_data, ocean_area, density):
@@ -790,7 +794,11 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
     plot_sea_level(ax2, ax4, masso_data, cube_dict, ocean_area, inargs.density, ylim=inargs.sealevel_ylim)
 
     plt.subplots_adjust(top=0.92)
-    title = '%s (%s), %s, piControl'  %(inargs.model, inargs.project, inargs.run)
+    ax1.text(0.03, 0.08, '(a)', transform=ax1.transAxes, fontsize=22, va='top')
+    ax2.text(0.03, 0.08, '(b)', transform=ax2.transAxes, fontsize=22, va='top')
+    ax3.text(0.03, 0.15, '(c)', transform=ax3.transAxes, fontsize=22, va='top')
+    ax4.text(0.03, 0.15, '(d)', transform=ax4.transAxes, fontsize=22, va='top')
+    title = '%s, %s, piControl'  %(inargs.model, inargs.run)
     plt.suptitle(title)
     plt.savefig(inargs.compfile, bbox_inches='tight')
 
