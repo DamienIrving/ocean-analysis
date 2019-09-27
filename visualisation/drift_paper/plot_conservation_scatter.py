@@ -229,7 +229,8 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
     plot_aesthetics(ax, yvar, xvar, plot_units, scinotation, shading, scale_factor,
                     xpad=xpad, ypad=ypad, non_square=non_square)
     ax.set_title(title)
-    #ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    if 'thermal' in title:
+        ax.legend(loc='center left', bbox_to_anchor=(1.05, -0.1))
 
 
 def main(inargs):
@@ -247,7 +248,7 @@ def main(inargs):
 
     # Thermal conservation
     xlims=[(-41.05, -40.82), (-0.35, 0.3)]
-    ylims=[(-0.3, 0.25), (0.55, 0.65)]
+    ylims=[(-0.3, 0.25), (0.55, 0.66)]
     wspace = hspace = 0.08
     thermal_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace, subplot_spec=thermal_sps)
     plot_broken_comparison(thermal_ax, df, '(b) thermal energy conservation', 'hfds (J yr-1)',
@@ -259,16 +260,16 @@ def main(inargs):
 
     # Salt conservation
     xlims=[(-2, 5)]
-    ylims=[(-19, -17.5), (-2.2, 5)]
+    ylims=[(-19, -17.5), (-2.3, 5.1)]
     hspace = 0.1
     salt_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=salt_sps)
     plot_broken_comparison(salt_ax, df, '(d) salt conservation', 'masso (g/kg yr-1)', 'soga (g/kg yr-1)',
                            'g/kg s-1', scale_factor=13, broken=True)
 
-    handles, labels = mass_ax.get_legend_handles_labels()
-    fig.legend(handles, labels, loc='center right', bbox_to_anchor=(1.05, 0.5))
+    #handles, labels = thermal_ax.get_legend_handles_labels()
+    #fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.95, 0.5))
 
-    plt.savefig(inargs.outfile, bbox_inches='tight')  # dpi=400
+    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=300)
     log_file = re.sub('.png', '.met', inargs.outfile)
     log_text = cmdprov.new_log(git_repo=repo_dir)
     cmdprov.write_log(log_file, log_text)
