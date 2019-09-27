@@ -15,10 +15,11 @@ import argparse
 import copy
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as colors
-import pandas as pd
+from matplotlib.gridspec import GridSpec
 from brokenaxes import brokenaxes
 
 import cmdline_provenance as cmdprov
@@ -191,21 +192,14 @@ def convert_units(value, start_units, end_units, ocean_area=None):
     return new_value
 
 
-def plot_broken_comparison(df, title, xvar, yvar, plot_units, scale_factor=0,
-                           scinotation=False, shading=False, outfile=None,
-                           xlims=None, ylims=None, xpad=None, ypad=None,
-                           hspace=0.04, wspace=0.04):
+def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
+                           scale_factor=0, scinotation=False, shading=False,
+                           xpad=None, ypad=None, broken=False):
     """Plot comparison for given x and y variables.
     
     Data are multiplied by 10^scale_factor.
     
     """
-    
-    fig = plt.figure(figsize=[10, 8])
-    if xlims and ylims:
-        bax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace)
-    else:
-        bax = fig.add_subplot(1, 1, 1)
     
     x_input_units = get_units(xvar) 
     y_input_units = get_units(yvar)
@@ -223,19 +217,19 @@ def plot_broken_comparison(df, title, xvar, yvar, plot_units, scale_factor=0,
         else:
             facecolors = 'none'
             edgecolors = color
-        bax.scatter(x, y, label=label, s=130, linewidth=1.2, marker=marker,
-                    facecolors=facecolors, edgecolors=edgecolors)
+        ax.scatter(x, y, label=label, s=130, linewidth=1.2, marker=marker,
+                   facecolors=facecolors, edgecolors=edgecolors)
 
-    if xlims:
+    if broken:
         non_square = False
     else:
         non_square = True
-        bax.spines["top"].set_visible(False)
-        bax.spines["right"].set_visible(False)
-    plot_aesthetics(bax, yvar, xvar, plot_units, scinotation, shading, scale_factor,
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+    plot_aesthetics(ax, yvar, xvar, plot_units, scinotation, shading, scale_factor,
                     xpad=xpad, ypad=ypad, non_square=non_square)
-    plt.title(title)
-    bax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    ax.set_title(title)
+    #ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
 
 def main(inargs):
@@ -243,10 +237,36 @@ def main(inargs):
 
     df = pd.read_csv(inargs.infile)
     df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
+ 
+    fig = plt.figure(figsize=[16, 14])
+    eei_sps, thermal_sps, mass_sps, salt_sps = GridSpec(2, 2)
 
-    plot_broken_comparison(df, 'thermal energy conservation', 'hfds (J yr-1)', 'thermal OHC (J yr-1)', 'W m-2',
-                           xlims=[(-41.05, -40.82), (-0.35, 0.3)], ylims=[(-0.3, 0.25), (0.55, 0.65)],
-                           wspace=0.08, hspace=0.08, xpad=20)
+    # EEI conservation
+    eei_ax = fig.add_subplot(eei_sps)
+    plot_broken_comparison(eei_ax, df, '(a) planetary energy imbalance', 'netTOA (J yr-1)', 'thermal OHC (J yr-1)', 'W m-2')
+
+    # Thermal conservation
+    xlims=[(-41.05, -40.82), (-0.35, 0.3)]
+    ylims=[(-0.3, 0.25), (0.55, 0.65)]
+    wspace = hspace = 0.08
+    thermal_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace, subplot_spec=thermal_sps)
+    plot_broken_comparison(thermal_ax, df, '(b) thermal energy conservation', 'hfds (J yr-1)',
+                           'thermal OHC (J yr-1)', 'W m-2', xpad=20, broken=True)
+    
+    # Mass conservation
+    mass_ax = fig.add_subplot(mass_sps)
+    plot_broken_comparison(mass_ax, df, '(c) mass conservation', 'wfo (kg yr-1)', 'masso (kg yr-1)', 'mm yr-1')
+
+    # Salt conservation
+    xlims=[(-2, 5)]
+    ylims=[(-19, -17.5), (-2.2, 5)]
+    hspace = 0.1
+    salt_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=salt_sps)
+    plot_broken_comparison(salt_ax, df, '(d) salt conservation', 'masso (g/kg yr-1)', 'soga (g/kg yr-1)',
+                           'g/kg s-1', scale_factor=13, broken=True)
+
+    handles, labels = mass_ax.get_legend_handles_labels()
+    fig.legend(handles, labels, loc='center right', bbox_to_anchor=(1.05, 0.5))
 
     plt.savefig(inargs.outfile, bbox_inches='tight')  # dpi=400
     log_file = re.sub('.png', '.met', inargs.outfile)
