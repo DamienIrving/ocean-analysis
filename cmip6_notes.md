@@ -8,6 +8,7 @@
 * Model documentation, errata submission etc at [ES-DOC](https://es-doc.org/cmip6/)
   * At the [ES-DOC Search](https://search.es-doc.org/) page you can find detailed documentation about each of the models, including the values for static variables like `cpocean` and `rhozero`
 * [FAFMIP website](http://www.fafmip.org/)
+* [CLEX CMS team CMIP6 quality checks repository](https://github.com/coecms/QCmip6)
 
 ## NCI access
   
