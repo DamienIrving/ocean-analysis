@@ -1,6 +1,6 @@
 # CMIP6
 
-## Global access
+## Resources
 
 * [ESMValTool](http://esmvaltool.org) is the global community tool for simple analysis
   * There is a [website](http://cmip-esmvaltool.dkrz.de/) to view ESMValTool results
@@ -10,7 +10,7 @@
 * [FAFMIP website](http://www.fafmip.org/)
 * [CLEX CMS team CMIP6 quality checks repository](https://github.com/coecms/QCmip6)
 
-## NCI access
+## Data access at NCI
   
 * Project oi10 on NCI
 * Search and request data using the Climate Finder, [CleF](https://clef.readthedocs.io/en/latest/index.html)
