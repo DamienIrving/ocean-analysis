@@ -176,7 +176,7 @@ def _create_region_mask(horiz_array, target_shape, horiz_bounds):
 
     target_ndim = len(target_shape)
 
-    lower_bound, upper_bound = lat_bounds
+    lower_bound, upper_bound = horiz_bounds
     mask_array = numpy.where((horiz_array >= lower_bound) & (horiz_array < upper_bound), False, True)
 
     mask = uconv.broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
