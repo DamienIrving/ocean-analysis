@@ -131,8 +131,8 @@ def plot_aesthetics(ax, yvar, xvar, units, scinotation, shading, scale_factor,
         plot_eei_shading(ax)
     else:
         plot_abline(ax, 1, 0, static_bounds=non_square)
-    ax.axhline(y=0, color='0.5', linewidth=1.0)
-    ax.axvline(x=0, color='0.5', linewidth=1.0)
+    ax.axhline(y=0, color='black', linewidth=1.0)
+    ax.axvline(x=0, color='black', linewidth=1.0)
     #ax.yaxis.major.formatter._useMathText = True
     #ax.xaxis.major.formatter._useMathText = True
 
@@ -152,6 +152,17 @@ def plot_aesthetics(ax, yvar, xvar, units, scinotation, shading, scale_factor,
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0), useMathText=True)
     
+    if 'W \; m^{-2}' in ylabel:
+        ax.axhline(y=-0.5, color='0.5', linewidth=0.5, linestyle='--')
+        ax.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
+        ax.axvline(x=-0.5, color='0.5', linewidth=0.5, linestyle='--')
+        ax.axvline(x=0.5, color='0.5', linewidth=0.5, linestyle='--')
+    elif 'mm \; yr^{-1}' in ylabel:
+        ax.axhline(y=-1.8, color='0.5', linewidth=0.5, linestyle='--')
+        ax.axhline(y=1.8, color='0.5', linewidth=0.5, linestyle='--')
+        ax.axvline(x=-1.8, color='0.5', linewidth=0.5, linestyle='--')
+        ax.axvline(x=1.8, color='0.5', linewidth=0.5, linestyle='--')
+
     # Shrink current axis by 20%
    #box = ax.get_position()
    #ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
@@ -258,16 +269,19 @@ def main(inargs):
     plot_broken_comparison(eei_ax, df, '(a) planetary energy imbalance', 'netTOA (J yr-1)', 'thermal OHC (J yr-1)', 'W m-2')
 
     # Thermal conservation
-    xlims=[(-41.05, -40.82), (-0.35, 0.3)]
-    ylims=[(-0.3, 0.25), (0.55, 0.66)]
+    xlims=[(-41.05, -40.82), (-0.55, 0.55)]
+    ylims=[(-0.55, 0.66)]
     wspace = hspace = 0.08
     thermal_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace, subplot_spec=thermal_sps)
     plot_broken_comparison(thermal_ax, df, '(b) thermal energy conservation', 'hfds (J yr-1)',
                            'thermal OHC (J yr-1)', 'W m-2', xpad=20, broken=True)
     
     # Mass conservation
-    mass_ax = fig.add_subplot(mass_sps)
-    plot_broken_comparison(mass_ax, df, '(c) mass conservation', 'wfo (kg yr-1)', 'masso (kg yr-1)', 'mm yr-1')
+    xlims=[(-8, 6.2)]
+    ylims=[(-1.9, 0.6)]
+    mass_ax = brokenaxes(xlims=xlims, ylims=ylims, subplot_spec=mass_sps)
+    plot_broken_comparison(mass_ax, df, '(c) mass conservation', 'wfo (kg yr-1)', 'masso (kg yr-1)',
+                           'mm yr-1', broken=True)
 
     # Salt conservation
     xlims=[(-2, 5)]
@@ -280,7 +294,7 @@ def main(inargs):
     #handles, labels = thermal_ax.get_legend_handles_labels()
     #fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.95, 0.5))
 
-    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=300)
+    plt.savefig(inargs.outfile, bbox_inches='tight')   #,    dpi=300)
     log_file = re.sub('.png', '.met', inargs.outfile)
     log_text = cmdprov.new_log(git_repo=repo_dir)
     cmdprov.write_log(log_file, log_text)
