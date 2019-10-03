@@ -44,6 +44,13 @@ markers = ['o', '<', '^', '>', 'v', 's', 'p', 'D',
            'o', '<', '^', '>', 'v', 's', 'p', 'D',
            'o', '<', '^', '>', 'v', 's', 'p', 'D']
 
+axis_labels = {'thermal OHC': '$dH_t/dt$',
+               'masso': '$dM/dt$',
+               'netTOA': '$dQ_r/dt$',
+               'hfds': '$dQ_h/dt$',
+               'soga': '$dS/dt$',
+               'wfo': '$dQ_m/dt$'}
+
 
 # Define functions 
 
@@ -97,7 +104,7 @@ def plot_eei_shading(ax):
                       
 def format_axis_label(orig_label, units, scale_factor):
     """Put LaTeX math into axis labels"""
-    
+
     label = orig_label.split('(')[0] + '(' + units + ')'
     label = label.replace('(', '($').replace(')', '$)')
     label = label.replace('s-1', '\; s^{-1}')
@@ -107,6 +114,10 @@ def format_axis_label(orig_label, units, scale_factor):
         scale_factor = int(scale_factor) * -1
         label = label.replace('($', '($10^{%s} \;' %(str(scale_factor)))
     
+    for var in axis_labels.keys():
+        if var in label:
+            label = label.replace(var, axis_labels[var])
+
     return label 
 
 
