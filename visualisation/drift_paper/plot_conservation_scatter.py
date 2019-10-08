@@ -125,12 +125,7 @@ def plot_aesthetics(ax, yvar, xvar, units, scinotation, shading, scale_factor,
                     xpad=None, ypad=None, non_square=True):
     """Set the plot aesthetics"""
     
-    if shading:
-        plot_shading(ax)
-    if 'netTOA' in xvar:
-        plot_eei_shading(ax)
-    else:
-        plot_abline(ax, 1, 0, static_bounds=non_square)
+    plot_abline(ax, 1, 0, static_bounds=non_square)
     ax.axhline(y=0, color='black', linewidth=1.0)
     ax.axvline(x=0, color='black', linewidth=1.0)
     #ax.yaxis.major.formatter._useMathText = True
@@ -294,7 +289,7 @@ def main(inargs):
     #handles, labels = thermal_ax.get_legend_handles_labels()
     #fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.95, 0.5))
 
-    plt.savefig(inargs.outfile, bbox_inches='tight')   #,    dpi=300)
+    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=200)
     log_file = re.sub('.png', '.met', inargs.outfile)
     log_text = cmdprov.new_log(git_repo=repo_dir)
     cmdprov.write_log(log_file, log_text)
