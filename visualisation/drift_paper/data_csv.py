@@ -133,7 +133,7 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("infile", type=str, help="File that needs new time axis")
+    parser.add_argument("infile", type=str, help="Input metadata file")
 
     args = parser.parse_args()             
     main(args)
