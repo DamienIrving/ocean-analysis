@@ -70,7 +70,8 @@ names = {'masso': 'sea_water_mass',
          'vsf': 'virtual_salt_flux_into_sea_water',
          'vsfcorr': 'virtual_salt_flux_correction'}
 
-wfo_wrong_sign = ['MIROC-ESM-CHEM', 'MIROC-ESM', 'CNRM-CM6-1', 'CNRM-ESM2-1', 'IPSL-CM5A-LR', 'IPSL-CM6A-LR', 'CMCC-CM']
+wfo_wrong_sign = ['MIROC-ESM-CHEM', 'MIROC-ESM', 'CNRM-CM6-1', 'CNRM-ESM2-1',
+                  'IPSL-CM5A-LR', 'IPSL-CM6A-LR', 'CMCC-CM', 'EC-Earth3', 'EC-Earth3-Veg']
 
 
 def get_latest(results):

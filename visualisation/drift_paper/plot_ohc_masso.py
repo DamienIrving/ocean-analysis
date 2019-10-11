@@ -113,10 +113,28 @@ def time_check(cube):
     return cube
 
 
-def read_global_variable(model, variable, ensemble):
+def file_match(files, target_model, target_variable, target_ensemble):
+    """Find matching file in list of files."""
+
+    match = []
+    for infile in files:
+        file_variable = infile.split('/')[-1].split('_')[0]
+        file_model = infile.split('/')[-1].split('_')[2]
+        file_ensemble = infile.split('/')[-1].split('_')[4]
+        if (file_variable == target_variable) and (file_model == target_model) and (file_ensemble == target_ensemble):
+            match.append(infile)
+    
+    return match
+
+
+def read_global_variable(model, variable, ensemble, manual_files):
     """Read data for a global variable"""
 
-    file_list = clef_search(model, variable, ensemble) 
+    manual = file_match(manual_files, model, variable, ensemble)
+    if manual:
+        file_list = manual
+    else:
+        file_list = clef_search(model, variable, ensemble) 
     
     if file_list:
         cube, history = gio.combine_files(file_list, names[variable])
@@ -202,7 +220,8 @@ def main(inargs):
     volo_models = ['CNRM-CM6-1', 'CNRM-ESM2-1', 'IPSL-CM6A-LR']
     cpocean_dict = {'HadGEM3-GC31-LL': 3991.867957, 'UKESM1-0-LL': 3991.867957}
     rhozero_dict = {'HadGEM3-GC31-LL': 1026, 'UKESM1-0-LL': 1026}
-    colors = iter(['red', 'gold', 'seagreen', 'limegreen', 'blue', 'teal', 'pink', 'maroon'])
+    #colors = iter(['red', 'gold', 'seagreen', 'limegreen', 'blue', 'teal', 'pink', 'maroon'])
+    colors=iter(plt.cm.rainbow(numpy.linspace(0, 1, len(inargs.models))))
 
     fig = plt.figure(figsize=[14, 8])
     nrows = 2
@@ -214,14 +233,15 @@ def main(inargs):
 
     max_time = 0
     for model, run in zip(inargs.models, inargs.runs):
+        print(model, run)
         if model in volo_models:
-            volo = read_global_variable(model, 'volo', run)
+            volo = read_global_variable(model, 'volo', run, inargs.manual_files)
             rhozero = 1026
             masso = volo * rhozero
         else:
-            masso = read_global_variable(model, 'masso', run)
+            masso = read_global_variable(model, 'masso', run, inargs.manual_files)
 
-        thetaoga = read_global_variable(model, 'thetaoga', run)
+        thetaoga = read_global_variable(model, 'thetaoga', run, inargs.manual_files)
         thetaoga = gio.temperature_unit_check(thetaoga, 'K')
 
         masso, thetaoga = common_time_period(masso, thetaoga)
@@ -252,7 +272,7 @@ def main(inargs):
     ax_ohc.grid(linestyle=':')
     ax_ohc.ticklabel_format(useOffset=False)
     ax_ohc.yaxis.major.formatter._useMathText = True
-    plot_reference_eei(ax_ohc, max_time)
+    #plot_reference_eei(ax_ohc, max_time)
 
     ax_ohcd.set_title('OHC anomaly (detrended)')
     ax_ohcd.set_ylabel('J')
@@ -266,7 +286,7 @@ def main(inargs):
     ax_mass.grid(linestyle=':')
     ax_mass.ticklabel_format(useOffset=False)
     ax_mass.yaxis.major.formatter._useMathText = True
-    plot_reference_mass(ax_mass, max_time)
+    #plot_reference_mass(ax_mass, max_time)
 
     ax_massd.set_title('ocean mass anomaly (detrended)')
     ax_massd.set_xlabel('year')
@@ -301,7 +321,7 @@ author:
     parser.add_argument("--models", type=str, nargs='*', required=True, help="Models to plot")
     parser.add_argument("--runs", type=str, nargs='*', required=True, help="Run (e.g. r1i1p1)")
 
-    parser.add_argument("--manual_files", type=str, action="append", nargs='*', default=[],
+    parser.add_argument("--manual_files", type=str, nargs='*', default=[],
                         help="Use these manually entered files instead of the clef search")    
 
     args = parser.parse_args()  
