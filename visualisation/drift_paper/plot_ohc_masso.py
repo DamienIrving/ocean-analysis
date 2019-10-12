@@ -222,6 +222,7 @@ def main(inargs):
     rhozero_dict = {'HadGEM3-GC31-LL': 1026, 'UKESM1-0-LL': 1026}
     #colors = iter(['red', 'gold', 'seagreen', 'limegreen', 'blue', 'teal', 'pink', 'maroon'])
     colors=iter(plt.cm.rainbow(numpy.linspace(0, 1, len(inargs.models))))
+    styles = ['-', '--', ':', '-', '--', ':', '-', '--', ':', '-', '--', ':', '-', '--', ':']
 
     fig = plt.figure(figsize=[14, 8])
     nrows = 2
@@ -232,6 +233,7 @@ def main(inargs):
     ax_massd = fig.add_subplot(nrows, ncols, 4)
 
     max_time = 0
+    count = 0
     for model, run in zip(inargs.models, inargs.runs):
         print(model, run)
         if model in volo_models:
@@ -258,10 +260,12 @@ def main(inargs):
 
         label = '%s (%s)' %(model, run)
         color = next(colors)
-        ax_ohc.plot(ohc_anomaly, color=color, label=label)
-        ax_ohcd.plot(ohc_dedrifted_anomaly, color=color, label=label)
-        ax_mass.plot(masso_anomaly, color=color, label=label)
-        ax_massd.plot(masso_dedrifted_anomaly, color=color, label=label)
+        style = styles[count]
+        count = count + 1
+        ax_ohc.plot(ohc_anomaly, color=color, label=label, linestyle=style)
+        ax_ohcd.plot(ohc_dedrifted_anomaly, color=color, label=label, linestyle=style)
+        ax_mass.plot(masso_anomaly, color=color, label=label, linestyle=style)
+        ax_massd.plot(masso_dedrifted_anomaly, color=color, label=label, linestyle=style)
 
         if len(ohc) > max_time:
             max_time = len(ohc)
