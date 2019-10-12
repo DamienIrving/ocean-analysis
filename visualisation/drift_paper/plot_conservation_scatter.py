@@ -40,9 +40,7 @@ ocean_model_colors = {'MOM': 'red',
                       'MICOM-HAMOCC': 'teal',
                       'POP': 'lime'}
 
-markers = ['o', '<', '^', '>', 'v', 's', 'p', 'D',
-           'o', '<', '^', '>', 'v', 's', 'p', 'D',
-           'o', '<', '^', '>', 'v', 's', 'p', 'D']
+markers = ['o', '<', '^', '>', 'v', 's', 'X', 'p', 'D', 'd', 'h', 'H']
 
 axis_labels = {'thermal OHC': '$dH_t/dt$',
                'masso': '$dM/dt$',
@@ -217,6 +215,9 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
     Data are multiplied by 10^scale_factor.
     
     """
+
+    ocean_model_counts = {'MOM': 0, 'GOLD': 0, 'NEMO': 0, 'OPA': 0,
+                          'COCO': 0, 'MPI-OM': 0, 'MICOM-HAMOCC': 0, 'POP': 0}
     
     x_input_units = get_units(xvar) 
     y_input_units = get_units(yvar)
@@ -224,9 +225,13 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
         area = df['ocean area (m2)'][dotnum]
         x = convert_units(df[xvar][dotnum], x_input_units, plot_units, ocean_area=area) * 10**scale_factor
         y = convert_units(df[yvar][dotnum], y_input_units, plot_units, ocean_area=area) * 10**scale_factor
-        marker = markers[dotnum]
-        label = df['model'][dotnum] + ' (' + df['run'][dotnum] + ')'
         ocean_model = df['ocean model'][dotnum]
+        label = df['model'][dotnum] + ' (' + df['run'][dotnum] + ')'
+
+        marker_num = ocean_model_counts[ocean_model]
+        marker = markers[marker_num]
+        ocean_model_counts[ocean_model] = ocean_model_counts[ocean_model] + 1
+
         color = ocean_model_colors[ocean_model]
         if df['project'][dotnum] == 'cmip6':
             facecolors = color
