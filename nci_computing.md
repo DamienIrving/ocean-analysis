@@ -18,6 +18,8 @@ Contacts:
 
 ## CWS Virtual Desktop
 
+[VDI User Guide](https://opus.nci.org.au/display/Help/VDI+User+Guide)
+
 ### Access requirements
 
 1. An NCI login with access to compute and storage resources
