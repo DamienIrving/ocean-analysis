@@ -9,6 +9,7 @@
 * ARCCSS CMIP wiki: http://climate-cms.unsw.wikispaces.net/CMIP5+data
 * NCI CMIP community page: https://opus.nci.org.au/display/CMIP/CMIP+Community+Home
 * ARCCSS support on slack: https://arccss.slack.com
+* NCI Data Training Page: https://nci-data-training.readthedocs.io/en/latest/index.html
 
 Contacts:  
 
@@ -17,6 +18,8 @@ Contacts:
 
 
 ## CWS Virtual Desktop
+
+[VDI User Guide](https://opus.nci.org.au/display/Help/VDI+User+Guide)
 
 ### Access requirements
 
