@@ -83,7 +83,7 @@ def select_basin(df, basin_name):
 def create_df(tcube, scube, vcube, bcube, basin):
     """Create DataFrame"""
 
-    tcube = gio.temperature_unit_check(tcube, convert_to_celsius=True)
+    tcube = gio.temperature_unit_check(tcube, 'C')
     scube = gio.salinity_unit_check(scube)
 
     assert tcube.ndim == 3
