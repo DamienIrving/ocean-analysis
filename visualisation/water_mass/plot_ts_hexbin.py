@@ -142,7 +142,7 @@ def plot_diff(hist_dict, inargs, extents, vmin, vmax):
     cb.set_label('log(volume) ($m^3$)')
 
 
-def plot_raw(hist_dict, inargs, extents, vmin, vmax):
+def plot_raw(hist_dict, inargs, extents, vmin, vmax, x_values, y_values):
     """Plot the raw volume distribution."""
 
     fig, ax = plt.subplots(figsize=(9, 9))
@@ -152,6 +152,17 @@ def plot_raw(hist_dict, inargs, extents, vmin, vmax):
         plt.imshow(log_hist, origin='lower',
                    extent=extents, aspect='auto', alpha=inargs.alphas[plotnum],
                    cmap=inargs.colors[plotnum], vmin=vmin, vmax=vmax)
+
+        x_points = []
+        for y_index in range(len(y_values)):
+            weights = hist_dict[label][:, y_index]
+            if weights.sum() == 0:
+                x_point = numpy.nan
+            else:
+                x_point = numpy.average(x_values, weights=weights)
+            x_points.append(x_point)
+        
+        plt.plot(numpy.array(x_points), y_values, color=inargs.colors[plotnum][0:-1])
 
         if plotnum == 0:
             cb = plt.colorbar()
@@ -201,7 +212,7 @@ def main(inargs):
     if inargs.diff:
         plot_diff(hist_dict, inargs, extents, vmin, vmax)
     else:
-        plot_raw(hist_dict, inargs, extents, vmin, vmax)
+        plot_raw(hist_dict, inargs, extents, vmin, vmax, x_values, y_values)
 
     title = get_title(tcube, inargs.basin) 
     plt.title(title)
