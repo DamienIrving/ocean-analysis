@@ -242,8 +242,8 @@ def combine_cubes(cube_list, new_calendar=None):
     if 'time' in coord_names:
         cube = check_time_units(cube, new_calendar=new_calendar)
 
-    if 'salinity' in cube.standard_name:
-        cube = salinity_unit_check(cube)
+    #if 'salinity' in cube.standard_name:
+    #    cube = salinity_unit_check(cube)
 
     return cube
 
