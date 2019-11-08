@@ -46,6 +46,8 @@ def get_agg_cube(cube, agg, remove_outliers=False):
 
     """
 
+    assert agg in ['trend', 'clim', 'monthly_clim']
+
     coord_names = [coord.name() for coord in cube.dim_coords]
     assert coord_names[0] == 'time'
 
@@ -58,8 +60,12 @@ def get_agg_cube(cube, agg, remove_outliers=False):
         except ValueError:
             agg_cube.units = 'yr-1'
     elif agg == 'clim':
-        agg_cube = cube.collapsed('time', iris.analysis.MEAN)    
-    agg_cube.remove_coord('time')
+        agg_cube = cube.collapsed('time', iris.analysis.MEAN)
+        agg_cube.remove_coord('time') 
+    elif agg == 'monthly_clim':
+        iris.coord_categorisation.add_month(cube, 'time')
+        agg_cube = cube.aggregated_by(['month'], iris.analysis.MEAN)
+        agg_cube.remove_coord('month') 
 
     return agg_cube
 
@@ -83,7 +89,7 @@ def process_cube(cube, inargs, sftlf_cube):
 
     if inargs.annual:
         cube = timeseries.convert_to_annual(cube, full_months=True)
-
+        
     if inargs.aggregation:
         cube = get_agg_cube(cube, inargs.aggregation, remove_outliers=inargs.remove_outliers)
 
@@ -126,7 +132,6 @@ def main(inargs):
     """Run the program."""
 
     time_constraint, depth_constraint, sftlf_cube = get_constraints(inargs)
-    
     cube = combine_infiles(inargs, time_constraint, depth_constraint)
     cube = process_cube(cube, inargs, sftlf_cube)
     iris.save(cube, inargs.outfile)
@@ -150,7 +155,7 @@ author:
     parser.add_argument("var", type=str, help="Variable standard_name")
     parser.add_argument("outfile", type=str, help="Output file name")
 
-    parser.add_argument("--aggregation", type=str, choices=('trend', 'clim'), default=None,
+    parser.add_argument("--aggregation", type=str, choices=('trend', 'clim', 'monthly_clim'), default=None,
                         help="Method for temporal aggregation [default = None]")
     parser.add_argument("--time_bounds", type=str, nargs=2, default=None, metavar=('START_DATE', 'END_DATE'),
                         help="Time period [default = entire]")
