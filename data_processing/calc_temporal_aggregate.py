@@ -11,6 +11,7 @@ import sys, os, pdb, re
 import argparse
 import numpy, math
 import iris
+import iris.coord_categorisation
 from decimal import Decimal
 import cmdline_provenance as cmdprov
 
