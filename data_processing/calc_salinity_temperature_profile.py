@@ -117,17 +117,6 @@ def create_df(tcube, scube, vcube, bcube, basin):
     return df
 
 
-def fix_units(hist, data_shape, tstep):
-    """Adjust units so they represent a single timestep and unit bin size"""
-
-    if len(data_shape) == 4:
-        hist = hist / data_shape[0]
-
-    hist = hist / tstep
-
-    return hist
-
-
 def get_bounds_list(edges):
     """Create a bounds list from edge list"""
 
@@ -208,7 +197,6 @@ def main(inargs):
         vdist, bin_edges = numpy.histogram(df['temperature'].values, bins=x_edges,
                                            weights=df['volume'].values)
         sdist = svdist / vdist
-        sdist = fix_units(sdist, temperature_year_cube.shape, tstep)
         outdata[index, :] = sdist
 
     outdata = numpy.ma.masked_invalid(outdata)
