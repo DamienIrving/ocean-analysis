@@ -104,8 +104,8 @@ def create_df(tcube, scube, vcube, bcube, basin):
     df['salinity'] = sdata.filled(fill_value=5000)
     df['volume'] = vdata.filled(fill_value=5000)
     df['basin'] = bdata.filled(fill_value=5000)
-    df['latitude'] = lat_data.filled(fill_value=5000)
-    df['longitude'] = lon_data.filled(fill_value=5000)
+    df['latitude'] = lat_data
+    df['longitude'] = lon_data
     df['depth'] = depth_data
 
     df = df[df.temperature != 5000]
@@ -148,14 +148,14 @@ def construct_cube(vdist, scube, tcube, x_values, y_values, x_edges, y_edges):
 
     scoord = iris.coords.DimCoord(x_values,
                                   standard_name=scube.standard_name,
-                                  long_name=scube.standard_name,
+                                  long_name=scube.long_name,
                                   var_name=scube.var_name,
                                   units=scube.units,
                                   bounds=x_bounds)
 
     tcoord = iris.coords.DimCoord(y_values,
                                   standard_name=tcube.standard_name,
-                                  long_name=tcube.standard_name,
+                                  long_name=tcube.long_name,
                                   var_name=tcube.var_name,
                                   units=tcube.units,
                                   bounds=y_bounds)
