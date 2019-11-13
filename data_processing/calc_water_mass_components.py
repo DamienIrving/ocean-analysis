@@ -1,7 +1,9 @@
 """
-Filename:     calc_salinity_temperature_profile.py
+Filename:     calc_water_mass_components.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Calculate salinity vs temperature profile  
+Description:  Calculate volume, volume*salinity and
+              volume*temperature binned by temperature
+              for each ocean basin  
 
 """
 
@@ -18,6 +20,7 @@ import pandas
 
 import iris
 import iris.coord_categorisation
+from iris.experimental.equalise_cubes import equalise_attributes
 import cmdline_provenance as cmdprov
 
 
@@ -114,7 +117,7 @@ def create_df(tcube, scube, vcube, bcube, basin):
     if basin:
         df = select_basin(df, basin)
 
-    return df
+    return df, scube.units, tcube.units
 
 
 def get_bounds_list(edges):
@@ -128,7 +131,8 @@ def get_bounds_list(edges):
     return numpy.array(bounds_list)
 
 
-def construct_cube(data, scube, tcube, years, x_values, x_edges):
+def construct_cube(vdata, vsdata, vtdata, vcube, scube, tcube, sunits, tunits,
+                   years, x_values, x_edges, log, basin):
     """Create the iris cube for output"""
 
     x_bounds = get_bounds_list(x_edges)
@@ -147,15 +151,47 @@ def construct_cube(data, scube, tcube, years, x_values, x_edges):
                                       units=scube.coord('year').units)
     
     dim_coords_list = [(year_coord, 0), (temperature_coord, 1)]
-    outcube = iris.cube.Cube(data,
-                             standard_name=scube.standard_name,
-                             long_name=scube.long_name,
-                             var_name=scube.var_name,
-                             units=scube.units,
-                             attributes=scube.attributes,
-                             dim_coords_and_dims=dim_coords_list) 
 
-    return outcube
+    vcube = iris.cube.Cube(vdata,
+                           standard_name=vcube.standard_name,
+                           long_name=vcube.long_name,
+                           var_name=vcube.var_name,
+                           units=vcube.units,
+                           attributes=vcube.attributes,
+                           dim_coords_and_dims=dim_coords_list)
+
+    vs_std_name = scube.standard_name + '_times_' + vcube.standard_name
+    vs_units = str(sunits) + ' ' + str(vcube.units)
+    iris.std_names.STD_NAMES[vs_std_name] = {'canonical_units': vs_units}
+    vscube = iris.cube.Cube(vsdata,
+                            standard_name=vs_std_name,
+                            long_name=scube.long_name + ' times ' + vcube.long_name,
+                            var_name=scube.var_name + '_' + vcube.var_name,
+                            units=vs_units,
+                            attributes=scube.attributes,
+                            dim_coords_and_dims=dim_coords_list) 
+
+    vt_std_name = tcube.standard_name + '_times_' + vcube.standard_name
+    vt_units = str(tunits) + ' ' + str(vcube.units)
+    iris.std_names.STD_NAMES[vt_std_name] = {'canonical_units': vt_units}
+    vtcube = iris.cube.Cube(vtdata,
+                            standard_name=vt_std_name,
+                            long_name=tcube.long_name + ' times ' + vcube.long_name,
+                            var_name=tcube.var_name + '_' + vcube.var_name,
+                            units=vt_units,
+                            attributes=tcube.attributes,
+                            dim_coords_and_dims=dim_coords_list)
+
+    vcube.attributes['history'] = log
+    vcube.attributes['ocean_basin'] = basin
+    vscube.attributes['history'] = log
+    vscube.attributes['ocean_basin'] = basin
+    vtcube.attributes['history'] = log
+    vtcube.attributes['ocean_basin'] = basin
+
+    outcube_list = iris.cube.CubeList([vcube, vscube, vtcube])
+
+    return outcube_list
 
 
 def main(inargs):
@@ -173,6 +209,12 @@ def main(inargs):
     tcube, thistory = gio.combine_files(inargs.temperature_files, 'sea_water_potential_temperature')
     scube, shistory = gio.combine_files(inargs.salinity_files, 'sea_water_salinity')
 
+    metadata_dict = {inargs.basin_file: bcube.attributes['history'],
+                     inargs.volume_file: vcube.attributes['history'],
+                     inargs.temperature_files[0]: thistory[0],
+                     inargs.salinity_files[0]: shistory[0]}
+    log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+
     iris.coord_categorisation.add_year(tcube, 'time')
     iris.coord_categorisation.add_year(scube, 'time')
 
@@ -182,36 +224,37 @@ def main(inargs):
     years = numpy.array(list(syears))
     years.sort()
 
-    outdata = numpy.ma.zeros([len(years), len(x_values)])
+    v_outdata = numpy.ma.zeros([len(years), len(x_values)])
+    vs_outdata = numpy.ma.zeros([len(years), len(x_values)])
+    vt_outdata = numpy.ma.zeros([len(years), len(x_values)])
     for index, year in enumerate(years):
         print(year)
         year_constraint = iris.Constraint(year=year)
         salinity_year_cube = scube.extract(year_constraint)
         temperature_year_cube = tcube.extract(year_constraint)
 
-        df = create_df(temperature_year_cube, salinity_year_cube,
-                       vcube, bcube, basin=inargs.basin)
+        df, sunits, tunits = create_df(temperature_year_cube, salinity_year_cube,
+                                       vcube, bcube, basin=inargs.basin)
 
-        svdist, bin_edges = numpy.histogram(df['temperature'].values, bins=x_edges,
-                                            weights=df['volume'].values * df['salinity'].values)
         vdist, bin_edges = numpy.histogram(df['temperature'].values, bins=x_edges,
                                            weights=df['volume'].values)
-        sdist = svdist / vdist
-        outdata[index, :] = sdist
+        vsdist, bin_edges = numpy.histogram(df['temperature'].values, bins=x_edges,
+                                            weights=df['volume'].values * df['salinity'].values)
+        vtdist, bin_edges = numpy.histogram(df['temperature'].values, bins=x_edges,
+                                            weights=df['volume'].values * df['temperature'].values)
+        v_outdata[index, :] = vdist
+        vs_outdata[index, :] = vsdist
+        vt_outdata[index, :] = vtdist
 
-    outdata = numpy.ma.masked_invalid(outdata)
-    outcube = construct_cube(outdata, scube, tcube, years, x_values, x_edges)
+    v_outdata = numpy.ma.masked_invalid(v_outdata)
+    vs_outdata = numpy.ma.masked_invalid(vs_outdata)
+    vt_outdata = numpy.ma.masked_invalid(vt_outdata)
+    outcube_list = construct_cube(v_outdata, vs_outdata, vt_outdata, vcube,
+                                  scube, tcube, sunits, tunits, years, 
+                                  x_values, x_edges, log, inargs.basin)
 
-    # Metadata
-    metadata_dict = {inargs.basin_file: bcube.attributes['history'],
-                     inargs.volume_file: vcube.attributes['history'],
-                     inargs.temperature_files[0]: thistory[0],
-                     inargs.salinity_files[0]: shistory[0]}
-    log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
-    outcube.attributes['history'] = log
-    outcube.attributes['ocean_basin'] = inargs.basin
-
-    iris.save(outcube, inargs.outfile)
+    equalise_attributes(outcube_list)
+    iris.save(outcube_list, inargs.outfile)
 
 
 if __name__ == '__main__':
@@ -223,7 +266,7 @@ author:
 
 """
 
-    description = 'Calculate ocean volume distribution in T-S space'
+    description = 'Calculate water mass components binned by temperature'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
