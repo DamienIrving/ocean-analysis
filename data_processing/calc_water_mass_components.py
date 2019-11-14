@@ -121,8 +121,6 @@ def create_df(tcube, scube, vcube, bcube):
     df['latitude'] = lat_data
     df['longitude'] = lon_data
 
-    #df = df[df.temperature != -273.15]
-
     return df, scube.units, tcube.units
 
 
