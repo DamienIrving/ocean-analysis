@@ -42,12 +42,15 @@ def construct_basin_cube(basin_array, global_atts, dim_coords):
         dim_coords_list.append((coord, i))
 
     basin_cube = iris.cube.Cube(basin_array,
-                                 standard_name='region',
-                                 long_name='Region Selection Index',
-                                 var_name='basin',
-                                 units='1',
-                                 attributes=global_atts,
-                                 dim_coords_and_dims=dim_coords_list) 
+                                standard_name='region',
+                                long_name='Region Selection Index',
+                                var_name='basin',
+                                units='1',
+                                attributes=global_atts,
+                                dim_coords_and_dims=dim_coords_list) 
+
+    basin_cube.attributes['flag_values'] = "11 12 13 14 15 16 17"
+    basin_cube.attributes['flag_meanings'] = "north_atlantic south_atlantic north_pacific south_pacific indian arctic marginal_seas_and_land" 
 
     return basin_cube
 
@@ -64,7 +67,7 @@ def check_lon_coord(lon_coord):
     return lon_coord
 
 
-def basins_fom_cmip(cmip_basin_cube, lat_array, lon_array, pacific_lon_bounds, indian_lon_bounds):
+def basins_from_cmip(cmip_basin_cube, lat_array, lon_array, pacific_lon_bounds, indian_lon_bounds):
     """Define basins using CMIP basin file information.
 
       CMIP definitions: 
@@ -124,7 +127,8 @@ def basins_manually(cube, lat_array, lon_array, pacific_lon_bounds, indian_lon_b
     basin_array = numpy.ones(lat_array.shape) * 11
     basin_array = numpy.where((lon_array >= pacific_lon_bounds[0]) & (lon_array <= pacific_lon_bounds[1]), 13, basin_array)
     basin_array = numpy.where((lon_array >= indian_lon_bounds[0]) & (lon_array <= indian_lon_bounds[1]), 15, basin_array)
-    basin_array = numpy.where((basin_array == 13) & (lon_array >= 265) & (lat_array >= 12), 11, basin_array)
+    basin_array = numpy.where((basin_array == 13) & (lon_array >= 275) & (lat_array >= 9), 11, basin_array)
+    basin_array = numpy.where((basin_array == 13) & (lon_array >= 260) & (lat_array >= 16), 11, basin_array)
     basin_array = numpy.where((basin_array == 15) & (lon_array >= 105) & (lat_array >= -8), 13, basin_array)
     basin_array = numpy.where((basin_array == 15) & (lat_array >= 25), 17, basin_array)
 
@@ -132,10 +136,25 @@ def basins_manually(cube, lat_array, lon_array, pacific_lon_bounds, indian_lon_b
     basin_array = numpy.where((basin_array == 11) & (lat_array < 0), 12, basin_array)
     basin_array = numpy.where((basin_array == 13) & (lat_array < 0), 14, basin_array)
 
+    # Marginal seas
+    hudson_lat_bounds = [51, 75]
+    hudson_lon_bounds = [265, 296]
+    basin_array = numpy.where((lon_array >= hudson_lon_bounds[0]) & (lon_array <= hudson_lon_bounds[1]) & (lat_array >= hudson_lat_bounds[0]) & (lat_array <= hudson_lat_bounds[1]), 17, basin_array)
+
+    baltic_lat_bounds = [54, 65.5]
+    baltic_lon_bounds = [8.5, 33]
+    basin_array = numpy.where((lon_array >= baltic_lon_bounds[0]) & (lon_array <= baltic_lon_bounds[1]) & (lat_array >= baltic_lat_bounds[0]) & (lat_array <= baltic_lat_bounds[1]), 17, basin_array)
+
+    med_red_black_lat_bounds = [12.5, 45.5]
+    med_red_black_lon_bounds1 = [0, 43]
+    med_red_black_lon_bounds2 = [354, 360]
+    basin_array = numpy.where((lon_array >= med_red_black_lon_bounds1[0]) & (lon_array <= med_red_black_lon_bounds1[1]) & (lat_array >= med_red_black_lat_bounds[0]) & (lat_array <= med_red_black_lat_bounds[1]), 17, basin_array)
+    basin_array = numpy.where((lon_array >= med_red_black_lon_bounds2[0]) & (lon_array <= med_red_black_lon_bounds2[1]) & (lat_array >= med_red_black_lat_bounds[0]) & (lat_array <= med_red_black_lat_bounds[1]), 17, basin_array)
+
     basin_array = numpy.where(lat_array >= 67, 16, basin_array)  # arctic ocean
 
-    if cube.data.mask.shape:
-        basin_array = numpy.where(cube.data.mask == True, 17, basin_array)  # Land
+    assert cube.data.mask.shape, "reference data needs land mask"
+    basin_array = numpy.where(cube.data.mask == True, 17, basin_array)  # Land
     
     assert basin_array.min() == 11
     assert basin_array.max() == 17
@@ -167,13 +186,9 @@ def create_basin_array(cube, ref_is_basin):
     else:
         # curvilinear grid
         lon_coord = check_lon_coord(lon_coord)
-        if cube.ndim == 3:
-            lat_array = uconv.broadcast_array(lat_coord.points, [1, 2], cube.shape)
-            lon_array = uconv.broadcast_array(lon_coord.points, [1, 2], cube.shape)
-        else:
-            assert cube.ndim == 2
-            lat_array = lat_coord.points
-            lon_array = lon_coord.points
+        assert cube.ndim == 2
+        lat_array = lat_coord.points
+        lon_array = lon_coord.points
 
     # Create basin array
     pacific_lon_bounds = [147, 294]
@@ -181,7 +196,7 @@ def create_basin_array(cube, ref_is_basin):
     if ref_is_basin:
         basin_array = basins_from_cmip(cube, lat_array, lon_array, pacific_lon_bounds, indian_lon_bounds)
     else:
-        basin_array = basins_manually(lat_array, lon_array, pacific_lon_bounds, indian_lon_bounds)    
+        basin_array = basins_manually(cube, lat_array, lon_array, pacific_lon_bounds, indian_lon_bounds)    
 
     return basin_array
     
@@ -189,15 +204,14 @@ def create_basin_array(cube, ref_is_basin):
 def main(inargs):
     """Run the program."""
 
-    pdb.set_trace()
     ref_cube = iris.load_cube(inargs.ref_file)
     if ref_cube.ndim == 4:
         coord_names = [coord.name() for coord in ref_cube.dim_coords]
-        assert coord_names[0] == 'time'
-        ref_cube = ref_cube[0, ::]
-        ref_cube.remove_coord('time')
+        ref_cube = ref_cube[0, 0, ::]
+        ref_cube.remove_coord(coord_names[0])
+        ref_cube.remove_coord(coord_names[1])
     else:
-        assert ref_cube.ndim == 3
+        assert ref_cube.ndim == 2
 
     ref_is_basin = ref_cube.var_name == 'basin'
     basin_array = create_basin_array(ref_cube, ref_is_basin)
