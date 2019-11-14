@@ -204,7 +204,7 @@ def create_basin_array(cube, ref_is_basin):
 def main(inargs):
     """Run the program."""
 
-    ref_cube = iris.load_cube(inargs.ref_file)
+    ref_cube = iris.load_cube(inargs.ref_file, inargs.ref_var)
     if ref_cube.ndim == 4:
         coord_names = [coord.name() for coord in ref_cube.dim_coords]
         ref_cube = ref_cube[0, 0, ::]
@@ -236,6 +236,7 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("ref_file", type=str, help="Reference file for grid information. Use a CMIP basin file if possible (helps for fine details and masking marginal seas)")
+    parser.add_argument("ref_var", type=str, help="Variable standard_name")
     parser.add_argument("out_file", type=str, help="Output file name")
 
     args = parser.parse_args()
