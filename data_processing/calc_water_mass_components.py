@@ -96,25 +96,32 @@ def create_df(tcube, scube, vcube, bcube):
         vdata = uconv.broadcast_array(vcube.data, [1, 3], tcube.shape)
         bdata = uconv.broadcast_array(bcube.data, [2, 3], tcube.shape)
 
-    sdata = scube.data.flatten()
-    tdata = tcube.data.flatten()
-    vdata = vdata.flatten()
-    bdata = bdata.flatten()
-    lat_data = lats.flatten()
-    lon_data = lons.flatten()
+    lats = numpy.ma.masked_array(lats, tcube.data.mask)
+    lons = numpy.ma.masked_array(lons, tcube.data.mask)
+    bdata.mask = tcube.data.mask
 
-    pdb.set_trace()
+    sdata = scube.data.compressed()
+    tdata = tcube.data.compressed()
+    vdata = vdata.compressed()
+    bdata = bdata.compressed()
+    lat_data = lats.compressed()
+    lon_data = lons.compressed()
+
+    assert sdata.shape == tdata.shape
+    assert sdata.shape == vdata.shape
+    assert sdata.shape == bdata.shape
+    assert sdata.shape == lat_data.shape
+    assert sdata.shape == lon_data.shape
 
     df = pandas.DataFrame(index=range(tdata.shape[0]))
-    df['temperature'] = tdata.filled(fill_value=5000)
-    df['salinity'] = sdata.filled(fill_value=5000)
-    df['volume'] = vdata.filled(fill_value=5000)
-    df['basin'] = bdata.filled(fill_value=5000)
+    df['temperature'] = tdata
+    df['salinity'] = sdata
+    df['volume'] = vdata
+    df['basin'] = bdata
     df['latitude'] = lat_data
     df['longitude'] = lon_data
 
-    df = df[df.temperature != 5000]
-    df = df[df.temperature != -273.15]
+    #df = df[df.temperature != -273.15]
 
     return df, scube.units, tcube.units
 
@@ -153,8 +160,8 @@ def construct_cube(vdata, vsdata, vtdata, vcube, bcube, scube, tcube, sunits,
                                        long_name=bcube.long_name,
                                        var_name=bcube.var_name,
                                        units=bcube.units,
-                                       attributes={'flag_values': bcube.flag_values,
-                                                   'flag_meanings': bcube.flag_meanings})
+                                       attributes={'flag_values': bcube.attributes['flag_values'],
+                                                   'flag_meanings': bcube.attributes['flag_meanings']})
     
     dim_coords_list = [(year_coord, 0), (temperature_coord, 1), (basin_coord, 2)]
 
