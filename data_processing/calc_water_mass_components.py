@@ -75,24 +75,26 @@ def select_basin(df, basin_name):
     return df
 
 
-def create_df(tcube, scube, vcube, bcube, basin):
+def create_df(tcube, scube, vcube, bcube):
     """Create DataFrame"""
 
+    assert bcube.ndim == 2
+    assert bcube.data.min() == 11
+    assert bcube.data.max() == 17
+ 
     tcube = gio.temperature_unit_check(tcube, 'C')
     scube = gio.salinity_unit_check(scube)
 
     if tcube.ndim == 3:
         lats = uconv.broadcast_array(tcube.coord('latitude').points, [1, 2], tcube.shape)
         lons = uconv.broadcast_array(tcube.coord('longitude').points, [1, 2], tcube.shape)
-        levs = uconv.broadcast_array(tcube.coord('depth').points, 0, tcube.shape)
+        bdata = uconv.broadcast_array(bcube.data, [1, 2], tcube.shape)
         vdata = vcube.data
-        bdata = bcube.data
     elif tcube.ndim == 4:
         lats = uconv.broadcast_array(tcube.coord('latitude').points, [2, 3], tcube.shape)
         lons = uconv.broadcast_array(tcube.coord('longitude').points, [2, 3], tcube.shape)
-        levs = uconv.broadcast_array(tcube.coord('depth').points, 1, tcube.shape)
         vdata = uconv.broadcast_array(vcube.data, [1, 3], tcube.shape)
-        bdata = uconv.broadcast_array(bcube.data, [1, 3], tcube.shape)
+        bdata = uconv.broadcast_array(bcube.data, [2, 3], tcube.shape)
 
     sdata = scube.data.flatten()
     tdata = tcube.data.flatten()
@@ -100,7 +102,8 @@ def create_df(tcube, scube, vcube, bcube, basin):
     bdata = bdata.flatten()
     lat_data = lats.flatten()
     lon_data = lons.flatten()
-    depth_data = levs.flatten()
+
+    pdb.set_trace()
 
     df = pandas.DataFrame(index=range(tdata.shape[0]))
     df['temperature'] = tdata.filled(fill_value=5000)
@@ -109,13 +112,9 @@ def create_df(tcube, scube, vcube, bcube, basin):
     df['basin'] = bdata.filled(fill_value=5000)
     df['latitude'] = lat_data
     df['longitude'] = lon_data
-    df['depth'] = depth_data
 
     df = df[df.temperature != 5000]
     df = df[df.temperature != -273.15]
-
-    if basin:
-        df = select_basin(df, basin)
 
     return df, scube.units, tcube.units
 
@@ -131,12 +130,17 @@ def get_bounds_list(edges):
     return numpy.array(bounds_list)
 
 
-def construct_cube(vdata, vsdata, vtdata, vcube, scube, tcube, sunits, tunits,
-                   years, x_values, x_edges, log, basin):
+def construct_cube(vdata, vsdata, vtdata, vcube, bcube, scube, tcube, sunits,
+                   tunits, years, x_values, x_edges, y_values, log):
     """Create the iris cube for output"""
 
-    x_bounds = get_bounds_list(x_edges)
+    year_coord = iris.coords.DimCoord(years,
+                                      standard_name=scube.coord('year').standard_name,
+                                      long_name=scube.coord('year').long_name,
+                                      var_name=scube.coord('year').var_name,
+                                      units=scube.coord('year').units)
 
+    x_bounds = get_bounds_list(x_edges)
     temperature_coord = iris.coords.DimCoord(x_values,
                                              standard_name=tcube.standard_name,
                                              long_name=tcube.long_name,
@@ -144,13 +148,15 @@ def construct_cube(vdata, vsdata, vtdata, vcube, scube, tcube, sunits, tunits,
                                              units=tcube.units,
                                              bounds=x_bounds)
 
-    year_coord = iris.coords.DimCoord(years,
-                                      standard_name=scube.coord('year').standard_name,
-                                      long_name=scube.coord('year').long_name,
-                                      var_name=scube.coord('year').var_name,
-                                      units=scube.coord('year').units)
+    basin_coord = iris.coords.DimCoord(y_values,
+                                       standard_name=bcube.standard_name,
+                                       long_name=bcube.long_name,
+                                       var_name=bcube.var_name,
+                                       units=bcube.units,
+                                       attributes={'flag_values': bcube.flag_values,
+                                                   'flag_meanings': bcube.flag_meanings})
     
-    dim_coords_list = [(year_coord, 0), (temperature_coord, 1)]
+    dim_coords_list = [(year_coord, 0), (temperature_coord, 1), (basin_coord, 2)]
 
     vcube = iris.cube.Cube(vdata,
                            standard_name=vcube.standard_name,
@@ -183,11 +189,8 @@ def construct_cube(vdata, vsdata, vtdata, vcube, scube, tcube, sunits, tunits,
                             dim_coords_and_dims=dim_coords_list)
 
     vcube.attributes['history'] = log
-    vcube.attributes['ocean_basin'] = basin
     vscube.attributes['history'] = log
-    vscube.attributes['ocean_basin'] = basin
     vtcube.attributes['history'] = log
-    vtcube.attributes['ocean_basin'] = basin
 
     outcube_list = iris.cube.CubeList([vcube, vscube, vtcube])
 
@@ -197,13 +200,15 @@ def construct_cube(vdata, vsdata, vtdata, vcube, scube, tcube, sunits, tunits,
 def main(inargs):
     """Run the program."""
 
-    vcube = iris.load_cube(inargs.volume_file)
-    bcube = iris.load_cube(inargs.basin_file)
+    vcube = iris.load_cube(inargs.volume_file, 'ocean_volume')
+    bcube = iris.load_cube(inargs.basin_file, 'region')
 
     tmin, tmax = inargs.temperature_bounds
     tstep = inargs.bin_size
     x_edges = numpy.arange(tmin, tmax, tstep)
     x_values = (x_edges[1:] + x_edges[:-1]) / 2
+    y_edges = numpy.array([10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5])
+    y_values = numpy.array([11, 12, 13, 14, 15, 16, 17])
     extents = [x_values[0], x_values[-1]]
    
     tcube, thistory = gio.combine_files(inargs.temperature_files, 'sea_water_potential_temperature')
@@ -224,34 +229,35 @@ def main(inargs):
     years = numpy.array(list(syears))
     years.sort()
 
-    v_outdata = numpy.ma.zeros([len(years), len(x_values)])
-    vs_outdata = numpy.ma.zeros([len(years), len(x_values)])
-    vt_outdata = numpy.ma.zeros([len(years), len(x_values)])
+    v_outdata = numpy.ma.zeros([len(years), len(x_values), len(y_values)])
+    vs_outdata = numpy.ma.zeros([len(years), len(x_values), len(y_values)])
+    vt_outdata = numpy.ma.zeros([len(years), len(x_values), len(y_values)])
     for index, year in enumerate(years):
         print(year)
         year_constraint = iris.Constraint(year=year)
         salinity_year_cube = scube.extract(year_constraint)
         temperature_year_cube = tcube.extract(year_constraint)
 
-        df, sunits, tunits = create_df(temperature_year_cube, salinity_year_cube,
-                                       vcube, bcube, basin=inargs.basin)
+        df, sunits, tunits = create_df(temperature_year_cube, salinity_year_cube, vcube, bcube)
 
-        vdist, bin_edges = numpy.histogram(df['temperature'].values, bins=x_edges,
-                                           weights=df['volume'].values)
-        vsdist, bin_edges = numpy.histogram(df['temperature'].values, bins=x_edges,
-                                            weights=df['volume'].values * df['salinity'].values)
-        vtdist, bin_edges = numpy.histogram(df['temperature'].values, bins=x_edges,
-                                            weights=df['volume'].values * df['temperature'].values)
-        v_outdata[index, :] = vdist
-        vs_outdata[index, :] = vsdist
-        vt_outdata[index, :] = vtdist
+        vdist, xbin_edges, ybin_edges = numpy.histogram2d(df['temperature'].values, df['basin'].values,
+                                                          weights=df['volume'].values, bins=[x_edges, y_edges])
+        vsdist, xbin_edges, ybin_edges = numpy.histogram2d(df['temperature'].values, df['basin'].values,
+                                                           weights=df['volume'].values * df['salinity'].values,
+                                                           bins=[x_edges, y_edges])
+        vtdist, xbin_edges, ybin_edges = numpy.histogram2d(df['temperature'].values, df['basin'].values,
+                                                           weights=df['volume'].values * df['temperature'].values,
+                                                           bins=[x_edges, y_edges])
+        v_outdata[index, :, :] = vdist
+        vs_outdata[index, :, :] = vsdist
+        vt_outdata[index, :, :] = vtdist
 
     v_outdata = numpy.ma.masked_invalid(v_outdata)
     vs_outdata = numpy.ma.masked_invalid(vs_outdata)
     vt_outdata = numpy.ma.masked_invalid(vt_outdata)
     outcube_list = construct_cube(v_outdata, vs_outdata, vt_outdata, vcube,
-                                  scube, tcube, sunits, tunits, years, 
-                                  x_values, x_edges, log, inargs.basin)
+                                  bcube, scube, tcube, sunits, tunits, years, 
+                                  x_values, x_edges, y_values, log)
 
     equalise_attributes(outcube_list)
     iris.save(outcube_list, inargs.outfile)
@@ -273,17 +279,13 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("volume_file", type=str, help="Volume file")
-    parser.add_argument("basin_file", type=str, help="Basin file")
+    parser.add_argument("basin_file", type=str, help="Basin file (from calc_basin.py)")
     parser.add_argument("outfile", type=str, help="Output file")
 
     parser.add_argument("--temperature_files", type=str, nargs='*',
                         help="Temperature files") 
     parser.add_argument("--salinity_files", type=str, nargs='*',
                         help="Salinity files")
-
-    parser.add_argument("--basin", type=str, default='globe',
-                        choices=('globe', 'indian', 'north_atlantic', 'south_atlantic', 'north_pacific', 'south_pacific'),
-                        help='ocean basin to plot')
 
     parser.add_argument("--temperature_bounds", type=float, nargs=2, default=(-2, 30),
                         help='bounds for the temperature (Y) axis')
