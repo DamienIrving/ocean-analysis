@@ -42,91 +42,53 @@ except ImportError:
 
 # Define functions
 
-ocean_names = {0: 'land', 1: 'southern_ocean', 2: 'atlantic', 
-               3: 'pacific', 4: 'arctic', 5: 'indian', 
-               6: 'mediterranean', 7: 'black_sea', 8: 'hudson_bay',
-               9: 'baltic_sea', 10: 'red_sea'}
-
-def get_ocean_name(ocean_num):
-    return ocean_names[ocean_num]
-
-
-def select_basin(df, basin_name):
-    """Select basin"""
-
-    if not basin_name == 'globe':
-        df['basin'] = df['basin'].apply(get_ocean_name)
-        basin_components = basin_name.split('_')
-        if len(basin_components) == 1:
-            ocean = basin_components[0]
-            hemisphere = None
-        else:
-            hemisphere, ocean = basin_components
-
-        df = df[(df.basin == ocean)]
-        if hemisphere == 'north':
-            df = df[(df.latitude > 0)]
-        elif hemisphere == 'south':
-            df = df[(df.latitude < 0)]
-
-    return df
-
-
-def create_df(tcube, scube, vcube, bcube, basin):
+def create_df(tcube, scube, vcube, bcube):
     """Create DataFrame"""
 
+    assert bcube.ndim == 2
+    assert bcube.data.min() == 11
+    assert bcube.data.max() == 17
+ 
     tcube = gio.temperature_unit_check(tcube, 'C')
     scube = gio.salinity_unit_check(scube)
 
     if tcube.ndim == 3:
         lats = uconv.broadcast_array(tcube.coord('latitude').points, [1, 2], tcube.shape)
         lons = uconv.broadcast_array(tcube.coord('longitude').points, [1, 2], tcube.shape)
-        levs = uconv.broadcast_array(tcube.coord('depth').points, 0, tcube.shape)
+        bdata = uconv.broadcast_array(bcube.data, [1, 2], tcube.shape)
         vdata = vcube.data
-        bdata = bcube.data
     elif tcube.ndim == 4:
         lats = uconv.broadcast_array(tcube.coord('latitude').points, [2, 3], tcube.shape)
         lons = uconv.broadcast_array(tcube.coord('longitude').points, [2, 3], tcube.shape)
-        levs = uconv.broadcast_array(tcube.coord('depth').points, 1, tcube.shape)
         vdata = uconv.broadcast_array(vcube.data, [1, 3], tcube.shape)
-        bdata = uconv.broadcast_array(bcube.data, [1, 3], tcube.shape)
+        bdata = uconv.broadcast_array(bcube.data, [2, 3], tcube.shape)
 
-    sdata = scube.data.flatten()
-    tdata = tcube.data.flatten()
-    vdata = vdata.flatten()
-    bdata = bdata.flatten()
-    lat_data = lats.flatten()
-    lon_data = lons.flatten()
-    depth_data = levs.flatten()
+    lats = numpy.ma.masked_array(lats, tcube.data.mask)
+    lons = numpy.ma.masked_array(lons, tcube.data.mask)
+    bdata.mask = tcube.data.mask
+
+    sdata = scube.data.compressed()
+    tdata = tcube.data.compressed()
+    vdata = vdata.compressed()
+    bdata = bdata.compressed()
+    lat_data = lats.compressed()
+    lon_data = lons.compressed()
+
+    assert sdata.shape == tdata.shape
+    assert sdata.shape == vdata.shape
+    assert sdata.shape == bdata.shape
+    assert sdata.shape == lat_data.shape
+    assert sdata.shape == lon_data.shape
 
     df = pandas.DataFrame(index=range(tdata.shape[0]))
-    df['temperature'] = tdata.filled(fill_value=5000)
-    df['salinity'] = sdata.filled(fill_value=5000)
-    df['volume'] = vdata.filled(fill_value=5000)
-    df['basin'] = bdata.filled(fill_value=5000)
+    df['temperature'] = tdata
+    df['salinity'] = sdata
+    df['volume'] = vdata
+    df['basin'] = bdata
     df['latitude'] = lat_data
     df['longitude'] = lon_data
-    df['depth'] = depth_data
 
-    df = df[df.temperature != 5000]
-    df = df[df.temperature != -273.15]
-
-    if basin:
-        df = select_basin(df, basin)
-
-    return df
-
-
-def fix_units(hist, data_shape, sstep, tstep):
-    """Adjust units so they represent a single timestep and unit bin size"""
-
-    if len(data_shape) == 4:
-        hist = hist / data_shape[0]
-
-    hist = hist / sstep
-    hist = hist / tstep
-
-    return hist
+    return df, scube.units, tcube.units
 
 
 def get_bounds_list(edges):
@@ -140,7 +102,8 @@ def get_bounds_list(edges):
     return numpy.array(bounds_list)
 
 
-def construct_cube(vdist, scube, tcube, x_values, y_values, x_edges, y_edges):
+def construct_cube(vdist, scube, tcube, bcube, sunits, tunits,
+                   x_values, y_values, z_values, x_edges, y_edges):
     """Create the iris cube for output"""
 
     x_bounds = get_bounds_list(x_edges)
@@ -160,7 +123,15 @@ def construct_cube(vdist, scube, tcube, x_values, y_values, x_edges, y_edges):
                                   units=tcube.units,
                                   bounds=y_bounds)
 
-    dim_coords_list = [(scoord, 0), (tcoord, 1)]
+    basin_coord = iris.coords.DimCoord(z_values,
+                                       standard_name=bcube.standard_name,
+                                       long_name=bcube.long_name,
+                                       var_name=bcube.var_name,
+                                       units=bcube.units,
+                                       attributes={'flag_values': bcube.attributes['flag_values'],
+                                                   'flag_meanings': bcube.attributes['flag_meanings']})
+
+    dim_coords_list = [(scoord, 0), (tcoord, 1), (basin_coord, 2)]
     vdist_cube = iris.cube.Cube(vdist,
                                 standard_name='ocean_volume',
                                 long_name='Ocean Grid-Cell Volume',
@@ -185,17 +156,18 @@ def main(inargs):
     y_edges = numpy.arange(tmin, tmax, tstep)
     x_values = (x_edges[1:] + x_edges[:-1]) / 2
     y_values = (y_edges[1:] + y_edges[:-1]) / 2
-    extents = [x_values[0], x_values[-1], y_values[0], y_values[-1]]
+    z_edges = numpy.array([10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5])
+    z_values = numpy.array([11, 12, 13, 14, 15, 16, 17])
 
     tcube = iris.load_cube(inargs.temperature_file, 'sea_water_potential_temperature')
     scube = iris.load_cube(inargs.salinity_file, 'sea_water_salinity')
    
-    df = create_df(tcube, scube, vcube, bcube, basin=inargs.basin)
+    df, sunits, tunits = create_df(tcube, scube, vcube, bcube)
 
-    vdist, xedges, yedges = numpy.histogram2d(df['salinity'].values, df['temperature'].values,
-                                              weights=df['volume'].values, bins=[x_edges, y_edges])
-    vdist = fix_units(vdist, tcube.shape, sstep, tstep)
-    vdist_cube = construct_cube(vdist, scube, tcube, x_values, y_values, x_edges, y_edges)
+    data = numpy.array([df['salinity'].values, df['temperature'].values, df['basin'].values]).T
+    vdist, edges = numpy.histogramdd(data, weights=df['volume'].values, bins=[x_edges, y_edges, z_edges])
+    vdist_cube = construct_cube(vdist, scube, tcube, bcube, sunits, tunits, 
+                                x_values, y_values, z_values, x_edges, y_edges)
 
     # Metadata
     metadata_dict = {inargs.basin_file: bcube.attributes['history'],
@@ -204,7 +176,6 @@ def main(inargs):
                      inargs.salinity_file: scube.attributes['history']}
     log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     vdist_cube.attributes['history'] = log
-    vdist_cube.attributes['ocean_basin'] = inargs.basin
 
     iris.save(vdist_cube, inargs.outfile)
 
@@ -229,10 +200,6 @@ author:
     parser.add_argument("volume_file", type=str, help="Volume file")
     parser.add_argument("basin_file", type=str, help="Basin file")
     parser.add_argument("outfile", type=str, help="Output file")
-
-    parser.add_argument("--basin", type=str, default='globe',
-                        choices=('globe', 'indian', 'north_atlantic', 'south_atlantic', 'north_pacific', 'south_pacific'),
-                        help='ocean basin to plot')
 
     parser.add_argument("--salinity_bounds", type=float, nargs=2, default=(32, 37.5),
                         help='bounds for the salinity (X) axis')
