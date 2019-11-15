@@ -45,36 +45,6 @@ except ImportError:
 
 # Define functions
 
-ocean_names = {0: 'land', 1: 'southern_ocean', 2: 'atlantic', 
-               3: 'pacific', 4: 'arctic', 5: 'indian', 
-               6: 'mediterranean', 7: 'black_sea', 8: 'hudson_bay',
-               9: 'baltic_sea', 10: 'red_sea'}
-
-def get_ocean_name(ocean_num):
-    return ocean_names[ocean_num]
-
-
-def select_basin(df, basin_name):
-    """Select basin"""
-
-    if not basin_name == 'globe':
-        df['basin'] = df['basin'].apply(get_ocean_name)
-        basin_components = basin_name.split('_')
-        if len(basin_components) == 1:
-            ocean = basin_components[0]
-            hemisphere = None
-        else:
-            hemisphere, ocean = basin_components
-
-        df = df[(df.basin == ocean)]
-        if hemisphere == 'north':
-            df = df[(df.latitude > 0)]
-        elif hemisphere == 'south':
-            df = df[(df.latitude < 0)]
-
-    return df
-
-
 def create_df(tcube, scube, vcube, bcube):
     """Create DataFrame"""
 
@@ -150,7 +120,7 @@ def construct_cube(vdata, vsdata, vtdata, vcube, bcube, scube, tcube, sunits,
                                              standard_name=tcube.standard_name,
                                              long_name=tcube.long_name,
                                              var_name=tcube.var_name,
-                                             units=tcube.units,
+                                             units=tunits,
                                              bounds=x_bounds)
 
     basin_coord = iris.coords.DimCoord(y_values,
@@ -214,7 +184,6 @@ def main(inargs):
     x_values = (x_edges[1:] + x_edges[:-1]) / 2
     y_edges = numpy.array([10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5])
     y_values = numpy.array([11, 12, 13, 14, 15, 16, 17])
-    extents = [x_values[0], x_values[-1]]
    
     tcube, thistory = gio.combine_files(inargs.temperature_files, 'sea_water_potential_temperature')
     scube, shistory = gio.combine_files(inargs.salinity_files, 'sea_water_salinity')
