@@ -188,6 +188,8 @@ def main(inargs):
     tcube, thistory = gio.combine_files(inargs.temperature_files, 'sea_water_potential_temperature')
     scube, shistory = gio.combine_files(inargs.salinity_files, 'sea_water_salinity')
 
+    assert tcube.shape == scube.shape
+
     metadata_dict = {inargs.basin_file: bcube.attributes['history'],
                      inargs.volume_file: vcube.attributes['history'],
                      inargs.temperature_files[0]: thistory[0],
