@@ -573,7 +573,7 @@ def temperature_unit_check(cube, output_unit, abort=True):
     """
 
     assert output_unit in ['K', 'C']
-    valid_bounds = {'K': [265, 310], 'C': [-10, 40]}
+    valid_bounds = {'K': [263, 333], 'C': [-10, 60]}
     
     data_mean = cube.data.mean()
     assert data_mean < 400
