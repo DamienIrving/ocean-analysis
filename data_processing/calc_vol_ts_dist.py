@@ -201,7 +201,7 @@ author:
     parser.add_argument("basin_file", type=str, help="Basin file")
     parser.add_argument("outfile", type=str, help="Output file")
 
-    parser.add_argument("--salinity_bounds", type=float, nargs=2, default=(30, 40),
+    parser.add_argument("--salinity_bounds", type=float, nargs=2, default=(25, 40),
                         help='bounds for the salinity (X) axis')
     parser.add_argument("--temperature_bounds", type=float, nargs=2, default=(-4, 40),
                         help='bounds for the temperature (Y) axis')
