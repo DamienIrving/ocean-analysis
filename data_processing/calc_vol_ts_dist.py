@@ -152,8 +152,8 @@ def main(inargs):
     smin, smax = inargs.salinity_bounds
     tmin, tmax = inargs.temperature_bounds
     sstep, tstep = inargs.bin_size
-    x_edges = numpy.arange(smin, smax, sstep)
-    y_edges = numpy.arange(tmin, tmax, tstep)
+    x_edges = numpy.arange(smin, smax + sstep, sstep)
+    y_edges = numpy.arange(tmin, tmax + tstep, tstep)
     x_values = (x_edges[1:] + x_edges[:-1]) / 2
     y_values = (y_edges[1:] + y_edges[:-1]) / 2
     z_edges = numpy.array([10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5])
@@ -201,9 +201,9 @@ author:
     parser.add_argument("basin_file", type=str, help="Basin file")
     parser.add_argument("outfile", type=str, help="Output file")
 
-    parser.add_argument("--salinity_bounds", type=float, nargs=2, default=(32, 37.5),
+    parser.add_argument("--salinity_bounds", type=float, nargs=2, default=(30, 40),
                         help='bounds for the salinity (X) axis')
-    parser.add_argument("--temperature_bounds", type=float, nargs=2, default=(-2, 30),
+    parser.add_argument("--temperature_bounds", type=float, nargs=2, default=(-4, 40),
                         help='bounds for the temperature (Y) axis')
     parser.add_argument("--bin_size", type=float, nargs=2, default=(0.05, 0.25),
                         help='bin size: salinity step, temperature step')
