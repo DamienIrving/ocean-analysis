@@ -36,6 +36,8 @@ except ImportError:
 def main(inargs):
     """Run the program."""
 
+    assert len(inargs.infiles) > 1
+
     cube_list = iris.cube.CubeList([])
     for var in inargs.variables:
         cube, history = gio.combine_files(inargs.infiles, var)
