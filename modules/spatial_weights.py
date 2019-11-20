@@ -105,7 +105,7 @@ def calc_vertical_weights_1D(depth_coord, coord_names, data_shape):
         level_diffs[0] = level_diffs[0] + level_bounds[0][0]
 
     # Broadcast to size of data
-    depth_index = coord_names.index('depth')
+    depth_index = coord_names.index(depth_coord.name())
     level_diffs = uconv.broadcast_array(level_diffs, depth_index, data_shape)
 
     assert level_diffs.min() > 0.0 
