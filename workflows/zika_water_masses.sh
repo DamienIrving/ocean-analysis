@@ -1,11 +1,3 @@
-#model=CNRM-CM6-1
-#institution=CNRM-CERFACS
-#cmip_version=v20180917
-#scenario_version=v20190219
-#grid=gn
-#ripf=r1i1p1f2
-
-
 institution=EC-Earth-Consortium
 model=EC-Earth3-Veg
 cmip_version=v20190605
@@ -22,7 +14,7 @@ script_dir=/home/599/dbi599/ocean-analysis/data_processing
 cmip_dir=/g/data1b/oi10/replicas/CMIP6/CMIP/${institution}/${model}
 scenario_dir=/g/data1b/oi10/replicas/CMIP6/ScenarioMIP/${institution}/${model}
 r87_cmip_dir=/g/data/r87/dbi599/CMIP6/CMIP/${institution}/${model}
-r87_scenario_dir=/g/data/r87/dbi599/CMIP6/CMIP/${institution}/${model}
+r87_scenario_dir=/g/data/r87/dbi599/CMIP6/ScenarioMIP/${institution}/${model}
 
 cmip_tfiles=(`ls ${cmip_dir}/${cmip_exp}/${ripf}/Omon/thetao/${grid}/${cmip_version}/*.nc`)
 cmip_sfiles=(`ls ${cmip_dir}/${cmip_exp}/${ripf}/Omon/so/${grid}/${cmip_version}/*.nc`)
