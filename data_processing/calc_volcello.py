@@ -92,7 +92,7 @@ author:
 
 """
 
-    description='Calculate the CMIP5 volcello variable'
+    description='Calculate the CMIP volcello variable'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
