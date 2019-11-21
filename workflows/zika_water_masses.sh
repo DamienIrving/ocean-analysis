@@ -1,9 +1,9 @@
-institution=EC-Earth-Consortium
-model=EC-Earth3-Veg
-cmip_version=v20190605
-scenario_version=v20190629
+institution=CNRM-CERFACS
+model=CNRM-ESM2-1
+cmip_version=v20181206
+scenario_version=v20190328
 grid=gn
-ripf=r1i1p1f1
+ripf=r1i1p1f2
 cmip_exp=historical
 scenario_exp=ssp585
 fx_exp=historical
@@ -46,10 +46,20 @@ cmip_wm_command="bash ${script_dir}/calc_water_mass_components.sh ${volume_file}
 echo ${cmip_wm_command}
 ${cmip_wm_command}
 
+cmip_wmfiles=(`ls ${r87_cmip_dir}/${cmip_exp}/${ripf}/Omon/water-mass/${grid}/${cmip_version}/*.nc`)
+cmip_merge_command="${python} ${script_dir}/merge_files.py ${cmip_wmfiles[@]} /g/data/r87/dbi599/zika/water-mass_Omon_${model}_${cmip_exp}_${ripf}_${grid}_185012-201412.nc --variables ocean_volume Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume Sea_Water_Potential_Temperature_times_Ocean_Grid-Cell_Volume"
+echo ${cmip_merge_command}
+${cmip_merge_command}
+
 mkdir -p ${r87_scenario_dir}/${scenario_exp}/${ripf}/Omon/water-mass/${grid}/${scenario_version}
 scenario_wm_command="bash ${script_dir}/calc_water_mass_components.sh ${volume_file} ${basin_file} ${scenario_tfiles[@]}"
 echo ${scenario_wm_command}
 ${scenario_wm_command}
+
+scenario_wmfiles=(`ls ${r87_scenario_dir}/${scenario_exp}/${ripf}/Omon/water-mass/${grid}/${scenario_version}/*.nc`)
+scenario_merge_command="${python} ${script_dir}/merge_files.py ${scenario_wmfiles[@]} /g/data/r87/dbi599/zika/water-mass_Omon_${model}_${scenario_exp}_${ripf}_${grid}_201512-210012.nc --variables ocean_volume Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume Sea_Water_Potential_Temperature_times_Ocean_Grid-Cell_Volume"
+echo ${scenario_merge_command}
+${scenario_merge_command}
 
 # T-S volume distribution
 
