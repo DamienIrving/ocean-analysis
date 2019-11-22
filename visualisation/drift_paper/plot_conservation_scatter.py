@@ -31,6 +31,13 @@ for directory in cwd.split('/')[1:]:
     if directory == 'ocean-analysis':
         break
 
+import matplotlib as mpl
+mpl.rcParams['axes.labelsize'] = 'large'
+mpl.rcParams['axes.titlesize'] = 'x-large'
+mpl.rcParams['xtick.labelsize'] = 'medium'
+mpl.rcParams['ytick.labelsize'] = 'medium'
+mpl.rcParams['legend.fontsize'] = 'large'
+
 ocean_model_colors = {'MOM': 'red',
                       'GOLD': 'gold',
                       'NEMO': 'blue',
@@ -42,12 +49,12 @@ ocean_model_colors = {'MOM': 'red',
 
 markers = ['o', '<', '^', '>', 'v', 's', 'X', 'p', 'D', 'd', 'h', 'H']
 
-axis_labels = {'thermal OHC': '$dH_t/dt$',
-               'masso': '$dM/dt$',
-               'netTOA': '$dQ_r/dt$',
-               'hfds': '$dQ_h/dt$',
-               'soga': '$dS/dt$',
-               'wfo': '$dQ_m/dt$'}
+axis_labels = {'thermal OHC': 'change in thermal OHC, $dH_T/dt$',
+               'masso': 'change in ocean mass, $dM/dt$',
+               'netTOA': 'cumulative netTOA, $dQ_r/dt$',
+               'hfds': 'cumulative ocean surface heat flux, $dQ_h/dt$',
+               'soga': 'change in ocean salinity, $dS/dt$',
+               'wfo': 'cumulative freshwater flux, $dQ_m/dt$'}
 
 
 # Define functions 
