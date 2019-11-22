@@ -91,7 +91,9 @@ def calc_vertical_weights_1D(depth_coord, coord_names, data_shape):
   
     """
 
-    assert depth_coord.units in ['m', 'dbar']
+    #assert depth_coord.units in ['m', 'dbar']
+    print('Depth coordinate name: ', depth_coord.long_name)
+    print('Depth coordinate units: ', str(depth_coord.units))
 
     # Calculate weights
     if not depth_coord.has_bounds():
@@ -194,8 +196,8 @@ def get_depth_array(data_cube, depth_name):
     depth_coord = data_cube.coord(depth_name)
     coord_names = [coord.name() for coord in data_cube.dim_coords]
 
-    error_msg =  "Unrecognised depth axis units, " +  str(depth_coord.units)
-    assert depth_coord.units in ['m', 'dbar'], error_msg
+    #error_msg =  "Unrecognised depth axis units, " +  str(depth_coord.units)
+    #assert depth_coord.units in ['m', 'dbar'], error_msg
     if depth_coord.ndim == 1:
         depth_interval_array = calc_vertical_weights_1D(depth_coord, coord_names, data_cube.shape)
     elif depth_coord.ndim == 2:
