@@ -1,8 +1,8 @@
 """
 Filename:     calc_water_mass_components.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Calculate volume, volume*salinity and
-              volume*temperature binned by temperature
+Description:  Calculate weight (volume or area), weight*salinity and
+              weight*temperature binned by temperature
               for each ocean basin  
 
 """
@@ -45,13 +45,14 @@ except ImportError:
 
 # Define functions
 
-def create_df(tcube, scube, vcube, bcube):
+def create_df(tcube, scube, wcube, bcube):
     """Create DataFrame"""
 
     assert bcube.ndim == 2
     assert bcube.data.min() == 11
     assert bcube.data.max() == 17
- 
+    coord_names = [coord.name() for coord in tcube.dim_coords]
+
     tcube = gio.temperature_unit_check(tcube, 'C')
     scube = gio.salinity_unit_check(scube)
 
@@ -59,26 +60,34 @@ def create_df(tcube, scube, vcube, bcube):
         lats = uconv.broadcast_array(tcube.coord('latitude').points, [1, 2], tcube.shape)
         lons = uconv.broadcast_array(tcube.coord('longitude').points, [1, 2], tcube.shape)
         bdata = uconv.broadcast_array(bcube.data, [1, 2], tcube.shape)
-        vdata = vcube.data
+        if wcube.var_name == 'areacello':
+            assert coord_names[0] == 'time'
+            wdata = uconv.broadcast_array(wcube.data, [1, 2], tcube.shape)
+        else:
+            assert 'time' not in coord_names
+            wdata = wcube.data
     elif tcube.ndim == 4:
         lats = uconv.broadcast_array(tcube.coord('latitude').points, [2, 3], tcube.shape)
         lons = uconv.broadcast_array(tcube.coord('longitude').points, [2, 3], tcube.shape)
-        vdata = uconv.broadcast_array(vcube.data, [1, 3], tcube.shape)
         bdata = uconv.broadcast_array(bcube.data, [2, 3], tcube.shape)
-
+        if wcube.var_name == 'areacello':
+            wdata = uconv.broadcast_array(wcube.data, [2, 3], tcube.shape)
+        else:
+            wdata = uconv.broadcast_array(wcube.data, [1, 3], tcube.shape)
+        
     lats = numpy.ma.masked_array(lats, tcube.data.mask)
     lons = numpy.ma.masked_array(lons, tcube.data.mask)
     bdata.mask = tcube.data.mask
 
     sdata = scube.data.compressed()
     tdata = tcube.data.compressed()
-    vdata = vdata.compressed()
+    wdata = wdata.compressed()
     bdata = bdata.compressed()
     lat_data = lats.compressed()
     lon_data = lons.compressed()
 
     assert sdata.shape == tdata.shape
-    assert sdata.shape == vdata.shape
+    assert sdata.shape == wdata.shape
     assert sdata.shape == bdata.shape
     assert sdata.shape == lat_data.shape
     assert sdata.shape == lon_data.shape
@@ -86,7 +95,7 @@ def create_df(tcube, scube, vcube, bcube):
     df = pandas.DataFrame(index=range(tdata.shape[0]))
     df['temperature'] = tdata
     df['salinity'] = sdata
-    df['volume'] = vdata
+    df['weight'] = wdata
     df['basin'] = bdata
     df['latitude'] = lat_data
     df['longitude'] = lon_data
@@ -105,7 +114,7 @@ def get_bounds_list(edges):
     return numpy.array(bounds_list)
 
 
-def construct_cube(vdata, vsdata, vtdata, vcube, bcube, scube, tcube, sunits,
+def construct_cube(wdata, wsdata, wtdata, wcube, bcube, scube, tcube, sunits,
                    tunits, years, x_values, x_edges, y_values, log):
     """Create the iris cube for output"""
 
@@ -133,41 +142,41 @@ def construct_cube(vdata, vsdata, vtdata, vcube, bcube, scube, tcube, sunits,
     
     dim_coords_list = [(year_coord, 0), (temperature_coord, 1), (basin_coord, 2)]
 
-    vcube = iris.cube.Cube(vdata,
-                           standard_name=vcube.standard_name,
-                           long_name=vcube.long_name,
-                           var_name=vcube.var_name,
-                           units=vcube.units,
-                           attributes=vcube.attributes,
+    wcube = iris.cube.Cube(wdata,
+                           standard_name=wcube.standard_name,
+                           long_name=wcube.long_name,
+                           var_name=wcube.var_name,
+                           units=wcube.units,
+                           attributes=wcube.attributes,
                            dim_coords_and_dims=dim_coords_list)
 
-    vs_std_name = scube.standard_name + '_times_' + vcube.standard_name
-    vs_units = str(sunits) + ' ' + str(vcube.units)
-    iris.std_names.STD_NAMES[vs_std_name] = {'canonical_units': vs_units}
-    vscube = iris.cube.Cube(vsdata,
-                            standard_name=vs_std_name,
-                            long_name=scube.long_name + ' times ' + vcube.long_name,
-                            var_name=scube.var_name + '_' + vcube.var_name,
-                            units=vs_units,
+    ws_std_name = scube.standard_name + '_times_' + wcube.standard_name
+    ws_units = str(sunits) + ' ' + str(wcube.units)
+    iris.std_names.STD_NAMES[ws_std_name] = {'canonical_units': ws_units}
+    wscube = iris.cube.Cube(wsdata,
+                            standard_name=ws_std_name,
+                            long_name=scube.long_name + ' times ' + wcube.long_name,
+                            var_name=scube.var_name + '_' + wcube.var_name,
+                            units=ws_units,
                             attributes=scube.attributes,
                             dim_coords_and_dims=dim_coords_list) 
 
-    vt_std_name = tcube.standard_name + '_times_' + vcube.standard_name
-    vt_units = str(tunits) + ' ' + str(vcube.units)
-    iris.std_names.STD_NAMES[vt_std_name] = {'canonical_units': vt_units}
-    vtcube = iris.cube.Cube(vtdata,
-                            standard_name=vt_std_name,
-                            long_name=tcube.long_name + ' times ' + vcube.long_name,
-                            var_name=tcube.var_name + '_' + vcube.var_name,
-                            units=vt_units,
+    wt_std_name = tcube.standard_name + '_times_' + wcube.standard_name
+    wt_units = str(tunits) + ' ' + str(wcube.units)
+    iris.std_names.STD_NAMES[wt_std_name] = {'canonical_units': wt_units}
+    wtcube = iris.cube.Cube(wtdata,
+                            standard_name=wt_std_name,
+                            long_name=tcube.long_name + ' times ' + wcube.long_name,
+                            var_name=tcube.var_name + '_' + wcube.var_name,
+                            units=wt_units,
                             attributes=tcube.attributes,
                             dim_coords_and_dims=dim_coords_list)
 
-    vcube.attributes['history'] = log
-    vscube.attributes['history'] = log
-    vtcube.attributes['history'] = log
+    wcube.attributes['history'] = log
+    wscube.attributes['history'] = log
+    wtcube.attributes['history'] = log
 
-    outcube_list = iris.cube.CubeList([vcube, vscube, vtcube])
+    outcube_list = iris.cube.CubeList([wcube, wscube, wtcube])
 
     return outcube_list
 
@@ -175,7 +184,9 @@ def construct_cube(vdata, vsdata, vtdata, vcube, bcube, scube, tcube, sunits,
 def main(inargs):
     """Run the program."""
 
-    vcube = iris.load_cube(inargs.volume_file, 'ocean_volume')
+    wcube = iris.load_cube(inargs.weights_file)
+    wvar = wcube.var_name
+    assert wvar in ['areacello', 'volcello']
     bcube = iris.load_cube(inargs.basin_file, 'region')
 
     tmin, tmax = inargs.temperature_bounds
@@ -189,9 +200,10 @@ def main(inargs):
     scube, shistory = gio.combine_files(inargs.salinity_files, 'sea_water_salinity')
 
     assert tcube.shape == scube.shape
+    coord_names = [coord.name() for coord in tcube.dim_coords]
 
     metadata_dict = {inargs.basin_file: bcube.attributes['history'],
-                     inargs.volume_file: vcube.attributes['history'],
+                     inargs.weights_file: wcube.attributes['history'],
                      inargs.temperature_files[0]: thistory[0],
                      inargs.salinity_files[0]: shistory[0]}
     log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
@@ -205,33 +217,39 @@ def main(inargs):
     years = numpy.array(list(syears))
     years.sort()
 
-    v_outdata = numpy.ma.zeros([len(years), len(x_values), len(y_values)])
-    vs_outdata = numpy.ma.zeros([len(years), len(x_values), len(y_values)])
-    vt_outdata = numpy.ma.zeros([len(years), len(x_values), len(y_values)])
+    w_outdata = numpy.ma.zeros([len(years), len(x_values), len(y_values)])
+    ws_outdata = numpy.ma.zeros([len(years), len(x_values), len(y_values)])
+    wt_outdata = numpy.ma.zeros([len(years), len(x_values), len(y_values)])
     for index, year in enumerate(years):
         print(year)
         year_constraint = iris.Constraint(year=year)
-        salinity_year_cube = scube.extract(year_constraint)
-        temperature_year_cube = tcube.extract(year_constraint)
+        if wvar == 'areacello':
+            assert scube.ndim == 4
+            salinity_year_cube = scube[:, 0, ::].extract(year_constraint)
+            temperature_year_cube = tcube[:, 0, ::].extract(year_constraint)
+            assert salinity_year_cube.coord(coord_names[1]).bounds[0][0] == 0
+        else:
+            salinity_year_cube = scube.extract(year_constraint)
+            temperature_year_cube = tcube.extract(year_constraint)
 
-        df, sunits, tunits = create_df(temperature_year_cube, salinity_year_cube, vcube, bcube)
+        df, sunits, tunits = create_df(temperature_year_cube, salinity_year_cube, wcube, bcube)
 
-        vdist, xbin_edges, ybin_edges = numpy.histogram2d(df['temperature'].values, df['basin'].values,
-                                                          weights=df['volume'].values, bins=[x_edges, y_edges])
-        vsdist, xbin_edges, ybin_edges = numpy.histogram2d(df['temperature'].values, df['basin'].values,
-                                                           weights=df['volume'].values * df['salinity'].values,
+        wdist, xbin_edges, ybin_edges = numpy.histogram2d(df['temperature'].values, df['basin'].values,
+                                                          weights=df['weight'].values, bins=[x_edges, y_edges])
+        wsdist, xbin_edges, ybin_edges = numpy.histogram2d(df['temperature'].values, df['basin'].values,
+                                                           weights=df['weight'].values * df['salinity'].values,
                                                            bins=[x_edges, y_edges])
-        vtdist, xbin_edges, ybin_edges = numpy.histogram2d(df['temperature'].values, df['basin'].values,
-                                                           weights=df['volume'].values * df['temperature'].values,
+        wtdist, xbin_edges, ybin_edges = numpy.histogram2d(df['temperature'].values, df['basin'].values,
+                                                           weights=df['weight'].values * df['temperature'].values,
                                                            bins=[x_edges, y_edges])
-        v_outdata[index, :, :] = vdist
-        vs_outdata[index, :, :] = vsdist
-        vt_outdata[index, :, :] = vtdist
+        w_outdata[index, :, :] = wdist
+        ws_outdata[index, :, :] = wsdist
+        wt_outdata[index, :, :] = wtdist
 
-    v_outdata = numpy.ma.masked_invalid(v_outdata)
-    vs_outdata = numpy.ma.masked_invalid(vs_outdata)
-    vt_outdata = numpy.ma.masked_invalid(vt_outdata)
-    outcube_list = construct_cube(v_outdata, vs_outdata, vt_outdata, vcube,
+    w_outdata = numpy.ma.masked_invalid(w_outdata)
+    ws_outdata = numpy.ma.masked_invalid(ws_outdata)
+    wt_outdata = numpy.ma.masked_invalid(wt_outdata)
+    outcube_list = construct_cube(w_outdata, ws_outdata, wt_outdata, wcube,
                                   bcube, scube, tcube, sunits, tunits, years, 
                                   x_values, x_edges, y_values, log)
 
@@ -254,7 +272,7 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("volume_file", type=str, help="Volume file")
+    parser.add_argument("weights_file", type=str, help="Can be a volcello or areacello file")
     parser.add_argument("basin_file", type=str, help="Basin file (from calc_basin.py)")
     parser.add_argument("outfile", type=str, help="Output file")
 
