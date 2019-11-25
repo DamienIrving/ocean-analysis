@@ -125,6 +125,12 @@ def main(inargs):
 
     data = numpy.array([df['salinity'].values, df['temperature'].values, df['basin'].values]).T
     wdist, edges = numpy.histogramdd(data, weights=df['weight'].values, bins=[x_edges, y_edges, z_edges])
+    
+    ntimes = scube.shape[0]
+    wdist = wdist / ntimes
+    assert wdist.sum() < wcube.data.sum()
+    assert wdist.sum() > wcube.data.sum() * 0.95
+
     wdist_cube = construct_cube(wdist, wcube, scube, tcube, bcube, sunits, tunits, 
                                 x_values, y_values, z_values, x_edges, y_edges)
 

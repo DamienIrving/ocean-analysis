@@ -185,9 +185,11 @@ def main(inargs):
         wtdist, xbin_edges, ybin_edges = numpy.histogram2d(df['temperature'].values, df['basin'].values,
                                                            weights=df['weight'].values * df['temperature'].values,
                                                            bins=[x_edges, y_edges])
-        w_outdata[index, :, :] = wdist
-        ws_outdata[index, :, :] = wsdist
-        wt_outdata[index, :, :] = wtdist
+        ntimes = salinity_year_cube.shape[0]
+        numpy.testing.assert_allclose(wcube.data.sum(), wdist.sum() / ntimes, rtol=1e-07)
+        w_outdata[index, :, :] = wdist / ntimes
+        ws_outdata[index, :, :] = wsdist / ntimes
+        wt_outdata[index, :, :] = wtdist / ntimes
 
     w_outdata = numpy.ma.masked_invalid(w_outdata)
     ws_outdata = numpy.ma.masked_invalid(ws_outdata)
