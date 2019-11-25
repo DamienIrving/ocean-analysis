@@ -52,7 +52,7 @@ mkdir -p ${cmip_wm_dir}
 
 cmip_awm_file=${cmip_wm_dir}/surface-water-mass_Omon_${model}_${cmip_exp}_${ripf}_${grid}_${start_date}-${end_hist_date}.nc
 cmip_awm_command="${python} ${script_dir}/calc_water_mass_components.py ${area_file} ${basin_file} ${cmip_awm_file} --salinity_files ${cmip_sfiles[@]} --temperature_files ${cmip_tfiles[@]}"
-echo ${cmip_awm_command}
+#echo ${cmip_awm_command}
 #${cmip_awm_command}
 
 scenario_wm_dir=${r87_scenario_dir}/${scenario_exp}/${ripf}/Omon/water-mass/${grid}/${scenario_version}
@@ -84,7 +84,7 @@ scenario_merge_command="${python} ${script_dir}/merge_files.py ${scenario_vwmfil
 #echo ${scenario_merge_command}
 #${scenario_merge_command}
 
-# T-S volume distribution
+# T-S distributions
 
 r87_tdir=${r87_cmip_dir}/${cmip_exp}/${ripf}/Omon/thetao/${grid}/${cmip_version}
 mkdir -p ${r87_tdir}
@@ -106,4 +106,11 @@ vdist_file=${r87_vdist_dir}/volo-tsdist_Omon_${model}_${cmip_exp}_${ripf}_${grid
 vdist_command="${python} ${script_dir}/calc_vol_ts_dist.py ${tclim_file} ${sclim_file} ${volume_file} ${basin_file} ${vdist_file}"
 #echo ${vdist_command}
 #${vdist_command}
+
+r87_adist_dir=${r87_cmip_dir}/${cmip_exp}/${ripf}/Omon/areao/${grid}/${cmip_version}
+mkdir -p ${r87_adist_dir}
+adist_file=${r87_adist_dir}/areao-tsdist_Omon_${model}_${cmip_exp}_${ripf}_${grid}_2005-2014-monthly-clim.nc
+adist_command="${python} ${script_dir}/calc_vol_ts_dist.py ${tclim_file} ${sclim_file} ${area_file} ${basin_file} ${adist_file}"
+echo ${adist_command}
+${adist_command}
 

@@ -1,7 +1,7 @@
 """
 Filename:     calc_vol_ts_dist.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Calculate ocean volume distribution in T-S space  
+Description:  Calculate ocean volume (or area) distribution in T-S space  
 
 """
 
@@ -14,10 +14,8 @@ import pdb
 import argparse
 
 import numpy
-import pandas
 
 import iris
-import iris.coord_categorisation
 import cmdline_provenance as cmdprov
 
 
@@ -34,6 +32,7 @@ modules_dir = os.path.join(repo_dir, 'modules')
 sys.path.append(modules_dir)
 
 try:
+    import water_mass
     import general_io as gio
     import convenient_universal as uconv
 except ImportError:
@@ -41,55 +40,6 @@ except ImportError:
 
 
 # Define functions
-
-def create_df(tcube, scube, vcube, bcube):
-    """Create DataFrame"""
-
-    assert bcube.ndim == 2
-    assert bcube.data.min() == 11
-    assert bcube.data.max() == 17
- 
-    tcube = gio.temperature_unit_check(tcube, 'C')
-    scube = gio.salinity_unit_check(scube)
-
-    if tcube.ndim == 3:
-        lats = uconv.broadcast_array(tcube.coord('latitude').points, [1, 2], tcube.shape)
-        lons = uconv.broadcast_array(tcube.coord('longitude').points, [1, 2], tcube.shape)
-        bdata = uconv.broadcast_array(bcube.data, [1, 2], tcube.shape)
-        vdata = vcube.data
-    elif tcube.ndim == 4:
-        lats = uconv.broadcast_array(tcube.coord('latitude').points, [2, 3], tcube.shape)
-        lons = uconv.broadcast_array(tcube.coord('longitude').points, [2, 3], tcube.shape)
-        vdata = uconv.broadcast_array(vcube.data, [1, 3], tcube.shape)
-        bdata = uconv.broadcast_array(bcube.data, [2, 3], tcube.shape)
-
-    lats = numpy.ma.masked_array(lats, tcube.data.mask)
-    lons = numpy.ma.masked_array(lons, tcube.data.mask)
-    bdata.mask = tcube.data.mask
-
-    sdata = scube.data.compressed()
-    tdata = tcube.data.compressed()
-    vdata = vdata.compressed()
-    bdata = bdata.compressed()
-    lat_data = lats.compressed()
-    lon_data = lons.compressed()
-
-    assert sdata.shape == tdata.shape
-    assert sdata.shape == vdata.shape
-    assert sdata.shape == bdata.shape
-    assert sdata.shape == lat_data.shape
-    assert sdata.shape == lon_data.shape
-
-    df = pandas.DataFrame(index=range(tdata.shape[0]))
-    df['temperature'] = tdata
-    df['salinity'] = sdata
-    df['volume'] = vdata
-    df['basin'] = bdata
-    df['latitude'] = lat_data
-    df['longitude'] = lon_data
-
-    return df, scube.units, tcube.units
-
 
 def get_bounds_list(edges):
     """Create a bounds list from edge list"""
@@ -102,7 +52,7 @@ def get_bounds_list(edges):
     return numpy.array(bounds_list)
 
 
-def construct_cube(vdist, scube, tcube, bcube, sunits, tunits,
+def construct_cube(wdist, wcube, scube, tcube, bcube, sunits, tunits,
                    x_values, y_values, z_values, x_edges, y_edges):
     """Create the iris cube for output"""
 
@@ -132,21 +82,23 @@ def construct_cube(vdist, scube, tcube, bcube, sunits, tunits,
                                                    'flag_meanings': bcube.attributes['flag_meanings']})
 
     dim_coords_list = [(scoord, 0), (tcoord, 1), (basin_coord, 2)]
-    vdist_cube = iris.cube.Cube(vdist,
-                                standard_name='ocean_volume',
-                                long_name='Ocean Grid-Cell Volume',
-                                var_name='volcello',
-                                units='m3',
+    wdist_cube = iris.cube.Cube(wdist,
+                                standard_name=wcube.standard_name,
+                                long_name=wcube.long_name,
+                                var_name=wcube.var_name,
+                                units=wcube.units,
                                 attributes=tcube.attributes,
                                 dim_coords_and_dims=dim_coords_list) 
 
-    return vdist_cube
+    return wdist_cube
 
 
 def main(inargs):
     """Run the program."""
 
-    vcube = iris.load_cube(inargs.volume_file)
+    wcube = iris.load_cube(inargs.weights_file)
+    wvar = wcube.var_name
+    assert wvar in ['areacello', 'volcello']
     bcube = iris.load_cube(inargs.basin_file)
 
     smin, smax = inargs.salinity_bounds
@@ -161,23 +113,30 @@ def main(inargs):
 
     tcube = iris.load_cube(inargs.temperature_file, 'sea_water_potential_temperature')
     scube = iris.load_cube(inargs.salinity_file, 'sea_water_salinity')
-   
-    df, sunits, tunits = create_df(tcube, scube, vcube, bcube)
+    coord_names = [coord.name() for coord in tcube.dim_coords]
+
+    if wvar == 'areacello':
+        #select surface layer
+        assert scube.ndim == 4
+        scube = scube[:, 0, ::]
+        tcube = tcube[:, 0, ::]
+
+    df, sunits, tunits = water_mass.create_df(tcube, scube, wcube, bcube)
 
     data = numpy.array([df['salinity'].values, df['temperature'].values, df['basin'].values]).T
-    vdist, edges = numpy.histogramdd(data, weights=df['volume'].values, bins=[x_edges, y_edges, z_edges])
-    vdist_cube = construct_cube(vdist, scube, tcube, bcube, sunits, tunits, 
+    wdist, edges = numpy.histogramdd(data, weights=df['weight'].values, bins=[x_edges, y_edges, z_edges])
+    wdist_cube = construct_cube(wdist, wcube, scube, tcube, bcube, sunits, tunits, 
                                 x_values, y_values, z_values, x_edges, y_edges)
 
     # Metadata
     metadata_dict = {inargs.basin_file: bcube.attributes['history'],
-                     inargs.volume_file: vcube.attributes['history'],
+                     inargs.weights_file: wcube.attributes['history'],
                      inargs.temperature_file: tcube.attributes['history'],
                      inargs.salinity_file: scube.attributes['history']}
     log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
-    vdist_cube.attributes['history'] = log
+    wdist_cube.attributes['history'] = log
 
-    iris.save(vdist_cube, inargs.outfile)
+    iris.save(wdist_cube, inargs.outfile)
 
 
 if __name__ == '__main__':
@@ -189,7 +148,7 @@ author:
 
 """
 
-    description = 'Calculate ocean volume distribution in T-S space'
+    description = 'Calculate ocean area or volume distribution in T-S space'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
@@ -197,7 +156,7 @@ author:
 
     parser.add_argument("temperature_file", type=str, help="Temperature file") 
     parser.add_argument("salinity_file", type=str, help="Salinity file")
-    parser.add_argument("volume_file", type=str, help="Volume file")
+    parser.add_argument("weights_file", type=str, help="Can be a volcello or areacello file")
     parser.add_argument("basin_file", type=str, help="Basin file")
     parser.add_argument("outfile", type=str, help="Output file")
 
