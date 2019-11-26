@@ -72,6 +72,7 @@ def create_df(tcube, scube, wcube, bcube):
     lats = numpy.ma.masked_array(lats, tcube.data.mask)
     lons = numpy.ma.masked_array(lons, tcube.data.mask)
     bdata.mask = tcube.data.mask
+    wdata.mask = tcube.data.mask
 
     sdata = scube.data.compressed()
     tdata = tcube.data.compressed()
