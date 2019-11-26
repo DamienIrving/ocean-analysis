@@ -187,7 +187,7 @@ def main(inargs):
                                                            bins=[x_edges, y_edges])
         ntimes = salinity_year_cube.shape[0]
         w_outdata[index, :, :] = wdist / ntimes
-        numpy.testing.assert_allclose(wcube.data.sum(), w_outdata[index, :, :].sum(), rtol=1e-07)
+        numpy.testing.assert_allclose(wcube.data.sum(), w_outdata[index, :, :].sum(), rtol=1e-05)
         ws_outdata[index, :, :] = wsdist / ntimes
         wt_outdata[index, :, :] = wtdist / ntimes
 
