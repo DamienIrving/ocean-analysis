@@ -1,14 +1,15 @@
-institution=MIROC
-model=MIROC-ES2L
-cmip_version=v20190823
-scenario_version=v20190823
+institution=NCAR
+model=CESM2-WACCM
+cmip_version=v20190808
+scenario_version=v20190815
+fx_version=v20190320
 grid=gn
-ripf=r1i1p1f2
+ripf=r1i1p1f1
 end_future_date=210012
 
 cmip_exp=historical
 scenario_exp=ssp585
-fx_exp=historical
+fx_exp=piControl 
 
 start_date=185001
 end_hist_date=201412
@@ -37,13 +38,17 @@ ${basin_command}
 
 # Volume file
 
-area_file=${cmip_dir}/${fx_exp}/${ripf}/Ofx/areacello/${grid}/${cmip_version}/areacello_Ofx_${model}_${fx_exp}_${ripf}_${grid}.nc
-volume_dir=${r87_cmip_dir}/${fx_exp}/${ripf}/Ofx/volcello/${grid}/${cmip_version}
-mkdir -p ${volume_dir}
-volume_file=${volume_dir}/volcello_Ofx_${model}_${fx_exp}_${ripf}_${grid}.nc
-volume_command="${python} ${script_dir}/calc_volcello.py ${cmip_tfiles[0]} sea_water_potential_temperature ${volume_file} --area_file ${area_file}"
-echo ${volume_command}
-${volume_command}
+## Use actual volume file
+volume_file=${cmip_dir}/${fx_exp}/${ripf}/Ofx/volcello/${grid}/${fx_version}/volcello_Ofx_${model}_${fx_exp}_${ripf}_${grid}.nc
+
+## Generate from areacello data
+#area_file=${cmip_dir}/${fx_exp}/${ripf}/Ofx/areacello/${grid}/${fx_version}/areacello_Ofx_${model}_${fx_exp}_${ripf}_${grid}.nc
+#volume_dir=${r87_cmip_dir}/${fx_exp}/${ripf}/Ofx/volcello/${grid}/${fx_version}
+#mkdir -p ${volume_dir}
+#volume_file=${volume_dir}/volcello_Ofx_${model}_${fx_exp}_${ripf}_${grid}.nc
+#volume_command="${python} ${script_dir}/calc_volcello.py ${cmip_tfiles[0]} sea_water_potential_temperature ${volume_file} --area_file ${area_file}"
+#echo ${volume_command}
+#${volume_command}
 
 
 # Area profiles
