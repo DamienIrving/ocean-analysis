@@ -124,6 +124,24 @@ def construct_cube(wdata, wsdata, wtdata, wcube, bcube, scube, tcube, sunits,
     return outcube_list
 
 
+def get_log(inargs, bcube_atts, wcube_atts, thistory, shistory):
+    """Get the log entry for the output file history attribute."""
+
+    metadata_dict = {}
+    if 'history' in bcube_atts:
+        metadata_dict[inargs.basin_file] = bcube_atts['history']
+    if 'history' in wcube_atts:
+        metadata_dict[inargs.weights_file] = wcube_atts['history']
+    if thistory:    
+        metadata_dict[inargs.temperature_files[0]] = thistory[0]
+    if shistory:    
+        metadata_dict[inargs.salinity_files[0]] = shistory[0]
+
+    log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+
+    return log
+
+
 def main(inargs):
     """Run the program."""
 
@@ -145,11 +163,7 @@ def main(inargs):
     assert tcube.shape == scube.shape
     coord_names = [coord.name() for coord in tcube.dim_coords]
 
-    metadata_dict = {inargs.basin_file: bcube.attributes['history'],
-                     inargs.weights_file: wcube.attributes['history'],
-                     inargs.temperature_files[0]: thistory[0],
-                     inargs.salinity_files[0]: shistory[0]}
-    log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+    log = get_log(inargs, bcube.attributes, wcube.attributes, thistory, shistory)
 
     iris.coord_categorisation.add_year(tcube, 'time')
     iris.coord_categorisation.add_year(scube, 'time')
@@ -187,7 +201,9 @@ def main(inargs):
                                                            bins=[x_edges, y_edges])
         ntimes = salinity_year_cube.shape[0]
         w_outdata[index, :, :] = wdist / ntimes
-        numpy.testing.assert_allclose(wcube.data.sum(), w_outdata[index, :, :].sum(), rtol=1e-03)
+        binned_total_weight = w_outdata[index, :, :].sum()
+        orig_total_weight = df['weight'].values.sum() / ntimes
+        numpy.testing.assert_allclose(orig_total_weight, binned_total_weight, rtol=1e-03)
         ws_outdata[index, :, :] = wsdist / ntimes
         wt_outdata[index, :, :] = wtdist / ntimes
 

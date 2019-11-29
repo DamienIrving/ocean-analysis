@@ -127,7 +127,8 @@ def save_history(cube, field, filename):
       and is therefore deleted upon equilising attributes)  
     """ 
 
-    history.append(cube.attributes['history']) 
+    if 'history' in cube.attributes:
+        history.append(cube.attributes['history']) 
 
 
 def check_iris_var(var):
