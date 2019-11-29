@@ -31,8 +31,11 @@ def main(inargs):
         dset = dset.sel(time=slice(start, end))
     clim_dset = dset.groupby('time.month').mean('time', keep_attrs=True)
     
-    history = dset.attrs['history']
-    log = cmdprov.new_log(infile_history={inargs.infiles[0]: history}, git_repo=repo_dir)
+    if 'history' in dset.attrs:
+        history = dset.attrs['history']
+        log = cmdprov.new_log(infile_history={inargs.infiles[0]: history}, git_repo=repo_dir)
+    else:
+        log = cmdprov.new_log(git_repo=repo_dir)
     clim_dset.attrs['history'] = log
 
     clim_dset.to_netcdf(inargs.outfile)

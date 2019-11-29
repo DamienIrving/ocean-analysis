@@ -93,6 +93,24 @@ def construct_cube(wdist, wcube, scube, tcube, bcube, sunits, tunits,
     return wdist_cube
 
 
+def get_log(inargs, bcube_atts, wcube_atts, tcube_atts, scube_atts):
+    """Get the log entry for the output file history attribute."""
+
+    metadata_dict = {}
+    if 'history' in bcube_atts:
+        metadata_dict[inargs.basin_file] = bcube_atts['history']
+    if 'history' in wcube_atts:
+        metadata_dict[inargs.weights_file] = wcube_atts['history']
+    if 'history' in tcube_atts: 
+        metadata_dict[inargs.temperature_file] = tcube_atts['history']
+    if 'history' in scube_atts:    
+        metadata_dict[inargs.salinity_file] = scube_atts['history']
+
+    log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+
+    return log
+
+
 def main(inargs):
     """Run the program."""
 
@@ -128,18 +146,16 @@ def main(inargs):
     
     ntimes = scube.shape[0]
     wdist = wdist / ntimes
-    assert wdist.sum() < wcube.data.sum()
-    assert wdist.sum() > wcube.data.sum() * 0.95
+    binned_total_weight = wdist.sum()
+    orig_total_weight = df['weight'].values.sum() / ntimes
+    assert binned_total_weight < orig_total_weight
+    assert binned_total_weight > orig_total_weight * 0.95
 
     wdist_cube = construct_cube(wdist, wcube, scube, tcube, bcube, sunits, tunits, 
                                 x_values, y_values, z_values, x_edges, y_edges)
 
     # Metadata
-    metadata_dict = {inargs.basin_file: bcube.attributes['history'],
-                     inargs.weights_file: wcube.attributes['history'],
-                     inargs.temperature_file: tcube.attributes['history'],
-                     inargs.salinity_file: scube.attributes['history']}
-    log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+    log = get_log(inargs, bcube.attributes, wcube.attributes, tcube.attributes, scube.attributes)
     wdist_cube.attributes['history'] = log
 
     iris.save(wdist_cube, inargs.outfile)
