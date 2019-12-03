@@ -50,9 +50,15 @@ def create_df(tcube, scube, wcube, bcube):
     tcube = gio.temperature_unit_check(tcube, 'C')
     scube = gio.salinity_unit_check(scube)
 
+    if tcube.coord('latitude').points.ndim == 1:
+        lat_pos = coord_names.index('latitude')
+        lon_pos = coord_names.index('longitude')
+    else:
+        lat_pos = lon_pos = [tcube.ndim - 2, tcube.ndim -1] 
+    lats = uconv.broadcast_array(tcube.coord('latitude').points, lat_pos, tcube.shape)
+    lons = uconv.broadcast_array(tcube.coord('longitude').points, lon_pos, tcube.shape)
+
     if tcube.ndim == 3:
-        lats = uconv.broadcast_array(tcube.coord('latitude').points, [1, 2], tcube.shape)
-        lons = uconv.broadcast_array(tcube.coord('longitude').points, [1, 2], tcube.shape)
         bdata = uconv.broadcast_array(bcube.data, [1, 2], tcube.shape)
         if wcube.var_name == 'areacello':
             assert coord_names[0] in ['time', 'month', 'year']
@@ -61,8 +67,6 @@ def create_df(tcube, scube, wcube, bcube):
             assert coord_names[0] not in ['time', 'month', 'year']
             wdata = wcube.data
     elif tcube.ndim == 4:
-        lats = uconv.broadcast_array(tcube.coord('latitude').points, [2, 3], tcube.shape)
-        lons = uconv.broadcast_array(tcube.coord('longitude').points, [2, 3], tcube.shape)
         bdata = uconv.broadcast_array(bcube.data, [2, 3], tcube.shape)
         if wcube.var_name == 'areacello':
             wdata = uconv.broadcast_array(wcube.data, [2, 3], tcube.shape)
