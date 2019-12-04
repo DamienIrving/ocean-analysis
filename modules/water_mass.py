@@ -100,3 +100,58 @@ def create_df(tcube, scube, wcube, bcube):
     df['longitude'] = lon_data
 
     return df, scube.units, tcube.units
+    
+
+def create_flux_df(flux_cube, bin_cube, basin_cube):
+    """Create DataFrame for surface flux analysis.
+
+    Args:
+      flux_cube (iris.cube.Cube) -- flux cube
+      bin_cube (iris.cube.Cube) -- data cube for defining bins
+      basin_cube (iris.cube.Cube) -- basin cube
+
+    """
+
+    assert basin_cube.ndim == 2
+    assert basin_cube.data.min() == 11
+    assert basin_cube.data.max() == 17
+
+    assert flux_cube.ndim == bin_cube.ndim == 3
+    coord_names = [coord.name() for coord in flux_cube.dim_coords]
+
+    if 'temperature' in bin_cube.long_name:
+        bin_cube = gio.temperature_unit_check(bin_cube, 'C')
+
+    if tcube.coord('latitude').points.ndim == 1:
+        lat_pos = coord_names.index('latitude')
+        lon_pos = coord_names.index('longitude')
+    else:
+        lat_pos = lon_pos = [flux_cube.ndim - 2, flux_cube.ndim -1] 
+    lats = uconv.broadcast_array(flux_cube.coord('latitude').points, lat_pos, flux_cube.shape)
+    lons = uconv.broadcast_array(flux_cube.coord('longitude').points, lon_pos, flux_cube.shape)
+
+    basin_data = uconv.broadcast_array(basin_cube.data, [1, 2], flux_cube.shape)
+        
+    lats = numpy.ma.masked_array(lats, tcube.data.mask)
+    lons = numpy.ma.masked_array(lons, tcube.data.mask)
+    basin_data.mask = flux_cube.data.mask
+ 
+    flux_data = flux_cube.data.compressed()
+    bin_data = bin_cube.data.compressed()
+    basin_data = basin_data.compressed()
+    lat_data = lats.compressed()
+    lon_data = lons.compressed()
+
+    assert flux_data.shape == bin_data.shape
+    assert flux_data.shape == basin_data.shape
+    assert flux_data.shape == lat_data.shape
+    assert flux_data.shape == lon_data.shape
+
+    df = pandas.DataFrame(index=range(flux_data.shape[0]))
+    df['flux'] = flux_data
+    df['bin'] = bin_data
+    df['basin'] = basin_data
+    df['latitude'] = lat_data
+    df['longitude'] = lon_data
+
+    return df, bin_cube.units

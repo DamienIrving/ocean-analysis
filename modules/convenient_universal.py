@@ -14,6 +14,7 @@ Functions:
   find_nearest          -- Find the closest array item to value
   find_duplicates       -- Return list of duplicates in a list
   fix_label             -- Fix formatting of an axis label taken from the command line
+  get_bounds_list       -- Create a bounds (i.e. pairs) list from an edge list
   get_threshold         -- Turn the user input threshold into a numeric threshold
   hi_lo                 -- Determine the new highest and lowest value.
   list_kwargs           -- List keyword arguments of a function
@@ -354,6 +355,17 @@ def fix_label(label):
 
     return label 
 
+
+def get_bounds_list(edges):
+    """Create a bounds (i.e. pairs) list from an edge list"""
+
+    bounds_list = []
+    for i in range(len(edges) - 1):
+        interval = [edges[i], edges[i+1]]
+        bounds_list.append(interval)
+
+    return numpy.array(bounds_list)
+    
 
 def get_chunks(cube_shape, coord_names, chunk=True, step=2):
     """Provide details for chunking along the time axis.
