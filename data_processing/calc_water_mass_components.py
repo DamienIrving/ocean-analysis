@@ -225,9 +225,11 @@ def main(inargs):
     t_edges = numpy.arange(tmin, tmax + tstep, tstep)
     t_values = (t_edges[1:] + t_edges[:-1]) / 2
 
-    smin, smax = inargs.salinity_bounds
-    sstep = inargs.bin_size
-    s_edges = numpy.arange(smin, smax + sstep, sstep)
+    smin = 0
+    smax = 50
+    s_edges = numpy.arange(30, 40.05, 0.1)
+    s_edges = numpy.insert(s_edges, 0, [0, 10, 20])
+    s_edges = numpy.append(s_edges, 50)
     s_values = (s_edges[1:] + s_edges[:-1]) / 2
 
     b_edges = numpy.array([10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5])
@@ -269,6 +271,10 @@ def main(inargs):
             temperature_year_cube = tcube.extract(year_constraint)
 
         df, sunits, tunits = water_mass.create_df(temperature_year_cube, salinity_year_cube, wcube, bcube)
+        assert df['temperature'].values.min() > tmin, "Temperature bin minimum not low enough"
+        assert df['temperature'].values.max() < tmax, "Temperature bin maximum not high enough"
+        assert df['salinity'].values.min() > smin, "Salinity bin minimum not low enough"
+        assert df['salinity'].values.max() < smax, "Salinity bin maximum not high enough"
         ntimes = salinity_year_cube.shape[0]
         w_tbin_outdata[index, :, :], ws_tbin_outdata[index, :, :], wt_tbin_outdata[index, :, :] = bin_data(df, 'temperature', t_edges, b_edges, ntimes)
         w_sbin_outdata[index, :, :], ws_sbin_outdata[index, :, :], wt_sbin_outdata[index, :, :] = bin_data(df, 'salinity', s_edges, b_edges, ntimes)
@@ -314,8 +320,6 @@ author:
 
     parser.add_argument("--temperature_bounds", type=float, nargs=2, default=(-4, 40),
                         help='bounds for the temperature (Y) axis')
-    parser.add_argument("--salinity_bounds", type=float, nargs=2, default=(0, 40),
-                        help='bounds for the salinity (X) axis')
     parser.add_argument("--bin_size", type=float, default=1.0,
                         help='bin size (i.e. temperature step)')
 
