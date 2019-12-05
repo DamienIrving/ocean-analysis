@@ -122,7 +122,7 @@ def create_flux_df(flux_cube, bin_cube, basin_cube):
     if 'temperature' in bin_cube.long_name:
         bin_cube = gio.temperature_unit_check(bin_cube, 'C')
 
-    if tcube.coord('latitude').points.ndim == 1:
+    if flux_cube.coord('latitude').points.ndim == 1:
         lat_pos = coord_names.index('latitude')
         lon_pos = coord_names.index('longitude')
     else:
@@ -132,8 +132,8 @@ def create_flux_df(flux_cube, bin_cube, basin_cube):
 
     basin_data = uconv.broadcast_array(basin_cube.data, [1, 2], flux_cube.shape)
         
-    lats = numpy.ma.masked_array(lats, tcube.data.mask)
-    lons = numpy.ma.masked_array(lons, tcube.data.mask)
+    lats = numpy.ma.masked_array(lats, flux_cube.data.mask)
+    lons = numpy.ma.masked_array(lons, flux_cube.data.mask)
     basin_data.mask = flux_cube.data.mask
  
     flux_data = flux_cube.data.compressed()

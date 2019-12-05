@@ -130,8 +130,10 @@ def main(inargs):
     flux_per_unit_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var)
     assert flux_per_unit_area_cube.shape == bin_cube.shape
     area_cube = iris.load_cube(inargs.area_file)
-    flux_cube = flux_per_unit_area_cube * area_cube  #FIXME: Do I need to broadcast this?
-    coord_names = [coord.name() for coord in flux_cube.dim_coords]
+    area_data = uconv.broadcast_array(area_cube.data, [1, 2], flux_per_unit_area_cube.shape)
+    flux_cube = flux_per_unit_area_cube.copy()
+    flux_cube.data = flux_per_unit_area_cube.data * area_data
+    flux_cube.units = str(flux_cube.units).replace('m-2 ', "")
 
     # Define basins
 
@@ -191,7 +193,7 @@ author:
     parser.add_argument("outfile", type=str, help="Output file")
 
     parser.add_argument("--bin_files", type=str, nargs='*', help="Data files for the binning") 
-    parser.add_argument("--bin_variable", type=str, help="bin variable")
+    parser.add_argument("--bin_var", type=str, help="bin variable")
      
     parser.add_argument("--bin_bounds", type=float, nargs=2, default=(-4, 40), help='bin bounds')
     parser.add_argument("--bin_size", type=float, default=1.0, help='bin size')
