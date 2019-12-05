@@ -4,6 +4,7 @@ Collection of commonly used functions for general file input and output.
 Functions:
   check_iris_var           -- Check if a variable is in the list of iris standard names
   check_time_units         -- Check time axis units
+  check_wfo_sign           -- Check that the wfo variable has correct sign
   check_xarrayDataset      -- Check xarray.Dataset for data format compliance
   combine_files            -- Create an iris cube from multiple input files
   create_outdir            -- Create the output directory if it doesn't exist already
@@ -163,6 +164,22 @@ def check_time_units(cube, new_calendar=None):
         cube.coord('time').units = cf_units.Unit(time_units+'-01', calendar=calendar)
     elif new_calendar:
         cube.coord('time').units = cf_units.Unit(time_units, calendar=calendar)
+
+    return cube
+
+
+def check_wfo_sign(cube):
+    """Check that the wfo variable has correct sign."""
+
+    wrong_sign_models = ['CMCC-CM', 'CNRM-CM6-1', 'CNRM-ESM2-1',
+                         'EC-Earth3', 'EC-Earth3-Veg', 'IPSL-CM5A-LR',
+                         'IPSL-CM6A-LR', 'MIROC-ESM', 'MIROC-ESM-CHEM']
+
+    assert cube.standard_name == 'water_flux_into_sea_water'
+    model = cube.attributes['source_id']
+                  
+    if model in wrong_sign_models:
+        cube.data = cube.data * -1
 
     return cube
 
@@ -443,7 +460,7 @@ def read_dates(infile):
     return date_list, date_metadata
 
 
-def salinity_unit_check(cube, valid_min=-1, valid_max=75, abort=True):
+def salinity_unit_check(cube, valid_min=-1, valid_max=90, abort=True):
     """Check CMIP5 salinity units.
 
     Most modeling groups store their salinity data

@@ -129,6 +129,8 @@ def main(inargs):
 
     flux_per_unit_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var)
     assert flux_per_unit_area_cube.shape == bin_cube.shape
+    if inargs.flux_var == 'water_flux_into_sea_water':
+        flux_per_unit_area_cube = gio.check_wfo_sign(flux_per_unit_area_cube)
     area_cube = iris.load_cube(inargs.area_file)
     area_data = uconv.broadcast_array(area_cube.data, [1, 2], flux_per_unit_area_cube.shape)
     flux_cube = flux_per_unit_area_cube.copy()
@@ -161,6 +163,8 @@ def main(inargs):
         year_constraint = iris.Constraint(year=year)
         flux_year_cube = flux_cube.extract(year_constraint)
         bin_year_cube = bin_cube.extract(year_constraint)
+        assert bin_year_cube.data.min() > bin_min, "Bin minimum not low enough"
+        assert bin_year_cube.data.max() < bin_max, "Bin maximum not high enough"
         df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube)
         ntimes = flux_year_cube.shape[0]
         outdata[index, :, :] = bin_data(df, bin_edges, basin_edges, ntimes)
