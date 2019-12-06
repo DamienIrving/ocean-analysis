@@ -218,6 +218,8 @@ def main(inargs):
     wcube = iris.load_cube(inargs.weights_file)
     wvar = wcube.var_name
     assert wvar in ['areacello', 'volcello']
+    if wvar == 'volcello':
+        gio.check_global_ocean_volume(wcube)
     bcube = iris.load_cube(inargs.basin_file, 'region')
 
     tmin, tmax = inargs.temperature_bounds

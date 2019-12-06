@@ -78,8 +78,7 @@ def main(inargs):
     volume_cube = construct_volume_cube(volume_data, data_cube.attributes, data_cube.dim_coords)    
     volume_cube.attributes['history'] = gio.write_metadata()
 
-    print('Global ocean volume:', volume_cube.data.sum())
-    print('(Typical value: 1.3e+18)')    
+    gio.check_global_ocean_volume(volume_cube) 
 
     iris.save(volume_cube, inargs.outfile)
 

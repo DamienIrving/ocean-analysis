@@ -2,28 +2,29 @@
 Collection of commonly used functions for general file input and output.
 
 Functions:
-  check_iris_var           -- Check if a variable is in the list of iris standard names
-  check_time_units         -- Check time axis units
-  check_wfo_sign           -- Check that the wfo variable has correct sign
-  check_xarrayDataset      -- Check xarray.Dataset for data format compliance
-  combine_files            -- Create an iris cube from multiple input files
-  create_outdir            -- Create the output directory if it doesn't exist already
-  get_cmip5_file_details   -- Extract details from a CMIP5 filename
-  get_subset_kwargs        -- Get keyword arguments for xarray subsetting
-  get_time_constraint      -- Get the time constraint used for reading an iris cube 
-  get_timescale            -- Get the timescale
-  get_timestamp            -- Return a time stamp that includes the command line entry
-  iris_vertical_constraint -- Define vertical constraint for iris cube loading.
-  read_dates               -- Read in a list of dates
-  set_dim_atts             -- Set dimension attributes
-  set_global_atts          -- Update the global attributes of an xarray.DataArray
-  set_outfile_date         -- Take an outfile name and replace existing date with new one
-  standard_datetime        -- Convert any arbitrary date/time to standard format: YYYY-MM-DD
-  two_floats               -- Read floats lile -5e20 from the command line
-  update_history_att       -- Update the global history attribute of an xarray.DataArray
-  vertical_bounds_text     -- Geneate text describing the vertical bounds of a data selection
-  write_dates              -- Write a list of dates
-  write_metadata           -- Write a metadata output file
+  check_iris_var            -- Check if a variable is in the list of iris standard names
+  check_time_units          -- Check time axis units
+  check_wfo_sign            -- Check that the wfo variable has correct sign
+  check_global_ocean_volume -- Check that the global ocean volume is within acceptable bounds
+  check_xarrayDataset       -- Check xarray.Dataset for data format compliance
+  combine_files             -- Create an iris cube from multiple input files
+  create_outdir             -- Create the output directory if it doesn't exist already
+  get_cmip5_file_details    -- Extract details from a CMIP5 filename
+  get_subset_kwargs         -- Get keyword arguments for xarray subsetting
+  get_time_constraint       -- Get the time constraint used for reading an iris cube 
+  get_timescale             -- Get the timescale
+  get_timestamp             -- Return a time stamp that includes the command line entry
+  iris_vertical_constraint  -- Define vertical constraint for iris cube loading.
+  read_dates                -- Read in a list of dates
+  set_dim_atts              -- Set dimension attributes
+  set_global_atts           -- Update the global attributes of an xarray.DataArray
+  set_outfile_date          -- Take an outfile name and replace existing date with new one
+  standard_datetime         -- Convert any arbitrary date/time to standard format: YYYY-MM-DD
+  two_floats                -- Read floats lile -5e20 from the command line
+  update_history_att        -- Update the global history attribute of an xarray.DataArray
+  vertical_bounds_text      -- Geneate text describing the vertical bounds of a data selection
+  write_dates               -- Write a list of dates
+  write_metadata            -- Write a metadata output file
 
 """
 
@@ -182,6 +183,16 @@ def check_wfo_sign(cube):
         cube.data = cube.data * -1
 
     return cube
+
+
+def check_global_ocean_volume(vol_cube):
+    """Check that the global ocean volume is within acceptable bounds."""
+
+    assert cube.var_name == 'volcello'
+    global_volume = vol_cube.data.sum()
+
+    assert global_volume > 1.2e+18, "Global ocean volume is %s. Typical value is 1.3e+18 m3" %(str(global_volume))
+    assert global_volume < 1.45e+18, "Global ocean volume is %s. Typical value is 1.3e+18 m3" %(str(global_volume))
 
 
 def check_xarrayDataset(dset, var_list):
