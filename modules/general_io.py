@@ -188,7 +188,7 @@ def check_wfo_sign(cube):
 def check_global_ocean_volume(vol_cube):
     """Check that the global ocean volume is within acceptable bounds."""
 
-    assert cube.var_name == 'volcello'
+    assert vol_cube.var_name == 'volcello'
     global_volume = vol_cube.data.sum()
 
     assert global_volume > 1.2e+18, "Global ocean volume is %s. Typical value is 1.3e+18 m3" %(str(global_volume))
