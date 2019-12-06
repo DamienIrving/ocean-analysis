@@ -163,9 +163,9 @@ def main(inargs):
         year_constraint = iris.Constraint(year=year)
         flux_year_cube = flux_cube.extract(year_constraint)
         bin_year_cube = bin_cube.extract(year_constraint)
-        assert bin_year_cube.data.min() > bin_min, "Bin minimum not low enough"
-        assert bin_year_cube.data.max() < bin_max, "Bin maximum not high enough"
         df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube)
+        assert df['bin'].values.min() > bin_min, "Bin minimum not low enough"
+        assert df['bin'].values.max() < bin_max, "Bin maximum not high enough"
         ntimes = flux_year_cube.shape[0]
         outdata[index, :, :] = bin_data(df, bin_edges, basin_edges, ntimes)
 
