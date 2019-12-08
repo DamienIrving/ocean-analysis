@@ -1,14 +1,3 @@
-#institution=NOAA-GFDL
-#model=GFDL-CM4
-#cmip_version=v20180701
-#scenario_version=v20180701
-#fx_version=v20180701
-#grid=gn
-#ripf=r1i1p1f1
-#end_future_date=210012
-
-##FIXME: Memory error for GFDL-CM4 on tcube.compression for a single year.
-
 institution=CCCma
 model=CanESM5
 cmip_version=v20190429
@@ -16,7 +5,7 @@ scenario_version=v20190429
 fx_version=v20190429
 grid=gn
 ripf=r1i1p1f1
-end_future_date=210012
+end_future_date=230012
 
 cmip_exp=historical
 scenario_exp=ssp585
@@ -98,13 +87,13 @@ mkdir -p ${scenario_wm_dir}
 
 cmip_awm_file=${cmip_wm_dir}/surface-water-mass_Omon_${model}_${cmip_exp}_${ripf}_${grid}_${start_date}-${end_hist_date}.nc
 cmip_awm_command="${python} ${script_dir}/calc_water_mass_components.py ${areacello_file} ${basin_file} ${cmip_awm_file} --salinity_files ${cmip_sfiles[@]} --temperature_files ${cmip_tfiles[@]}"
-echo ${cmip_awm_command}
-${cmip_awm_command}
+#echo ${cmip_awm_command}
+#${cmip_awm_command}
 
 scenario_awm_file=${scenario_wm_dir}/surface-water-mass_Omon_${model}_${scenario_exp}_${ripf}_${grid}_201501-${end_future_date}.nc
 scenario_awm_command="${python} ${script_dir}/calc_water_mass_components.py ${areacello_file} ${basin_file} ${scenario_awm_file} --salinity_files ${scenario_sfiles[@]} --temperature_files ${scenario_tfiles[@]}"
-echo ${scenario_awm_command}
-${scenario_awm_command}
+#echo ${scenario_awm_command}
+#${scenario_awm_command}
 
 
 # Volume profiles
@@ -112,22 +101,22 @@ ${scenario_awm_command}
 ## Each file individually
 
 cmip_vwm_command="bash ${script_dir}/calc_water_mass_components_by_volume.sh ${volume_file} ${basin_file} ${cmip_tfiles[@]}"
-echo ${cmip_vwm_command}
-${cmip_vwm_command}
+#echo ${cmip_vwm_command}
+#${cmip_vwm_command}
 
 cmip_vwmfiles=(`ls ${r87_cmip_dir}/${cmip_exp}/${ripf}/Omon/water-mass/${grid}/${cmip_version}/water-mass*.nc`)
 cmip_merge_command="${python} ${script_dir}/merge_files.py ${cmip_vwmfiles[@]} /g/data/r87/dbi599/zika/water-mass_Omon_${model}_${cmip_exp}_${ripf}_${grid}_${start_date}-${end_hist_date}.nc --variables Ocean_Grid-Cell_Volume_binned_by_temperature Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume_binned_by_temperature Sea_Water_Potential_Temperature_times_Ocean_Grid-Cell_Volume_binned_by_temperature Ocean_Grid-Cell_Volume_binned_by_salinity Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume_binned_by_salinity Sea_Water_Potential_Temperature_times_Ocean_Grid-Cell_Volume_binned_by_salinity"
-echo ${cmip_merge_command}
-${cmip_merge_command}
+#echo ${cmip_merge_command}
+#${cmip_merge_command}
 
 scenario_vwm_command="bash ${script_dir}/calc_water_mass_components_by_volume.sh ${volume_file} ${basin_file} ${scenario_tfiles[@]}"
-echo ${scenario_vwm_command}
-${scenario_vwm_command}
+#echo ${scenario_vwm_command}
+#${scenario_vwm_command}
 
 scenario_vwmfiles=(`ls ${r87_scenario_dir}/${scenario_exp}/${ripf}/Omon/water-mass/${grid}/${scenario_version}/water-mass*.nc`)
-scenario_merge_command="${python} ${script_dir}/merge_files.py ${scenario_vwmfiles[@]} /g/data/r87/dbi599/zika/water-mass_Omon_${model}_${scenario_exp}_${ripf}_${grid}_201501-${end_future_date}.nc --variables ocean_volume Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume Sea_Water_Potential_Temperature_times_Ocean_Grid-Cell_Volume"
-echo ${scenario_merge_command}
-${scenario_merge_command}
+scenario_merge_command="${python} ${script_dir}/merge_files.py ${scenario_vwmfiles[@]} /g/data/r87/dbi599/zika/water-mass_Omon_${model}_${scenario_exp}_${ripf}_${grid}_201501-${end_future_date}.nc --variables Ocean_Grid-Cell_Volume_binned_by_temperature Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume_binned_by_temperature Sea_Water_Potential_Temperature_times_Ocean_Grid-Cell_Volume_binned_by_temperature Ocean_Grid-Cell_Volume_binned_by_salinity Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume_binned_by_salinity Sea_Water_Potential_Temperature_times_Ocean_Grid-Cell_Volume_binned_by_salinity"
+#echo ${scenario_merge_command}
+#${scenario_merge_command}
 
 ## All files at once
 
@@ -176,6 +165,7 @@ adist_command="${python} ${script_dir}/calc_vol_ts_dist.py ${tclim_file} ${sclim
 # Surface water flux
 
 r87_wfo_dir=${r87_cmip_dir}/${cmip_exp}/${ripf}/Omon/wfo/${grid}/${cmip_version}
+mkdir -p ${r87_wfo_dir}
 cmip_wfo_tos_file=${r87_wfo_dir}/wfo-tos-binned_Omon_${model}_${cmip_exp}_${ripf}_${grid}_${start_date}-${end_hist_date}.nc
 cmip_wfo_tos_command="${python} ${script_dir}/calc_surface_flux_histogram.py ${cmip_wfo_files[@]} water_flux_into_sea_water ${areacello_file} ${basin_file} ${cmip_wfo_tos_file} --bin_files ${cmip_tos_files[@]} --bin_var sea_surface_temperature"
 echo ${cmip_wfo_tos_command}
@@ -184,9 +174,9 @@ ${cmip_wfo_tos_command}
 
 #echo ${vdist_file}
 #echo ${adist_file}
-echo ${cmip_vwm_file}
-echo ${cmip_awm_file}
-echo ${scenario_vwm_file}
-echo ${scenario_awm_file}
+#echo ${cmip_vwm_file}
+#echo ${cmip_awm_file}
+#echo ${scenario_vwm_file}
+#echo ${scenario_awm_file}
 echo ${cmip_wfo_tos_file}
 

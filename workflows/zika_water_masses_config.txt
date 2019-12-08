@@ -1,0 +1,19 @@
+institution=CCCma
+model=CanESM5
+cmip_version=v20190429
+scenario_version=v20190429
+fx_version=v20190429
+grid=gn
+ripf=r1i1p1f1
+end_future_date=230012
+
+##FIXME: Memory error for GFDL-CM4 on tcube.compression for a single year.
+
+institution=NOAA-GFDL
+model=GFDL-CM4
+cmip_version=v20180701
+scenario_version=v20180701
+fx_version=v20180701
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
