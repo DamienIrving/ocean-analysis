@@ -228,10 +228,11 @@ def main(inargs):
     t_values = (t_edges[1:] + t_edges[:-1]) / 2
 
     smin = 0
-    smax = 50
+    smax = 60
     s_edges = numpy.arange(30, 40.05, 0.1)
     s_edges = numpy.insert(s_edges, 0, [0, 10, 20])
     s_edges = numpy.append(s_edges, 50)
+    s_edges = numpy.append(s_edges, 60)
     s_values = (s_edges[1:] + s_edges[:-1]) / 2
 
     b_edges = numpy.array([10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5])
@@ -273,10 +274,10 @@ def main(inargs):
             temperature_year_cube = tcube.extract(year_constraint)
 
         df, sunits, tunits = water_mass.create_df(temperature_year_cube, salinity_year_cube, wcube, bcube)
-        assert df['temperature'].values.min() > tmin, "Temperature bin minimum not low enough"
-        assert df['temperature'].values.max() < tmax, "Temperature bin maximum not high enough"
-        assert df['salinity'].values.min() > smin, "Salinity bin minimum not low enough"
-        assert df['salinity'].values.max() < smax, "Salinity bin maximum not high enough"
+        assert df['temperature'].values.min() > tmin, "Temperature minimum of %s is outside bin range" %(str(df['temperature'].values.min()))
+        assert df['temperature'].values.max() < tmax, "Temperature maximum of %s is outside bin range" %(str(df['temperature'].values.max()))
+        assert df['salinity'].values.min() > smin, "Salinity minimum of %s is outside bin range" %(str(df['salinity'].values.min()))
+        assert df['salinity'].values.max() < smax, "Salinity maximum of %s is outside bin range" %(str(df['salinity'].values.max()))
         ntimes = salinity_year_cube.shape[0]
         w_tbin_outdata[index, :, :], ws_tbin_outdata[index, :, :], wt_tbin_outdata[index, :, :] = bin_data(df, 'temperature', t_edges, b_edges, ntimes)
         w_sbin_outdata[index, :, :], ws_sbin_outdata[index, :, :], wt_sbin_outdata[index, :, :] = bin_data(df, 'salinity', s_edges, b_edges, ntimes)
