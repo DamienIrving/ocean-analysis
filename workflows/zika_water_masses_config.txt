@@ -1,3 +1,28 @@
+# ACCESS-CM2
+# (/g/data/fs38/publications/CMIP6/)
+institution=CSIRO-ARCCSS
+model=ACCESS-CM2
+cmip_version=v20191118
+scenario_version=v20191118
+fx_version=v20191118
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# ACCESS-ESM1-5
+# (/g/data/fs38/publications/CMIP6/)
+institution=CSIRO
+model=ACCESS-ESM1-5
+cmip_version=v20191118
+scenario_version=
+fx_version=v20191118
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# CanESM5
 institution=CCCma
 model=CanESM5
 cmip_version=v20190429
@@ -6,9 +31,82 @@ fx_version=v20190429
 grid=gn
 ripf=r1i1p1f1
 end_future_date=230012
+fx_exp=historical
 
-##FIXME: Memory error for GFDL-CM4 on tcube.compression for a single year.
+# CESM2
+# (no wfo)
+institution=NCAR
+model=CESM2
+cmip_version=v20190308
+scenario_version=v20190730
+fx_version=v20190308
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=piControl
 
+# CESM2-WACCM
+# (no wfo)
+institution=NCAR
+model=CESM2-WACCM
+cmip_version=v20190808
+scenario_version=v20190815
+fx_version=v20190320
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=piControl
+
+# CNRM-CM6-1
+# 
+institution=CNRM-CERFACS
+model=CNRM-CM6-1
+cmip_version=v20180917
+scenario_version=v20190219
+fx_version=v20180917
+grid=gn
+ripf=r1i1p1f2
+end_future_date=210012
+fx_exp=historical
+
+# CNRM-ESM2-1
+# 
+institution=CNRM-CERFACS
+model=CNRM-ESM2-1
+cmip_version=v20181206
+scenario_version=v20190328
+fx_version=v20181206
+grid=gn
+ripf=r1i1p1f2
+end_future_date=210012
+fx_exp=historical
+
+# E3SM-1-0
+# 
+institution=E3SM-Project
+model=E3SM-1-0
+cmip_version=v20190826
+scenario_version= # None
+fx_version= # None (need to create areacello from regular grid)
+grid=gr
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# EC-Earth3-Veg
+# 
+institution=EC-Earth-Consortium
+model=EC-Earth3-Veg
+cmip_version=v20190605
+scenario_version=v20190629
+fx_version=v20190605
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# GFDL-CM4
+# (FIXME: Memory error for GFDL-CM4 on tcube.compression for a single year.)
 institution=NOAA-GFDL
 model=GFDL-CM4
 cmip_version=v20180701
@@ -17,3 +115,153 @@ fx_version=v20180701
 grid=gn
 ripf=r1i1p1f1
 end_future_date=210012
+fx_exp=historical
+
+# GFDL-ESM4
+# 
+institution=NOAA-GFDL
+model=GFDL-ESM4
+cmip_version=v20190726
+scenario_version= # so missing for ssp585
+fx_version=v20190726
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# GISS-E2-1-G
+# 
+institution=NASA-GISS
+model=GISS-E2-1-G
+cmip_version=v20180827
+scenario_version= # None
+fx_version=v20180824
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=piControl
+
+# GISS-E2-1-G-CC
+# 
+institution=NASA-GISS
+model=GISS-E2-1-G-CC
+cmip_version=v20190815
+scenario_version= # None
+fx_version=v20190325
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=piControl
+
+# GISS-E2-1-H
+# 
+institution=NASA-GISS
+model=GISS-E2-1-H
+cmip_version=v20190403
+scenario_version= # None
+fx_version=v20180824
+grid=gr
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=piControl
+
+# IPSL-CM6A-LR
+# 
+institution=IPSL
+model=IPSL-CM6A-LR
+cmip_version=v20180803
+scenario_version=v20190119
+fx_version=v20180803
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# MIROC6
+# (no wfo?)
+institution=MIROC
+model=MIROC6
+cmip_version=v20190311
+scenario_version=v20190627
+fx_version=v20190311
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# MIROC-ES2L
+# 
+institution=MIROC
+model=MIROC-ES2L
+cmip_version=v20190823
+scenario_version=v20190823
+fx_version=v20190823
+grid=gn
+ripf=r1i1p1f2
+end_future_date=210012
+fx_exp=historical
+
+# MPI-ESM1-2-HR
+# 
+institution=MPI-M
+model=MPI-ESM1-2-HR
+cmip_version=v20190710
+scenario_version= # None
+fx_version=v20190710
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# NorCPM1
+# (Historical goes past 2014. Only gr has the 20th century data.)
+institution=NCC
+model=NorCPM1
+cmip_version=v20190914
+scenario_version= # None
+fx_version= # None for gr
+grid=gr
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# NorESM2-LM
+# 
+institution=NCC
+model=NorESM2-LM
+cmip_version=v20190815
+scenario_version=
+fx_version=v20190815
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# SAM0-UNICON
+# 
+institution=SNU
+model=SAM0-UNICON
+cmip_version=v20190323
+scenario_version= # None
+fx_version=v20190323
+grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# UKESM1-0-LL
+# 
+institution=MOHC
+model=UKESM1-0-LL
+cmip_version=v20190627
+scenario_version=v20190726
+fx_version=v20190705
+grid=gn
+ripf=r1i1p1f2
+end_future_date=210012
+fx_exp=piControl
+
+
+
+
+
