@@ -321,7 +321,7 @@ author:
     parser.add_argument("--salinity_files", type=str, nargs='*',
                         help="Salinity files")
 
-    parser.add_argument("--temperature_bounds", type=float, nargs=2, default=(-4, 50),
+    parser.add_argument("--temperature_bounds", type=float, nargs=2, default=(-6, 50),
                         help='bounds for the temperature (Y) axis')
     parser.add_argument("--bin_size", type=float, default=1.0,
                         help='bin size (i.e. temperature step)')
