@@ -107,6 +107,11 @@ fx_exp=historical
 
 # GFDL-CM4
 # (FIXME: Memory error for GFDL-CM4 on tcube.compression for a single year.)
+# (On NCI one file - 20 years - takes:
+     CPU Time Used: 01:32:18
+     Memory Used: 37.91GB
+     Walltime Used: 01:36:17)
+# (No wfo)
 institution=NOAA-GFDL
 model=GFDL-CM4
 cmip_version=v20180701
@@ -115,7 +120,7 @@ fx_version=v20180701
 grid=gn
 ripf=r1i1p1f1
 end_future_date=210012
-fx_exp=historical
+fx_exp=piControl
 
 # GFDL-ESM4
 # 
