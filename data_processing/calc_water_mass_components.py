@@ -233,6 +233,7 @@ def main(inargs):
     s_edges = numpy.insert(s_edges, 0, [-0.1, 10, 20])
     s_edges = numpy.append(s_edges, 50)
     s_edges = numpy.append(s_edges, 60)
+    s_edges = numpy.append(s_edges, 80)
     s_values = (s_edges[1:] + s_edges[:-1]) / 2
     s_values = list(s_values)
     s_values[0] = 5
