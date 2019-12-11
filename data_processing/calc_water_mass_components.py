@@ -228,7 +228,7 @@ def main(inargs):
     t_values = (t_edges[1:] + t_edges[:-1]) / 2
 
     smin = -0.1
-    smax = 60
+    smax = 80
     s_edges = numpy.arange(30, 40.05, 0.1)
     s_edges = numpy.insert(s_edges, 0, [-0.1, 10, 20])
     s_edges = numpy.append(s_edges, 50)
