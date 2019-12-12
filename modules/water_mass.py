@@ -31,17 +31,19 @@ except ImportError:
 
 # Define functions
 
-def create_df(tcube, scube, wcube, bcube):
+def create_df(tcube, scube, wdata, wvar, bcube):
     """Create DataFrame for water mass analysis.
 
     Args:
-      tcube (iris.cube.Cube) -- temperature cube
-      scube (iris.cube.Cube) -- salinity cube
-      wcube (iris.cube.Cube) -- weights cube (volcello or areacello)
-      bcube (iris.cube.Cube) -- basin cube
+      tcube (iris.cube.Cube)            -- temperature cube
+      scube (iris.cube.Cube)            -- salinity cube
+      wcube (numpy.ma.core.MaskedArray) -- weights data
+      wvar (str)                        -- weights variable (areacello or volcello)
+      bcube (iris.cube.Cube)            -- basin cube
 
     """
-
+ 
+    assert wvar in ['areacello', 'volcello']
     assert bcube.ndim == 2
     assert bcube.data.min() == 11
     assert bcube.data.max() == 17
@@ -60,18 +62,17 @@ def create_df(tcube, scube, wcube, bcube):
 
     if tcube.ndim == 3:
         bdata = uconv.broadcast_array(bcube.data, [1, 2], tcube.shape)
-        if wcube.var_name == 'areacello':
+        if wvar == 'areacello':
             assert coord_names[0] in ['time', 'month', 'year']
-            wdata = uconv.broadcast_array(wcube.data, [1, 2], tcube.shape)
+            wdata = uconv.broadcast_array(wdata, [1, 2], tcube.shape)
         else:
             assert coord_names[0] not in ['time', 'month', 'year']
-            wdata = wcube.data
     elif tcube.ndim == 4:
         bdata = uconv.broadcast_array(bcube.data, [2, 3], tcube.shape)
-        if wcube.var_name == 'areacello':
-            wdata = uconv.broadcast_array(wcube.data, [2, 3], tcube.shape)
+        if wvar == 'areacello':
+            wdata = uconv.broadcast_array(wdata, [2, 3], tcube.shape)
         else:
-            wdata = uconv.broadcast_array(wcube.data, [1, 3], tcube.shape)
+            wdata = uconv.broadcast_array(wdata, [1, 3], tcube.shape)
         
     lats = numpy.ma.masked_array(lats, tcube.data.mask)
     lons = numpy.ma.masked_array(lons, tcube.data.mask)

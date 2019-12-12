@@ -52,9 +52,13 @@ def get_bounds_list(edges):
     return numpy.array(bounds_list)
 
 
-def construct_cube(wdist, wcube, scube, tcube, bcube, sunits, tunits,
+def construct_cube(wdist, wobj, wattributes, scube, tcube, bcube, sunits, tunits,
                    x_values, y_values, z_values, x_edges, y_edges):
-    """Create the iris cube for output"""
+    """Create the iris cube for output
+
+    wobj is an iris.cube.Cube or xarray.core.dataarray.DataArray
+
+    """
 
     x_bounds = get_bounds_list(x_edges)
     y_bounds = get_bounds_list(y_edges)
@@ -82,12 +86,13 @@ def construct_cube(wdist, wcube, scube, tcube, bcube, sunits, tunits,
                                                    'flag_meanings': bcube.attributes['flag_meanings']})
 
     dim_coords_list = [(scoord, 0), (tcoord, 1), (basin_coord, 2)]
+    wvar = wobj.var_name if type(wobj) == iris.cube.Cube else wobj.name
     wdist_cube = iris.cube.Cube(wdist,
-                                standard_name=wcube.standard_name,
-                                long_name=wcube.long_name,
-                                var_name=wcube.var_name,
-                                units=wcube.units,
-                                attributes=tcube.attributes,
+                                standard_name=wobj.standard_name,
+                                long_name=wobj.long_name,
+                                var_name=wvar,
+                                units=wobj.units,
+                                attributes=wattributes,
                                 dim_coords_and_dims=dim_coords_list) 
 
     return wdist_cube
@@ -114,11 +119,7 @@ def get_log(inargs, bcube_atts, wcube_atts, tcube_atts, scube_atts):
 def main(inargs):
     """Run the program."""
 
-    wcube = iris.load_cube(inargs.weights_file)
-    wvar = wcube.var_name
-    assert wvar in ['areacello', 'volcello']
-    if wvar == 'volcello':
-        gio.check_global_ocean_volume(wcube)
+    wdata, wvar, wattributes, wobj = gio.get_ocean_weights(inargs.weights_file) 
     bcube = iris.load_cube(inargs.basin_file)
 
     smin, smax = inargs.salinity_bounds
@@ -141,7 +142,7 @@ def main(inargs):
         scube = scube[:, 0, ::]
         tcube = tcube[:, 0, ::]
 
-    df, sunits, tunits = water_mass.create_df(tcube, scube, wcube, bcube)
+    df, sunits, tunits = water_mass.create_df(tcube, scube, wdata, wvar, bcube)
 
     data = numpy.array([df['salinity'].values, df['temperature'].values, df['basin'].values]).T
     wdist, edges = numpy.histogramdd(data, weights=df['weight'].values, bins=[x_edges, y_edges, z_edges])
@@ -153,11 +154,11 @@ def main(inargs):
     assert binned_total_weight < orig_total_weight
     assert binned_total_weight > orig_total_weight * 0.95
 
-    wdist_cube = construct_cube(wdist, wcube, scube, tcube, bcube, sunits, tunits, 
+    wdist_cube = construct_cube(wdist, wobj, wattributes, scube, tcube, bcube, sunits, tunits, 
                                 x_values, y_values, z_values, x_edges, y_edges)
 
     # Metadata
-    log = get_log(inargs, bcube.attributes, wcube.attributes, tcube.attributes, scube.attributes)
+    log = get_log(inargs, bcube.attributes, wattributes, tcube.attributes, scube.attributes)
     wdist_cube.attributes['history'] = log
 
     iris.save(wdist_cube, inargs.outfile)

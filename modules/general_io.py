@@ -5,11 +5,13 @@ Functions:
   check_iris_var            -- Check if a variable is in the list of iris standard names
   check_time_units          -- Check time axis units
   check_wfo_sign            -- Check that the wfo variable has correct sign
+  check_global_ocean_area   -- Check that the global ocean area is within acceptable bounds
   check_global_ocean_volume -- Check that the global ocean volume is within acceptable bounds
   check_xarrayDataset       -- Check xarray.Dataset for data format compliance
   combine_files             -- Create an iris cube from multiple input files
   create_outdir             -- Create the output directory if it doesn't exist already
   get_cmip5_file_details    -- Extract details from a CMIP5 filename
+  get_ocean_weights         -- Read the volcello or areacello weights file and sainity check
   get_subset_kwargs         -- Get keyword arguments for xarray subsetting
   get_time_constraint       -- Get the time constraint used for reading an iris cube 
   get_timescale             -- Get the timescale
@@ -40,6 +42,7 @@ import iris
 from iris.experimental.equalise_cubes import equalise_attributes
 import cftime
 import cf_units
+import xarray as xr
 
 # Import my modules
 
@@ -185,11 +188,15 @@ def check_wfo_sign(cube):
     return cube
 
 
-def check_global_ocean_volume(vol_cube):
-    """Check that the global ocean volume is within acceptable bounds."""
+def check_global_ocean_area(global_area):
+    """Check that the global ocean area is within acceptable bounds."""
 
-    assert vol_cube.var_name == 'volcello'
-    global_volume = vol_cube.data.sum()
+    assert global_area > 3.4e+14, "Global ocean area is %s. Typical value is 1.3e+18 m3" %(str(global_area))
+    assert global_area < 3.8e+14, "Global ocean area is %s. Typical value is 1.3e+18 m3" %(str(global_area))
+
+
+def check_global_ocean_volume(global_volume):
+    """Check that the global ocean volume is within acceptable bounds."""
 
     assert global_volume > 1.2e+18, "Global ocean volume is %s. Typical value is 1.3e+18 m3" %(str(global_volume))
     assert global_volume < 1.45e+18, "Global ocean volume is %s. Typical value is 1.3e+18 m3" %(str(global_volume))
@@ -326,6 +333,34 @@ def get_cmip5_file_details(cube):
     #model, experiment, run = components[2:5]
 
     return model, experiment, run
+
+
+def get_ocean_weights(infile):
+    """Read the volcello or areacello weights file and sainity check.
+
+    This function is needed because for some reason iris can't read some volcello files.
+
+    """
+
+    try:
+        wobj = iris.load_cube(infile)
+        wdata = wcube.data
+        wvar = wcube.var_name
+        atts = wcube.attributes
+    except iris.exceptions.ConstraintMismatchError:
+        dset = xr.open_dataset(infile)
+        wobj = dset.volcello
+        wdata = numpy.ma.masked_invalid(wobj.data)
+        wvar = 'volcello'
+        atts = dset.attrs
+
+    assert wvar in ['areacello', 'volcello']
+    if wvar == 'volcello':
+        check_global_ocean_volume(wdata.sum())
+    else:
+        check_global_ocean_area(wdata.sum())
+
+    return wdata, wvar, atts, wobj 
 
 
 def get_subset_kwargs(namespace):

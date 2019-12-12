@@ -59,9 +59,14 @@ def get_bounds_list(edges):
 
 def construct_cube(w_tbin_data, ws_tbin_data, wt_tbin_data,
                    w_sbin_data, ws_sbin_data, wt_sbin_data,
-                   wcube, bcube, scube, tcube, sunits, tunits, years,
+                   wobj, wattributes, bcube, scube, tcube, sunits, tunits, years,
                    t_values, t_edges, s_values, s_edges, b_values, log):
-    """Create the iris cube for output"""
+    """Create the iris cube for output
+
+    wobj is an iris.cube.Cube or xarray.core.dataarray.DataArray
+
+
+"""
 
     year_coord = iris.coords.DimCoord(years,
                                       standard_name=scube.coord('year').standard_name,
@@ -95,65 +100,66 @@ def construct_cube(w_tbin_data, ws_tbin_data, wt_tbin_data,
     
     tbin_dim_coords_list = [(year_coord, 0), (temperature_coord, 1), (basin_coord, 2)]
     sbin_dim_coords_list = [(year_coord, 0), (salinity_coord, 1), (basin_coord, 2)]
+    wvar = wobj.var_name if type(wobj) == iris.cube.Cube else wobj.name
 
-    w_tbin_std_name = wcube.standard_name + '_binned_by_temperature'
-    iris.std_names.STD_NAMES[w_tbin_std_name] = {'canonical_units': str(wcube.units)}
+    w_tbin_std_name = wobj.standard_name + '_binned_by_temperature'
+    iris.std_names.STD_NAMES[w_tbin_std_name] = {'canonical_units': str(wobj.units)}
     w_tbin_cube = iris.cube.Cube(w_tbin_data,
                                  standard_name=w_tbin_std_name,
-                                 long_name=wcube.long_name + ' binned by temperature',
-                                 var_name=wcube.var_name + '_tbin',
-                                 units=wcube.units,
-                                 attributes=wcube.attributes,
+                                 long_name=wobj.long_name + ' binned by temperature',
+                                 var_name=wvar + '_tbin',
+                                 units=wobj.units,
+                                 attributes=wattributes,
                                  dim_coords_and_dims=tbin_dim_coords_list)
 
-    ws_tbin_std_name = scube.standard_name + '_times_' + wcube.standard_name + '_binned_by_temperature'
-    ws_units = str(sunits) + ' ' + str(wcube.units)
+    ws_tbin_std_name = scube.standard_name + '_times_' + wobj.standard_name + '_binned_by_temperature'
+    ws_units = str(sunits) + ' ' + str(wobj.units)
     iris.std_names.STD_NAMES[ws_tbin_std_name] = {'canonical_units': ws_units}
     ws_tbin_cube = iris.cube.Cube(ws_tbin_data,
                                   standard_name=ws_tbin_std_name,
-                                  long_name=scube.long_name + ' times ' + wcube.long_name + ' binned by temperature',
-                                  var_name=scube.var_name + '_' + wcube.var_name + '_tbin',
+                                  long_name=scube.long_name + ' times ' + wobj.long_name + ' binned by temperature',
+                                  var_name=scube.var_name + '_' + wvar + '_tbin',
                                   units=ws_units,
                                   attributes=scube.attributes,
                                   dim_coords_and_dims=tbin_dim_coords_list) 
 
-    wt_tbin_std_name = tcube.standard_name + '_times_' + wcube.standard_name + '_binned_by_temperature'
-    wt_units = str(tunits) + ' ' + str(wcube.units)
+    wt_tbin_std_name = tcube.standard_name + '_times_' + wobj.standard_name + '_binned_by_temperature'
+    wt_units = str(tunits) + ' ' + str(wobj.units)
     iris.std_names.STD_NAMES[wt_tbin_std_name] = {'canonical_units': wt_units}
     wt_tbin_cube = iris.cube.Cube(wt_tbin_data,
                                   standard_name=wt_tbin_std_name,
-                                  long_name=tcube.long_name + ' times ' + wcube.long_name + ' binned by temperature',
-                                  var_name=tcube.var_name + '_' + wcube.var_name + '_tbin',
+                                  long_name=tcube.long_name + ' times ' + wobj.long_name + ' binned by temperature',
+                                  var_name=tcube.var_name + '_' + wvar + '_tbin',
                                   units=wt_units,
                                   attributes=tcube.attributes,
                                   dim_coords_and_dims=tbin_dim_coords_list)
 
-    w_sbin_std_name = wcube.standard_name + '_binned_by_salinity'
-    iris.std_names.STD_NAMES[w_sbin_std_name] = {'canonical_units': str(wcube.units)}
+    w_sbin_std_name = wobj.standard_name + '_binned_by_salinity'
+    iris.std_names.STD_NAMES[w_sbin_std_name] = {'canonical_units': str(wobj.units)}
     w_sbin_cube = iris.cube.Cube(w_sbin_data,
                                  standard_name=w_sbin_std_name,
-                                 long_name=wcube.long_name + ' binned by salinity',
-                                 var_name=wcube.var_name + '_sbin',
-                                 units=wcube.units,
-                                 attributes=wcube.attributes,
+                                 long_name=wobj.long_name + ' binned by salinity',
+                                 var_name=wvar + '_sbin',
+                                 units=wobj.units,
+                                 attributes=wattributes,
                                  dim_coords_and_dims=sbin_dim_coords_list)
 
-    ws_sbin_std_name = scube.standard_name + '_times_' + wcube.standard_name + '_binned_by_salinity'
+    ws_sbin_std_name = scube.standard_name + '_times_' + wobj.standard_name + '_binned_by_salinity'
     iris.std_names.STD_NAMES[ws_sbin_std_name] = {'canonical_units': ws_units}
     ws_sbin_cube = iris.cube.Cube(ws_sbin_data,
                                   standard_name=ws_sbin_std_name,
-                                  long_name=scube.long_name + ' times ' + wcube.long_name + ' binned by salinity',
-                                  var_name=scube.var_name + '_' + wcube.var_name + '_sbin',
+                                  long_name=scube.long_name + ' times ' + wobj.long_name + ' binned by salinity',
+                                  var_name=scube.var_name + '_' + wvar + '_sbin',
                                   units=ws_units,
                                   attributes=scube.attributes,
                                   dim_coords_and_dims=sbin_dim_coords_list) 
 
-    wt_sbin_std_name = tcube.standard_name + '_times_' + wcube.standard_name + '_binned_by_salinity'
+    wt_sbin_std_name = tcube.standard_name + '_times_' + wobj.standard_name + '_binned_by_salinity'
     iris.std_names.STD_NAMES[wt_sbin_std_name] = {'canonical_units': wt_units}
     wt_sbin_cube = iris.cube.Cube(wt_sbin_data,
                                   standard_name=wt_sbin_std_name,
-                                  long_name=tcube.long_name + ' times ' + wcube.long_name + ' binned by salinity',
-                                  var_name=tcube.var_name + '_' + wcube.var_name + '_sbin',
+                                  long_name=tcube.long_name + ' times ' + wobj.long_name + ' binned by salinity',
+                                  var_name=tcube.var_name + '_' + wvar + '_sbin',
                                   units=wt_units,
                                   attributes=tcube.attributes,
                                   dim_coords_and_dims=sbin_dim_coords_list)
@@ -210,16 +216,12 @@ def bin_data(df, x_var, x_edges, basin_edges, ntimes):
     wt_out = wt_dist / ntimes
 
     return w_out, ws_out, wt_out
-
+    
 
 def main(inargs):
     """Run the program."""
 
-    wcube = iris.load_cube(inargs.weights_file)
-    wvar = wcube.var_name
-    assert wvar in ['areacello', 'volcello']
-    if wvar == 'volcello':
-        gio.check_global_ocean_volume(wcube)
+    wdata, wvar, wattributes, wobj = gio.get_ocean_weights(inargs.weights_file)  
     bcube = iris.load_cube(inargs.basin_file, 'region')
 
     tmin, tmax = inargs.temperature_bounds
@@ -247,7 +249,7 @@ def main(inargs):
     assert tcube.shape == scube.shape
     coord_names = [coord.name() for coord in tcube.dim_coords]
 
-    log = get_log(inargs, bcube.attributes, wcube.attributes, thistory, shistory)
+    log = get_log(inargs, bcube.attributes, wattributes, thistory, shistory)
 
     iris.coord_categorisation.add_year(tcube, 'time')
     iris.coord_categorisation.add_year(scube, 'time')
@@ -276,7 +278,7 @@ def main(inargs):
             salinity_year_cube = scube.extract(year_constraint)
             temperature_year_cube = tcube.extract(year_constraint)
 
-        df, sunits, tunits = water_mass.create_df(temperature_year_cube, salinity_year_cube, wcube, bcube)
+        df, sunits, tunits = water_mass.create_df(temperature_year_cube, salinity_year_cube, wdata, wvar, bcube)
         assert df['temperature'].values.min() > tmin, "Temperature minimum of %s is outside bin range" %(str(df['temperature'].values.min()))
         assert df['temperature'].values.max() < tmax, "Temperature maximum of %s is outside bin range" %(str(df['temperature'].values.max()))
         assert df['salinity'].values.min() > smin, "Salinity minimum of %s is outside bin range" %(str(df['salinity'].values.min()))
@@ -293,7 +295,7 @@ def main(inargs):
     wt_sbin_outdata = numpy.ma.masked_invalid(wt_sbin_outdata)
     outcube_list = construct_cube(w_tbin_outdata, ws_tbin_outdata, wt_tbin_outdata,
                                   w_sbin_outdata, ws_sbin_outdata, wt_sbin_outdata,
-                                  wcube, bcube, scube, tcube, sunits, tunits, years, 
+                                  wobj, wattributes, bcube, scube, tcube, sunits, tunits, years, 
                                   t_values, t_edges, s_values, s_edges, b_values, log)
 
     equalise_attributes(outcube_list)
