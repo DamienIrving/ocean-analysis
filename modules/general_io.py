@@ -344,9 +344,9 @@ def get_ocean_weights(infile):
 
     try:
         wobj = iris.load_cube(infile)
-        wdata = wcube.data
-        wvar = wcube.var_name
-        atts = wcube.attributes
+        wdata = wobj.data
+        wvar = wobj.var_name
+        atts = wobj.attributes
     except iris.exceptions.ConstraintMismatchError:
         dset = xr.open_dataset(infile)
         wobj = dset.volcello
