@@ -57,20 +57,24 @@ def main(inargs):
     """Run the program."""
 
     # Depth data
-    pdb.set_trace()
     data_cube = iris.load_cube(inargs.dummy_file, inargs.dummy_var)
     coord_names = [coord.name() for coord in data_cube.dim_coords]
-    assert coord_names == ['time', 'latitude', 'longitude']
-    data_cube = data_cube[0, ::]
-    data_cube.remove_coord('time')
-
+    assert coord_names[-2:] == ['latitude', 'longitude']
+    if data_cube.ndim == 3:
+        data_cube = data_cube[0, ::]
+        data_cube.remove_coord(coord_names[0])
+    else:
+        data_cube = data_cube[0, 0, ::]
+        data_cube.remove_coord(coord_names[0])
+        data_cube.remove_coord(coord_names[1])
+    
     area_data = spatial_weights.area_array(data_cube)
+    area_data = numpy.ma.asarray(area_data)
     area_data.mask = data_cube.data.mask
     area_cube = construct_area_cube(area_data, data_cube.attributes, data_cube.dim_coords)    
     area_cube.attributes['history'] = cmdprov.new_log(git_repo=repo_dir)
 
-    print('Global ocean area:', area_cube.data.sum())
-    print('(Typical value: 3.6e+14)')    
+    gio.check_global_ocean_area(area_cube.data.sum()) 
 
     iris.save(area_cube, inargs.outfile)
 
@@ -83,7 +87,7 @@ author:
 
 """
 
-    description='Calculate the CMIP5 areacello variable'
+    description='Calculate the CMIP areacello variable'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
