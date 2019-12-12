@@ -123,7 +123,7 @@ end_future_date=210012
 fx_exp=piControl
 
 # GFDL-ESM4
-# 
+# (no wfo)
 institution=NOAA-GFDL
 model=GFDL-ESM4
 cmip_version=v20190726
@@ -159,7 +159,7 @@ end_future_date=210012
 fx_exp=piControl
 
 # GISS-E2-1-H
-# 
+# (no wfo)
 institution=NASA-GISS
 model=GISS-E2-1-H
 cmip_version=v20190403
