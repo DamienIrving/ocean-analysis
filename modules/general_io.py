@@ -189,10 +189,14 @@ def check_wfo_sign(cube):
 
 
 def check_global_ocean_area(global_area):
-    """Check that the global ocean area is within acceptable bounds."""
+    """Check that the global ocean area is within acceptable bounds.
 
-    assert global_area > 3.4e+14, "Global ocean area is %s. Typical value is 1.3e+18 m3" %(str(global_area))
-    assert global_area < 3.8e+14, "Global ocean area is %s. Typical value is 1.3e+18 m3" %(str(global_area))
+    The 7.0e+14 allows for no ocean mask.
+
+    """
+
+    assert global_area > 3.4e+14, "Global ocean area is %s. Typical value (ocean masked) is 3.6e+14 m3" %(str(global_area))
+    assert global_area < 7.0e+14, "Global ocean area is %s. Typical value (ocean masked) is 3.6e+14 m3" %(str(global_area))
 
 
 def check_global_ocean_volume(global_volume):
