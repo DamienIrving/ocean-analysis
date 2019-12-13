@@ -132,11 +132,17 @@ def create_flux_df(flux_cube, bin_cube, basin_cube):
     lons = uconv.broadcast_array(flux_cube.coord('longitude').points, lon_pos, flux_cube.shape)
 
     basin_data = uconv.broadcast_array(basin_cube.data, [1, 2], flux_cube.shape)
-        
-    lats = numpy.ma.masked_array(lats, flux_cube.data.mask)
-    lons = numpy.ma.masked_array(lons, flux_cube.data.mask)
-    basin_data.mask = flux_cube.data.mask
- 
+
+    if not flux_cube.data.mask.sum() == bin_cube.data.mask.sum():
+        print("Applying common mask...")
+    common_mask = flux_cube.data.mask + bin_cube.data.mask
+            
+    lats = numpy.ma.masked_array(lats, common_mask)
+    lons = numpy.ma.masked_array(lons, common_mask)
+    basin_data.mask = common_mask
+    flux_cube.data.mask = common_mask
+    bin_cube.data.mask = common_mask
+    
     flux_data = flux_cube.data.compressed()
     bin_data = bin_cube.data.compressed()
     basin_data = basin_data.compressed()
