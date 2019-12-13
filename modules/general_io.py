@@ -172,22 +172,6 @@ def check_time_units(cube, new_calendar=None):
     return cube
 
 
-def check_wfo_sign(cube):
-    """Check that the wfo variable has correct sign."""
-
-    wrong_sign_models = ['CMCC-CM', 'CNRM-CM6-1', 'CNRM-ESM2-1',
-                         'EC-Earth3', 'EC-Earth3-Veg', 'IPSL-CM5A-LR',
-                         'IPSL-CM6A-LR', 'MIROC-ESM', 'MIROC-ESM-CHEM']
-
-    assert cube.standard_name == 'water_flux_into_sea_water'
-    model = cube.attributes['source_id']
-                  
-    if model in wrong_sign_models:
-        cube.data = cube.data * -1
-
-    return cube
-
-
 def check_global_ocean_area(global_area):
     """Check that the global ocean area is within acceptable bounds.
 
@@ -204,6 +188,25 @@ def check_global_ocean_volume(global_volume):
 
     assert global_volume > 1.2e+18, "Global ocean volume is %s. Typical value is 1.3e+18 m3" %(str(global_volume))
     assert global_volume < 1.45e+18, "Global ocean volume is %s. Typical value is 1.3e+18 m3" %(str(global_volume))
+
+
+def check_wfo_sign(cube):
+    """Check that the wfo variable has correct sign."""
+
+    wrong_sign_models = ['CMCC-CM',
+                         'CNRM-CM6-1', 'CNRM-ESM2-1',
+                         'EC-Earth3', 'EC-Earth3-Veg',
+                         'GISS-E2-1-G', 'GISS-E2-1-G-CC', 
+                         'IPSL-CM5A-LR', 'IPSL-CM6A-LR',
+                         'MIROC-ESM', 'MIROC-ESM-CHEM']
+
+    assert cube.standard_name == 'water_flux_into_sea_water'
+    model = cube.attributes['source_id']
+                  
+    if model in wrong_sign_models:
+        cube.data = cube.data * -1
+
+    return cube
 
 
 def check_xarrayDataset(dset, var_list):
