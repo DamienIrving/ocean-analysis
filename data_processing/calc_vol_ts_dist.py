@@ -151,7 +151,7 @@ def main(inargs):
     wdist = wdist / ntimes
     binned_total_weight = wdist.sum()
     orig_total_weight = df['weight'].values.sum() / ntimes
-    assert binned_total_weight < orig_total_weight
+    assert binned_total_weight <= orig_total_weight
     assert binned_total_weight > orig_total_weight * 0.95
 
     wdist_cube = construct_cube(wdist, wobj, wattributes, scube, tcube, bcube, sunits, tunits, 
