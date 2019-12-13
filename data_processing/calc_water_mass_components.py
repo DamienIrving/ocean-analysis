@@ -273,7 +273,6 @@ def main(inargs):
             assert scube.ndim == 4
             salinity_year_cube = scube[:, 0, ::].extract(year_constraint)
             temperature_year_cube = tcube[:, 0, ::].extract(year_constraint)
-            assert salinity_year_cube.coord(coord_names[1]).bounds[0][0] == 0
         else:
             salinity_year_cube = scube.extract(year_constraint)
             temperature_year_cube = tcube.extract(year_constraint)
