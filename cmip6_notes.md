@@ -51,6 +51,8 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | IPSL-CM6A-LR | [Website](http://forge.ipsl.jussieu.fr/igcmg/wiki/IPSLCMIP6), Reference, ES-DOC | NEMO 3.2 | BO, *FS*, *FWF* | 1. wfo wrong sign <br> 2. masso is not volo * rhozero <br> 3. missing dimension coordinates for x and y |
 | MIROC6 | Website, [Reference](https://www.geosci-model-dev.net/12/2727/2019/), ES-DOC | | | |
 | MIROC-ES2L | Website, [Reference](https://www.geosci-model-dev-discuss.net/gmd-2019-275/), ES-DOC | | | |
+| NorCPM1 | [Website](https://wiki.uib.no/norcpm/index.php/Norwegian_Climate_Prediction_Model), Reference, ES-DOC | | | |
+| NorESM2-LM | Website, Reference, ES-DOC | | | |
 | SAM0-UNICON | Website, [Reference](https://journals.ametsoc.org/doi/full/10.1175/JCLI-D-18-0796.1), ES-DOC | POP2 | BO, FS, *FWF* | 1. wfo values are zero everywhere |
 | UKESM1-0-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2019MS001739), [ES-DOC](https://explore.es-doc.org/cmip6/models/snu/sam0-unicon) | NEMO 3.6 | BO, *FS*, *FWF* | 1. constant wfo |
 
