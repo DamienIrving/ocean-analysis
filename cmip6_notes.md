@@ -29,7 +29,7 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 * [UK Earth System Models](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.UKESM1) (HadGEM3-GC3, UKESM1)
 * [Energy Exascale Earth System Model](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)2169-8996.ENERGY1) (E3SM-1-0)
 * [Max Planck Institute for Meteorology Earth System Model](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.MPIESM1) (MPI-ESM)
-* [Geophysical Fluid Dynamics Laboratory](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.CMIPMOD1) (GFDL-CM4)
+* [Geophysical Fluid Dynamics Laboratory](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.CMIPMOD1) (GFDL-CM4, GFDL-ESM4)
 
 
 | Model | Information | Ocean model | Ocean model characteristics | Issues |
@@ -43,6 +43,7 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | EC-Earth3 | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | 1. missing years in control thetaoga data |
 | EC-Earth3-Veg | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | 1. missing years in control thetaoga data |
 | GFDL-CM4 | [Website](https://www.gfdl.noaa.gov/coupled-physical-model-cm4/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2019MS001829), ES-DOC | MOM 6 | BO, *FS*, *FWF* | 1. Branch time issues. |
+| GFDL-ESM4 | [Website](https://www.gfdl.noaa.gov/earth-system-esm4/), Reference, ES-DOC | | | |
 | HadGEM3-GC31-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2017MS001115), [ES-DOC](https://explore.es-doc.org/cmip6/models/mohc/hadgem3-gc31-ll) | NEMO 3.6 | BO, *FS*, *FWF* | |
 | IPSL-CM6A-LR | [Website](http://forge.ipsl.jussieu.fr/igcmg/wiki/IPSLCMIP6), Reference, ES-DOC | NEMO 3.2 | BO, *FS*, *FWF* | 1. wfo wrong sign <br> 2. masso is not volo * rhozero <br> 3. missing dimension coordinates for x and y |
 | MIROC6 | Website, [Reference](https://www.geosci-model-dev.net/12/2727/2019/), ES-DOC | | | |
