@@ -112,7 +112,8 @@ def main(inargs):
 
     cube = iris.load_cube(inargs.infile, inargs.var)
     cube = gio.check_time_units(cube)
-    cube = timeseries.convert_to_annual(cube, chunk=inargs.chunk)
+    if inargs.annual:
+        cube = timeseries.convert_to_annual(cube, chunk=inargs.chunk)
     log = cmdprov.new_log(infile_history={inargs.infile: cube.attributes['history']}, git_repo=repo_dir) 
 
     dim_vals = {}
