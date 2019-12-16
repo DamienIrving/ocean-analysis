@@ -50,7 +50,7 @@ def create_df(tcube, scube, wdata, wvar, bcube):
     coord_names = [coord.name() for coord in tcube.dim_coords]
 
     tcube = gio.temperature_unit_check(tcube, 'C')
-    scube = gio.salinity_unit_check(scube)
+    scube = gio.salinity_unit_check(scube, abort=False)
 
     if tcube.coord('latitude').points.ndim == 1:
         lat_pos = coord_names.index('latitude')
@@ -72,12 +72,13 @@ def create_df(tcube, scube, wdata, wvar, bcube):
         if wvar == 'areacello':
             wdata = uconv.broadcast_array(wdata, [2, 3], tcube.shape)
         else:
-            wdata = uconv.broadcast_array(wdata, [1, 3], tcube.shape)
-        
-    lats = numpy.ma.masked_array(lats, tcube.data.mask)
-    lons = numpy.ma.masked_array(lons, tcube.data.mask)
-    bdata.mask = tcube.data.mask
-    wdata.mask = tcube.data.mask
+            wdata = uconv.broadcast_array(wdata, [1, 3], tcube.shape)    
+
+    tcube.data.mask = scube.data.mask
+    lats = numpy.ma.masked_array(lats, scube.data.mask)
+    lons = numpy.ma.masked_array(lons, scube.data.mask)
+    bdata.mask = scube.data.mask
+    wdata.mask = scube.data.mask
 
     sdata = scube.data.compressed()
     tdata = tcube.data.compressed()

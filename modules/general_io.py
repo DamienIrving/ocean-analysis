@@ -43,6 +43,7 @@ from iris.experimental.equalise_cubes import equalise_attributes
 import cftime
 import cf_units
 import xarray as xr
+import numpy
 
 # Import my modules
 
@@ -542,9 +543,17 @@ def salinity_unit_check(cube, valid_min=-1, valid_max=90, abort=True):
         assert data_min >= valid_min , 'Data min is %f' %(data_min)
     else: 
         if data_max > valid_max:
-            print('Data max is %f' %(data_max))
+            masked_points_before = cube.data.mask.sum()
+            cube.data = numpy.ma.masked_where(cube.data > valid_max, cube.data)
+            masked_points_after = cube.data.mask.sum()
+            new_masked_points = masked_points_after - masked_points_before
+            print('Data max is %f. New masked points = %f' %(data_max, new_masked_points))
         if data_min < valid_min:
-            print('Data min is %f' %(data_min))
+            masked_points_before = cube.data.mask.sum()
+            cube.data = numpy.ma.masked_where(cube.data < valid_min, cube.data)
+            masked_points_after = cube.data.mask.sum()
+            new_masked_points = masked_points_after - masked_points_before
+            print('Data min is %f. New masked points = %f' %(data_min, new_masked_points))
 
     cube.units = 'g/kg'   #cf_units.Unit('unknown')
 
