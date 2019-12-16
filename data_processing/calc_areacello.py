@@ -107,7 +107,8 @@ author:
     parser.add_argument("dummy_var", type=str, help="Dummy variable")
     parser.add_argument("outfile", type=str, help="Output file name")
 
-    parser.add_argument("--volcello_file", type=str, help="Volume file (still need dummy file because of iris issues with reading volcello files)")
+    parser.add_argument("--volcello_file", type=str, default=None,
+                        help="Volume file (still need dummy file because of iris issues with reading volcello files)")
 
     args = parser.parse_args()
     main(args)
