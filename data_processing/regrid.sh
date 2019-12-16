@@ -20,7 +20,7 @@ infiles=($@)
 for infile in "${infiles[@]}"; do
  
     outfile=`echo ${infile} | sed s:data1b/oi10/replicas:data/r87/dbi599:`
-    outfile=`echo ${outfile} | sed s:gn:gr:`
+    outfile=`echo ${outfile} | sed s:gn:gr:g`
 
     command="${python} ${script_dir}/regrid.py ${infile} ${var} ${outfile} --lats -89.5 89.5 1.0 --lons 0.5 359.5 1"
 
