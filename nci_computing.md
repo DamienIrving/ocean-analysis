@@ -80,13 +80,8 @@ $ cat job.txt
 #!/bin/bash
 #PBS -P r87
 #PBS -q normal
-#PBS -l walltime=20:00:00
-#PBS -l mem=30GB
-#PBS -l jobfs=30GB
-#PBS -l ncpus=16
-## For licensed software, you have to specify it to get the job running. For unlicensed software, you should also specify it to help us analyse the software usage on our system.
-#PBS -l software=my_program
-## The job will be executed from current working directory instead of home.
+#PBS -l walltime=05:00:00
+#PBS -l mem=50GB
 #PBS -l wd
 
 command...
