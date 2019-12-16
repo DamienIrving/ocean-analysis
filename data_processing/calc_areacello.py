@@ -56,21 +56,31 @@ def construct_area_cube(area_data, global_atts, dim_coords):
 def main(inargs):
     """Run the program."""
 
-    # Depth data
     data_cube = iris.load_cube(inargs.dummy_file, inargs.dummy_var)
-    coord_names = [coord.name() for coord in data_cube.dim_coords]
-    assert coord_names[-2:] == ['latitude', 'longitude']
-    if data_cube.ndim == 3:
-        data_cube = data_cube[0, ::]
-        data_cube.remove_coord(coord_names[0])
-    else:
+    coord_names = [coord.name() for coord in data_cube.dim_coords]       
+    if inargs.volcello_file:
+        assert data_cube.ndim == 4
+        wdata, wvar, atts, wobj = gio.get_ocean_weights(inargs.volcello_file)
+        depth_coord = data_cube.coord(coord_names[1])
+        assert depth_coord.units in ['m', 'dbar']
+        surface_depth = depth_coord.bounds[0][1] - depth_coord.bounds[0][0]
+        area_data = wdata[0, ::] / surface_depth
         data_cube = data_cube[0, 0, ::]
         data_cube.remove_coord(coord_names[0])
         data_cube.remove_coord(coord_names[1])
-    
-    area_data = spatial_weights.area_array(data_cube)
-    area_data = numpy.ma.asarray(area_data)
-    area_data.mask = data_cube.data.mask
+    else:
+        assert coord_names[-2:] == ['latitude', 'longitude']
+        if data_cube.ndim == 3:
+            data_cube = data_cube[0, ::]
+            data_cube.remove_coord(coord_names[0])
+        else:
+            data_cube = data_cube[0, 0, ::]
+            data_cube.remove_coord(coord_names[0])
+            data_cube.remove_coord(coord_names[1])
+        area_data = spatial_weights.area_array(data_cube)
+        area_data = numpy.ma.asarray(area_data)
+        area_data.mask = data_cube.data.mask
+        
     area_cube = construct_area_cube(area_data, data_cube.attributes, data_cube.dim_coords)    
     area_cube.attributes['history'] = cmdprov.new_log(git_repo=repo_dir)
 
@@ -96,6 +106,8 @@ author:
     parser.add_argument("dummy_file", type=str, help="Dummy file (for horizontal grid information)")
     parser.add_argument("dummy_var", type=str, help="Dummy variable")
     parser.add_argument("outfile", type=str, help="Output file name")
+
+    parser.add_argument("--volcello_file", type=str, help="Volume file (still need dummy file because of iris issues with reading volcello files)")
 
     args = parser.parse_args()
     main(args)
