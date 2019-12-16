@@ -22,6 +22,18 @@ ripf=r1i1p1f1
 end_future_date=210012
 fx_exp=historical
 
+# CAMS-CSM1-0
+(/g/data/r87/dbi599/CMIP6 - gn data must be regridded because no Ofx files)
+institution=CAMS
+model=CAMS-CSM1-0
+cmip_version=v20190708
+#scenario_version= # TODO
+fx_version=v20190708
+grid=gr
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
 # CanESM5
 institution=CCCma
 model=CanESM5
