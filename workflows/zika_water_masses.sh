@@ -23,14 +23,12 @@ scenario_dir=/g/data1b/oi10/replicas/CMIP6/ScenarioMIP/${institution}/${model}
 r87_cmip_dir=/g/data/r87/dbi599/CMIP6/CMIP/${institution}/${model}
 r87_scenario_dir=/g/data/r87/dbi599/CMIP6/ScenarioMIP/${institution}/${model}
 
-cmip_tfiles=(`ls ${cmip_dir}/${cmip_exp}/${ripf}/Omon/thetao/${grid}/${cmip_version}/*.nc`)
-cmip_sfiles=(`ls ${cmip_dir}/${cmip_exp}/${ripf}/Omon/so/${grid}/${cmip_version}/*.nc`)
-cmip_wfo_files=(`ls ${cmip_dir}/${cmip_exp}/${ripf}/Omon/wfo/${grid}/${cmip_version}/*.nc`)
-cmip_tos_files=(`ls ${cmip_dir}/${cmip_exp}/${ripf}/Omon/tos/${grid}/${cmip_version}/*.nc`)
-scenario_tfiles=(`ls ${scenario_dir}/${scenario_exp}/${ripf}/Omon/thetao/${grid}/${scenario_version}/*.nc`)
-scenario_sfiles=(`ls ${scenario_dir}/${scenario_exp}/${ripf}/Omon/so/${grid}/${scenario_version}/*.nc`)
-scenario_wfo_files=(`ls ${scenario_dir}/${scenario_exp}/${ripf}/Omon/wfo/${grid}/${scenario_version}/*.nc`)
-scenario_tos_files=(`ls ${scenario_dir}/${scenario_exp}/${ripf}/Omon/tos/${grid}/${scenario_version}/*.nc`)
+cmip_tfiles=(`ls ${cmip_dir}/${cmip_exp}/${ripf}/Omon/thetao/${grid}/${cmip_version}/thetao_Omon_${model}_${cmip_exp}_${ripf}_${grid}_??????-??????.nc`)
+cmip_sfiles=(`ls ${cmip_dir}/${cmip_exp}/${ripf}/Omon/so/${grid}/${cmip_version}/so_Omon_${model}_${cmip_exp}_${ripf}_${grid}_??????-??????.nc`)
+cmip_wfo_files=(`ls ${cmip_dir}/${cmip_exp}/${ripf}/Omon/wfo/${grid}/${cmip_version}/wfo_Omon_${model}_${cmip_exp}_${ripf}_${grid}_??????-??????.nc`)
+cmip_tos_files=(`ls ${cmip_dir}/${cmip_exp}/${ripf}/Omon/tos/${grid}/${cmip_version}/tos_Omon_${model}_${cmip_exp}_${ripf}_${grid}_??????-??????.nc`)
+scenario_tfiles=(`ls ${scenario_dir}/${scenario_exp}/${ripf}/Omon/thetao/${grid}/${scenario_version}/thetao_Omon_${model}_${scenario_exp}_${ripf}_${grid}_??????-??????.nc`)
+scenario_sfiles=(`ls ${scenario_dir}/${scenario_exp}/${ripf}/Omon/so/${grid}/${scenario_version}/so_Omon_${model}_${scenario_exp}_${ripf}_${grid}_??????-??????.nc`)
 
 # Basin file
 
@@ -38,8 +36,8 @@ basin_dir=${r87_cmip_dir}/${fx_exp}/${ripf}/Ofx/basin/${grid}/${cmip_version}
 mkdir -p ${basin_dir}
 basin_file=${basin_dir}/basin_Ofx_${model}_${fx_exp}_${ripf}_${grid}.nc
 basin_command="${python} ${script_dir}/calc_basin.py ${cmip_tfiles[0]} sea_water_potential_temperature ${basin_file}" 
-#echo ${basin_command}
-#${basin_command}
+echo ${basin_command}
+${basin_command}
 
 # Volume file
 
@@ -52,8 +50,8 @@ volume_dir=${r87_cmip_dir}/${fx_exp}/${ripf}/Ofx/volcello/${grid}/${fx_version}
 mkdir -p ${volume_dir}
 volume_file=${volume_dir}/volcello_Ofx_${model}_${fx_exp}_${ripf}_${grid}.nc
 volume_command="${python} ${script_dir}/calc_volcello.py ${cmip_tfiles[0]} sea_water_potential_temperature ${volume_file} --area_file ${areacello_file}"
-#echo ${volume_command}
-#${volume_command}
+echo ${volume_command}
+${volume_command}
 
 
 # Area profiles
@@ -138,29 +136,29 @@ r87_tdir=${r87_cmip_dir}/${cmip_exp}/${ripf}/Omon/thetao/${grid}/${cmip_version}
 mkdir -p ${r87_tdir}
 tclim_file=${r87_tdir}/thetao_Omon_${model}_${cmip_exp}_${ripf}_${grid}_2005-2014-monthly-clim.nc
 tclim_command="${python} ${script_dir}/calc_monthly_climatology.py ${cmip_tfiles[@]} ${tclim_file} --time_bounds 2005-01-01 2014-12-31" 
-#echo ${tclim_command}
-#${tclim_command}
+echo ${tclim_command}
+${tclim_command}
 
 r87_sdir=${r87_cmip_dir}/${cmip_exp}/${ripf}/Omon/so/${grid}/${cmip_version}
 mkdir -p ${r87_sdir}
 sclim_file=${r87_sdir}/so_Omon_${model}_${cmip_exp}_${ripf}_${grid}_2005-2014-monthly-clim.nc
 sclim_command="${python} ${script_dir}/calc_monthly_climatology.py ${cmip_sfiles[@]} ${sclim_file} --time_bounds 2005-01-01 2014-12-31" 
-#echo ${sclim_command}
-#${sclim_command}
+echo ${sclim_command}
+${sclim_command}
 
 r87_vdist_dir=${r87_cmip_dir}/${cmip_exp}/${ripf}/Omon/volo/${grid}/${cmip_version}
 mkdir -p ${r87_vdist_dir}
 vdist_file=${r87_vdist_dir}/volo-tsdist_Omon_${model}_${cmip_exp}_${ripf}_${grid}_2005-2014-monthly-clim.nc
 vdist_command="${python} ${script_dir}/calc_vol_ts_dist.py ${tclim_file} ${sclim_file} ${volume_file} ${basin_file} ${vdist_file}"
-#echo ${vdist_command}
-#${vdist_command}
+echo ${vdist_command}
+${vdist_command}
 
 r87_adist_dir=${r87_cmip_dir}/${cmip_exp}/${ripf}/Omon/areao/${grid}/${cmip_version}
 mkdir -p ${r87_adist_dir}
 adist_file=${r87_adist_dir}/areao-tsdist_Omon_${model}_${cmip_exp}_${ripf}_${grid}_2005-2014-monthly-clim.nc
 adist_command="${python} ${script_dir}/calc_vol_ts_dist.py ${tclim_file} ${sclim_file} ${areacello_file} ${basin_file} ${adist_file}"
-#echo ${adist_command}
-#${adist_command}
+echo ${adist_command}
+${adist_command}
 
 
 # Surface water flux
@@ -173,8 +171,8 @@ echo ${cmip_wfo_tos_command}
 ${cmip_wfo_tos_command}
 
 
-#ls -l ${vdist_file}
-#ls -l ${adist_file}
+ls -l ${vdist_file}
+ls -l ${adist_file}
 ls -l ${cmip_vwm_file}
 ls -l ${cmip_awm_file}
 ls -l ${scenario_vwm_file}
