@@ -150,7 +150,7 @@ def main(inargs):
         cube = iris.util.new_axis(cube, 'time')
 
     cube.attributes['history'] = log
-    iris.save(cube, inargs.outfile)
+    iris.save(cube, inargs.outfile, fill_value=1e20)
 
 
 if __name__ == '__main__':
