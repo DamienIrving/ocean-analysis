@@ -22,12 +22,36 @@ ripf=r1i1p1f1
 end_future_date=210012
 fx_exp=historical
 
+# BCC-CSM2-MR
+(/g/data/r87/dbi599/CMIP6 - gn data must be regridded because no Ofx files)
+institution=BCC
+model=BCC-CSM2-MR
+cmip_version=v20181126
+scenario_version=v20190319
+fx_version=v20181126
+grid=gr
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# BCC-ESM1
+(/g/data/r87/dbi599/CMIP6 - gn data must be regridded because no Ofx files)
+institution=BCC
+model=BCC-ESM1
+cmip_version=v20181129
+scenario_version= #None
+fx_version=v20181129
+grid=gr
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
 # CAMS-CSM1-0
 (/g/data/r87/dbi599/CMIP6 - gn data must be regridded because no Ofx files)
 institution=CAMS
 model=CAMS-CSM1-0
 cmip_version=v20190708
-#scenario_version= # TODO
+scenario_version=v20190708
 fx_version=v20190708
 grid=gr
 ripf=r1i1p1f1
@@ -226,6 +250,18 @@ cmip_version=v20190710
 scenario_version= # None
 fx_version=v20190710
 grid=gn
+ripf=r1i1p1f1
+end_future_date=210012
+fx_exp=historical
+
+# NESM3
+(/g/data/r87/dbi599/CMIP6 - gn data must be regridded because no Ofx files)
+institution=NUIST
+model=NESM3
+cmip_version=v20190703
+scenario_version=v20190731
+fx_version=v20190703
+grid=gr
 ripf=r1i1p1f1
 end_future_date=210012
 fx_exp=historical
