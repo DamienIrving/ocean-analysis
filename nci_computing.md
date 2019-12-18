@@ -1,21 +1,14 @@
-# Climate and Weather Science Laboratory (CWSLab) project
+### Links
 
-* New website: http://cwslab.nci.org.au/
-* Overview of CWSLab: http://www.cawcr.gov.au/projects/CWSLab/MAS.php  
-* GitHub repo (plus wiki): https://github.com/CWSL  
-* Vistrails user guide: http://www.vistrails.org/usersguide/v2.1/html/index.html  
-* NCI environment modules: http://nci.org.au/services-support/getting-help/environment-modules/  
-* NCI `/g/data/`: http://nci.org.au/services-support/getting-help/gdata-faqs-2/  
-* ARCCSS CMIP wiki: http://climate-cms.unsw.wikispaces.net/CMIP5+data
+* CLEX CMS wiki: http://climate-cms.wikis.unsw.edu.au/Home 
 * NCI CMIP community page: https://opus.nci.org.au/display/CMIP/CMIP+Community+Home
-* ARCCSS support on slack: https://arccss.slack.com
 * NCI Data Training Page: https://nci-data-training.readthedocs.io/en/latest/index.html
 
-Contacts:  
+### Help
 
-* General: cwslab@bom.gov.au
-* NCI: help@nci.org.au
-
+* Email: cws_help@nci.org.au (i.e. CMS team) or help@nci.org.au (general NCI help)
+* Slack: https://arccss.slack.com
+* Request access to different projects here: https://my.nci.org.au/mancini/
 
 ### CWS Virtual Desktop
 
