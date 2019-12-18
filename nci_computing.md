@@ -39,10 +39,6 @@ Contacts:
 
 Install miniconda at `/g/data/r87/dbi599` and use conda environments.
 
-### Long running jobs
-
-If you go to the "TurboVNC Viewer" menu in the top left when quitting, it will give you the option of having the VM continue to run while you're logged out.
-
 ### Version control
 
 Need to use ssh (not https) when cloning.  
@@ -71,7 +67,7 @@ To create or update a symlink:
 ln -sf /path/to/file /path/to/symlink
 ```  
 
-## Raijin
+## Queuing system (on Gadi or Raijin)
 
 To submit to the queue, run `qsub job.txt` where:
 ```
@@ -87,4 +83,5 @@ $ cat job.txt
 command...
 
 ```
+Use `qstat -u dbi599` to check status of jobs (job state definitions [here](https://www.jlab.org/hpc/PBS/qstat.html)) and `qdel <jobid>` to kill one.
   
