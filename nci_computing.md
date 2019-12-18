@@ -17,11 +17,11 @@ Contacts:
 * NCI: help@nci.org.au
 
 
-## CWS Virtual Desktop
+### CWS Virtual Desktop
 
 [VDI User Guide](https://opus.nci.org.au/display/Help/VDI+User+Guide)
 
-### Access requirements
+#### Access requirements
 
 1. An NCI login with access to compute and storage resources
    
@@ -67,7 +67,7 @@ To create or update a symlink:
 ln -sf /path/to/file /path/to/symlink
 ```  
 
-## Queuing system (on Gadi or Raijin)
+### Queuing system (on Gadi or Raijin)
 
 To submit to the queue, run `qsub job.txt` where:
 ```
