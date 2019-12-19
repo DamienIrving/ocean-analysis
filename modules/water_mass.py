@@ -74,11 +74,13 @@ def create_df(tcube, scube, wdata, wvar, bcube):
         else:
             wdata = uconv.broadcast_array(wdata, [1, 3], tcube.shape)    
 
-    tcube.data.mask = scube.data.mask
-    lats = numpy.ma.masked_array(lats, scube.data.mask)
-    lons = numpy.ma.masked_array(lons, scube.data.mask)
-    bdata.mask = scube.data.mask
-    wdata.mask = scube.data.mask
+    common_mask = tcube.data.mask + scube.data.mask
+    scube.data.mask = common_mask
+    tcube.data.mask = common_mask
+    lats = numpy.ma.masked_array(lats, common_mask)
+    lons = numpy.ma.masked_array(lons, common_mask)
+    bdata.mask = common_mask
+    wdata.mask = common_mask
 
     sdata = scube.data.compressed()
     tdata = tcube.data.compressed()
