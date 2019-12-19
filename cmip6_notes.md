@@ -36,14 +36,17 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | ---   | ---         | ---         | ---                         | ---    |
 | ACCESS-CM2 | Website, Reference, ES-DOC |  |  |  |
 | ACCESS-ESM1-5 | Website, Reference, ES-DOC |  |  |  |
-| BCC-CSM2-MR | Website, [Reference](https://www.geosci-model-dev.net/12/1573/2019/), ES-DOC | MOM 4 | BO, *FS*, *FWF* | |
-| BCC-ESM1 | Website, [Reference](https://www.geosci-model-dev.net/12/1573/2019/), ES-DOC | MOM 4 | BO, *FS*, *FWF* | |
-| CanESM5 | Website, [Reference](https://www.geosci-model-dev-discuss.net/gmd-2019-177/), ES-DOC | | |
+| AWI-CM-1-1-MR | Website, Reference, ES-DOC | FESOM |  | 1. unstructured grid |
+| BCC-CSM2-MR | Website, [Reference](https://www.geosci-model-dev.net/12/1573/2019/), ES-DOC | MOM 4 | BO, *FS*, *FWF* | 1. has two lat and lon coordinates (remove auxillary coords with `fix_bcc_models.sh`) |
+| BCC-ESM1 | Website, [Reference](https://www.geosci-model-dev.net/12/1573/2019/), ES-DOC | MOM 4 | BO, *FS*, *FWF* | 1. has two lat and lon coordinates (remove auxillary coords with `fix_bcc_models.sh`) |
+| CAMS-CSM1-0 | Website, Reference, ES-DOC |  |  | 1. curvilinear ocean grid and no `Ofx` data, so must be regridded using `regrid.py` first |
+| CanESM5 | Website, [Reference](https://www.geosci-model-dev-discuss.net/gmd-2019-177/), ES-DOC |  |  |  |
 | CESM2 | Website, Reference, [ES-DOC](https://explore.es-doc.org/cmip6/models/ncar/cesm2) |  |  |  |
-| CESM2-WACCM | Website, [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2017MS001232), ES-DOC | | |
-| CNRM-CM6-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019MS001683), ES-DOC | NEMO 3.6 | BO, *FS*, *FWF* | 1. wfo wrong sign <br> 2. masso is not volo * rhozero <br> 3. missing dimension coordinates for x and y |
-| CNRM-ESM2-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), Reference, ES-DOC | NEMO 3.6 | BO, *FS*, *FWF* | 1. wfo wrong sign <br> 2. masso is not volo * rhozero |
-| EC-Earth3 | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | 1. missing years in control thetaoga data |
+| CESM2-WACCM | Website, [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2017MS001232), ES-DOC |  |  |  |
+| CNRM-CM6-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019MS001683), ES-DOC | NEMO 3.6 | BO, *FS*, *FWF* | 1. `wfo` wrong sign <br> 2. `masso` is not `volo` * `rhozero` <br> 3. missing dimension coordinates for x and y <br> 4. `so` and `thetao` files use different time chunks |
+| CNRM-ESM2-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), Reference, ES-DOC | NEMO 3.6 | BO, *FS*, *FWF* | 1. `wfo` wrong sign <br> 2. `masso` is not `volo` * `rhozero` <br> 3. `so` and `thetao` files use different time chunks |
+| E3SM-1-0 | [Website](https://e3sm.org/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2018MS001603), ES-DOC |  |  | 1. the missing value for land in `so` and `thetao` files (and possibly others) is 1.0 <br> 2. the historical experiment data doesn't span 1850-2014 |
+| EC-Earth3 | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | 1. missing years in piControl `thetaoga` data |
 | EC-Earth3-Veg | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | 1. missing years in control thetaoga data |
 | GFDL-CM4 | [Website](https://www.gfdl.noaa.gov/coupled-physical-model-cm4/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2019MS001829), ES-DOC | MOM 6 | BO, *FS*, *FWF* | 1. Branch time issues. |
 | GFDL-ESM4 | [Website](https://www.gfdl.noaa.gov/earth-system-esm4/), Reference, ES-DOC | | | |
