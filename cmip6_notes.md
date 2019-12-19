@@ -38,7 +38,7 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | ACCESS-ESM1-5 | Website, Reference, ES-DOC |  |  |  |
 | AWI-CM-1-1-MR | Website, Reference, ES-DOC | FESOM (unstructured grid) |  |  |
 | BCC-CSM2-MR | Website, [Reference](https://www.geosci-model-dev.net/12/1573/2019/), ES-DOC | MOM 4 | BO, *FS*, *FWF* | 1. has two lat and lon coordinates (remove auxillary coords with `fix_bcc_models.sh`) |
-| BCC-ESM1 | Website, [Reference](https://www.geosci-model-dev.net/12/1573/2019/), ES-DOC | MOM 4 | BO, *FS*, *FWF* | 1. has two lat and lon coordinates (remove auxillary coords with `fix_bcc_models.sh`) |
+| BCC-ESM1 | Website, [Reference](https://www.geosci-model-dev.net/12/1573/2019/), ES-DOC | MOM 4 | BO, *FS*, *FWF* | 1. has two lat and lon coordinates (remove auxillary coords with `fix_bcc_models.sh`) <br> 2. from sometime in 1930s onwards time values are zero in the `so` historical data files |
 | CAMS-CSM1-0 | Website, Reference, ES-DOC |  |  | 1. curvilinear ocean grid and no `Ofx` data, so must be regridded using `regrid.py` first |
 | CanESM5 | Website, [Reference](https://www.geosci-model-dev-discuss.net/gmd-2019-177/), ES-DOC |  |  |  |
 | CESM2 | Website, Reference, [ES-DOC](https://explore.es-doc.org/cmip6/models/ncar/cesm2) |  |  |  |
