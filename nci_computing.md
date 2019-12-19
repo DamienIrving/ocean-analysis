@@ -1,27 +1,20 @@
-# Climate and Weather Science Laboratory (CWSLab) project
+### Links
 
-* New website: http://cwslab.nci.org.au/
-* Overview of CWSLab: http://www.cawcr.gov.au/projects/CWSLab/MAS.php  
-* GitHub repo (plus wiki): https://github.com/CWSL  
-* Vistrails user guide: http://www.vistrails.org/usersguide/v2.1/html/index.html  
-* NCI environment modules: http://nci.org.au/services-support/getting-help/environment-modules/  
-* NCI `/g/data/`: http://nci.org.au/services-support/getting-help/gdata-faqs-2/  
-* ARCCSS CMIP wiki: http://climate-cms.unsw.wikispaces.net/CMIP5+data
+* CLEX CMS wiki: http://climate-cms.wikis.unsw.edu.au/Home 
 * NCI CMIP community page: https://opus.nci.org.au/display/CMIP/CMIP+Community+Home
-* ARCCSS support on slack: https://arccss.slack.com
 * NCI Data Training Page: https://nci-data-training.readthedocs.io/en/latest/index.html
 
-Contacts:  
+### Help
 
-* General: cwslab@bom.gov.au
-* NCI: help@nci.org.au
+* Email: cws_help@nci.org.au (i.e. CMS team) or help@nci.org.au (general NCI help)
+* Slack: https://arccss.slack.com
+* Request access to different projects here: https://my.nci.org.au/mancini/
 
-
-## CWS Virtual Desktop
+### CWS Virtual Desktop
 
 [VDI User Guide](https://opus.nci.org.au/display/Help/VDI+User+Guide)
 
-### Access requirements
+#### Access requirements
 
 1. An NCI login with access to compute and storage resources
    
@@ -38,10 +31,6 @@ Contacts:
 ### Software solution
 
 Install miniconda at `/g/data/r87/dbi599` and use conda environments.
-
-### Long running jobs
-
-If you go to the "TurboVNC Viewer" menu in the top left when quitting, it will give you the option of having the VM continue to run while you're logged out.
 
 ### Version control
 
@@ -71,7 +60,7 @@ To create or update a symlink:
 ln -sf /path/to/file /path/to/symlink
 ```  
 
-## Raijin
+### Queuing system (on Gadi or Raijin)
 
 To submit to the queue, run `qsub job.txt` where:
 ```
@@ -87,4 +76,5 @@ $ cat job.txt
 command...
 
 ```
+Use `qstat -u dbi599` to check status of jobs (job state definitions [here](https://www.jlab.org/hpc/PBS/qstat.html)) and `qdel <jobid>` to kill one.
   
