@@ -539,21 +539,21 @@ def salinity_unit_check(cube, valid_min=-1, valid_max=90, abort=True):
     data_min = cube.data.min()
     
     if abort:
-        assert data_max < valid_max, 'Data max is %f' %(data_max)
-        assert data_min >= valid_min , 'Data min is %f' %(data_min)
+        assert data_max < valid_max, 'Salinity max is %f' %(data_max)
+        assert data_min >= valid_min , 'Salinity min is %f' %(data_min)
     else: 
         if data_max > valid_max:
             masked_points_before = cube.data.mask.sum()
             cube.data = numpy.ma.masked_where(cube.data > valid_max, cube.data)
             masked_points_after = cube.data.mask.sum()
             new_masked_points = masked_points_after - masked_points_before
-            print('Data max is %f. New masked points = %f' %(data_max, new_masked_points))
+            print('Salinity max is %f. New masked points = %f' %(data_max, new_masked_points))
         if data_min < valid_min:
             masked_points_before = cube.data.mask.sum()
             cube.data = numpy.ma.masked_where(cube.data < valid_min, cube.data)
             masked_points_after = cube.data.mask.sum()
             new_masked_points = masked_points_after - masked_points_before
-            print('Data min is %f. New masked points = %f' %(data_min, new_masked_points))
+            print('Salinity min is %f. New masked points = %f' %(data_min, new_masked_points))
 
     cube.units = 'g/kg'   #cf_units.Unit('unknown')
 
@@ -655,9 +655,9 @@ def temperature_unit_check(cube, output_unit, abort=True):
     assert output_unit in ['K', 'C']
     valid_bounds = {'K': [263, 333], 'C': [-10, 60]}
     
-    data_mean = cube.data.mean()
-    assert data_mean < 400
-    in_unit = 'K' if data_mean > 200 else 'C'
+    data_median = numpy.ma.median(cube.data)
+    assert data_median < 400
+    in_unit = 'K' if data_median > 200 else 'C'
 
     valid_min, valid_max = valid_bounds[in_unit]
     data_max = cube.data.max()
@@ -668,13 +668,21 @@ def temperature_unit_check(cube, output_unit, abort=True):
         data_min = cube.data.min()
 
     if abort:
-        assert data_max < valid_max, 'Data max is %f' %(data_max)
-        assert data_min >= valid_min , 'Data min is %f' %(data_min)
+        assert data_max < valid_max, 'Temperature max is %f' %(data_max)
+        assert data_min >= valid_min , 'Temperature min is %f' %(data_min)
     else: 
         if data_max > valid_max:
-            print('Data max is %f' %(data_max))
+            masked_points_before = cube.data.mask.sum()
+            cube.data = numpy.ma.masked_where(cube.data > valid_max, cube.data)
+            masked_points_after = cube.data.mask.sum()
+            new_masked_points = masked_points_after - masked_points_before
+            print('Temperature max is %f. New masked points = %f' %(data_max, new_masked_points))
         if data_min < valid_min:
-            print('Data min is %f' %(data_min))
+            masked_points_before = cube.data.mask.sum()
+            cube.data = numpy.ma.masked_where(cube.data < valid_min, cube.data)
+            masked_points_after = cube.data.mask.sum()
+            new_masked_points = masked_points_after - masked_points_before
+            print('Temperature min is %f. New masked points = %f' %(data_min, new_masked_points))
 
     if in_unit != output_unit:
         if output_unit == 'C':

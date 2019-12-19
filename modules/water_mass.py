@@ -49,7 +49,7 @@ def create_df(tcube, scube, wdata, wvar, bcube):
     assert bcube.data.max() == 17
     coord_names = [coord.name() for coord in tcube.dim_coords]
 
-    tcube = gio.temperature_unit_check(tcube, 'C')
+    tcube = gio.temperature_unit_check(tcube, 'C', abort=False)
     scube = gio.salinity_unit_check(scube, abort=False)
 
     if tcube.coord('latitude').points.ndim == 1:
