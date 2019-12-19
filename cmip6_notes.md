@@ -36,7 +36,7 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | ---   | ---         | ---         | ---                         | ---    |
 | ACCESS-CM2 | Website, Reference, ES-DOC |  |  |  |
 | ACCESS-ESM1-5 | Website, Reference, ES-DOC |  |  |  |
-| AWI-CM-1-1-MR | Website, Reference, ES-DOC | FESOM |  | 1. unstructured grid |
+| AWI-CM-1-1-MR | Website, Reference, ES-DOC | FESOM (unstructured grid) |  |  |
 | BCC-CSM2-MR | Website, [Reference](https://www.geosci-model-dev.net/12/1573/2019/), ES-DOC | MOM 4 | BO, *FS*, *FWF* | 1. has two lat and lon coordinates (remove auxillary coords with `fix_bcc_models.sh`) |
 | BCC-ESM1 | Website, [Reference](https://www.geosci-model-dev.net/12/1573/2019/), ES-DOC | MOM 4 | BO, *FS*, *FWF* | 1. has two lat and lon coordinates (remove auxillary coords with `fix_bcc_models.sh`) |
 | CAMS-CSM1-0 | Website, Reference, ES-DOC |  |  | 1. curvilinear ocean grid and no `Ofx` data, so must be regridded using `regrid.py` first |
@@ -46,22 +46,24 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | CNRM-CM6-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019MS001683), ES-DOC | NEMO 3.6 | BO, *FS*, *FWF* | 1. `wfo` wrong sign <br> 2. `masso` is not `volo` * `rhozero` <br> 3. missing dimension coordinates for x and y <br> 4. `so` and `thetao` files use different time chunks |
 | CNRM-ESM2-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), Reference, ES-DOC | NEMO 3.6 | BO, *FS*, *FWF* | 1. `wfo` wrong sign <br> 2. `masso` is not `volo` * `rhozero` <br> 3. `so` and `thetao` files use different time chunks |
 | E3SM-1-0 | [Website](https://e3sm.org/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2018MS001603), ES-DOC |  |  | 1. the missing value for land in `so` and `thetao` files (and possibly others) is 1.0 <br> 2. the historical experiment data doesn't span 1850-2014 |
-| EC-Earth3 | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | 1. missing years in piControl `thetaoga` data |
-| EC-Earth3-Veg | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | 1. missing years in control thetaoga data |
-| GFDL-CM4 | [Website](https://www.gfdl.noaa.gov/coupled-physical-model-cm4/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2019MS001829), ES-DOC | MOM 6 | BO, *FS*, *FWF* | 1. Branch time issues. |
-| GFDL-ESM4 | [Website](https://www.gfdl.noaa.gov/earth-system-esm4/), Reference, ES-DOC | | | |
-| GISS-E2-1-G | [Website](https://data.giss.nasa.gov/modelE/cmip6/), Reference, ES-DOC | | | |
-| GISS-E2-1-G-CC | [Website](https://data.giss.nasa.gov/modelE/cmip6/), Reference, ES-DOC | | | |
+| EC-Earth3 | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | 1. missing years in piControl `thetaoga` data <br>  2. `masso` is not `volo` * `rhozero` <br> 3. `wfo` wrong sign |
+| EC-Earth3-Veg | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | 1. missing years in control `thetaoga` data <br> 2. `wfo` does not equal `wfonocorr` <br> 3. `masso` is not `volo` * `rhozero` <br> 4. `wfo` wrong sign |
+| GFDL-CM4 | [Website](https://www.gfdl.noaa.gov/coupled-physical-model-cm4/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2019MS001829), ES-DOC | MOM 6 | BO, *FS*, *FWF* | 1. branch time issues. |
+| GFDL-ESM4 | [Website](https://www.gfdl.noaa.gov/earth-system-esm4/), Reference, ES-DOC | | | 1. `sos` data missing for ssp585 |
+| GISS-E2-1-G | [Website](https://data.giss.nasa.gov/modelE/cmip6/), Reference, ES-DOC | | | 1. `wfo` wrong sign |
+| GISS-E2-1-G-CC | [Website](https://data.giss.nasa.gov/modelE/cmip6/), Reference, ES-DOC | | | 1. `wfo` wrong sign |
 | GISS-E2-1-H | [Website](https://data.giss.nasa.gov/modelE/cmip6/), Reference, ES-DOC | | | |
 | HadGEM3-GC31-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2017MS001115), [ES-DOC](https://explore.es-doc.org/cmip6/models/mohc/hadgem3-gc31-ll) | NEMO 3.6 | BO, *FS*, *FWF* | |
-| IPSL-CM6A-LR | [Website](http://forge.ipsl.jussieu.fr/igcmg/wiki/IPSLCMIP6), Reference, [ES-DOC](https://explore.es-doc.org/cmip6/models/ipsl/ipsl-cm6a-lr) | NEMO 3.2 | BO, *FS*, *FWF* | 1. wfo wrong sign <br> 2. masso is not volo * rhozero <br> 3. missing dimension coordinates for x and y |
+| IPSL-CM6A-LR | [Website](http://forge.ipsl.jussieu.fr/igcmg/wiki/IPSLCMIP6), Reference, [ES-DOC](https://explore.es-doc.org/cmip6/models/ipsl/ipsl-cm6a-lr) | NEMO 3.2 | BO, *FS*, *FWF* | 1. `wfo` wrong sign <br> 2. `masso` is not `volo` * `rhozero` <br> 3. missing dimension coordinates for x and y |
+| MCM-UA-1-0 | Website, Reference, ES-DOC |  |  | 1. global ocean volume (from `volcello`) is way too small |
 | MIROC6 | Website, [Reference](https://www.geosci-model-dev.net/12/2727/2019/), [ES-DOC](https://explore.es-doc.org/cmip6/models/miroc/miroc6) | | | |
 | MIROC-ES2L | Website, [Reference](https://www.geosci-model-dev-discuss.net/gmd-2019-275/), [ES-DOC](https://explore.es-doc.org/cmip6/models/miroc/miroc-es2l) | | | |
 | MPI-ESM1-2-HR | [Website](https://www.geosci-model-dev.net/12/3241/2019/), Reference, ES-DOC |  |  |  |
-| NorCPM1 | [Website](https://wiki.uib.no/norcpm/index.php/Norwegian_Climate_Prediction_Model), Reference, ES-DOC | | | |
-| NorESM2-LM | Website, Reference, ES-DOC | | | |
-| SAM0-UNICON | Website, [Reference](https://journals.ametsoc.org/doi/full/10.1175/JCLI-D-18-0796.1), [ES-DOC](https://explore.es-doc.org/cmip6/models/snu/sam0-unicon) | POP2 | BO, FS, *FWF* | 1. wfo values are zero everywhere |
-| UKESM1-0-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2019MS001739), [ES-DOC](https://explore.es-doc.org/cmip6/models/mohc/ukesm1-0-ll) | NEMO 3.6 | BO, *FS*, *FWF* | 1. constant wfo |
+| NESM3 | Website, [Reference](https://www.geosci-model-dev.net/11/2975/2018/), ES-DOC |  |  | 1. historical data doesn't go beyond 1999 <br> 2. curvilinear ocean grid and no `Ofx` data, so must be regridded using `regrid.py` first | 
+| NorCPM1 | [Website](https://wiki.uib.no/norcpm/index.php/Norwegian_Climate_Prediction_Model), Reference, ES-DOC | | | 1. can use the gn `areacello` data (which has depth coord in metres) with gr data |
+| NorESM2-LM | Website, Reference, ES-DOC | | | 1. bogus gn `volcello` data |
+| SAM0-UNICON | Website, [Reference](https://journals.ametsoc.org/doi/full/10.1175/JCLI-D-18-0796.1), [ES-DOC](https://explore.es-doc.org/cmip6/models/snu/sam0-unicon) | POP2 | BO, FS, *FWF* | 1. `wfo` values are zero everywhere |
+| UKESM1-0-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2019MS001739), [ES-DOC](https://explore.es-doc.org/cmip6/models/mohc/ukesm1-0-ll) | NEMO 3.6 | BO, *FS*, *FWF* | 1. constant `wfo` |
 
 
 
