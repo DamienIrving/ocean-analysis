@@ -48,6 +48,9 @@ def plot_energy_conservation(df):
     """Plot regression coefficients for thermal energy conservation"""
     
     comparison_list = ['netTOA vs thermal OHC regression', 'netTOA vs hfds regression', 'hfds vs thermal OHC regression']
+    df = df[comparison_list]
+    df = df.dropna(axis=0, how='all')
+    
     x = np.arange(df.shape[0])
     x0 = x - 0.2
     x1 = x + 0.2
@@ -80,6 +83,9 @@ def plot_mass_conservation(df):
     """Plot the regression coefficient for each model"""
     
     comparison_list = ['wfo vs masso regression', 'wfo vs soga regression', 'masso vs soga regression']
+    df = df[comparison_list]
+    df = df.dropna(axis=0, how='all')
+    
     x = np.arange(df.shape[0])
     x0 = x - 0.2
     x1 = x + 0.2
