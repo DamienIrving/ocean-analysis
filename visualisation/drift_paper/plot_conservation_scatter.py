@@ -216,7 +216,7 @@ def convert_units(value, start_units, end_units, ocean_area=None):
 
 def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
                            scale_factor=0, scinotation=False, shading=False,
-                           xpad=None, ypad=None, broken=False):
+                           xpad=None, ypad=None, broken=False, legend=False):
     """Plot comparison for given x and y variables.
     
     Data are multiplied by 10^scale_factor.
@@ -258,30 +258,71 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
     plot_aesthetics(ax, yvar, xvar, plot_units, scinotation, shading, scale_factor,
                     xpad=xpad, ypad=ypad, non_square=non_square)
     ax.set_title(title)
-    if 'thermal' in title:
-        ax.legend(loc='center left', bbox_to_anchor=(1.05, -0.1))
 
 
+def get_legend_info(ax, df_subset):
+    """Get the legend handles and labels.
+    
+    df_subset should only contain rows plotted in ax
+    
+    """
+
+    legend_info = ax.get_legend_handles_labels()
+    if len(legend_info[0]) == 2:
+        legend_info = legend_info[0]
+    assert len(legend_info) == 2
+    handles = legend_info[0]
+    labels = legend_info[1]
+    
+    for index, model in enumerate(labels):
+        if df_subset.loc[model].isnull().values.any():
+            handles[index] = None    
+    
+    return handles, labels
+    
+
+def update_legend_info(ax, df_subset, handles, labels):
+    """Update legend information.
+    
+    df_subset should only contain rows plotted in ax
+    
+    """
+    
+    new_handles, new_labels = get_legend_info(ax, df_subset)
+    assert len(handles) == len(new_handles)
+    
+    for index, handle in enumerate(handles):
+        if not handle:
+            handles[index] = new_handles[index] 
+    
+    return handles, labels  
+    
+    
 def main(inargs):
     """Run the program."""
 
     df = pd.read_csv(inargs.infile)
     df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
  
-    fig = plt.figure(figsize=[16, 14])
+    fig = plt.figure(figsize=[18.5, 14])
     eei_sps, thermal_sps, mass_sps, salt_sps = GridSpec(2, 2)
 
     # EEI conservation
     eei_ax = fig.add_subplot(eei_sps)
-    plot_broken_comparison(eei_ax, df, '(a) planetary energy imbalance', 'netTOA (J yr-1)', 'thermal OHC (J yr-1)', 'W m-2')
+    plot_broken_comparison(eei_ax, df, '(a) planetary energy imbalance', 'netTOA (J yr-1)',
+                           'thermal OHC (J yr-1)', 'W m-2', legend=True)
+    handles, labels = get_legend_info(eei_ax, df[['netTOA (J yr-1)', 'thermal OHC (J yr-1)']])
 
     # Thermal conservation
     xlims=[(-41.05, -40.82), (-0.55, 0.55)]
     ylims=[(-0.55, 0.66)]
     wspace = hspace = 0.08
-    thermal_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace, subplot_spec=thermal_sps)
+    thermal_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace,
+                            subplot_spec=thermal_sps, d=0.0)
     plot_broken_comparison(thermal_ax, df, '(b) thermal energy conservation', 'hfds (J yr-1)',
                            'thermal OHC (J yr-1)', 'W m-2', xpad=20, broken=True)
+    handles, labels = update_legend_info(thermal_ax, df[['hfds (J yr-1)', 'thermal OHC (J yr-1)']],
+                                         handles, labels)
     
     # Mass conservation
     xlims=[(-8, 6.2)]
@@ -289,19 +330,23 @@ def main(inargs):
     mass_ax = brokenaxes(xlims=xlims, ylims=ylims, subplot_spec=mass_sps)
     plot_broken_comparison(mass_ax, df, '(c) mass conservation', 'wfo (kg yr-1)', 'masso (kg yr-1)',
                            'mm yr-1', broken=True)
+    handles, labels = update_legend_info(mass_ax, df[['wfo (kg yr-1)', 'masso (kg yr-1)']],
+                                         handles, labels)
 
     # Salt conservation
     xlims=[(-2, 5)]
     ylims=[(-19, -17.5), (-2.3, 5.1)]
     hspace = 0.1
-    salt_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=salt_sps)
+    salt_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=salt_sps, d=0.0)
     plot_broken_comparison(salt_ax, df, '(d) salt conservation', 'masso (g/kg yr-1)', 'soga (g/kg yr-1)',
                            'g/kg s-1', scale_factor=13, broken=True)
+    handles, labels = update_legend_info(salt_ax, df[['masso (g/kg yr-1)', 'soga (g/kg yr-1)']],
+                                         handles, labels)
 
-    #handles, labels = thermal_ax.get_legend_handles_labels()
-    #fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.95, 0.5))
+    fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.815, 0.5))
 
-    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=200)
+    plt.tight_layout(rect=(0, 0, 0.8, 1))
+    plt.savefig(inargs.outfile, dpi=200)
     log_file = re.sub('.png', '.met', inargs.outfile)
     log_text = cmdprov.new_log(git_repo=repo_dir)
     cmdprov.write_log(log_file, log_text)
