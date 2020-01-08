@@ -321,8 +321,8 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("infile", type=str, default=None, help="Output file name")
-    parser.add_argument("outfile", type=str, default=None, help="Output file name")
+    parser.add_argument("infile", type=str, help="Input file name")
+    parser.add_argument("outfile", type=str, help="Output file name")
 
     args = parser.parse_args()  
     main(args)
