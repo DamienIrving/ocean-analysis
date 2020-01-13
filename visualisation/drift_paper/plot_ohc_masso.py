@@ -214,6 +214,14 @@ def plot_reference_mass(ax, max_time):
     ax.set_ylim(ymin, ymax)
 
 
+def print_trend(data, label, units):
+    """Print the linear trend to the screen"""
+
+    time_axis = numpy.arange(len(data))
+    trend = timeseries.linear_trend(data, time_axis, None)
+    print(label, trend, units)
+
+
 def main(inargs):
     """Run the program."""
 
@@ -262,10 +270,15 @@ def main(inargs):
         color = next(colors)
         style = styles[count]
         count = count + 1
+        print(model)
         ax_ohc.plot(ohc_anomaly, color=color, label=label, linestyle=style)
+        print_trend(ohc_anomaly, 'OHC first-order trend:', 'C/yr')
         ax_ohcd.plot(ohc_dedrifted_anomaly, color=color, label=label, linestyle=style)
+        print_trend(ohc_dedrifted_anomaly, 'OHC second-order trend:', 'C/yr')
         ax_mass.plot(masso_anomaly, color=color, label=label, linestyle=style)
+        print_trend(masso_anomaly, 'Mass first-order trend:', 'kg/yr')
         ax_massd.plot(masso_dedrifted_anomaly, color=color, label=label, linestyle=style)
+        print_trend(masso_dedrifted_anomaly, 'Mass second-order trend:', 'kg/yr')
 
         if len(ohc) > max_time:
             max_time = len(ohc)
