@@ -52,7 +52,10 @@ def main(inargs):
         cube = iris.load_cube(infile, 'sea_water_potential_temperature')
         weights = uconv.broadcast_array(volume_data, [1, 3], cube.shape)
         coord_names = [coord.name() for coord in cube.dim_coords]
+        aux_coord_names = [coord.name() for coord in cube.aux_coords]
         thetaoga = cube.collapsed(coord_names[1:], iris.analysis.MEAN, weights=weights)
+        for coord in coord_names[1:] + aux_coord_names:
+            thetaoga.remove_coord(coord)
         thetaoga.var_name = 'thetaoga'
         output_cubelist.append(thetaoga)
         print(infile)
