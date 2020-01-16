@@ -45,7 +45,7 @@ names = {'masso': 'sea_water_mass',
          'volo': 'sea_water_volume',
          'thetaoga': 'sea_water_potential_temperature'}
 
-processed_files = []
+extra_log = []
 
 
 def dedrift_data(data, fit='linear'):
@@ -91,9 +91,6 @@ def clef_search(model, variable, ensemble):
         filenames.sort()
         filedir = results['pdir']
         file_list = [filedir + '/' + filename for filename in filenames]
-        version = results['version']
-        file_version_list = [filedir + '/' + filename + ', ' + str(version) for filename in filenames]
-        processed_files.append(file_version_list)
     else:
         file_list = []
 
@@ -119,8 +116,9 @@ def file_match(file_dict, target_model, target_variable, target_ensemble):
 
     key = '%s_%s_%s'  %(target_model, target_ensemble, target_variable)
     match = file_dict.get(key, None)
+    files = uconv.single2list(match) if match else None
     
-    return uconv.single2list(match)
+    return files
 
 
 def read_global_variable(model, variable, ensemble, manual_files):
@@ -131,23 +129,21 @@ def read_global_variable(model, variable, ensemble, manual_files):
         file_list = manual
     else:
         file_list = clef_search(model, variable, ensemble) 
-
     if file_list:
         cube, history = gio.combine_files(file_list, names[variable])
         cube = timeseries.convert_to_annual(cube)
         cube = time_check(cube)
+        extra_log.append(file_list)
     else:
         cube = None
 
     return cube
 
 
-def get_log_text(file_list):
+def get_log_text(extra_log):
     """Write the metadata to file."""
 
-    flat_list = [item for sublist in file_list for item in sublist]
-    flat_list = list(set(flat_list))
-    flat_list.sort()
+    flat_list = [item for sublist in extra_log for item in sublist]
     log_text = cmdprov.new_log(git_repo=repo_dir, extra_notes=flat_list)
 
     return log_text
@@ -210,12 +206,12 @@ def plot_reference_mass(ax, max_time):
     ax.set_ylim(ymin, ymax)
 
 
-def print_trend(data, label, units):
+def record_trend(data, label, units):
     """Print the linear trend to the screen"""
 
     time_axis = numpy.arange(len(data))
     trend = timeseries.linear_trend(data, time_axis, None)
-    print(label, trend, units)
+    extra_log.append(['%s: %f %s' %(label, trend, units)])
 
 
 def main(inargs):
@@ -246,13 +242,14 @@ def main(inargs):
     count = 0
     for model, run in zip(inargs.models, inargs.runs):
         print(model, run)
+        extra_log.append(['# ' + model + ', ' + run])
         if model in volo_models:
             volo = read_global_variable(model, 'volo', run, manual_files)
             rhozero = 1026
             masso = volo * rhozero
         else:
             masso = read_global_variable(model, 'masso', run, manual_files)
-
+       
         thetaoga = read_global_variable(model, 'thetaoga', run, manual_files)
         thetaoga = gio.temperature_unit_check(thetaoga, 'K')
 
@@ -272,15 +269,15 @@ def main(inargs):
         color = next(colors)
         style = styles[count]
         count = count + 1
-        print(model)
+        
         ax_ohc.plot(ohc_anomaly, color=color, label=label, linestyle=style)
-        print_trend(ohc_anomaly, 'OHC first-order trend:', 'C/yr')
+        record_trend(ohc_anomaly, 'OHC first-order trend', 'C/yr')
         ax_ohcd.plot(ohc_dedrifted_anomaly, color=color, label=label, linestyle=style)
-        print_trend(ohc_dedrifted_anomaly, 'OHC second-order trend:', 'C/yr')
+        record_trend(ohc_dedrifted_anomaly, 'OHC second-order trend', 'C/yr')
         ax_mass.plot(masso_anomaly, color=color, label=label, linestyle=style)
-        print_trend(masso_anomaly, 'Mass first-order trend:', 'kg/yr')
+        record_trend(masso_anomaly, 'Mass first-order trend', 'kg/yr')
         ax_massd.plot(masso_dedrifted_anomaly, color=color, label=label, linestyle=style)
-        print_trend(masso_dedrifted_anomaly, 'Mass second-order trend:', 'kg/yr')
+        record_trend(masso_dedrifted_anomaly, 'Mass second-order trend', 'kg/yr')
 
         if len(ohc) > max_time:
             max_time = len(ohc)
@@ -316,7 +313,7 @@ def main(inargs):
     ax_massd.legend(loc='center left', bbox_to_anchor=(1, 1))
 
     plt.savefig(inargs.outfile, bbox_inches='tight')  # dpi=400
-    log_text = get_log_text(processed_files)
+    log_text = get_log_text(extra_log)
     log_file = re.sub('.png', '.met', inargs.outfile)
     cmdprov.write_log(log_file, log_text)
 
