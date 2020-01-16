@@ -46,11 +46,11 @@ def save_history(cube, field, filename):
 def main(inargs):
     """Run the program."""
 
-    volume_cube = iris.load_cube(inargs.volfile, 'ocean_volume')
+    volume_data, volume_var, volume_atts, volume_obj = gio.get_ocean_weights(inargs.volfile)
     output_cubelist = iris.cube.CubeList([])
     for infile in inargs.infiles:
         cube = iris.load_cube(infile, 'sea_water_potential_temperature')
-        weights = uconv.broadcast_array(volume_cube.data, [1, 3], cube.shape)
+        weights = uconv.broadcast_array(volume_data, [1, 3], cube.shape)
         coord_names = [coord.name() for coord in cube.dim_coords]
         thetaoga = cube.collapsed(coord_names[1:], iris.analysis.MEAN, weights=weights)
         thetaoga.var_name = 'thetaoga'
@@ -60,7 +60,7 @@ def main(inargs):
     outcube = gio.combine_cubes(output_cubelist)
     metadata_dict = {}
     metadata_dict[infile] = cube.attributes['history'] 
-    metadata_dict[inargs.volfile] = volume_cube.attributes['history'] 
+    metadata_dict[inargs.volfile] = volume_atts['history'] 
     outcube.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     iris.save(outcube, inargs.outfile)
         
