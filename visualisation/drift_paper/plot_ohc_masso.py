@@ -12,6 +12,7 @@ import os
 import re
 import pdb
 import argparse
+import yaml
 
 import numpy
 import matplotlib.pyplot as plt
@@ -36,7 +37,7 @@ sys.path.append(modules_dir)
 
 import timeseries
 import general_io as gio
-
+import convenient_universal as uconv
 
 # Define functions 
 
@@ -113,18 +114,13 @@ def time_check(cube):
     return cube
 
 
-def file_match(files, target_model, target_variable, target_ensemble):
+def file_match(file_dict, target_model, target_variable, target_ensemble):
     """Find matching file in list of files."""
 
-    match = []
-    for infile in files:
-        file_variable = infile.split('/')[-1].split('_')[0]
-        file_model = infile.split('/')[-1].split('_')[2]
-        file_ensemble = infile.split('/')[-1].split('_')[4]
-        if (file_variable == target_variable) and (file_model == target_model) and (file_ensemble == target_ensemble):
-            match.append(infile)
+    key = '%s_%s_%s'  %(target_model, target_ensemble, target_variable)
+    match = file_dict.get(key, None)
     
-    return match
+    return uconv.single2list(match)
 
 
 def read_global_variable(model, variable, ensemble, manual_files):
@@ -135,7 +131,7 @@ def read_global_variable(model, variable, ensemble, manual_files):
         file_list = manual
     else:
         file_list = clef_search(model, variable, ensemble) 
-    
+
     if file_list:
         cube, history = gio.combine_files(file_list, names[variable])
         cube = timeseries.convert_to_annual(cube)
@@ -232,6 +228,12 @@ def main(inargs):
     colors=iter(plt.cm.rainbow(numpy.linspace(0, 1, len(inargs.models))))
     styles = ['-', '--', ':', '-', '--', ':', '-', '--', ':', '-', '--', ':', '-', '--', ':']
 
+    if inargs.manual_files:
+        with open(inargs.manual_files, 'r') as reader:
+            manual_files = yaml.load(reader)
+    else:
+        manual_files = {}
+
     fig = plt.figure(figsize=[14, 8])
     nrows = 2
     ncols = 2
@@ -245,13 +247,13 @@ def main(inargs):
     for model, run in zip(inargs.models, inargs.runs):
         print(model, run)
         if model in volo_models:
-            volo = read_global_variable(model, 'volo', run, inargs.manual_files)
+            volo = read_global_variable(model, 'volo', run, manual_files)
             rhozero = 1026
             masso = volo * rhozero
         else:
-            masso = read_global_variable(model, 'masso', run, inargs.manual_files)
+            masso = read_global_variable(model, 'masso', run, manual_files)
 
-        thetaoga = read_global_variable(model, 'thetaoga', run, inargs.manual_files)
+        thetaoga = read_global_variable(model, 'thetaoga', run, manual_files)
         thetaoga = gio.temperature_unit_check(thetaoga, 'K')
 
         masso, thetaoga = common_time_period(masso, thetaoga)
@@ -338,8 +340,8 @@ author:
     parser.add_argument("--models", type=str, nargs='*', required=True, help="Models to plot")
     parser.add_argument("--runs", type=str, nargs='*', required=True, help="Run (e.g. r1i1p1)")
 
-    parser.add_argument("--manual_files", type=str, nargs='*', default=[],
-                        help="Use these manually entered files instead of the clef search")    
+    parser.add_argument("--manual_files", type=str, default=None,
+                        help="YAML file with manually entered files instead of the clef search. Keys: model_ripf_var")    
 
     args = parser.parse_args()  
     assert len(args.models) == len(args.runs)           
