@@ -1,0 +1,7 @@
+# Manually entered files (to override clef)
+ACCESS-CM2_r1i1p1f1_thetaoga: /g/data/r87/dbi599/CMIP6/CMIP/CSIRO-ARCCSS/ACCESS-CM2/piControl/r1i1p1f1/Omon/thetao/gn/v20191112/thetao_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_095001-144912.nc
+ACCESS-CM2_r1i1p1f1_masso: /g/data/fs38/publications/CMIP6/CMIP/CSIRO-ARCCSS/ACCESS-CM2/piControl/r1i1p1f1/Omon/masso/gn/v20191112/masso_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_095001-144912.nc
+ACCESS-ESM1-5_r1i1p1f1_thetaoga: /g/data/r87/dbi599/CMIP6/CMIP/CSIRO/ACCESS-ESM1-5/piControl/r1i1p1f1/Omon/thetaoga/gn/v20191214/thetaoga_Omon_ACCESS-ESM1-5_piControl_r1i1p1f1_gn_010101-100012.nc
+ACCESS-ESM1-5_r1i1p1f1_masso:
+- /g/data/fs38/publications/CMIP6/CMIP/CSIRO/ACCESS-ESM1-5/piControl/r1i1p1f1/Omon/masso/gn/latest/masso_Omon_ACCESS-ESM1-5_piControl_r1i1p1f1_gn_010101-060012.nc
+- /g/data/fs38/publications/CMIP6/CMIP/CSIRO/ACCESS-ESM1-5/piControl/r1i1p1f1/Omon/masso/gn/latest/masso_Omon_ACCESS-ESM1-5_piControl_r1i1p1f1_gn_060101-100012.nc
