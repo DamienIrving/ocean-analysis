@@ -280,8 +280,8 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
 
     cube_dict = {}
 
-    cube_dict['areacello'] = read_area(inargs.model, 'areacello', inargs.run, inargs.project, manual_file_dict)
     cube_dict['areacella'] = read_area(inargs.model, 'areacella', inargs.run, inargs.project, manual_file_dict)
+    cube_dict['areacello'] = read_area(inargs.model, 'areacello', inargs.run, inargs.project, manual_file_dict)
 
     cube_dict['masso'] = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
                                               manual_file_dict, inargs.ignore_list)
@@ -303,14 +303,16 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
     else:
         cube_dict['zosga'] = cube_dict['zossga'] = None
 
-    cube_dict['wfo'] = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project, cube_dict['areacello'],
+    wfo_areavar = 'areacella' if 'wfo' in inargs.areacella else 'areacello'
+    cube_dict['wfo'] = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project, cube_dict[wfo_areavar],
                                          manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     cube_dict['wfonocorr'] = read_spatial_flux(inargs.model, 'wfonocorr', inargs.run, inargs.project, cube_dict['areacello'],
                                                manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     cube_dict['wfcorr'] = read_spatial_flux(inargs.model, 'wfcorr', inargs.run, inargs.project, cube_dict['areacello'],
                                             manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
 
-    cube_dict['hfds'] = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project, cube_dict['areacello'],
+    hfds_areavar = 'areacella' if 'hfds' in inargs.areacella else 'areacello'
+    cube_dict['hfds'] = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project, cube_dict[hfds_areavar],
                                           manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
     cube_dict['hfcorr'] = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project, cube_dict['areacello'],
                                             manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
@@ -912,6 +914,8 @@ author:
                         help="Chunk annual mean calculation for spatial variables (useful for boussinesq models)")
     parser.add_argument("--forced_experiments", action="store_true", default=False,
                         help="Plot the forced experiments (raw) or their branch time (comparison)")
+    parser.add_argument("--areacella", type=str, nargs='*', default=[],
+                        help="ocean surface fluxes on an atmosphere grid")
 
     parser.add_argument("--cpocean", type=float, default=4000,
                         help="Specific heat in ocean in J/(kg K)")
