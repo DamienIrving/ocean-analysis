@@ -143,7 +143,8 @@ def time_check(cube):
     return cube
 
 
-def read_global_variable(model, variable, ensemble, project, manual_file_dict, ignore_list, experiment='piControl'):
+def read_global_variable(model, variable, ensemble, project, manual_file_dict,
+                         ignore_list, time_constraint, experiment='piControl'):
     """Read data for a global variable"""
 
     if variable in ignore_list:
@@ -159,6 +160,8 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict, i
             cube = gio.salinity_unit_check(cube)
         cube = timeseries.convert_to_annual(cube)
         cube = time_check(cube)
+        if time_constraint:
+            cube = cube.extract(time_constraint)
         if numpy.isnan(cube.data[0]):
             cube.data[0] = 0.0
     else:
@@ -187,7 +190,8 @@ def read_area(model, variable, ensemble, project, manual_file_dict):
 
 
 def read_spatial_flux(model, variable, ensemble, project, area_cube,
-                      manual_file_dict, ignore_list, chunk=False, ref_time_coord=None):
+                      manual_file_dict, ignore_list, time_constraint,
+                      chunk=False, ref_time_coord=None):
     """Read spatial flux data and convert to global value.
 
     Accounts for cases where spatial dimensions are unnamed
@@ -248,9 +252,11 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
                                   dim_coords_and_dims=[(ref_time_coord, 0)])
             cube = time_check(cube)
         cube = timeseries.flux_to_total(cube)
+        if time_constraint:
+            cube = cube.extract(time_constraint)
     else:
         cube = None
-
+        
     return cube
 
 
@@ -278,58 +284,63 @@ def get_start_year(branch_time, control_time_axis):
 def get_data_dict(inargs, manual_file_dict, branch_year_dict):
     """Get all the necessary data."""
 
+    if inargs.time_bounds:
+        time_constraint = gio.get_time_constraint(inargs.time_bounds)
+    else:
+        time_constraint = None
+
     cube_dict = {}
 
     cube_dict['areacella'] = read_area(inargs.model, 'areacella', inargs.run, inargs.project, manual_file_dict)
     cube_dict['areacello'] = read_area(inargs.model, 'areacello', inargs.run, inargs.project, manual_file_dict)
 
     cube_dict['masso'] = read_global_variable(inargs.model, 'masso', inargs.run, inargs.project,
-                                              manual_file_dict, inargs.ignore_list)
+                                              manual_file_dict, inargs.ignore_list, time_constraint)
     cube_dict['volo'] = read_global_variable(inargs.model, 'volo', inargs.run, inargs.project,
-                                             manual_file_dict, inargs.ignore_list)
+                                             manual_file_dict, inargs.ignore_list, time_constraint)
     cube_dict['thetaoga'] = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
-                                                 manual_file_dict, inargs.ignore_list)
+                                                 manual_file_dict, inargs.ignore_list, time_constraint)
     cube_dict['thetaoga'] = gio.temperature_unit_check(cube_dict['thetaoga'], 'K')
     cube_dict['soga'] = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project,
-                                             manual_file_dict, inargs.ignore_list) 
+                                             manual_file_dict, inargs.ignore_list, time_constraint) 
 
     cube_dict['zostoga'] = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project,
-                                                manual_file_dict, inargs.ignore_list) 
+                                                manual_file_dict, inargs.ignore_list, time_constraint) 
     if inargs.project == 'cmip5':
         cube_dict['zosga'] = read_global_variable(inargs.model, 'zosga', inargs.run, inargs.project,
-                                                  manual_file_dict, inargs.ignore_list) 
+                                                  manual_file_dict, inargs.ignore_list, time_constraint) 
         cube_dict['zossga'] = read_global_variable(inargs.model, 'zossga', inargs.run, inargs.project,
-                                                   manual_file_dict, inargs.ignore_list)
+                                                   manual_file_dict, inargs.ignore_list, time_constraint)
     else:
         cube_dict['zosga'] = cube_dict['zossga'] = None
 
     wfo_areavar = 'areacella' if 'wfo' in inargs.areacella else 'areacello'
     cube_dict['wfo'] = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project, cube_dict[wfo_areavar],
-                                         manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+                                         manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
     cube_dict['wfonocorr'] = read_spatial_flux(inargs.model, 'wfonocorr', inargs.run, inargs.project, cube_dict['areacello'],
-                                               manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+                                               manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
     cube_dict['wfcorr'] = read_spatial_flux(inargs.model, 'wfcorr', inargs.run, inargs.project, cube_dict['areacello'],
-                                            manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+                                            manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
 
     hfds_areavar = 'areacella' if 'hfds' in inargs.areacella else 'areacello'
     cube_dict['hfds'] = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project, cube_dict[hfds_areavar],
-                                          manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+                                          manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
     cube_dict['hfcorr'] = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project, cube_dict['areacello'],
-                                            manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+                                            manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
     cube_dict['hfgeou'] = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project, cube_dict['areacello'],
-                                            manual_file_dict, inargs.ignore_list, chunk=inargs.chunk,
+                                            manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk,
                                             ref_time_coord=cube_dict['masso'].coord('time'))
     cube_dict['vsf'] = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project, cube_dict['areacello'],
-                                         manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+                                         manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
     cube_dict['vsfcorr'] = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project, cube_dict['areacello'],
-                                             manual_file_dict, inargs.ignore_list, chunk=inargs.chunk)
+                                             manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
 
     cube_dict['rsdt'] = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project, cube_dict['areacella'],
-                                          manual_file_dict, inargs.ignore_list)
+                                          manual_file_dict, inargs.ignore_list, time_constraint)
     cube_dict['rlut'] = read_spatial_flux(inargs.model, 'rlut', inargs.run, inargs.project, cube_dict['areacella'],
-                                          manual_file_dict, inargs.ignore_list)
+                                          manual_file_dict, inargs.ignore_list, time_constraint)
     cube_dict['rsut'] = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project, cube_dict['areacella'],
-                                          manual_file_dict, inargs.ignore_list)
+                                          manual_file_dict, inargs.ignore_list, time_constraint)
 
     return cube_dict
 
@@ -907,6 +918,9 @@ author:
 
     parser.add_argument("--rawfile", type=str, default=None, help="Output raw data file name")
     parser.add_argument("--compfile", type=str, default=None, help="Output comparison data file name")
+
+    parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
+                        help="Time period [default = entire]")
 
     parser.add_argument("--volo", action="store_true", default=False,
                         help="Use volo to calculate masso (useful for boussinesq models)")
