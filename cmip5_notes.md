@@ -345,6 +345,7 @@ Model details from [Huang and Qiao (2015)](https://link.springer.com/article/10.
 | ACCESS1-3      | MOM4.1          |                 | BO, FS, FWF (Bi et al., 2013) |
 | [BCC-CSM1-1](http://forecast.bcccsm.ncc-cma.net/web/channel-1.htm) | MOM4 |  | BO, FS, FWF (Griffies et al., 2005) |
 | BCC-CSM1-1-m   |                 |                 | BO, FS, FWF (Griffies et al., 2005) |
+| BNU-ESM        | MOM 4.1         |                 | [Wang et al (2014)](https://www.geosci-model-dev.net/7/2039/2014/gmd-7-2039-2014.html)
 | CanESM2        |                 | regular lat/lon | BO, RL, VSF (Merryfield et al., 2013) |
 | CCSM4          |                 | curvilinear     | BO, FS, VSF (Danabasoglu et al., 2012) |
 | CESM1-BGC      |                 |                 | BO, FS, VSF (Danabasoglu et al., 2012) |
