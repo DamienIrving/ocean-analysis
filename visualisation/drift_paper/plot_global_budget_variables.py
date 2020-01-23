@@ -943,7 +943,6 @@ author:
     parser.add_argument("--manual_files", type=str, action="append", nargs='*', default=[],
                         help="Use these manually entered files instead of the clef search")
     parser.add_argument("--ignore_list", type=str, nargs='*', default=[],
-                        choices=('rsdt', 'rsut', 'rlut'),
                         help="Variables to ignore")
     parser.add_argument("--ohc_ylim", type=float, nargs=2, metavar=('LOWER_LIMIT', 'UPPER_LIMIT'), default=None,
                         help="y-axis limits for OHC plot (*1e24) [default = auto]")
