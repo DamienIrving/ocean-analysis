@@ -209,7 +209,8 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
 
     cube_list = iris.cube.CubeList([])
     for infile in file_list:
-        cube = iris.load_cube(infile, gio.check_iris_var(names[variable]))     
+        cube = iris.load_cube(infile, gio.check_iris_var(names[variable]))
+        cube = gio.check_time_units(cube)     
         coord_names = [coord.name() for coord in cube.dim_coords]
 
         if 'time' in coord_names:
@@ -685,7 +686,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
         wfonocorr_cumsum_data = numpy.cumsum(cube_dict['wfonocorr'].data)
         wfonocorr_cumsum_anomaly = wfonocorr_cumsum_data - wfonocorr_cumsum_data[0]
         sea_level_anomaly_from_wfonocorr = sea_level_from_mass(wfonocorr_cumsum_anomaly, ocean_area, density)
-        ax_top.plot(sea_level_anomaly_from_wfonocorr, color='lightsteelgray', linestyle=':',
+        ax_top.plot(sea_level_anomaly_from_wfonocorr, color='lightslategray', linestyle=':',
                     label='cumulative surface freshwater flux (no flux correction)')
 
     if cube_dict['wfo'] and ocean_area:
