@@ -117,7 +117,7 @@ def file_match(file_dict, target_model, target_variable, target_ensemble):
 
     key = '%s_%s_%s'  %(target_model, target_ensemble, target_variable)
     match = file_dict.get(key, None)
-    files = glob.glob(match)
+    files = glob.glob(match) if match else None
     
     return files
 
@@ -222,9 +222,15 @@ def main(inargs):
     volo_models = ['CNRM-CM6-1', 'CNRM-ESM2-1', 'E3SM-1-0', 'IPSL-CM6A-LR']
     cpocean_dict = {'HadGEM3-GC31-LL': 3991.867957, 'UKESM1-0-LL': 3991.867957}
     rhozero_dict = {'HadGEM3-GC31-LL': 1026, 'UKESM1-0-LL': 1026}
-    #colors = iter(['red', 'gold', 'seagreen', 'limegreen', 'blue', 'teal', 'pink', 'maroon'])
-    colors=iter(plt.cm.rainbow(numpy.linspace(0, 1, len(inargs.models))))
-    styles = ['-', '--', ':', '-', '--', ':', '-', '--', ':', '-', '--', ':', '-', '--', ':']
+    if inargs.colors:
+        colors = iter(inargs.colors)
+    else:
+        colors=iter(plt.cm.rainbow(numpy.linspace(0, 1, len(inargs.models))))
+
+    if inargs.linestyles:
+        styles = iter(inargs.linestyles)
+    else:
+        styles = iter(['-', '--', ':', '-', '--', ':', '-', '--', ':', '-', '--', ':', '-', '--', ':'])
 
     if inargs.manual_files:
         with open(inargs.manual_files, 'r') as reader:
@@ -269,8 +275,7 @@ def main(inargs):
 
         label = '%s (%s)' %(model, run)
         color = next(colors)
-        style = styles[count]
-        count = count + 1
+        style = next(styles)
         
         ax_ohc.plot(ohc_anomaly, color=color, label=label, linestyle=style)
         record_trend(ohc_anomaly, 'OHC first-order trend', 'C/yr')
@@ -339,9 +344,21 @@ author:
     parser.add_argument("--models", type=str, nargs='*', required=True, help="Models to plot")
     parser.add_argument("--runs", type=str, nargs='*', required=True, help="Run (e.g. r1i1p1)")
 
+    parser.add_argument("--linestyles", type=str, nargs='*', help="Line styles",
+                        choices=('solid', 'dashed', 'dashdot', 'dotted'))
+    parser.add_argument("--colors", type=str, nargs='*', help="colors",
+                        choices=('tab:blue', 'tab:orange', 'tab:green', 'tab:red',
+                                 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray',
+                                 'tab:olive', 'tab:cyan', 'black'))
+
     parser.add_argument("--manual_files", type=str, default=None,
                         help="YAML file with manually entered files instead of the clef search. Keys: model_ripf_var")    
 
     args = parser.parse_args()  
-    assert len(args.models) == len(args.runs)           
+    assert len(args.models) == len(args.runs)
+    if args.linestyles:
+        assert len(args.models) == len(args.linestyles)
+    if args.colors:
+        assert len(args.models) == len(args.colors)
+           
     main(args)
