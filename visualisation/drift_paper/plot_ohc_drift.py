@@ -41,6 +41,7 @@ def main(inargs):
 
     df = pd.read_csv(inargs.infile)
     df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
+    ncmip5 = df['project'].value_counts()['cmip5']
 
     df_ohc = df[['OHC (J yr-1)', 'thermal OHC (J yr-1)', 'barystatic OHC (J yr-1)']]
 
@@ -50,9 +51,9 @@ def main(inargs):
     df_ohc = df_ohc.rename(columns={"OHC (J yr-1)": "change in OHC ($dH/dt$)",
                                     "thermal OHC (J yr-1)": "change in thermal OHC ($dH_T/dt$)",
                                     "barystatic OHC (J yr-1)": "change in barystatic OHC ($dH_m/dt$)"})
-
+    
     df_ohc.plot.bar(figsize=(18,6), color=['black', 'red', 'blue'], width=0.9)
-    plt.axvline(x=14.5, color='0.5', linewidth=2.0)
+    plt.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
     plt.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
     plt.ylabel('$W \; m^{-2}$')
 
