@@ -38,16 +38,17 @@ mpl.rcParams['xtick.labelsize'] = 'medium'
 mpl.rcParams['ytick.labelsize'] = 'medium'
 mpl.rcParams['legend.fontsize'] = 'large'
 
-ocean_model_colors = {'MOM': 'red',
-                      'GOLD': 'gold',
-                      'NEMO': 'blue',
-                      'OPA': 'green',
-                      'COCO': 'chocolate',
-                      'MPI-OM': 'purple',
-                      'MICOM-HAMOCC': 'teal',
-                      'POP': 'lime'}
+ocean_model_colors = {'COCO': 'tab:red',
+                      'GO': 'tab:purple',
+                      'GOLD': 'tab:brown',
+                      'MICOM': 'tab:pink',
+                      'MOM': 'tab:orange',
+                      'MPAS': 'tab:olive',
+                      'MPIOM': 'tab:green',
+                      'NEMO': 'tab:blue',
+                      }
 
-markers = ['o', '<', '^', '>', 'v', 's', 'X', 'p', 'D', 'd', 'h', 'H']
+markers = ['o', '<', '^', '>', 'v', 's', 'p', 'D', 'd', 'h', 'H', 'X']
 
 axis_labels = {'thermal OHC': 'change in thermal OHC, $dH_T/dt$',
                'masso': 'change in ocean mass, $dM/dt$',
@@ -223,9 +224,10 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
     
     """
 
-    ocean_model_counts = {'MOM': 0, 'GOLD': 0, 'NEMO': 0, 'OPA': 0,
-                          'COCO': 0, 'MPI-OM': 0, 'MICOM-HAMOCC': 0, 'POP': 0}
-    
+    cmip5_ocean_model_counts = {'COCO': 0, 'GO': 0, 'GOLD': 0, 'MICOM': 0,
+                                'MOM': 0, 'MPAS': 0, 'MPIOM': 0, 'NEMO': 0}
+    cmip6_ocean_model_counts = cmip5_ocean_model_counts.copy()
+
     x_input_units = get_units(xvar) 
     y_input_units = get_units(yvar)
     for dotnum in range(len(df['model'])):
@@ -235,17 +237,18 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
         ocean_model = df['ocean model'][dotnum]
         label = df['model'][dotnum] + ' (' + df['run'][dotnum] + ')'
 
-        marker_num = ocean_model_counts[ocean_model]
-        marker = markers[marker_num]
-        ocean_model_counts[ocean_model] = ocean_model_counts[ocean_model] + 1
-
         color = ocean_model_colors[ocean_model]
         if df['project'][dotnum] == 'cmip6':
             facecolors = color
             edgecolors ='none'
+            marker_num = cmip6_ocean_model_counts[ocean_model]
+            cmip6_ocean_model_counts[ocean_model] = cmip6_ocean_model_counts[ocean_model] + 1
         else:
             facecolors = 'none'
             edgecolors = color
+            marker_num = cmip5_ocean_model_counts[ocean_model]
+            cmip5_ocean_model_counts[ocean_model] = cmip5_ocean_model_counts[ocean_model] + 1
+        marker = markers[marker_num]
         ax.scatter(x, y, label=label, s=130, linewidth=1.2, marker=marker,
                    facecolors=facecolors, edgecolors=edgecolors)
 
