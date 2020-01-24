@@ -41,8 +41,12 @@ def main(inargs):
 
     df = pd.read_csv(inargs.infile)
     df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
-    x = np.arange(df.shape[0])
-    ncmip5 = df['project'].value_counts()['cmip5']
+    if inargs.cmip_line:
+        cmip_line = inargs.cmip_line
+    else:
+        ncmip5 = df['project'].value_counts()['cmip5']
+        cmip_line = ncmip5 - 0.5
+        print('x-value for CMIP dividing line:', cmip_line)
 
     df['atmos energy leakage (J yr-1)'] = df['netTOA (J yr-1)'] - df['hfds (J yr-1)']
     df['ocean energy leakage (J yr-1)'] = df['hfds (J yr-1)'] - df['thermal OHC (J yr-1)']
@@ -51,6 +55,9 @@ def main(inargs):
     df_leakage = df[['total energy leakage (J yr-1)',
                      'atmos energy leakage (J yr-1)',
                      'ocean energy leakage (J yr-1)']]
+    pdb.set_trace()
+    df_leakage = df_leakage.dropna(axis=0, how='all')
+    x = np.arange(df_leakage.shape[0])
 
     sec_in_year = 365.25 * 24 * 60 * 60
     earth_surface_area = 5.1e14
@@ -79,9 +86,9 @@ def main(inargs):
 
         plt.subplots_adjust(hspace=0.15)
 
-        ax1.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
-        ax2.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
-        ax3.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
+        ax1.axvline(x=cmip_line, color='0.5', linewidth=2.0)
+        ax2.axvline(x=cmip_line, color='0.5', linewidth=2.0)
+        ax3.axvline(x=cmip_line, color='0.5', linewidth=2.0)
         ax2.axhline(y=-0.5, color='0.5', linewidth=0.5, linestyle='--')
         ax2.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
         ax2.set_ylabel('$W \; m^{-2}$')
@@ -97,7 +104,7 @@ def main(inargs):
     else:
     
         df_leakage.plot.bar(figsize=(18,6), color=['gold', 'green', 'blue'], width=0.9)
-        plt.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
+        plt.axvline(x=cmip_line, color='0.5', linewidth=2.0)
         plt.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
         plt.axhline(y=-0.5, color='0.5', linewidth=0.5, linestyle='--')
         plt.ylabel('$W \; m^{-2}$')
@@ -129,6 +136,8 @@ author:
     parser.add_argument("infile", type=str, help="Input file name")
     parser.add_argument("outfile", type=str, help="Output file name")
 
+    parser.add_argument("--cmip_line", type=float, default=None,
+                        help="Override default CMIP line, which can be wrong if nan models")
     parser.add_argument("--split_axes", action="store_true", default=False,
                         help="Split the axes to accommodate outliers")
 
