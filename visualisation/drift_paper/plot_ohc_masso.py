@@ -13,6 +13,7 @@ import re
 import pdb
 import argparse
 import yaml
+import glob
 
 import numpy
 import matplotlib.pyplot as plt
@@ -116,7 +117,7 @@ def file_match(file_dict, target_model, target_variable, target_ensemble):
 
     key = '%s_%s_%s'  %(target_model, target_ensemble, target_variable)
     match = file_dict.get(key, None)
-    files = uconv.single2list(match) if match else None
+    files = glob.glob(match)
     
     return files
 
@@ -129,6 +130,7 @@ def read_global_variable(model, variable, ensemble, manual_files):
         file_list = manual
     else:
         file_list = clef_search(model, variable, ensemble) 
+
     if file_list:
         cube, history = gio.combine_files(file_list, names[variable])
         cube = timeseries.convert_to_annual(cube)
@@ -217,7 +219,7 @@ def record_trend(data, label, units):
 def main(inargs):
     """Run the program."""
 
-    volo_models = ['CNRM-CM6-1', 'CNRM-ESM2-1', 'IPSL-CM6A-LR']
+    volo_models = ['CNRM-CM6-1', 'CNRM-ESM2-1', 'E3SM-1-0', 'IPSL-CM6A-LR']
     cpocean_dict = {'HadGEM3-GC31-LL': 3991.867957, 'UKESM1-0-LL': 3991.867957}
     rhozero_dict = {'HadGEM3-GC31-LL': 1026, 'UKESM1-0-LL': 1026}
     #colors = iter(['red', 'gold', 'seagreen', 'limegreen', 'blue', 'teal', 'pink', 'maroon'])
