@@ -13,6 +13,7 @@ import re
 import pdb
 import argparse
 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -40,6 +41,8 @@ def main(inargs):
 
     df = pd.read_csv(inargs.infile)
     df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
+    x = np.arange(df.shape[0])
+    ncmip5 = df['project'].value_counts()['cmip5']
 
     df['atmos energy leakage (J yr-1)'] = df['netTOA (J yr-1)'] - df['hfds (J yr-1)']
     df['ocean energy leakage (J yr-1)'] = df['hfds (J yr-1)'] - df['thermal OHC (J yr-1)']
@@ -56,31 +59,52 @@ def main(inargs):
                                             "ocean energy leakage (J yr-1)": "ocean leakage ($dQ_h/dt - dH_T/dt$)",
                                             "atmos energy leakage (J yr-1)": "non-ocean leakage ($dQ_r/dt - dQ_h/dt$)"})
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(18,8), gridspec_kw={'height_ratios': [1, 5, 1]})
-    ax1.spines['bottom'].set_visible(False)
-    ax2.spines['bottom'].set_visible(False)
-    ax1.tick_params(axis='x', which='both', bottom=False)
-    ax2.tick_params(axis='x', which='both', bottom=False)
-    ax2.spines['top'].set_visible(False)
-    ax3.spines['top'].set_visible(False)
-    ax1.set_ylim(30, 45)
-    ax2.set_ylim(-1.5, 2.5)
-    ax3.set_ylim(-45, -30)
+    if inargs.split_axes:
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(18,8), gridspec_kw={'height_ratios': [1, 5, 1]})
+        ax1.spines['bottom'].set_visible(False)
+        ax2.spines['bottom'].set_visible(False)
+        ax1.tick_params(axis='x', which='both', bottom=False)
+        ax2.tick_params(axis='x', which='both', bottom=False)
+        ax2.spines['top'].set_visible(False)
+        ax3.spines['top'].set_visible(False)
+        ax1.set_ylim(30, 45)
+        ax2.set_ylim(-1.5, 2.5)
+        ax3.set_ylim(-45, -30)
 
-    df_leakage.plot(ax=ax3, kind='bar', color=['gold', 'green', 'blue'], width=0.9, legend=False)
-    df_leakage.plot(ax=ax2, kind='bar', color=['gold', 'green', 'blue'], width=0.9, legend=False)
-    df_leakage.plot(ax=ax1, kind='bar', color=['gold', 'green', 'blue'], width=0.9)
-    for tick in ax3.get_xticklabels():
-        tick.set_rotation(90)
+        df_leakage.plot(ax=ax3, kind='bar', color=['gold', 'green', 'blue'], width=0.9, legend=False)
+        df_leakage.plot(ax=ax2, kind='bar', color=['gold', 'green', 'blue'], width=0.9, legend=False)
+        df_leakage.plot(ax=ax1, kind='bar', color=['gold', 'green', 'blue'], width=0.9)
+        for tick in ax3.get_xticklabels():
+            tick.set_rotation(90)
 
-    plt.subplots_adjust(hspace=0.15)
+        plt.subplots_adjust(hspace=0.15)
 
-    ax1.axvline(x=14.5, color='0.5', linewidth=2.0)
-    ax2.axvline(x=14.5, color='0.5', linewidth=2.0)
-    ax3.axvline(x=14.5, color='0.5', linewidth=2.0)
-    ax2.axhline(y=-0.5, color='0.5', linewidth=0.5, linestyle='--')
-    ax2.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
-    ax2.set_ylabel('$W \; m^{-2}$')
+        ax1.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
+        ax2.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
+        ax3.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
+        ax2.axhline(y=-0.5, color='0.5', linewidth=0.5, linestyle='--')
+        ax2.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
+        ax2.set_ylabel('$W \; m^{-2}$')
+
+        ax1.axvline(x=x[0]-0.5, color='0.5', linewidth=0.1)
+        ax2.axvline(x=x[0]-0.5, color='0.5', linewidth=0.1)
+        ax3.axvline(x=x[0]-0.5, color='0.5', linewidth=0.1)
+        for val in x:
+            ax1.axvline(x=val+0.5, color='0.5', linewidth=0.1)
+            ax2.axvline(x=val+0.5, color='0.5', linewidth=0.1)
+            ax3.axvline(x=val+0.5, color='0.5', linewidth=0.1)
+
+    else:
+    
+        df_leakage.plot.bar(figsize=(18,6), color=['gold', 'green', 'blue'], width=0.9)
+        plt.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
+        plt.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
+        plt.axhline(y=-0.5, color='0.5', linewidth=0.5, linestyle='--')
+        plt.ylabel('$W \; m^{-2}$')
+        plt.axvline(x=x[0]-0.5, color='0.5', linewidth=0.1)
+        for val in x:
+            plt.axvline(x=val+0.5, color='0.5', linewidth=0.1)
+        plt.ylim(-1.5, 2.5)
 
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=200)
     log_file = re.sub('.png', '.met', inargs.outfile)
@@ -104,6 +128,9 @@ author:
 
     parser.add_argument("infile", type=str, help="Input file name")
     parser.add_argument("outfile", type=str, help="Output file name")
+
+    parser.add_argument("--split_axes", action="store_true", default=False,
+                        help="Split the axes to accommodate outliers")
 
     args = parser.parse_args()  
     main(args)
