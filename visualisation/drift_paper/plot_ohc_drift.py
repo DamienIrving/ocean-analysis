@@ -14,6 +14,7 @@ import re
 import pdb
 import argparse
 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -41,6 +42,7 @@ def main(inargs):
 
     df = pd.read_csv(inargs.infile)
     df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
+    x = np.arange(df.shape[0])
     ncmip5 = df['project'].value_counts()['cmip5']
 
     df_ohc = df[['OHC (J yr-1)', 'thermal OHC (J yr-1)', 'barystatic OHC (J yr-1)']]
@@ -56,6 +58,9 @@ def main(inargs):
     plt.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
     plt.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
     plt.ylabel('$W \; m^{-2}$')
+    plt.axvline(x=x[0]-0.5, color='0.5', linewidth=0.1)
+    for val in x:
+        plt.axvline(x=val+0.5, color='0.5', linewidth=0.1)
 
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=200)
     log_file = re.sub('.png', '.met', inargs.outfile)
