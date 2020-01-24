@@ -55,7 +55,6 @@ def main(inargs):
     df_leakage = df[['total energy leakage (J yr-1)',
                      'atmos energy leakage (J yr-1)',
                      'ocean energy leakage (J yr-1)']]
-    pdb.set_trace()
     df_leakage = df_leakage.dropna(axis=0, how='all')
     x = np.arange(df_leakage.shape[0])
 
