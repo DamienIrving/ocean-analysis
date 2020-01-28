@@ -265,9 +265,17 @@ def main(inargs):
 
         cp = cpocean_dict[model] if model in cpocean_dict.keys() else 4000
         ohc = masso.data * thetaoga.data * cp
+        if inargs.ohc_outlier:
+            ohc, outlier_idx = timeseries.outlier_removal(ohc, inargs.ohc_outlier)
+            if outlier_idx:
+                print('%s (%s) outliers:' %(model, run), outlier_idx)
+
         ohc_anomaly = ohc - ohc[0]
         masso_anomaly = masso.data - masso.data[0]
-
+        if inargs.runmean_window:
+            ohc_anomaly = timeseries.runmean(ohc_anomaly, inargs.runmean_window)
+            masso_anomaly = timeseries.runmean(masso_anomaly, inargs.runmean_window)
+        
         ohc_dedrifted = dedrift_data(ohc_anomaly)
         masso_dedrifted = dedrift_data(masso_anomaly)
         ohc_dedrifted_anomaly = ohc_dedrifted - ohc_dedrifted[0]
@@ -297,7 +305,7 @@ def main(inargs):
     ax_ohc.yaxis.major.formatter._useMathText = True
     #plot_reference_eei(ax_ohc, max_time)
 
-    ax_ohcd.set_title('OHC anomaly (detrended)')
+    ax_ohcd.set_title('OHC anomaly (linear trend removed)')
     ax_ohcd.set_ylabel('J')
     ax_ohcd.grid(linestyle=':')
     ax_ohcd.ticklabel_format(useOffset=False)
@@ -311,7 +319,7 @@ def main(inargs):
     ax_mass.yaxis.major.formatter._useMathText = True
     #plot_reference_mass(ax_mass, max_time)
 
-    ax_massd.set_title('ocean mass anomaly (detrended)')
+    ax_massd.set_title('ocean mass anomaly (linear trend removed)')
     ax_massd.set_xlabel('year')
     ax_massd.set_ylabel('kg')
     ax_massd.grid(linestyle=':')
@@ -350,9 +358,14 @@ author:
                         choices=('tab:blue', 'tab:orange', 'tab:green', 'tab:red',
                                  'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray',
                                  'tab:olive', 'tab:cyan', 'black'))
-
+    parser.add_argument("--ohc_outlier", type=float, default=None,
+                        help="threshold for an OHC outlier (e.g. 1e24")  
+    parser.add_argument("--runmean_window", type=int, default=None,
+                        help="window for running mean") 
     parser.add_argument("--manual_files", type=str, default=None,
                         help="YAML file with manually entered files instead of the clef search. Keys: model_ripf_var")    
+    
+
 
     args = parser.parse_args()  
     assert len(args.models) == len(args.runs)
