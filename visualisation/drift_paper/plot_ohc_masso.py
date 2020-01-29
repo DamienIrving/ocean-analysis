@@ -286,32 +286,31 @@ def main(inargs):
         style = next(styles)
         
         ax_ohc.plot(ohc_anomaly, color=color, label=label, linestyle=style)
-        record_trend(ohc_anomaly, 'OHC first-order trend', 'C/yr')
+        record_trend(ohc_anomaly, 'OHC linear trend', 'C/yr')
         ax_ohcd.plot(ohc_dedrifted_anomaly, color=color, label=label, linestyle=style)
-        record_trend(ohc_dedrifted_anomaly, 'OHC second-order trend', 'C/yr')
+
         ax_mass.plot(masso_anomaly, color=color, label=label, linestyle=style)
-        record_trend(masso_anomaly, 'Mass first-order trend', 'kg/yr')
+        record_trend(masso_anomaly, 'Mass linear trend', 'kg/yr')
         ax_massd.plot(masso_dedrifted_anomaly, color=color, label=label, linestyle=style)
-        record_trend(masso_dedrifted_anomaly, 'Mass second-order trend', 'kg/yr')
 
         if len(ohc) > max_time:
             max_time = len(ohc)
 
 
-    ax_ohc.set_title('OHC anomaly')
+    ax_ohc.set_title('(a) OHC anomaly')
     ax_ohc.set_ylabel('J')
     ax_ohc.grid(linestyle=':')
     ax_ohc.ticklabel_format(useOffset=False)
     ax_ohc.yaxis.major.formatter._useMathText = True
     #plot_reference_eei(ax_ohc, max_time)
 
-    ax_ohcd.set_title('OHC anomaly (linear trend removed)')
+    ax_ohcd.set_title('(b) OHC anomaly (linear trend removed)')
     ax_ohcd.set_ylabel('J')
     ax_ohcd.grid(linestyle=':')
     ax_ohcd.ticklabel_format(useOffset=False)
     ax_ohcd.yaxis.major.formatter._useMathText = True
 
-    ax_mass.set_title('ocean mass anomaly')
+    ax_mass.set_title('(c) ocean mass anomaly')
     ax_mass.set_xlabel('year')
     ax_mass.set_ylabel('kg')
     ax_mass.grid(linestyle=':')
@@ -319,7 +318,7 @@ def main(inargs):
     ax_mass.yaxis.major.formatter._useMathText = True
     #plot_reference_mass(ax_mass, max_time)
 
-    ax_massd.set_title('ocean mass anomaly (linear trend removed)')
+    ax_massd.set_title('(d) ocean mass anomaly (linear trend removed)')
     ax_massd.set_xlabel('year')
     ax_massd.set_ylabel('kg')
     ax_massd.grid(linestyle=':')
