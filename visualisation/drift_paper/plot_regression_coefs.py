@@ -16,6 +16,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 import cmdline_provenance as cmdprov
 
@@ -44,7 +45,7 @@ labels = {"netTOA vs hfds regression": "cumulative netTOA ($Q_r$) vs. cumulative
           "masso vs soga regression": "ocean mass ($M$) vs. ocean salinity ($S$)"}
 
 
-def plot_energy_conservation(df):
+def plot_energy_conservation(df, cmip_line):
     """Plot regression coefficients for thermal energy conservation"""
     
     comparison_list = ['netTOA vs thermal OHC regression', 'netTOA vs hfds regression', 'hfds vs thermal OHC regression']
@@ -58,7 +59,8 @@ def plot_energy_conservation(df):
     
     plt.figure(figsize=[14, 5])
     plt.axhline(y=1.0, color='0.5', linewidth=0.5)
-    plt.axvline(x=14.5, color='0.5', linewidth=2.0)
+    if cmip_line:
+        plt.axvline(x=cmip_line, color='0.5', linewidth=2.0)
     colors = ['cadetblue', 'seagreen', 'mediumpurple']
     linestyles = ['--', '-.', ':']
     for pnum, var in enumerate(comparison_list):
@@ -69,9 +71,9 @@ def plot_energy_conservation(df):
         plt.setp(stemlines, color=color, linestyle=linestyle)
         plt.setp(markerline, color=color)
 
-    plt.axvline(x=x[0]-0.5, color='0.5', linewidth=0.5)
+    plt.axvline(x=x[0]-0.5, color='0.5', linewidth=0.1)
     for val in x:
-        plt.axvline(x=val+0.5, color='0.5', linewidth=0.5)
+        plt.axvline(x=val+0.5, color='0.5', linewidth=0.1)
     #plt.grid(True, axis='x')
     plt.legend()
     plt.xlim(x[0] - 0.5, x[-1] + 0.5)
@@ -79,7 +81,7 @@ def plot_energy_conservation(df):
     plt.ylabel('regression coefficient')
 
 
-def plot_mass_conservation(df):
+def plot_mass_conservation(df, cmip_line):
     """Plot the regression coefficient for each model"""
     
     comparison_list = ['wfo vs masso regression', 'wfo vs soga regression', 'masso vs soga regression']
@@ -103,9 +105,10 @@ def plot_mass_conservation(df):
     ax3.set_ylim(-5.5, -1)
 
     ax2.axhline(y=1.0, color='0.5', linewidth=0.5)
-    ax1.axvline(x=14.5, color='0.5', linewidth=2.0)
-    ax2.axvline(x=14.5, color='0.5', linewidth=2.0)
-    ax3.axvline(x=14.5, color='0.5', linewidth=2.0)
+    if cmip_line:
+        ax1.axvline(x=cmip_line, color='0.5', linewidth=2.0)
+        ax2.axvline(x=cmip_line, color='0.5', linewidth=2.0)
+        ax3.axvline(x=cmip_line, color='0.5', linewidth=2.0)
     colors = ['cadetblue', 'seagreen', 'mediumpurple']
     linestyles = ['--', '-.', ':']
     for pnum, var in enumerate(comparison_list):
@@ -124,13 +127,13 @@ def plot_mass_conservation(df):
         plt.setp(stemlines, color=color, linestyle=linestyle)
         plt.setp(markerline, color=color)
 
-    ax1.axvline(x=x[0] - 0.5, color='0.5', linewidth=0.5)
-    ax2.axvline(x=x[0] - 0.5, color='0.5', linewidth=0.5)
-    ax3.axvline(x=x[0] - 0.5, color='0.5', linewidth=0.5)
+    ax1.axvline(x=x[0] - 0.5, color='0.5', linewidth=0.1)
+    ax2.axvline(x=x[0] - 0.5, color='0.5', linewidth=0.1)
+    ax3.axvline(x=x[0] - 0.5, color='0.5', linewidth=0.1)
     for val in x:
-        ax1.axvline(x=val + 0.5, color='0.5', linewidth=0.5)
-        ax2.axvline(x=val + 0.5, color='0.5', linewidth=0.5)
-        ax3.axvline(x=val + 0.5, color='0.5', linewidth=0.5)
+        ax1.axvline(x=val + 0.5, color='0.5', linewidth=0.1)
+        ax2.axvline(x=val + 0.5, color='0.5', linewidth=0.1)
+        ax3.axvline(x=val + 0.5, color='0.5', linewidth=0.1)
     #plt.grid(True, axis='x')
     ax1.legend()
     plt.xlim(x[0] - 0.5, x[-1] + 0.5)
@@ -144,11 +147,11 @@ def main(inargs):
 
     df = pd.read_csv(inargs.infile)
     df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
-
+    
     if inargs.domain == 'energy':
-        plot_energy_conservation(df)
+        plot_energy_conservation(df, inargs.cmip_line)
     elif inargs.domain == 'mass':
-        plot_mass_conservation(df)
+        plot_mass_conservation(df, inargs.cmip_line)
 
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=200)
     log_file = re.sub('.png', '.met', inargs.outfile)
@@ -174,6 +177,9 @@ author:
     parser.add_argument("domain", type=str, choices=("energy", "mass"),
                         help="Plot energy or mass conservation")
     parser.add_argument("outfile", type=str, help="Output file name")
+
+    parser.add_argument("--cmip_line", type=float, default=None,
+                        help="Add a vertical line at this x value to should CMIP5/6 boundary")
 
     args = parser.parse_args()  
     main(args)

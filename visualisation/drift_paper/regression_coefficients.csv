@@ -1,0 +1,223 @@
+﻿model,run,project,realm,comparison,regression coefficient
+ACCESS1-0,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.953527473
+ACCESS1-3,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.909163169
+BCC-CSM1-1,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.874489837
+BCC-CSM1.1(m),r1i1p1,CMIP5,energy,netTOA vs thermal OHC,nan
+BNU-ESM,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,1.030560567
+CMCC-CESM,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.954575322
+CMCC-CM,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,nan
+CMCC-CMS,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,1.026178488
+GFDL-CM3,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.88947886
+GFDL-ESM2G,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.402514163
+GFDL-ESM2M,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.93090726
+IPSL-CM5A-MR,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,1.632950642
+IPSL-CM5B-LR,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.844835766
+MIROC4h,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,1.008884369
+MIROC-ESM,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.772526282
+MIROC-ESM-CHEM,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,1.030647042
+MPI-ESM-LR,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.956290413
+MPI-ESM-MR,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.943791873
+MPI-ESM-P,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.86876012
+NorESM1-M,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.972466236
+NorESM1-ME,r1i1p1,CMIP5,energy,netTOA vs thermal OHC,0.974590477
+ACCESS-CM2,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.960226103
+ACCESS-ESM1-5,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,1.036144659
+BCC-CSM2-MR,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.962620516
+BCC-ESM1,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.915575839
+CNRM-CM6-1,r1i1p1f2,CMIP6,energy,netTOA vs thermal OHC,1.216032793
+CNRM-ESM2-1,r1i1p1f2,CMIP6,energy,netTOA vs thermal OHC,1.214701707
+E3SM-1-0,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.936124716
+EC-Earth3,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.812062981
+EC-Earth3-Veg,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.82573687
+GFDL-CM4,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.981265023
+GISS-E2-1-G,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.93011091
+GISS-E2-1-G-CC,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.943779926
+HadGEM3-GC31-LL,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.954781861
+IPSL-CM6A-LR,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.90089001
+MPI-ESM1-2-HR,r1i1p1f1,CMIP6,energy,netTOA vs thermal OHC,0.955224228
+UKESM1-0-LL,r1i1p1f2,CMIP6,energy,netTOA vs thermal OHC,0.968134339
+ACCESS1-0,r1i1p1,CMIP5,energy,netTOA vs hfds,0.664543004
+ACCESS1-3,r1i1p1,CMIP5,energy,netTOA vs hfds,nan
+BCC-CSM1-1,r1i1p1,CMIP5,energy,netTOA vs hfds,0.91203045
+BCC-CSM1.1(m),r1i1p1,CMIP5,energy,netTOA vs hfds,nan
+BNU-ESM,r1i1p1,CMIP5,energy,netTOA vs hfds,1.065721615
+CMCC-CESM,r1i1p1,CMIP5,energy,netTOA vs hfds,0.947590534
+CMCC-CM,r1i1p1,CMIP5,energy,netTOA vs hfds,nan
+CMCC-CMS,r1i1p1,CMIP5,energy,netTOA vs hfds,1.024553982
+GFDL-CM3,r1i1p1,CMIP5,energy,netTOA vs hfds,nan
+GFDL-ESM2G,r1i1p1,CMIP5,energy,netTOA vs hfds,0.89957602
+GFDL-ESM2M,r1i1p1,CMIP5,energy,netTOA vs hfds,nan
+IPSL-CM5A-MR,r1i1p1,CMIP5,energy,netTOA vs hfds,nan
+IPSL-CM5B-LR,r1i1p1,CMIP5,energy,netTOA vs hfds,nan
+MIROC4h,r1i1p1,CMIP5,energy,netTOA vs hfds,0.983786316
+MIROC-ESM,r1i1p1,CMIP5,energy,netTOA vs hfds,0.39231778
+MIROC-ESM-CHEM,r1i1p1,CMIP5,energy,netTOA vs hfds,0.955254254
+MPI-ESM-LR,r1i1p1,CMIP5,energy,netTOA vs hfds,1.052661598
+MPI-ESM-MR,r1i1p1,CMIP5,energy,netTOA vs hfds,0.91701042
+MPI-ESM-P,r1i1p1,CMIP5,energy,netTOA vs hfds,0.918270902
+NorESM1-M,r1i1p1,CMIP5,energy,netTOA vs hfds,0.995167634
+NorESM1-ME,r1i1p1,CMIP5,energy,netTOA vs hfds,0.947988235
+ACCESS-CM2,r1i1p1f1,CMIP6,energy,netTOA vs hfds,0.981716933
+ACCESS-ESM1-5,r1i1p1f1,CMIP6,energy,netTOA vs hfds,1.05071087
+BCC-CSM2-MR,r1i1p1f1,CMIP6,energy,netTOA vs hfds,nan
+BCC-ESM1,r1i1p1f1,CMIP6,energy,netTOA vs hfds,nan
+CNRM-CM6-1,r1i1p1f2,CMIP6,energy,netTOA vs hfds,1.235304457
+CNRM-ESM2-1,r1i1p1f2,CMIP6,energy,netTOA vs hfds,1.228666653
+E3SM-1-0,r1i1p1f1,CMIP6,energy,netTOA vs hfds,0.961304314
+EC-Earth3,r1i1p1f1,CMIP6,energy,netTOA vs hfds,0.898524987
+EC-Earth3-Veg,r1i1p1f1,CMIP6,energy,netTOA vs hfds,0.865083939
+GFDL-CM4,r1i1p1f1,CMIP6,energy,netTOA vs hfds,0.980774881
+GISS-E2-1-G,r1i1p1f1,CMIP6,energy,netTOA vs hfds,1.283494601
+GISS-E2-1-G-CC,r1i1p1f1,CMIP6,energy,netTOA vs hfds,1.012988128
+HadGEM3-GC31-LL,r1i1p1f1,CMIP6,energy,netTOA vs hfds,0.981970252
+IPSL-CM6A-LR,r1i1p1f1,CMIP6,energy,netTOA vs hfds,0.941656932
+MPI-ESM1-2-HR,r1i1p1f1,CMIP6,energy,netTOA vs hfds,1.006859953
+UKESM1-0-LL,r1i1p1f2,CMIP6,energy,netTOA vs hfds,nan
+ACCESS1-0,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.63983265
+ACCESS1-3,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.980195928
+BCC-CSM1-1,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.969454515
+BCC-CSM1.1(m),r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.962689345
+BNU-ESM,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.962136928
+CMCC-CESM,r1i1p1,CMIP5,energy,hfds vs thermal OHC,1.002667985
+CMCC-CM,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.342506799
+CMCC-CMS,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.999707933
+GFDL-CM3,r1i1p1,CMIP5,energy,hfds vs thermal OHC,nan
+GFDL-ESM2G,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.413984498
+GFDL-ESM2M,r1i1p1,CMIP5,energy,hfds vs thermal OHC,nan
+IPSL-CM5A-MR,r1i1p1,CMIP5,energy,hfds vs thermal OHC,nan
+IPSL-CM5B-LR,r1i1p1,CMIP5,energy,hfds vs thermal OHC,nan
+MIROC4h,r1i1p1,CMIP5,energy,hfds vs thermal OHC,1.019482428
+MIROC-ESM,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.422506613
+MIROC-ESM-CHEM,r1i1p1,CMIP5,energy,hfds vs thermal OHC,1.012367046
+MPI-ESM-LR,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.882949512
+MPI-ESM-MR,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.990805532
+MPI-ESM-P,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.866180567
+NorESM1-M,r1i1p1,CMIP5,energy,hfds vs thermal OHC,0.969099478
+NorESM1-ME,r1i1p1,CMIP5,energy,hfds vs thermal OHC,1.021043707
+ACCESS-CM2,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,0.968581187
+ACCESS-ESM1-5,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,0.97642497
+BCC-CSM2-MR,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,nan
+BCC-ESM1,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,nan
+CNRM-CM6-1,r1i1p1f2,CMIP6,energy,hfds vs thermal OHC,0.983415845
+CNRM-ESM2-1,r1i1p1f2,CMIP6,energy,hfds vs thermal OHC,0.98644991
+E3SM-1-0,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,0.969031201
+EC-Earth3,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,0.897442668
+EC-Earth3-Veg,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,0.941158699
+GFDL-CM4,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,0.996435436
+GISS-E2-1-G,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,0.592807
+GISS-E2-1-G-CC,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,0.837044639
+HadGEM3-GC31-LL,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,0.96885323
+IPSL-CM6A-LR,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,0.956068614
+MPI-ESM1-2-HR,r1i1p1f1,CMIP6,energy,hfds vs thermal OHC,0.947841068
+UKESM1-0-LL,r1i1p1f2,CMIP6,energy,hfds vs thermal OHC,nan
+ACCESS1-0,r1i1p1,CMIP5,mass,wfo vs masso,
+ACCESS1-3,r1i1p1,CMIP5,mass,wfo vs masso,0.968261909
+BCC-CSM1-1,r1i1p1,CMIP5,mass,wfo vs masso,nan
+BCC-CSM1.1(m),r1i1p1,CMIP5,mass,wfo vs masso,nan
+BNU-ESM,r1i1p1,CMIP5,mass,wfo vs masso,nan
+CMCC-CESM,r1i1p1,CMIP5,mass,wfo vs masso,nan
+CMCC-CM,r1i1p1,CMIP5,mass,wfo vs masso,0.968194422
+CMCC-CMS,r1i1p1,CMIP5,mass,wfo vs masso,-0.009840999
+GFDL-CM3,r1i1p1,CMIP5,mass,wfo vs masso,1.06151548
+GFDL-ESM2G,r1i1p1,CMIP5,mass,wfo vs masso,0.974282077
+GFDL-ESM2M,r1i1p1,CMIP5,mass,wfo vs masso,0.8814692
+IPSL-CM5A-MR,r1i1p1,CMIP5,mass,wfo vs masso,0.719667027
+IPSL-CM5B-LR,r1i1p1,CMIP5,mass,wfo vs masso,0.533403934
+MIROC4h,r1i1p1,CMIP5,mass,wfo vs masso,nan
+MIROC-ESM,r1i1p1,CMIP5,mass,wfo vs masso,0.684523935
+MIROC-ESM-CHEM,r1i1p1,CMIP5,mass,wfo vs masso,1.080300688
+MPI-ESM-LR,r1i1p1,CMIP5,mass,wfo vs masso,0.015231081
+MPI-ESM-MR,r1i1p1,CMIP5,mass,wfo vs masso,0.030772919
+MPI-ESM-P,r1i1p1,CMIP5,mass,wfo vs masso,0.114402664
+NorESM1-M,r1i1p1,CMIP5,mass,wfo vs masso,0.029978464
+NorESM1-ME,r1i1p1,CMIP5,mass,wfo vs masso,0.0238602
+ACCESS-CM2,r1i1p1f1,CMIP6,mass,wfo vs masso,0.97749091
+ACCESS-ESM1-5,r1i1p1f1,CMIP6,mass,wfo vs masso,0.929126815
+BCC-CSM2-MR,r1i1p1f1,CMIP6,mass,wfo vs masso,nan
+BCC-ESM1,r1i1p1f1,CMIP6,mass,wfo vs masso,nan
+CNRM-CM6-1,r1i1p1f2,CMIP6,mass,wfo vs masso,0.947334069
+CNRM-ESM2-1,r1i1p1f2,CMIP6,mass,wfo vs masso,0.895064274
+E3SM-1-0,r1i1p1f1,CMIP6,mass,wfo vs masso,-0.002127283
+EC-Earth3,r1i1p1f1,CMIP6,mass,wfo vs masso,0.884217891
+EC-Earth3-Veg,r1i1p1f1,CMIP6,mass,wfo vs masso,0.872970866
+GFDL-CM4,r1i1p1f1,CMIP6,mass,wfo vs masso,nan
+GISS-E2-1-G,r1i1p1f1,CMIP6,mass,wfo vs masso,-0.017096634
+GISS-E2-1-G-CC,r1i1p1f1,CMIP6,mass,wfo vs masso,0.137815824
+HadGEM3-GC31-LL,r1i1p1f1,CMIP6,mass,wfo vs masso,0.995410073
+IPSL-CM6A-LR,r1i1p1f1,CMIP6,mass,wfo vs masso,0.94765267
+MPI-ESM1-2-HR,r1i1p1f1,CMIP6,mass,wfo vs masso,0.24282894
+UKESM1-0-LL,r1i1p1f2,CMIP6,mass,wfo vs masso,nan
+ACCESS1-0,r1i1p1,CMIP5,mass,wfo vs soga,
+ACCESS1-3,r1i1p1,CMIP5,mass,wfo vs soga,1.243034012
+BCC-CSM1-1,r1i1p1,CMIP5,mass,wfo vs soga,nan
+BCC-CSM1.1(m),r1i1p1,CMIP5,mass,wfo vs soga,nan
+BNU-ESM,r1i1p1,CMIP5,mass,wfo vs soga,nan
+CMCC-CESM,r1i1p1,CMIP5,mass,wfo vs soga,-2.266515589
+CMCC-CM,r1i1p1,CMIP5,mass,wfo vs soga,0.230723932
+CMCC-CMS,r1i1p1,CMIP5,mass,wfo vs soga,2.26619136
+GFDL-CM3,r1i1p1,CMIP5,mass,wfo vs soga,0.93086414
+GFDL-ESM2G,r1i1p1,CMIP5,mass,wfo vs soga,1.024667589
+GFDL-ESM2M,r1i1p1,CMIP5,mass,wfo vs soga,0.821174314
+IPSL-CM5A-MR,r1i1p1,CMIP5,mass,wfo vs soga,0.329419921
+IPSL-CM5B-LR,r1i1p1,CMIP5,mass,wfo vs soga,0.677734407
+MIROC4h,r1i1p1,CMIP5,mass,wfo vs soga,nan
+MIROC-ESM,r1i1p1,CMIP5,mass,wfo vs soga,0.648499877
+MIROC-ESM-CHEM,r1i1p1,CMIP5,mass,wfo vs soga,1.044600194
+MPI-ESM-LR,r1i1p1,CMIP5,mass,wfo vs soga,0.020490657
+MPI-ESM-MR,r1i1p1,CMIP5,mass,wfo vs soga,0.05249827
+MPI-ESM-P,r1i1p1,CMIP5,mass,wfo vs soga,0.099828649
+NorESM1-M,r1i1p1,CMIP5,mass,wfo vs soga,0.845039208
+NorESM1-ME,r1i1p1,CMIP5,mass,wfo vs soga,0.855441211
+ACCESS-CM2,r1i1p1f1,CMIP6,mass,wfo vs soga,0.867322131
+ACCESS-ESM1-5,r1i1p1f1,CMIP6,mass,wfo vs soga,0.859371187
+BCC-CSM2-MR,r1i1p1f1,CMIP6,mass,wfo vs soga,nan
+BCC-ESM1,r1i1p1f1,CMIP6,mass,wfo vs soga,nan
+CNRM-CM6-1,r1i1p1f2,CMIP6,mass,wfo vs soga,0.871236975
+CNRM-ESM2-1,r1i1p1f2,CMIP6,mass,wfo vs soga,0.850545768
+E3SM-1-0,r1i1p1f1,CMIP6,mass,wfo vs soga,-0.003617739
+EC-Earth3,r1i1p1f1,CMIP6,mass,wfo vs soga,0.80969913
+EC-Earth3-Veg,r1i1p1f1,CMIP6,mass,wfo vs soga,0.798801683
+GFDL-CM4,r1i1p1f1,CMIP6,mass,wfo vs soga,nan
+GISS-E2-1-G,r1i1p1f1,CMIP6,mass,wfo vs soga,-0.017527622
+GISS-E2-1-G-CC,r1i1p1f1,CMIP6,mass,wfo vs soga,0.138804773
+HadGEM3-GC31-LL,r1i1p1f1,CMIP6,mass,wfo vs soga,0.855931503
+IPSL-CM6A-LR,r1i1p1f1,CMIP6,mass,wfo vs soga,0.861454076
+MPI-ESM1-2-HR,r1i1p1f1,CMIP6,mass,wfo vs soga,0.21005497
+UKESM1-0-LL,r1i1p1f2,CMIP6,mass,wfo vs soga,nan
+ACCESS1-0,r1i1p1,CMIP5,mass,masso vs soga,1.007686308
+ACCESS1-3,r1i1p1,CMIP5,mass,masso vs soga,1.286225176
+BCC-CSM1-1,r1i1p1,CMIP5,mass,masso vs soga,2.534138285
+BCC-CSM1.1(m),r1i1p1,CMIP5,mass,masso vs soga,-3.735233884
+BNU-ESM,r1i1p1,CMIP5,mass,masso vs soga,0.824741274
+CMCC-CESM,r1i1p1,CMIP5,mass,masso vs soga,nan
+CMCC-CM,r1i1p1,CMIP5,mass,masso vs soga,0.291335337
+CMCC-CMS,r1i1p1,CMIP5,mass,masso vs soga,-5.00855041
+GFDL-CM3,r1i1p1,CMIP5,mass,masso vs soga,0.87933835
+GFDL-ESM2G,r1i1p1,CMIP5,mass,masso vs soga,0.472365454
+GFDL-ESM2M,r1i1p1,CMIP5,mass,masso vs soga,0.929239993
+IPSL-CM5A-MR,r1i1p1,CMIP5,mass,masso vs soga,0.506668422
+IPSL-CM5B-LR,r1i1p1,CMIP5,mass,masso vs soga,1.41349032
+MIROC4h,r1i1p1,CMIP5,mass,masso vs soga,0.901041518
+MIROC-ESM,r1i1p1,CMIP5,mass,masso vs soga,0.930316175
+MIROC-ESM-CHEM,r1i1p1,CMIP5,mass,masso vs soga,0.963012539
+MPI-ESM-LR,r1i1p1,CMIP5,mass,masso vs soga,0.868168794
+MPI-ESM-MR,r1i1p1,CMIP5,mass,masso vs soga,0.871118658
+MPI-ESM-P,r1i1p1,CMIP5,mass,masso vs soga,0.875180881
+NorESM1-M,r1i1p1,CMIP5,mass,masso vs soga,0.167335119
+NorESM1-ME,r1i1p1,CMIP5,mass,masso vs soga,0.184953647
+ACCESS-CM2,r1i1p1f1,CMIP6,mass,masso vs soga,0.889154925
+ACCESS-ESM1-5,r1i1p1f1,CMIP6,mass,masso vs soga,0.930836109
+BCC-CSM2-MR,r1i1p1f1,CMIP6,mass,masso vs soga,nan
+BCC-ESM1,r1i1p1f1,CMIP6,mass,masso vs soga,nan
+CNRM-CM6-1,r1i1p1f2,CMIP6,mass,masso vs soga,0.915809889
+CNRM-ESM2-1,r1i1p1f2,CMIP6,mass,masso vs soga,0.940307741
+E3SM-1-0,r1i1p1f1,CMIP6,mass,masso vs soga,0.899361819
+EC-Earth3,r1i1p1f1,CMIP6,mass,masso vs soga,0.91375317
+EC-Earth3-Veg,r1i1p1f1,CMIP6,mass,masso vs soga,0.9160767
+GFDL-CM4,r1i1p1f1,CMIP6,mass,masso vs soga,0.937916453
+GISS-E2-1-G,r1i1p1f1,CMIP6,mass,masso vs soga,0.962684989
+GISS-E2-1-G-CC,r1i1p1f1,CMIP6,mass,masso vs soga,0.990449221
+HadGEM3-GC31-LL,r1i1p1f1,CMIP6,mass,masso vs soga,0.859376335
+IPSL-CM6A-LR,r1i1p1f1,CMIP6,mass,masso vs soga,0.908936659
+MPI-ESM1-2-HR,r1i1p1f1,CMIP6,mass,masso vs soga,0.860891786
+UKESM1-0-LL,r1i1p1f2,CMIP6,mass,masso vs soga,0.809467804
