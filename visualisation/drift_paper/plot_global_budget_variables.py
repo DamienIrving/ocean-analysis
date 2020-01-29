@@ -46,11 +46,11 @@ import convenient_universal as uconv
 import spatial_weights
 
 import matplotlib as mpl
-mpl.rcParams['axes.labelsize'] = 'large'
-mpl.rcParams['axes.titlesize'] = 'x-large'
-mpl.rcParams['xtick.labelsize'] = 'medium'
-mpl.rcParams['ytick.labelsize'] = 'medium'
-mpl.rcParams['legend.fontsize'] = 'large'
+mpl.rcParams['axes.labelsize'] = 'x-large'
+mpl.rcParams['axes.titlesize'] = 'xx-large'
+mpl.rcParams['xtick.labelsize'] = 'x-large'
+mpl.rcParams['ytick.labelsize'] = 'x-large'
+mpl.rcParams['legend.fontsize'] = 'x-large'
 
 
 # Define functions 
@@ -546,9 +546,9 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
     calc_trend(barystatic_data, 'barystatic OHC', 'J')
 
     ax_top.grid(linestyle=':')
-    ax_top.plot(ohc_anomaly_data, color='purple', label='OHC ($H$)')
-    ax_top.plot(thermal_data, color='red', label='thermal OHC ($H_T$)')
-    ax_top.plot(barystatic_data, color='blue', label='barystatic OHC ($H_M$)')
+    ax_top.plot(ohc_anomaly_data, color='#272727', label='OHC ($H$)')
+    ax_top.plot(thermal_data, color='tab:red', label='OHC temperature component ($H_T$)')
+    ax_top.plot(barystatic_data, color='tab:blue', label='OHC barystatic component ($H_M$)')
 
     #ohc_anomaly_cubic_dedrifted = dedrift_data(ohc_anomaly_data, fit='cubic')
     #ax_bottom.plot(ohc_anomaly_cubic_dedrifted, color='black')
@@ -556,7 +556,7 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
     thermal_data_linear_dedrifted = dedrift_data(thermal_data, fit='linear')
     thermal_data_cubic_dedrifted = dedrift_data(thermal_data, fit='cubic')
     ax_middle.grid(linestyle=':')
-    ax_middle.plot(thermal_data_cubic_dedrifted, color='red', label='thermal OHC ($H_T$)')
+    ax_middle.plot(thermal_data_cubic_dedrifted, color='tab:red', label='OHC temperature component ($H_T$)')
 
     # Optional data
 
@@ -565,10 +565,10 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         nettoa_cumsum_data = numpy.cumsum(nettoa_data)
         nettoa_cumsum_anomaly = nettoa_cumsum_data - nettoa_cumsum_data[0]
         calc_trend(nettoa_cumsum_anomaly, 'cumulative netTOA', 'J')
-        ax_top.plot(nettoa_cumsum_anomaly, color='gold', label='cumulative netTOA ($Q_r$)')
+        ax_top.plot(nettoa_cumsum_anomaly, color='tab:olive', label='cumulative netTOA ($Q_r$)')
         nettoa_linear_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='linear')
         nettoa_cubic_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='cubic')
-        ax_middle.plot(nettoa_cubic_dedrifted, color='gold', label='cumulative netTOA ($Q_r$)')
+        ax_middle.plot(nettoa_cubic_dedrifted, color='tab:olive', label='cumulative netTOA ($Q_r$)')
         calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
                         'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, annual mean)')
         calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
@@ -587,10 +587,10 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         hfds_cumsum_data = numpy.cumsum(net_surface_heat_flux_data)
         hfds_cumsum_anomaly = hfds_cumsum_data - hfds_cumsum_data[0]
         calc_trend(hfds_cumsum_anomaly, 'cumulative hfds', 'J')
-        ax_top.plot(hfds_cumsum_anomaly, color='orange', label='cumulative ocean surface heat flux ($Q_h$)')
+        ax_top.plot(hfds_cumsum_anomaly, color='tab:orange', label='cumulative ocean surface heat flux ($Q_h$)')
         hfds_linear_dedrifted = dedrift_data(hfds_cumsum_anomaly, fit='linear')
         hfds_cubic_dedrifted = dedrift_data(hfds_cumsum_anomaly, fit='cubic')
-        ax_middle.plot(hfds_cubic_dedrifted, color='orange', label='cumulative ocean surface heat flux ($Q_h$)')
+        ax_middle.plot(hfds_cubic_dedrifted, color='tab:orange', label='cumulative ocean surface heat flux ($Q_h$)')
         calc_regression(hfds_cubic_dedrifted, thermal_data_cubic_dedrifted,
                         'cumulative surface heat flux vs thermal OHC anomaly (cubic dedrift, annual mean)')
         calc_regression(hfds_cubic_dedrifted, thermal_data_cubic_dedrifted,
@@ -625,19 +625,14 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
     if ylim:
         ax_top.set_ylim(ylim[0] * 1e24, ylim[1] * 1e24)
 
-    ax_top.set_title('heat budget')
-    ax_middle.set_title('heat budget (de-drifted)')
+    ax_top.set_title('(a) energy budget')
+    ax_middle.set_title('(c) energy budget (de-drifted)')
     ax_middle.set_xlabel('year')
-#    ax_bottom.set_title('De-drifted total OHC comparison')
-#    ax_bottom.set_xlabel('year')
     ax_top.set_ylabel('equivalent change in OHC (J)')
-    ax_middle.set_ylabel('equivalent change in OHC (J)')
-#    ax_bottom.set_ylabel('equivalent change in OHC (J)')
+    ax_top.yaxis.set_label_coords(-0.1, 0.2)
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
-#    ax_bottom.yaxis.major.formatter._useMathText = True
     ax_top.legend()
-#    ax_middle.legend()
 
 
 def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density, ylim=None):
@@ -662,17 +657,17 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
         calc_trend(sea_level_anomaly_from_masso, 'global ocean mass', 'm')
 
         ax_top.grid(linestyle=':')
-        ax_top.plot(sea_level_anomaly_from_masso, color='blue', label='ocean mass ($M$)')
-        ax_top.plot(sea_level_anomaly_from_soga, color='teal', label='ocean salinity ($S$)')
+        ax_top.plot(sea_level_anomaly_from_masso, color='tab:blue', label='ocean mass ($M$)')
+        ax_top.plot(sea_level_anomaly_from_soga, color='tab:green', label='ocean salinity ($S$)')
 
         masso_linear_dedrifted = dedrift_data(sea_level_anomaly_from_masso, fit='linear')
         masso_cubic_dedrifted = dedrift_data(sea_level_anomaly_from_masso, fit='cubic')
         ax_middle.grid(linestyle=':')
-        ax_middle.plot(masso_cubic_dedrifted, color='blue', label='ocean mass ($M$)')
+        ax_middle.plot(masso_cubic_dedrifted, color='tab:blue', label='ocean mass ($M$)')
 
         soga_linear_dedrifted = dedrift_data(sea_level_anomaly_from_soga, fit='linear')
         soga_cubic_dedrifted = dedrift_data(sea_level_anomaly_from_soga, fit='cubic')
-        ax_middle.plot(soga_cubic_dedrifted, color='teal', label='ocean salinity ($S$)')
+        ax_middle.plot(soga_cubic_dedrifted, color='tab:green', label='ocean salinity ($S$)')
         calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
                         'change in global ocean mass vs global mean salinity anomaly (cubic dedrift, annual mean)')
         calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
@@ -687,7 +682,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
         wfonocorr_cumsum_data = numpy.cumsum(cube_dict['wfonocorr'].data)
         wfonocorr_cumsum_anomaly = wfonocorr_cumsum_data - wfonocorr_cumsum_data[0]
         sea_level_anomaly_from_wfonocorr = sea_level_from_mass(wfonocorr_cumsum_anomaly, ocean_area, density)
-        ax_top.plot(sea_level_anomaly_from_wfonocorr, color='lightslategray', linestyle=':',
+        ax_top.plot(sea_level_anomaly_from_wfonocorr, color='tab:gray', linestyle=':',
                     label='cumulative surface freshwater flux (no flux correction)')
 
     if cube_dict['wfo'] and ocean_area:
@@ -695,12 +690,12 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
         wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
         sea_level_anomaly_from_wfo = sea_level_from_mass(wfo_cumsum_anomaly, ocean_area, density)
         calc_trend(wfo_cumsum_anomaly, 'cumulative wfo', 'kg')
-        ax_top.plot(sea_level_anomaly_from_wfo, color='lightslategray',
+        ax_top.plot(sea_level_anomaly_from_wfo, color='tab:gray',
                     label='cumulative freshwater flux ($Q_m$)')
 
         wfo_linear_dedrifted = dedrift_data(sea_level_anomaly_from_wfo, fit='linear')
         wfo_cubic_dedrifted = dedrift_data(sea_level_anomaly_from_wfo, fit='cubic')
-        ax_middle.plot(wfo_cubic_dedrifted, color='lightslategray',
+        ax_middle.plot(wfo_cubic_dedrifted, color='tab:gray',
                        label='cumulative freshwater flux ($Q_m$)')
         
         calc_regression(wfo_cubic_dedrifted, masso_cubic_dedrifted,
@@ -738,15 +733,14 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
     if ylim:
         ax_top.set_ylim(ylim[0], ylim[1])
 
-    ax_top.set_title('mass budget')
-    ax_middle.set_title('mass budget (de-drifted)')
+    ax_top.set_title('(b) mass budget')
+    ax_middle.set_title('(d) mass budget (de-drifted)')
     ax_middle.set_xlabel('year')
     ax_top.set_ylabel('equivalent change in global sea level (m)')
-    ax_middle.set_ylabel('equivalent change in global sea level (m)')
+    ax_top.yaxis.set_label_coords(-0.1, 0.2)
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
     ax_top.legend()
-    #ax_middle.legend(loc=2)    
 
 
 def sea_level_from_mass(mass_anomaly_data, ocean_area, density):
@@ -813,7 +807,7 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
     numbers_out_list.append(area_text)
 
     fig = plt.figure(figsize=[20, 12])
-    gs = gridspec.GridSpec(3, 2)
+    gs = gridspec.GridSpec(3, 2, hspace=0.3)
     ax1 = plt.subplot(gs[0:2, 0])
     ax2 = plt.subplot(gs[0:2, 1])
     ax3 = plt.subplot(gs[2, 0])
@@ -829,10 +823,10 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
     plot_sea_level(ax2, ax4, masso_data, cube_dict, ocean_area, inargs.density, ylim=inargs.sealevel_ylim)
 
     plt.subplots_adjust(top=0.92)
-    ax1.text(0.03, 0.08, '(a)', transform=ax1.transAxes, fontsize=22, va='top')
-    ax2.text(0.03, 0.08, '(b)', transform=ax2.transAxes, fontsize=22, va='top')
-    ax3.text(0.03, 0.15, '(c)', transform=ax3.transAxes, fontsize=22, va='top')
-    ax4.text(0.03, 0.15, '(d)', transform=ax4.transAxes, fontsize=22, va='top')
+    #ax1.text(0.03, 0.08, '(a)', transform=ax1.transAxes, fontsize=22, va='top')
+    #ax2.text(0.03, 0.08, '(b)', transform=ax2.transAxes, fontsize=22, va='top')
+    #ax3.text(0.03, 0.15, '(c)', transform=ax3.transAxes, fontsize=22, va='top')
+    #ax4.text(0.03, 0.15, '(d)', transform=ax4.transAxes, fontsize=22, va='top')
 
     if inargs.title:
         title = '%s, %s, piControl'  %(inargs.model, inargs.run)
