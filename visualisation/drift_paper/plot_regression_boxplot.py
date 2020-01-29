@@ -55,17 +55,18 @@ def main(inargs):
     fig, axes =plt.subplots(1,2)
     sns.set(style="whitegrid")
     
-    axes[0].axhline(y=1.0, color='0.5', linewidth=0.5)
     sns.boxplot(x="project", y="regression coefficient", hue="comparison",
                 data=df[df['realm'] == 'energy'], ax=axes[0], palette='hot')
     axes[0].set_title('(a) heat budget')
     axes[0].set_ylim(-0.25, 1.75)
+    axes[0].axhline(y=1.0, color='0.5', linewidth=0.2)
     set_legend(axes[0])
     
     sns.boxplot(x="project", y="regression coefficient", hue="comparison",
                 data=df[df['realm'] == 'mass'], ax=axes[1], palette='GnBu_r')
     axes[1].set_title('(b) mass budget')
     axes[1].set_ylim(-0.25, 1.75)
+    axes[1].axhline(y=1.0, color='0.5', linewidth=0.2)
     set_legend(axes[1])
     
     for ax in axes.flat:
