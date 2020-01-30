@@ -29,8 +29,8 @@ for directory in cwd.split('/')[1:]:
 import matplotlib as mpl
 mpl.rcParams['axes.labelsize'] = 'large'
 mpl.rcParams['axes.titlesize'] = 'x-large'
-mpl.rcParams['xtick.labelsize'] = 'medium'
-mpl.rcParams['ytick.labelsize'] = 'medium'
+mpl.rcParams['xtick.labelsize'] = 'large'
+mpl.rcParams['ytick.labelsize'] = 'large'
 mpl.rcParams['legend.fontsize'] = 'large'
 
 
@@ -77,9 +77,9 @@ def main(inargs):
         ax2.set_ylim(-1.5, 2.5)
         ax3.set_ylim(-45, -30)
 
-        df_leakage.plot(ax=ax3, kind='bar', color=['gold', 'green', 'blue'], width=0.9, legend=False)
-        df_leakage.plot(ax=ax2, kind='bar', color=['gold', 'green', 'blue'], width=0.9, legend=False)
-        df_leakage.plot(ax=ax1, kind='bar', color=['gold', 'green', 'blue'], width=0.9)
+        df_leakage.plot(ax=ax3, kind='bar', color=['tab:olive', 'tab:green', 'tab:blue'], width=0.9, legend=False)
+        df_leakage.plot(ax=ax2, kind='bar', color=['tab:olive', 'tab:green', 'tab:blue'], width=0.9, legend=False)
+        df_leakage.plot(ax=ax1, kind='bar', color=['tab:olive', 'tab:green', 'tab:blue'], width=0.9)
         for tick in ax3.get_xticklabels():
             tick.set_rotation(90)
 
@@ -102,7 +102,7 @@ def main(inargs):
 
     else:
     
-        df_leakage.plot.bar(figsize=(18,6), color=['gold', 'green', 'blue'], width=0.9)
+        df_leakage.plot.bar(figsize=(18,6), color=['tab:olive', 'tab:green', 'tab:blue'], width=0.9)
         plt.axvline(x=cmip_line, color='0.5', linewidth=2.0)
         plt.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
         plt.axhline(y=-0.5, color='0.5', linewidth=0.5, linestyle='--')
