@@ -37,12 +37,12 @@ mpl.rcParams['legend.fontsize'] = 'large'
 
 # Define functions 
 
-labels = {"netTOA vs hfds regression": "cumulative netTOA ($Q_r$) vs. cumulative surface heat flux ($Q_h$)",
-          "hfds vs thermal OHC regression": "cumulative surface heat flux ($Q_h$) vs. thermal OHC ($H_T$)",
-          "netTOA vs thermal OHC regression": "cumulative netTOA ($Q_r$) vs. thermal OHC ($H_T$)",
-          "wfo vs masso regression": "cumulative freshwater flux ($Q_m$) vs. ocean mass ($M$)",
-          "wfo vs soga regression": "cumulative freshwater flux ($Q_m$) vs. ocean salinity ($S$)",
-          "masso vs soga regression": "ocean mass ($M$) vs. ocean salinity ($S$)"}
+labels = {"netTOA vs hfds regression": "$Q_r$ vs. $Q_h$",
+          "hfds vs thermal OHC regression": "$Q_h$ vs. $H_T$",
+          "netTOA vs thermal OHC regression": "$Q_r$ vs. $H_T$",
+          "wfo vs masso regression": "$Q_m$ vs. $M$",
+          "wfo vs soga regression": "$Q_m$ vs. $S$",
+          "masso vs soga regression": "$M$ vs. $S$"}
 
 
 def plot_energy_conservation(df, cmip_line):
