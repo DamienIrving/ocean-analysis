@@ -737,7 +737,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
     ax_middle.set_title('(d) mass budget (de-drifted)')
     ax_middle.set_xlabel('year')
     ax_top.set_ylabel('equivalent change in global sea level (m)')
-    ax_top.yaxis.set_label_coords(-0.1, 0.2)
+    ax_top.yaxis.set_label_coords(-0.12, 0.2)
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
     ax_top.legend()
