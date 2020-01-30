@@ -32,10 +32,10 @@ for directory in cwd.split('/')[1:]:
         break
 
 import matplotlib as mpl
-mpl.rcParams['axes.labelsize'] = 'large'
-mpl.rcParams['axes.titlesize'] = 'x-large'
-mpl.rcParams['xtick.labelsize'] = 'medium'
-mpl.rcParams['ytick.labelsize'] = 'medium'
+mpl.rcParams['axes.labelsize'] = 'x-large'
+mpl.rcParams['axes.titlesize'] = 'xx-large'
+mpl.rcParams['xtick.labelsize'] = 'x-large'
+mpl.rcParams['ytick.labelsize'] = 'x-large'
 mpl.rcParams['legend.fontsize'] = 'large'
 
 ocean_model_colors = {'COCO': 'tab:red',
@@ -50,7 +50,7 @@ ocean_model_colors = {'COCO': 'tab:red',
 
 markers = ['o', '<', '^', '>', 'v', 's', 'p', 'D', 'd', 'h', 'H', 'X']
 
-axis_labels = {'thermal OHC': 'change in thermal OHC, $dH_T/dt$',
+axis_labels = {'thermal OHC': 'change in OHC temperature component, $dH_T/dt$',
                'masso': 'change in ocean mass, $dM/dt$',
                'netTOA': 'cumulative netTOA, $dQ_r/dt$',
                'hfds': 'cumulative ocean surface heat flux, $dQ_h/dt$',
@@ -323,7 +323,7 @@ def main(inargs):
     thermal_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace,
                             subplot_spec=thermal_sps, d=0.0)
     plot_broken_comparison(thermal_ax, df, '(b) thermal energy conservation', 'hfds (J yr-1)',
-                           'thermal OHC (J yr-1)', 'W m-2', xpad=20, broken=True)
+                           'thermal OHC (J yr-1)', 'W m-2', xpad=25, ypad=45, broken=True)
     handles, labels = update_legend_info(thermal_ax, df[['hfds (J yr-1)', 'thermal OHC (J yr-1)']],
                                          handles, labels)
     
@@ -332,7 +332,7 @@ def main(inargs):
     ylims=[(-1.9, 0.6)]
     mass_ax = brokenaxes(xlims=xlims, ylims=ylims, subplot_spec=mass_sps)
     plot_broken_comparison(mass_ax, df, '(c) mass conservation', 'wfo (kg yr-1)', 'masso (kg yr-1)',
-                           'mm yr-1', broken=True)
+                           'mm yr-1', broken=True, xpad=30, ypad=50)
     handles, labels = update_legend_info(mass_ax, df[['wfo (kg yr-1)', 'masso (kg yr-1)']],
                                          handles, labels)
 
@@ -342,7 +342,7 @@ def main(inargs):
     hspace = 0.1
     salt_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=salt_sps, d=0.0)
     plot_broken_comparison(salt_ax, df, '(d) salt conservation', 'masso (g/kg yr-1)', 'soga (g/kg yr-1)',
-                           'g/kg s-1', scale_factor=13, broken=True)
+                           'g/kg s-1', scale_factor=13, broken=True, xpad=30, ypad=40)
     handles, labels = update_legend_info(salt_ax, df[['masso (g/kg yr-1)', 'soga (g/kg yr-1)']],
                                          handles, labels)
 
