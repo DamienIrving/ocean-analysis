@@ -38,17 +38,24 @@ mpl.rcParams['xtick.labelsize'] = 'x-large'
 mpl.rcParams['ytick.labelsize'] = 'x-large'
 mpl.rcParams['legend.fontsize'] = 'large'
 
-ocean_model_colors = {'COCO': 'tab:red',
-                      'GO': 'tab:purple',
-                      'GOLD': 'tab:brown',
-                      'MICOM': 'tab:pink',
-                      'MOM': 'tab:orange',
-                      'MPAS': 'tab:olive',
-                      'MPIOM': 'tab:green',
-                      'NEMO': 'tab:blue',
+# From https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+institution_colors = {'BCC': '#800000',
+                      'BNU': '#a9a9a9',
+                      'CMCC': '#808000',
+                      'CNRM-CERFACS': '#469990',
+                      'CSIRO': '#000075',
+                      'E3SM-Project': '#e6194B',
+                      'EC-Earth-Consortium': '#f58231',
+                      'IPSL': '#ffe119',
+                      'MIROC': '#bfef45',
+                      'MOHC': '#3cb44b',
+                      'MPI-M': '#42d4f4',
+                      'NASA-GISS': '#4363d8',
+                      'NCC': '#911eb4',
+                      'NOAA-GFDL': '#f032e6'
                       }
 
-markers = ['o', '<', '^', '>', 'v', 's', 'p', 'D', 'd', 'h', 'H', 'X']
+markers = ['o', '^', 's', '<', '>', 'v', 'p', 'D', 'd', 'h', 'H', 'X']
 
 axis_labels = {'thermal OHC': 'change in OHC temperature component, $dH_T/dt$',
                'masso': 'change in ocean mass, $dM/dt$',
@@ -224,9 +231,11 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
     
     """
 
-    cmip5_ocean_model_counts = {'COCO': 0, 'GO': 0, 'GOLD': 0, 'MICOM': 0,
-                                'MOM': 0, 'MPAS': 0, 'MPIOM': 0, 'NEMO': 0}
-    cmip6_ocean_model_counts = cmip5_ocean_model_counts.copy()
+    cmip5_institution_counts = {'BCC': 0, 'BNU': 0, 'CMCC': 0, 'CNRM-CERFACS': 0,
+                                'CSIRO': 0, 'E3SM-Project': 0, 'EC-Earth-Consortium': 0,
+                                'IPSL': 0, 'MIROC': 0, 'MOHC': 0, 'MPI-M': 0, 'NASA-GISS': 0,
+                                'NCC': 0, 'NOAA-GFDL': 0}
+    cmip6_institution_counts = cmip5_institution_counts.copy()
 
     x_input_units = get_units(xvar) 
     y_input_units = get_units(yvar)
@@ -234,20 +243,20 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
         area = df['ocean area (m2)'][dotnum]
         x = convert_units(df[xvar][dotnum], x_input_units, plot_units, ocean_area=area) * 10**scale_factor
         y = convert_units(df[yvar][dotnum], y_input_units, plot_units, ocean_area=area) * 10**scale_factor
-        ocean_model = df['ocean model'][dotnum]
+        institution = df['institution'][dotnum]
         label = df['model'][dotnum] + ' (' + df['run'][dotnum] + ')'
 
-        color = ocean_model_colors[ocean_model]
+        color = institution_colors[institution]
         if df['project'][dotnum] == 'cmip6':
             facecolors = color
             edgecolors ='none'
-            marker_num = cmip6_ocean_model_counts[ocean_model]
-            cmip6_ocean_model_counts[ocean_model] = cmip6_ocean_model_counts[ocean_model] + 1
+            marker_num = cmip6_institution_counts[institution]
+            cmip6_institution_counts[institution] = cmip6_institution_counts[institution] + 1
         else:
             facecolors = 'none'
             edgecolors = color
-            marker_num = cmip5_ocean_model_counts[ocean_model]
-            cmip5_ocean_model_counts[ocean_model] = cmip5_ocean_model_counts[ocean_model] + 1
+            marker_num = cmip5_institution_counts[institution]
+            cmip5_institution_counts[institution] = cmip5_institution_counts[institution] + 1
         marker = markers[marker_num]
         ax.scatter(x, y, label=label, s=130, linewidth=1.2, marker=marker,
                    facecolors=facecolors, edgecolors=edgecolors)
