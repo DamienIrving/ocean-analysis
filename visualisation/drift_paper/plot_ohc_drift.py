@@ -31,7 +31,7 @@ import matplotlib as mpl
 mpl.rcParams['axes.labelsize'] = 'large'
 mpl.rcParams['axes.titlesize'] = 'x-large'
 mpl.rcParams['xtick.labelsize'] = 'medium'
-mpl.rcParams['ytick.labelsize'] = 'medium'
+mpl.rcParams['ytick.labelsize'] = 'large'
 mpl.rcParams['legend.fontsize'] = 'large'
 
 
@@ -51,10 +51,10 @@ def main(inargs):
     earth_surface_area = 5.1e14
     df_ohc = (df_ohc / sec_in_year) / earth_surface_area
     df_ohc = df_ohc.rename(columns={"OHC (J yr-1)": "change in OHC ($dH/dt$)",
-                                    "thermal OHC (J yr-1)": "change in thermal OHC ($dH_T/dt$)",
-                                    "barystatic OHC (J yr-1)": "change in barystatic OHC ($dH_m/dt$)"})
+                                    "thermal OHC (J yr-1)": "change in OHC temperature component ($dH_T/dt$)",
+                                    "barystatic OHC (J yr-1)": "change in OHC barystatic component ($dH_m/dt$)"})
     
-    df_ohc.plot.bar(figsize=(18,6), color=['black', 'red', 'blue'], width=0.9)
+    df_ohc.plot.bar(figsize=(18,6), color=['#272727', 'tab:red', 'tab:blue'], width=0.9)
     plt.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
     plt.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
     plt.ylabel('$W \; m^{-2}$')
