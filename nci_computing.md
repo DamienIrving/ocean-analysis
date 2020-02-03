@@ -69,8 +69,9 @@ $ cat job.txt
 #!/bin/bash
 #PBS -P r87
 #PBS -q normal
-#PBS -l walltime=05:00:00
-#PBS -l mem=50GB
+#PBS -l walltime=02:00:00
+#PBS -l storage=gdata/r87+gdata/oi10
+#PBS -l mem=60GB
 #PBS -l wd
 
 command...
