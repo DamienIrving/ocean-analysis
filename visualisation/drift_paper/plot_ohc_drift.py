@@ -37,6 +37,28 @@ mpl.rcParams['legend.fontsize'] = 'large'
 
 # Define functions 
 
+def get_quartiles(df, column_name, df_project, units):
+    """Get the ensemble quartiles"""
+
+    quartiles = ['# ' + column_name + ' quartiles']
+    for project in ['cmip6', 'cmip5']:
+        df_subset = df[df_project == project]
+        
+        upper_quartile = df_subset[column_name].abs().quantile(0.75)
+        median = df_subset[column_name].abs().quantile(0.5)
+        lower_quartile = df_subset[column_name].abs().quantile(0.25)
+        
+        upper_quartile_text = "%s upper quartile: %f %s" %(project, upper_quartile, units)
+        median_text = "%s median: %f %s" %(project, median, units)
+        lower_quartile_text = "%s lower quartile: %f %s" %(project, lower_quartile, units)
+        
+        quartiles.append(upper_quartile_text)
+        quartiles.append(median_text)
+        quartiles.append(lower_quartile_text)
+
+    return quartiles
+
+
 def main(inargs):
     """Run the program."""
 
@@ -57,14 +79,17 @@ def main(inargs):
     df_ohc.plot.bar(figsize=(18,6), color=['#272727', 'tab:red', 'tab:blue'], width=0.9)
     plt.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
     plt.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
-    plt.ylabel('$W \; m^{-2}$')
+    units = '$W \; m^{-2}$'
+    plt.ylabel(units)
     plt.axvline(x=x[0]-0.5, color='0.5', linewidth=0.1)
     for val in x:
         plt.axvline(x=val+0.5, color='0.5', linewidth=0.1)
+    
+    quartiles = get_quartiles(df_ohc, "change in OHC ($dH/dt$)", df['project'], units)
 
     plt.savefig(inargs.outfile, bbox_inches='tight', dpi=200)
     log_file = re.sub('.png', '.met', inargs.outfile)
-    log_text = cmdprov.new_log(git_repo=repo_dir)
+    log_text = cmdprov.new_log(git_repo=repo_dir, extra_notes=quartiles)
     cmdprov.write_log(log_file, log_text)
 
 
