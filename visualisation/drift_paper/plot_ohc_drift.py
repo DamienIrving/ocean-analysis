@@ -40,6 +40,8 @@ mpl.rcParams['legend.fontsize'] = 'large'
 def get_quartiles(df, column_name, df_project, units):
     """Get the ensemble quartiles"""
 
+    assert len(df) == len(df_project)
+
     quartiles = ['# ' + column_name + ' quartiles']
     for project in ['cmip6', 'cmip5']:
         df_subset = df[df_project == project]
