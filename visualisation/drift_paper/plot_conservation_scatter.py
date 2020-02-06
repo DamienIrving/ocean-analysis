@@ -64,8 +64,46 @@ axis_labels = {'thermal OHC': 'change in OHC temperature component, $dH_T/dt$',
                'soga': 'change in ocean salinity, $dS/dt$',
                'wfo': 'cumulative freshwater flux, $dQ_m/dt$'}
 
+stats_done = []
+quartiles = []
+
+cmip6_data_points = {'netTOA (J yr-1)': [],
+                     'hfds (J yr-1)': [],
+                     'thermal OHC (J yr-1)': [],
+                     'wfo (kg yr-1)': [],
+                     'masso (kg yr-1)': [],
+                     'masso (g/kg yr-1)': [],
+                     'soga (g/kg yr-1)': []}
+cmip5_data_points = {'netTOA (J yr-1)': [],
+                     'hfds (J yr-1)': [],
+                     'thermal OHC (J yr-1)': [],
+                     'wfo (kg yr-1)': [],
+                     'masso (kg yr-1)': [],
+                     'masso (g/kg yr-1)': [],
+                     'soga (g/kg yr-1)': []}
 
 # Define functions 
+
+def record_quartiles(variable, data, project):
+    """Get the ensemble quartiles"""
+
+    quartiles.append('# ' + variable + ' quartiles') 
+    
+    abs_data = np.abs(data)
+    clean_abs_data = abs_data[np.logical_not(np.isnan(abs_data))]
+        
+    upper_quartile = np.percentile(clean_abs_data, 75)
+    median = np.percentile(clean_abs_data, 50)
+    lower_quartile = np.percentile(clean_abs_data, 25)
+        
+    upper_quartile_text = "%s upper quartile: %f" %(project, upper_quartile)
+    median_text = "%s median: %f" %(project, median)
+    lower_quartile_text = "%s lower quartile: %f" %(project, lower_quartile)
+        
+    quartiles.append(upper_quartile_text)
+    quartiles.append(median_text)
+    quartiles.append(lower_quartile_text)
+
 
 def plot_abline(ax, slope, intercept, static_bounds=True):
     """Plot a line from slope and intercept"""
@@ -252,11 +290,19 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
             edgecolors ='none'
             marker_num = cmip6_institution_counts[institution]
             cmip6_institution_counts[institution] = cmip6_institution_counts[institution] + 1
+            if not xvar in stats_done:
+                cmip6_data_points[xvar].append(x)
+            if not yvar in stats_done:
+                cmip6_data_points[yvar].append(y)
         else:
             facecolors = 'none'
             edgecolors = color
             marker_num = cmip5_institution_counts[institution]
             cmip5_institution_counts[institution] = cmip5_institution_counts[institution] + 1
+            if not xvar in stats_done:
+                cmip5_data_points[xvar].append(x)
+            if not yvar in stats_done:
+                cmip5_data_points[yvar].append(y)
         marker = markers[marker_num]
         ax.scatter(x, y, label=label, s=130, linewidth=1.2, marker=marker,
                    facecolors=facecolors, edgecolors=edgecolors)
@@ -270,7 +316,8 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
     plot_aesthetics(ax, yvar, xvar, plot_units, scinotation, shading, scale_factor,
                     xpad=xpad, ypad=ypad, non_square=non_square)
     ax.set_title(title)
-
+    stats_done.append(xvar)
+    stats_done.append(yvar)
 
 def get_legend_info(ax, df_subset):
     """Get the legend handles and labels.
@@ -356,11 +403,16 @@ def main(inargs):
                                          handles, labels)
 
     fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.815, 0.5))
-
     plt.tight_layout(rect=(0, 0, 0.8, 1))
+    
+    for variable, data in cmip6_data_points.items():
+        record_quartiles(variable, data, 'cmip6')
+    for variable, data in cmip5_data_points.items():
+        record_quartiles(variable, data, 'cmip5')
+    
     plt.savefig(inargs.outfile, dpi=200)
     log_file = re.sub('.png', '.met', inargs.outfile)
-    log_text = cmdprov.new_log(git_repo=repo_dir)
+    log_text = cmdprov.new_log(git_repo=repo_dir, extra_notes=quartiles)
     cmdprov.write_log(log_file, log_text)
 
 
