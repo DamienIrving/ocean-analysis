@@ -67,20 +67,8 @@ axis_labels = {'thermal OHC': 'change in OHC temperature component, $dH_T/dt$',
 stats_done = []
 quartiles = []
 
-cmip6_data_points = {'netTOA (J yr-1)': [],
-                     'hfds (J yr-1)': [],
-                     'thermal OHC (J yr-1)': [],
-                     'wfo (kg yr-1)': [],
-                     'masso (kg yr-1)': [],
-                     'masso (g/kg yr-1)': [],
-                     'soga (g/kg yr-1)': []}
-cmip5_data_points = {'netTOA (J yr-1)': [],
-                     'hfds (J yr-1)': [],
-                     'thermal OHC (J yr-1)': [],
-                     'wfo (kg yr-1)': [],
-                     'masso (kg yr-1)': [],
-                     'masso (g/kg yr-1)': [],
-                     'soga (g/kg yr-1)': []}
+cmip6_data_points = {}
+cmip5_data_points = {}
 
 # Define functions 
 
@@ -179,8 +167,6 @@ def plot_aesthetics(ax, yvar, xvar, units, scinotation, shading, scale_factor,
     plot_abline(ax, 1, 0, static_bounds=non_square)
     ax.axhline(y=0, color='black', linewidth=1.0)
     ax.axvline(x=0, color='black', linewidth=1.0)
-    #ax.yaxis.major.formatter._useMathText = True
-    #ax.xaxis.major.formatter._useMathText = True
 
     ylabel = format_axis_label(yvar, units, scale_factor)
     if ypad:
@@ -209,9 +195,7 @@ def plot_aesthetics(ax, yvar, xvar, units, scinotation, shading, scale_factor,
         ax.axvline(x=-1.8, color='0.5', linewidth=0.5, linestyle='--')
         ax.axvline(x=1.8, color='0.5', linewidth=0.5, linestyle='--')
 
-    # Shrink current axis by 20%
-   #box = ax.get_position()
-   #ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    return xlabel, ylabel
 
 
 def get_units(column_header):
@@ -274,6 +258,10 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
                                 'IPSL': 0, 'MIROC': 0, 'MOHC': 0, 'MPI-M': 0, 'NASA-GISS': 0,
                                 'NCC': 0, 'NOAA-GFDL': 0}
     cmip6_institution_counts = cmip5_institution_counts.copy()
+    cmip6_xdata = []
+    cmip6_ydata = []
+    cmip5_xdata = []
+    cmip5_ydata = []
 
     x_input_units = get_units(xvar) 
     y_input_units = get_units(yvar)
@@ -290,19 +278,15 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
             edgecolors ='none'
             marker_num = cmip6_institution_counts[institution]
             cmip6_institution_counts[institution] = cmip6_institution_counts[institution] + 1
-            if not xvar in stats_done:
-                cmip6_data_points[xvar].append(x)
-            if not yvar in stats_done:
-                cmip6_data_points[yvar].append(y)
+            cmip6_xdata.append(x)
+            cmip6_ydata.append(y)
         else:
             facecolors = 'none'
             edgecolors = color
             marker_num = cmip5_institution_counts[institution]
             cmip5_institution_counts[institution] = cmip5_institution_counts[institution] + 1
-            if not xvar in stats_done:
-                cmip5_data_points[xvar].append(x)
-            if not yvar in stats_done:
-                cmip5_data_points[yvar].append(y)
+            cmip5_xdata.append(x)
+            cmip5_ydata.append(y)
         marker = markers[marker_num]
         ax.scatter(x, y, label=label, s=130, linewidth=1.2, marker=marker,
                    facecolors=facecolors, edgecolors=edgecolors)
@@ -313,11 +297,19 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
         non_square = True
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-    plot_aesthetics(ax, yvar, xvar, plot_units, scinotation, shading, scale_factor,
-                    xpad=xpad, ypad=ypad, non_square=non_square)
     ax.set_title(title)
-    stats_done.append(xvar)
-    stats_done.append(yvar)
+    xlabel, ylabel = plot_aesthetics(ax, yvar, xvar, plot_units, scinotation, shading, scale_factor,
+                                     xpad=xpad, ypad=ypad, non_square=non_square)
+
+    if not xlabel in stats_done:
+        cmip6_data_points[xlabel] = cmip6_xdata
+        cmip5_data_points[xlabel] = cmip5_xdata
+    if not ylabel in stats_done:
+        cmip6_data_points[ylabel] = cmip6_ydata
+        cmip5_data_points[ylabel] = cmip5_ydata
+    stats_done.append(xlabel)
+    stats_done.append(ylabel)
+
 
 def get_legend_info(ax, df_subset):
     """Get the legend handles and labels.
@@ -404,7 +396,7 @@ def main(inargs):
 
     fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.815, 0.5))
     plt.tight_layout(rect=(0, 0, 0.8, 1))
-    
+
     for variable, data in cmip6_data_points.items():
         record_quartiles(variable, data, 'cmip6')
     for variable, data in cmip5_data_points.items():
