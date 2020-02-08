@@ -9,7 +9,6 @@ that show how the code in this repository was used to generate the key results.
 The rationale for this approach to reproducible research is outlined
 [here](http://journals.ametsoc.org/doi/abs/10.1175/BAMS-D-15-00010.1).
 
-
 ## Table of contents
 
 | Directory | Contents |
