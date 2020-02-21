@@ -77,7 +77,14 @@ names = {'masso': 'sea_water_mass',
          'vsf': 'virtual_salt_flux_into_sea_water',
          'vsfcorr': 'virtual_salt_flux_correction',
          'sfdsi': 'downward_sea_ice_basal_salt_flux',
-         'sfriver': 'salt_flux_into_sea_water_from_rivers'}
+         'sfriver': 'salt_flux_into_sea_water_from_rivers',
+         'clwvi': 'atmosphere_mass_content_of_cloud_condensed_water',
+         'prw': 'atmosphere_mass_content_of_water_vapor',
+         'pr': 'precipitation_flux',
+         'evspsbl': 'water_evapotranspiration_flux'
+}
+
+amon_vars = ['rsdt', 'rsut', 'rlut', 'pr', 'evspsbl', 'clwvi', 'prw']
 
 wfo_wrong_sign = ['MIROC-ESM-CHEM', 'MIROC-ESM', 'CNRM-CM6-1', 'CNRM-ESM2-1',
                   'IPSL-CM5A-LR', 'IPSL-CM5A-MR', 'IPSL-CM5B-LR', 'IPSL-CM6A-LR',
@@ -108,7 +115,7 @@ def clef_search(model, variable, ensemble, project, experiment='piControl'):
             table = 'Ofx'
         else:
             table = 'fx'
-    elif variable in ['rsdt', 'rsut', 'rlut']:
+    elif variable in amon_vars:
         table = 'Amon'
     else:
         table = 'Omon'
@@ -255,7 +262,8 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
                                   attributes=cube.attributes,
                                   dim_coords_and_dims=[(ref_time_coord, 0)])
             cube = time_check(cube)
-        cube = timeseries.flux_to_total(cube)
+        if ('s-1' in str(cube.units)) or ('W' in str(cube.units)):
+            cube = timeseries.flux_to_total(cube)
         if time_constraint:
             cube = cube.extract(time_constraint)
     else:
@@ -349,15 +357,23 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
                                           manual_file_dict, inargs.ignore_list, time_constraint)
     cube_dict['rsut'] = read_spatial_flux(inargs.model, 'rsut', inargs.run, inargs.project, cube_dict['areacella'],
                                           manual_file_dict, inargs.ignore_list, time_constraint)
-
+    cube_dict['pr'] = read_spatial_flux(inargs.model, 'pr', inargs.run, inargs.project, cube_dict['areacella'],
+                                        manual_file_dict, inargs.ignore_list, time_constraint)
+    cube_dict['evspsbl'] = read_spatial_flux(inargs.model, 'evspsbl', inargs.run, inargs.project, cube_dict['areacella'],
+                                             manual_file_dict, inargs.ignore_list, time_constraint)
+    cube_dict['clwvi'] = read_spatial_flux(inargs.model, 'clwvi', inargs.run, inargs.project, cube_dict['areacella'],
+                                        manual_file_dict, inargs.ignore_list, time_constraint)
+    cube_dict['prw'] = read_spatial_flux(inargs.model, 'prw', inargs.run, inargs.project, cube_dict['areacella'],
+                                             manual_file_dict, inargs.ignore_list, time_constraint)
+    pdb.set_trace()
     return cube_dict
 
 
 def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
     """Plot the raw budget variables."""
 
-    fig = plt.figure(figsize=[15, 25])
-    nrows = 5
+    fig = plt.figure(figsize=[20, 35])
+    nrows = 6
     ncols = 2
 
     if cube_dict['masso']:
@@ -452,6 +468,19 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
         if cube_dict['sfdsi']:
             plot_global_variable(ax10, cube_dict['sfdsi'].data, 'Annual Salt Fluxes',
                                 cube_dict['sfdsi'].units, 'maroon', label=cube_dict['sfdsi'].long_name)
+        ax10.legend()
+    if cube_dict['pr'] and cube_dict['evspsbl']:
+        ax11 = fig.add_subplot(nrows, ncols, 11)
+        ax11.plot(cube_dict['pr'].data, color='blue', label=cube_dict['pr'].long_name)
+        plot_global_variable(ax11, cube_dict['evspsbl'].data, 'Annual Water Flux out of Atmosphere',
+                             cube_dict['evspsbl'].units, 'orange', label=cube_dict['evspsbl'].long_name)
+        ax11.legend()
+    if cube_dict['prw'] and cube_dict['clwvi']:
+        ax12 = fig.add_subplot(nrows, ncols, 12)
+        ax12.plot(cube_dict['prw'].data, color='green', label=cube_dict['prw'].long_name)
+        plot_global_variable(ax12, cube_dict['clwvi'].data, 'Atmospheric Water Content',
+                             cube_dict['clwvi'].units, 'teal', label=cube_dict['clwvi'].long_name)
+        ax12.legend()
 
     plt.subplots_adjust(top=0.92)
     title = '%s (%s), %s, piControl'  %(inargs.model, inargs.project, inargs.run)
