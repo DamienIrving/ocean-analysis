@@ -17,6 +17,13 @@
   * At the moment `$ clef --request` sends to Paola Petrelli instead of NCI.
   * Instead, use the [data download online form](https://opus.nci.org.au/display/CMIP/Data+Download+Request) or send the output files from `$clef --request` (which are produced if you say no instead of yes at the end of the process) to help@nci.org.au
 
+## Downloading data directly
+
+The wget scripts need to be run with a `-H` option. That makes it ask for your ESGF login credentials.
+```
+$ bash wget.sh -H
+```
+
 ## Models
 
 A number of modelling centres have 
