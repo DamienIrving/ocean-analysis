@@ -75,7 +75,9 @@ names = {'masso': 'sea_water_mass',
          'rlut': 'toa_outgoing_longwave_flux',
          'rsut': 'toa_outgoing_shortwave_flux',
          'vsf': 'virtual_salt_flux_into_sea_water',
-         'vsfcorr': 'virtual_salt_flux_correction'}
+         'vsfcorr': 'virtual_salt_flux_correction',
+         'sfdsi': 'downward_sea_ice_basal_salt_flux',
+         'sfriver': 'salt_flux_into_sea_water_from_rivers'}
 
 wfo_wrong_sign = ['MIROC-ESM-CHEM', 'MIROC-ESM', 'CNRM-CM6-1', 'CNRM-ESM2-1',
                   'IPSL-CM5A-LR', 'IPSL-CM5A-MR', 'IPSL-CM5B-LR', 'IPSL-CM6A-LR',
@@ -336,6 +338,10 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
                                          manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
     cube_dict['vsfcorr'] = read_spatial_flux(inargs.model, 'vsfcorr', inargs.run, inargs.project, cube_dict['areacello'],
                                              manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
+    cube_dict['sfriver'] = read_spatial_flux(inargs.model, 'sfriver', inargs.run, inargs.project, cube_dict['areacello'],
+                                             manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
+    cube_dict['sfdsi'] = read_spatial_flux(inargs.model, 'sfdsi', inargs.run, inargs.project, cube_dict['areacello'],
+                                           manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
 
     cube_dict['rsdt'] = read_spatial_flux(inargs.model, 'rsdt', inargs.run, inargs.project, cube_dict['areacella'],
                                           manual_file_dict, inargs.ignore_list, time_constraint)
@@ -432,14 +438,20 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
         plot_global_variable(ax9, cube_dict['rlut'].data, 'Annual TOA Radiative Fluxes',
                              cube_dict['rlut'].units, 'maroon', label=cube_dict['rlut'].long_name)
         ax9.legend()
-    if cube_dict['vsf'] or cube_dict['vsfcorr']:
+    if cube_dict['vsf'] or cube_dict['vsfcorr'] or cube_dict['sfriver'] or cube_dict['sfdsi']:
         ax10 = fig.add_subplot(nrows, ncols, 10)
         if cube_dict['vsf']:
-            plot_global_variable(ax10, cube_dict['vsf'].data, 'Annual Virtual Salt Fluxes',
+            plot_global_variable(ax10, cube_dict['vsf'].data, 'Annual Salt Fluxes',
                                  cube_dict['vsf'].units, 'orange', label=cube_dict['vsf'].long_name)
         if cube_dict['vsfcorr']:
-            plot_global_variable(ax10, cube_dict['vsfcorr'].data, 'Annual Virtual Salt Fluxes',
+            plot_global_variable(ax10, cube_dict['vsfcorr'].data, 'Annual Salt Fluxes',
                                 cube_dict['vsfcorr'].units, 'yellow', label=cube_dict['vsfcorr'].long_name)
+        if cube_dict['sfriver']:
+            plot_global_variable(ax10, cube_dict['sfriver'].data, 'Annual Salt Fluxes',
+                                 cube_dict['sfriver'].units, 'red', label=cube_dict['sfriver'].long_name)
+        if cube_dict['sfdsi']:
+            plot_global_variable(ax10, cube_dict['sfdsi'].data, 'Annual Salt Fluxes',
+                                cube_dict['sfdsi'].units, 'maroon', label=cube_dict['sfdsi'].long_name)
 
     plt.subplots_adjust(top=0.92)
     title = '%s (%s), %s, piControl'  %(inargs.model, inargs.project, inargs.run)
