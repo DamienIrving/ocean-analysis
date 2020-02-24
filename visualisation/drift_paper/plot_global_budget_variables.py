@@ -272,13 +272,14 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
     return cube
 
 
-def plot_global_variable(ax, data, long_name, units, color, label=None):
+def plot_global_variable(ax, data, long_name, units, color, label=None, xlabel=True):
     """Plot a global variable."""
 
     ax.grid(linestyle=':')
     ax.plot(data, color=color, label=label)
     ax.set_title(long_name)
-    ax.set_xlabel('year')
+    if xlabel:
+        ax.set_xlabel('year')
     ax.set_ylabel(units)
     ax.ticklabel_format(useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
@@ -365,7 +366,7 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
                                         manual_file_dict, inargs.ignore_list, time_constraint)
     cube_dict['prw'] = read_spatial_flux(inargs.model, 'prw', inargs.run, inargs.project, cube_dict['areacella'],
                                              manual_file_dict, inargs.ignore_list, time_constraint)
-    pdb.set_trace()
+
     return cube_dict
 
 
@@ -386,7 +387,7 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
                 xdata = numpy.arange(branch_year, len(cube.data) + branch_year)
                 ax1.plot(xdata, cube.data, color='limegreen', label=experiment, linestyle=next(linestyles))
         plot_global_variable(ax1, cube_dict['masso'].data, cube_dict['masso'].long_name,
-                             cube_dict['masso'].units, 'green', label='piControl')
+                             cube_dict['masso'].units, 'green', label='piControl', xlabel=False)
         ax1.legend()
     if cube_dict['volo']:
         ax2 = fig.add_subplot(nrows, ncols, 2)
@@ -398,12 +399,12 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
                 xdata = numpy.arange(branch_year, len(cube.data) + branch_year)
                 ax2.plot(xdata, cube.data, color='tomato', label=experiment, linestyle=next(linestyles))
         plot_global_variable(ax2, cube_dict['volo'].data, cube_dict['volo'].long_name,
-                            cube_dict['volo'].units, 'red', label='piControl')
+                            cube_dict['volo'].units, 'red', label='piControl', xlabel=False)
         ax2.legend()
     if cube_dict['masso'] and cube_dict['volo']:
         ax3 = fig.add_subplot(nrows, ncols, 3)
         units = str(cube_dict['masso'].units) + ' / ' + str(cube_dict['volo'].units)
-        plot_global_variable(ax3, cube_dict['masso'].data / cube_dict['volo'].data, 'Density', units, 'grey')
+        plot_global_variable(ax3, cube_dict['masso'].data / cube_dict['volo'].data, 'Density', units, 'grey', xlabel=False)
     if cube_dict['thetaoga']:
         ax4 = fig.add_subplot(nrows, ncols, 4)
         linestyles = itertools.cycle(('-', '--', ':', '-.'))
@@ -415,11 +416,11 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
                 xdata = numpy.arange(branch_year, len(cube.data) + branch_year)
                 ax4.plot(xdata, cube.data, color='yellow', label=experiment, linestyle=next(linestyles))
         plot_global_variable(ax4, cube_dict['thetaoga'].data, cube_dict['thetaoga'].long_name,
-                             cube_dict['thetaoga'].units, 'gold', label='piControl')
+                             cube_dict['thetaoga'].units, 'gold', label='piControl', xlabel=False)
         ax4.legend()
     if cube_dict['soga']:
         ax5 = fig.add_subplot(nrows, ncols, 5)
-        plot_global_variable(ax5, cube_dict['soga'].data, cube_dict['soga'].long_name, 'g/kg', 'orange')
+        plot_global_variable(ax5, cube_dict['soga'].data, cube_dict['soga'].long_name, 'g/kg', 'orange', xlabel=False)
     if cube_dict['zostoga']:
         ax6 = fig.add_subplot(nrows, ncols, 6)
         if cube_dict['zosga']:
@@ -427,7 +428,7 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
         if cube_dict['zossga']:
             ax6.plot(cube_dict['zossga'].data, color='purple', label=cube_dict['zossga'].long_name, linestyle='-.')
         plot_global_variable(ax6, cube_dict['zostoga'].data, 'Sea Level', cube_dict['zostoga'].units,
-                             'purple', label=cube_dict['zostoga'].long_name)
+                             'purple', label=cube_dict['zostoga'].long_name, xlabel=False)
         ax6.legend()
     if cube_dict['wfo']:
         ax7 = fig.add_subplot(nrows, ncols, 7)
@@ -435,8 +436,8 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
             ax7.plot(cube_dict['wfcorr'].data, color='blue', label=cube_dict['wfcorr'].long_name, linestyle=':')
         if cube_dict['wfonocorr']:
             ax7.plot(cube_dict['wfonocorr'].data, color='blue', label=cube_dict['wfonocorr'].long_name, linestyle='-.')
-        plot_global_variable(ax7, cube_dict['wfo'].data, 'Annual Water Flux Into Ocean', cube_dict['wfo'].units,
-                             'blue', label=cube_dict['wfo'].long_name)
+        plot_global_variable(ax7, cube_dict['wfo'].data, 'Water Flux Into Ocean', cube_dict['wfo'].units,
+                             'blue', label=cube_dict['wfo'].long_name, xlabel=False)
         ax7.legend()
     if cube_dict['hfds']:
         ax8 = fig.add_subplot(nrows, ncols, 8)
@@ -444,42 +445,42 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
             ax8.plot(cube_dict['hfcorr'].data, color='teal', label=cube_dict['hfcorr'].long_name, linestyle=':')
         if cube_dict['hfgeou']:
             ax8.plot(cube_dict['hfgeou'].data, color='teal', label=cube_dict['hfgeou'].long_name, linestyle='-.')
-        plot_global_variable(ax8, cube_dict['hfds'].data, 'Annual Heat Flux Into Ocean', cube_dict['hfds'].units,
-                             'teal', label=cube_dict['hfds'].long_name)
+        plot_global_variable(ax8, cube_dict['hfds'].data, 'Heat Flux Into Ocean', cube_dict['hfds'].units,
+                             'teal', label=cube_dict['hfds'].long_name, xlabel=False)
         ax8.legend()
     if cube_dict['rsdt']:
         ax9 = fig.add_subplot(nrows, ncols, 9)
         ax9.plot(cube_dict['rsdt'].data, color='maroon', label=cube_dict['rsdt'].long_name, linestyle=':')
         ax9.plot(cube_dict['rsut'].data, color='maroon', label=cube_dict['rsut'].long_name, linestyle='-.')
-        plot_global_variable(ax9, cube_dict['rlut'].data, 'Annual TOA Radiative Fluxes',
-                             cube_dict['rlut'].units, 'maroon', label=cube_dict['rlut'].long_name)
+        plot_global_variable(ax9, cube_dict['rlut'].data, 'TOA Radiative Fluxes',
+                             cube_dict['rlut'].units, 'maroon', label=cube_dict['rlut'].long_name, xlabel=False)
         ax9.legend()
     if cube_dict['vsf'] or cube_dict['vsfcorr'] or cube_dict['sfriver'] or cube_dict['sfdsi']:
         ax10 = fig.add_subplot(nrows, ncols, 10)
         if cube_dict['vsf']:
-            plot_global_variable(ax10, cube_dict['vsf'].data, 'Annual Salt Fluxes',
-                                 cube_dict['vsf'].units, 'orange', label=cube_dict['vsf'].long_name)
+            plot_global_variable(ax10, cube_dict['vsf'].data, 'Salt Fluxes',
+                                 cube_dict['vsf'].units, 'orange', label=cube_dict['vsf'].long_name, xlabel=False)
         if cube_dict['vsfcorr']:
-            plot_global_variable(ax10, cube_dict['vsfcorr'].data, 'Annual Salt Fluxes',
-                                cube_dict['vsfcorr'].units, 'yellow', label=cube_dict['vsfcorr'].long_name)
+            plot_global_variable(ax10, cube_dict['vsfcorr'].data, 'Salt Fluxes',
+                                cube_dict['vsfcorr'].units, 'yellow', label=cube_dict['vsfcorr'].long_name, xlabel=False)
         if cube_dict['sfriver']:
-            plot_global_variable(ax10, cube_dict['sfriver'].data, 'Annual Salt Fluxes',
-                                 cube_dict['sfriver'].units, 'red', label=cube_dict['sfriver'].long_name)
+            plot_global_variable(ax10, cube_dict['sfriver'].data, 'Salt Fluxes',
+                                 cube_dict['sfriver'].units, 'red', label=cube_dict['sfriver'].long_name, xlabel=False)
         if cube_dict['sfdsi']:
-            plot_global_variable(ax10, cube_dict['sfdsi'].data, 'Annual Salt Fluxes',
-                                cube_dict['sfdsi'].units, 'maroon', label=cube_dict['sfdsi'].long_name)
+            plot_global_variable(ax10, cube_dict['sfdsi'].data, 'Salt Fluxes',
+                                cube_dict['sfdsi'].units, 'maroon', label=cube_dict['sfdsi'].long_name, xlabel=False)
         ax10.legend()
     if cube_dict['pr'] and cube_dict['evspsbl']:
         ax11 = fig.add_subplot(nrows, ncols, 11)
         ax11.plot(cube_dict['pr'].data, color='blue', label=cube_dict['pr'].long_name)
-        plot_global_variable(ax11, cube_dict['evspsbl'].data, 'Annual Water Flux out of Atmosphere',
-                             cube_dict['evspsbl'].units, 'orange', label=cube_dict['evspsbl'].long_name)
+        plot_global_variable(ax11, cube_dict['evspsbl'].data, 'Water Flux out of Atmosphere',
+                             cube_dict['evspsbl'].units, 'orange', label=cube_dict['evspsbl'].long_name, xlabel=False)
         ax11.legend()
     if cube_dict['prw'] and cube_dict['clwvi']:
         ax12 = fig.add_subplot(nrows, ncols, 12)
         ax12.plot(cube_dict['prw'].data, color='green', label=cube_dict['prw'].long_name)
         plot_global_variable(ax12, cube_dict['clwvi'].data, 'Atmospheric Water Content',
-                             cube_dict['clwvi'].units, 'teal', label=cube_dict['clwvi'].long_name)
+                             cube_dict['clwvi'].units, 'teal', label=cube_dict['clwvi'].long_name, xlabel=False)
         ax12.legend()
 
     plt.subplots_adjust(top=0.92)
@@ -667,7 +668,7 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         ax_top.set_ylim(ylim[0] * 1e24, ylim[1] * 1e24)
 
     ax_top.set_title('(a) energy budget')
-    ax_middle.set_title('(c) energy budget (de-drifted)')
+    ax_middle.set_title('(d) energy budget (de-drifted)')
     ax_middle.set_xlabel('year')
     ax_top.set_ylabel('equivalent change in OHC (J)')
     ax_top.yaxis.set_label_coords(-0.1, 0.2)
@@ -775,9 +776,62 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
         ax_top.set_ylim(ylim[0], ylim[1])
 
     ax_top.set_title('(b) mass budget')
-    ax_middle.set_title('(d) mass budget (de-drifted)')
+    ax_middle.set_title('(e) mass budget (de-drifted)')
     ax_middle.set_xlabel('year')
     ax_top.set_ylabel('equivalent change in global sea level (m)')
+    ax_top.yaxis.set_label_coords(-0.12, 0.2)
+    ax_top.yaxis.major.formatter._useMathText = True
+    ax_middle.yaxis.major.formatter._useMathText = True
+    ax_top.legend()
+
+
+def plot_atmosphere(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
+    """Plot atmospheric mass reservoir and fluxes"""
+    
+    if cube_dict['clwvi']:
+        massa_data = cube_dict['prw'].data + cube_dict['clwvi'].data
+    else:
+        massa_data = cube_dict['prw'].data
+    massa_anomaly_data = massa_data - massa_data[0]
+    calc_trend(massa_anomaly_data, 'global atmospheric water mass', 'kg')
+    ax_top.grid(linestyle=':')
+    ax_top.plot(massa_anomaly_data, color='tab:blue', label='atmospheric water mass')
+    massa_cubic_dedrifted = dedrift_data(massa_anomaly_data, fit='cubic')
+    ax_middle.grid(linestyle=':')
+    
+    wfa_data = cube_dict['evspsbl'].data - cube_dict['pr'].data
+    wfa_cumsum_data = numpy.cumsum(wfa_data)
+    wfa_cumsum_anomaly = wfa_cumsum_data - wfa_cumsum_data[0]
+    calc_trend(wfa_cumsum_anomaly, 'cumulative wfa', 'kg')
+    ax_top.plot(wfa_cumsum_anomaly, color='tab:gray',
+                label='cumulative water flux into atmosphere (E-P)')
+    wfa_cubic_dedrifted = dedrift_data(wfa_cumsum_anomaly, fit='cubic')
+
+    ax_middle.plot(wfa_cubic_dedrifted, color='tab:gray',
+                   label='cumulative water flux into atmosphere (E-P)')
+    ax_middle.plot(massa_cubic_dedrifted, color='tab:blue', label='atmospheric water mass')
+    
+    wfo_data = cube_dict['wfo'].data
+    wfo_cumsum_data = numpy.cumsum(wfo_data)
+    wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
+    ax_top.plot(-1 * wfo_cumsum_anomaly, color='tab:gray', linestyle=':',
+                label='cumulative water flux from ocean into atmosphere (-wfo)')
+    #wfo_cubic_dedrifted = dedrift_data(wfo_cumsum_anomaly, fit='cubic')
+    #ax_middle.plot(wfa_cubic_dedrifted, color='tab:gray', linestyle=':',
+    #               label='cumulative water flux from ocean into atmosphere (-wfo)')
+
+    masso_anomaly_data = masso_data - masso_data[0]
+    ax_top.plot(-1 * masso_anomaly_data, color='tab:blue', linestyle=':', label='-1 * ocean mass')
+    #masso_cubic_dedrifted = dedrift_data(masso_anomaly_data, fit='cubic')
+    #ax_middle.plot(masso_cubic_dedrifted, color='tab:blue', linestyle=':', label='-1 * ocean mass')
+
+    if ylim:
+        ax_top.set_ylim(ylim[0], ylim[1])
+
+    ax_top.set_title('(c) atmospheric water budget')
+    ax_middle.set_title('(f) atmospheric water budget (de-drifted)')
+    ax_middle.set_xlabel('year')
+    ax_top.set_ylabel('change in water mass (kg)')
     ax_top.yaxis.set_label_coords(-0.12, 0.2)
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
@@ -847,21 +901,23 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
 
     numbers_out_list.append(area_text)
 
-    fig = plt.figure(figsize=[20, 12])
-    gs = gridspec.GridSpec(3, 2, hspace=0.3)
+    fig = plt.figure(figsize=[30, 12])
+    gs = gridspec.GridSpec(3, 3, hspace=0.3)
     ax1 = plt.subplot(gs[0:2, 0])
     ax2 = plt.subplot(gs[0:2, 1])
-    ax3 = plt.subplot(gs[2, 0])
-    ax4 = plt.subplot(gs[2, 1])
-#    ax5 = plt.subplot(gs[3, 0])
+    ax3 = plt.subplot(gs[0:2, 2])
+    ax4 = plt.subplot(gs[2, 0])
+    ax5 = plt.subplot(gs[2, 1])
+    ax6 = plt.subplot(gs[2, 2])
 
     linestyles = itertools.cycle(('-', '-', '--', '--', ':', ':', '-.', '-.'))
     for experiment, branch_year in branch_year_dict.items():
         ax1.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
         ax2.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
 
-    plot_ohc(ax1, ax3, masso_data, inargs.cpocean, cube_dict, ylim=inargs.ohc_ylim)
-    plot_sea_level(ax2, ax4, masso_data, cube_dict, ocean_area, inargs.density, ylim=inargs.sealevel_ylim)
+    plot_ohc(ax1, ax4, masso_data, inargs.cpocean, cube_dict, ylim=inargs.ohc_ylim)
+    plot_sea_level(ax2, ax5, masso_data, cube_dict, ocean_area, inargs.density, ylim=inargs.sealevel_ylim)
+    plot_atmosphere(ax3, ax6, masso_data, cube_dict)
 
     plt.subplots_adjust(top=0.92)
     #ax1.text(0.03, 0.08, '(a)', transform=ax1.transAxes, fontsize=22, va='top')
