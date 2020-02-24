@@ -6,7 +6,8 @@
 
 ### Help
 
-* Email: cws_help@nci.org.au (i.e. CMS team) or help@nci.org.au (general NCI help) or [help website](https://track.nci.org.au/servicedesk/customer/portals)
+* Website: https://track.nci.org.au/servicedesk/customer/portals
+* Email: cws_help@nci.org.au (i.e. CMS team) or help@nci.org.au (general NCI help)
 * Slack: https://arccss.slack.com
 * Request access to different projects here: https://my.nci.org.au/mancini/
 
