@@ -24,28 +24,17 @@ headers = ['trend, OHC',
            'trend, global ocean mass',
            'trend, global mean salinity',
            'trend, global ocean mass',
-           'trend, barystatic sea level',
-           'trend, thermosteric sea level',
-           'trend, global ocean mass',
+           'trend, cumulative wfa',
+           'trend, global atmospheric water mass',
+           'surface area',
            'ocean surface area',
-           'regression coefficient, change in global ocean mass vs global mean salinity anomaly (cubic dedrift, decadal mean)',
-           'regression coefficient, change in global ocean mass vs global mean salinity anomaly (cubic dedrift, decadal mean), CI lower',
-           'regression coefficient, change in global ocean mass vs global mean salinity anomaly (cubic dedrift, decadal mean), CI upper',           
+           'regression coefficient, change in global ocean mass vs global mean salinity anomaly (cubic dedrift, decadal mean)',           
            'regression coefficient, cumulative netTOA radiative flux vs cumulative surface heat flux (cubic dedrift, decadal mean)',
-           'regression coefficient, cumulative netTOA radiative flux vs cumulative surface heat flux (cubic dedrift, decadal mean), CI lower',
-           'regression coefficient, cumulative netTOA radiative flux vs cumulative surface heat flux (cubic dedrift, decadal mean), CI upper',
            'regression coefficient, cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, decadal mean)',
-           'regression coefficient, cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, decadal mean), CI lower',
-           'regression coefficient, cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, decadal mean), CI upper',
            'regression coefficient, cumulative surface freshwater flux vs change in global ocean mass (cubic dedrift, decadal mean)',
-           'regression coefficient, cumulative surface freshwater flux vs change in global ocean mass (cubic dedrift, decadal mean), CI lower',
-           'regression coefficient, cumulative surface freshwater flux vs change in global ocean mass (cubic dedrift, decadal mean), CI upper',
            'regression coefficient, cumulative surface freshwater flux vs global mean salinity anomaly (cubic dedrift, decadal mean)',
-           'regression coefficient, cumulative surface freshwater flux vs global mean salinity anomaly (cubic dedrift, decadal mean), CI lower',
-           'regression coefficient, cumulative surface freshwater flux vs global mean salinity anomaly (cubic dedrift, decadal mean), CI upper',
            'regression coefficient, cumulative surface heat flux vs thermal OHC anomaly (cubic dedrift, decadal mean)',
-           'regression coefficient, cumulative surface heat flux vs thermal OHC anomaly (cubic dedrift, decadal mean), CI lower',
-           'regression coefficient, cumulative surface heat flux vs thermal OHC anomaly (cubic dedrift, decadal mean), CI upper'
+           'regression coefficient, cumulative water flux into atmosphere (E-P) vs atmospheric water mass (cubic dedrift, annual mean, 10 year running mean)'
            ]
 
 units = ['J/yr',
@@ -57,21 +46,10 @@ units = ['J/yr',
          'kg/yr',
          'g/kg/yr',
          'g/kg/yr',
-         'm/yr',
-         'm/yr',
-         'm/yr',
+         'kg/yr',
+         'kg/yr',
          'm2',
-         '',
-         '',
-         '',
-         '',
-         '',
-         '',
-         '',
-         '',
-         '',
-         '',
-         '',
+         'm2',
          '',
          '',
          '',
@@ -107,14 +85,11 @@ def main(inargs):
                 match_unit = units[col].strip()
                 if ('regression' in header) and not 'ERROR' in value:
                     df[header] = value
-                    lower_ci = line.split('[')[1].split(',')[0]
-                    upper_ci = line.split(']')[0].split(' ')[-1]
-                    df[header + ', CI lower'] = lower_ci
-                    df[header + ', CI upper'] = upper_ci
                 elif file_unit == match_unit:
                     df[header + ' (' + file_unit + ')'] = value
 
     outfile = inargs.infile.replace('.met', '.csv')
+    print(outfile)
     df.to_csv(outfile)
 
 
