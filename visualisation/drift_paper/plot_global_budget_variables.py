@@ -883,12 +883,20 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
 
     if cube_dict['areacello']:
         ocean_area = cube_dict['areacello'].data.sum()
-        area_text = 'ocean surface area: %s %s'  %(str(ocean_area), cube_dict['areacello'].units) 
+        ocean_area_text = 'ocean surface area: %s %s'  %(str(ocean_area), cube_dict['areacello'].units) 
     else:
         ocean_area = None
-        area_text = 'ocean surface area: nan'
+        ocean_area_text = 'ocean surface area: nan'
+
+    if cube_dict['areacella']:
+        surface_area = cube_dict['areacella'].data.sum()
+        area_text = 'surface area: %s %s'  %(str(surface_area), cube_dict['areacella'].units) 
+    else:
+        surface_area = None
+        area_text = 'surface area: nan'
 
     numbers_out_list.append(area_text)
+    numbers_out_list.append(ocean_area_text)
 
     fig = plt.figure(figsize=[30, 12])
     gs = gridspec.GridSpec(3, 3, hspace=0.3)
