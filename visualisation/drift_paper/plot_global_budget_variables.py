@@ -667,8 +667,8 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
     if ylim:
         ax_top.set_ylim(ylim[0] * 1e24, ylim[1] * 1e24)
 
-    ax_top.set_title('(a) energy budget')
-    ax_middle.set_title('(d) energy budget (de-drifted)')
+    ax_top.set_title('(a) global energy budget')
+    ax_middle.set_title('(d) global energy budget (de-drifted)')
     ax_middle.set_xlabel('year')
     ax_top.set_ylabel('equivalent change in OHC (J)')
     ax_top.yaxis.set_label_coords(-0.1, 0.2)
@@ -775,8 +775,8 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
     if ylim:
         ax_top.set_ylim(ylim[0], ylim[1])
 
-    ax_top.set_title('(b) mass budget')
-    ax_middle.set_title('(e) mass budget (de-drifted)')
+    ax_top.set_title('(b) ocean mass budget')
+    ax_middle.set_title('(e) ocean mass budget (de-drifted)')
     ax_middle.set_xlabel('year')
     ax_top.set_ylabel('equivalent change in global sea level (m)')
     ax_top.yaxis.set_label_coords(-0.12, 0.2)
@@ -795,35 +795,24 @@ def plot_atmosphere(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
     massa_anomaly_data = massa_data - massa_data[0]
     calc_trend(massa_anomaly_data, 'global atmospheric water mass', 'kg')
     ax_top.grid(linestyle=':')
-    ax_top.plot(massa_anomaly_data, color='tab:blue', label='atmospheric water mass')
+    ax_top.plot(massa_anomaly_data, color='tab:purple', label='atmospheric water mass')
     massa_cubic_dedrifted = dedrift_data(massa_anomaly_data, fit='cubic')
     ax_middle.grid(linestyle=':')
-    
+
     wfa_data = cube_dict['evspsbl'].data - cube_dict['pr'].data
     wfa_cumsum_data = numpy.cumsum(wfa_data)
     wfa_cumsum_anomaly = wfa_cumsum_data - wfa_cumsum_data[0]
     calc_trend(wfa_cumsum_anomaly, 'cumulative wfa', 'kg')
-    ax_top.plot(wfa_cumsum_anomaly, color='tab:gray',
+    ax_top.plot(wfa_cumsum_anomaly, color='tab:cyan',
                 label='cumulative water flux into atmosphere (E-P)')
     wfa_cubic_dedrifted = dedrift_data(wfa_cumsum_anomaly, fit='cubic')
 
-    ax_middle.plot(wfa_cubic_dedrifted, color='tab:gray',
-                   label='cumulative water flux into atmosphere (E-P)')
-    ax_middle.plot(massa_cubic_dedrifted, color='tab:blue', label='atmospheric water mass')
-    
-    wfo_data = cube_dict['wfo'].data
-    wfo_cumsum_data = numpy.cumsum(wfo_data)
-    wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
-    ax_top.plot(-1 * wfo_cumsum_anomaly, color='tab:gray', linestyle=':',
-                label='cumulative water flux from ocean into atmosphere (-wfo)')
-    #wfo_cubic_dedrifted = dedrift_data(wfo_cumsum_anomaly, fit='cubic')
-    #ax_middle.plot(wfa_cubic_dedrifted, color='tab:gray', linestyle=':',
-    #               label='cumulative water flux from ocean into atmosphere (-wfo)')
-
-    masso_anomaly_data = masso_data - masso_data[0]
-    ax_top.plot(-1 * masso_anomaly_data, color='tab:blue', linestyle=':', label='-1 * ocean mass')
-    #masso_cubic_dedrifted = dedrift_data(masso_anomaly_data, fit='cubic')
-    #ax_middle.plot(masso_cubic_dedrifted, color='tab:blue', linestyle=':', label='-1 * ocean mass')
+    wfa_cubic_dedrifted_smoothed = timeseries.runmean(wfa_cubic_dedrifted, 10)
+    massa_cubic_dedrifted_smoothed = timeseries.runmean(massa_cubic_dedrifted, 10)
+    ax_middle.plot(wfa_cubic_dedrifted_smoothed, color='tab:cyan')
+    ax_middle.plot(massa_cubic_dedrifted_smoothed, color='tab:purple')
+    calc_regression(wfa_cubic_dedrifted_smoothed, massa_cubic_dedrifted_smoothed,
+                    'cumulative water flux into atmosphere (E-P) vs atmospheric water mass (cubic dedrift, annual mean, 10 year running mean)')
 
     if ylim:
         ax_top.set_ylim(ylim[0], ylim[1])
