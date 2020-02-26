@@ -363,9 +363,9 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
     cube_dict['evspsbl'] = read_spatial_flux(inargs.model, 'evspsbl', inargs.run, inargs.project, cube_dict['areacella'],
                                              manual_file_dict, inargs.ignore_list, time_constraint)
     cube_dict['clwvi'] = read_spatial_flux(inargs.model, 'clwvi', inargs.run, inargs.project, cube_dict['areacella'],
-                                        manual_file_dict, inargs.ignore_list, time_constraint)
+                                           manual_file_dict, inargs.ignore_list, time_constraint)
     cube_dict['prw'] = read_spatial_flux(inargs.model, 'prw', inargs.run, inargs.project, cube_dict['areacella'],
-                                             manual_file_dict, inargs.ignore_list, time_constraint)
+                                         manual_file_dict, inargs.ignore_list, time_constraint)
 
     return cube_dict
 
@@ -473,7 +473,7 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
     if cube_dict['pr'] and cube_dict['evspsbl']:
         ax11 = fig.add_subplot(nrows, ncols, 11)
         ax11.plot(cube_dict['pr'].data, color='blue', label=cube_dict['pr'].long_name)
-        plot_global_variable(ax11, cube_dict['evspsbl'].data, 'Water Flux out of Atmosphere',
+        plot_global_variable(ax11, cube_dict['evspsbl'].data, 'Atmospheric moisture fluxes',
                              cube_dict['evspsbl'].units, 'orange', label=cube_dict['evspsbl'].long_name, xlabel=False)
         ax11.legend()
     if cube_dict['prw']:
@@ -789,31 +789,34 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
 def plot_atmosphere(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
     """Plot atmospheric mass reservoir and fluxes"""
     
-    if cube_dict['clwvi']:
-        massa_data = cube_dict['prw'].data + cube_dict['clwvi'].data
-    else:
-        massa_data = cube_dict['prw'].data
-    massa_anomaly_data = massa_data - massa_data[0]
-    calc_trend(massa_anomaly_data, 'global atmospheric water mass', 'kg')
-    ax_top.grid(linestyle=':')
-    ax_top.plot(massa_anomaly_data, color='tab:purple', label='atmospheric water mass')
-    massa_cubic_dedrifted = dedrift_data(massa_anomaly_data, fit='cubic')
-    ax_middle.grid(linestyle=':')
+    if cube_dict['prw']:
+        if cube_dict['clwvi']:
+            massa_data = cube_dict['prw'].data + cube_dict['clwvi'].data
+        else:
+            massa_data = cube_dict['prw'].data
+        massa_anomaly_data = massa_data - massa_data[0]
+        calc_trend(massa_anomaly_data, 'global atmospheric water mass', 'kg')
+        ax_top.grid(linestyle=':')
+        ax_top.plot(massa_anomaly_data, color='tab:purple', label='atmospheric water mass')
+        massa_cubic_dedrifted = dedrift_data(massa_anomaly_data, fit='cubic')
+        ax_middle.grid(linestyle=':')
 
-    wfa_data = cube_dict['evspsbl'].data - cube_dict['pr'].data
-    wfa_cumsum_data = numpy.cumsum(wfa_data)
-    wfa_cumsum_anomaly = wfa_cumsum_data - wfa_cumsum_data[0]
-    calc_trend(wfa_cumsum_anomaly, 'cumulative wfa', 'kg')
-    ax_top.plot(wfa_cumsum_anomaly, color='tab:cyan',
-                label='cumulative water flux into atmosphere (E-P)')
-    wfa_cubic_dedrifted = dedrift_data(wfa_cumsum_anomaly, fit='cubic')
+    if cube_dict['evspsbl'] and cube_dict['pr']:
+        wfa_data = cube_dict['evspsbl'].data - cube_dict['pr'].data
+        wfa_cumsum_data = numpy.cumsum(wfa_data)
+        wfa_cumsum_anomaly = wfa_cumsum_data - wfa_cumsum_data[0]
+        calc_trend(wfa_cumsum_anomaly, 'cumulative wfa', 'kg')
+        ax_top.plot(wfa_cumsum_anomaly, color='tab:cyan',
+                    label='cumulative water flux into atmosphere (E-P)')
+        wfa_cubic_dedrifted = dedrift_data(wfa_cumsum_anomaly, fit='cubic')
 
-    wfa_cubic_dedrifted_smoothed = timeseries.runmean(wfa_cubic_dedrifted, 10)
-    massa_cubic_dedrifted_smoothed = timeseries.runmean(massa_cubic_dedrifted, 10)
-    ax_middle.plot(wfa_cubic_dedrifted_smoothed, color='tab:cyan')
-    ax_middle.plot(massa_cubic_dedrifted_smoothed, color='tab:purple')
-    calc_regression(wfa_cubic_dedrifted_smoothed, massa_cubic_dedrifted_smoothed,
-                    'cumulative water flux into atmosphere (E-P) vs atmospheric water mass (cubic dedrift, annual mean, 10 year running mean)')
+    if cube_dict['prw'] and cube_dict['evspsbl'] and cube_dict['pr']:
+        wfa_cubic_dedrifted_smoothed = timeseries.runmean(wfa_cubic_dedrifted, 10)
+        massa_cubic_dedrifted_smoothed = timeseries.runmean(massa_cubic_dedrifted, 10)
+        ax_middle.plot(wfa_cubic_dedrifted_smoothed, color='tab:cyan')
+        ax_middle.plot(massa_cubic_dedrifted_smoothed, color='tab:purple')
+        calc_regression(wfa_cubic_dedrifted_smoothed, massa_cubic_dedrifted_smoothed,
+                        'cumulative water flux into atmosphere (E-P) vs atmospheric water mass (cubic dedrift, annual mean, 10 year running mean)')
 
     if ylim:
         ax_top.set_ylim(ylim[0], ylim[1])
