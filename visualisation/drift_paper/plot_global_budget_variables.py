@@ -232,7 +232,7 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
         elif area_cube:
             area_array = area_cube.data
         else:
-            assert variable in ['rsdt', 'rsut', 'rlut']
+            assert variable in amon_vars
             area_array = spatial_weights.area_array(cube)
 
         units = str(cube.units)
@@ -476,11 +476,12 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
         plot_global_variable(ax11, cube_dict['evspsbl'].data, 'Water Flux out of Atmosphere',
                              cube_dict['evspsbl'].units, 'orange', label=cube_dict['evspsbl'].long_name, xlabel=False)
         ax11.legend()
-    if cube_dict['prw'] and cube_dict['clwvi']:
+    if cube_dict['prw']:
         ax12 = fig.add_subplot(nrows, ncols, 12)
-        ax12.plot(cube_dict['prw'].data, color='green', label=cube_dict['prw'].long_name)
-        plot_global_variable(ax12, cube_dict['clwvi'].data, 'Atmospheric Water Content',
-                             cube_dict['clwvi'].units, 'teal', label=cube_dict['clwvi'].long_name, xlabel=False)
+        if cube_dict['clwvi']:
+            ax12.plot(cube_dict['clwvi'].data, color='green', label=cube_dict['clwvi'].long_name)
+        plot_global_variable(ax12, cube_dict['prw'].data, 'Atmospheric Water Content',
+                             cube_dict['prw'].units, 'teal', label=cube_dict['prw'].long_name, xlabel=False)
         ax12.legend()
 
     plt.subplots_adjust(top=0.92)
