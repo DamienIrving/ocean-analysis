@@ -790,10 +790,7 @@ def plot_atmosphere(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
     """Plot atmospheric mass reservoir and fluxes"""
     
     if cube_dict['prw']:
-        if cube_dict['clwvi']:
-            massa_data = cube_dict['prw'].data + cube_dict['clwvi'].data
-        else:
-            massa_data = cube_dict['prw'].data
+        massa_data = cube_dict['prw'].data
         massa_anomaly_data = massa_data - massa_data[0]
         calc_trend(massa_anomaly_data, 'global atmospheric water mass', 'kg')
         ax_top.grid(linestyle=':')
