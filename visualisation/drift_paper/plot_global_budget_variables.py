@@ -219,7 +219,7 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
 
     cube_list = iris.cube.CubeList([])
     for infile in file_list:
-        cube = iris.load_cube(infile, gio.check_iris_var(names[variable]))
+        cube = iris.load_cube(infile, gio.check_iris_var(names[variable], model=model))
         cube = gio.check_time_units(cube)     
         coord_names = [coord.name() for coord in cube.dim_coords]
 
@@ -360,6 +360,7 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
                                           manual_file_dict, inargs.ignore_list, time_constraint)
     cube_dict['pr'] = read_spatial_flux(inargs.model, 'pr', inargs.run, inargs.project, cube_dict['areacella'],
                                         manual_file_dict, inargs.ignore_list, time_constraint)
+
     cube_dict['evspsbl'] = read_spatial_flux(inargs.model, 'evspsbl', inargs.run, inargs.project, cube_dict['areacella'],
                                              manual_file_dict, inargs.ignore_list, time_constraint)
     cube_dict['clwvi'] = read_spatial_flux(inargs.model, 'clwvi', inargs.run, inargs.project, cube_dict['areacella'],
@@ -420,7 +421,14 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
         ax4.legend()
     if cube_dict['soga']:
         ax5 = fig.add_subplot(nrows, ncols, 5)
-        plot_global_variable(ax5, cube_dict['soga'].data, cube_dict['soga'].long_name, 'g/kg', 'orange', xlabel=False)
+        if cube_dict['sfdsi']:
+            sfdsi_cumsum_data = numpy.cumsum(cube_dict['sfdsi'].data)
+            sfdsi_cumsum_anomaly = sfdsi_cumsum_data - sfdsi_cumsum_data[0]
+            sfdsi_cumsum_anomaly = (sfdsi_cumsum_anomaly * 1000) / cube_dict['masso'].data  #kg to g/kg
+            ax5.plot(sfdsi_cumsum_anomaly, color='red', label=cube_dict['sfdsi'].long_name, linestyle=':')
+        plot_global_variable(ax5, cube_dict['soga'].data - cube_dict['soga'].data[0], cube_dict['soga'].long_name, 'g/kg', 'orange',
+                             label=cube_dict['soga'].long_name + ' anomaly')
+        ax5.legend()
     if cube_dict['zostoga']:
         ax6 = fig.add_subplot(nrows, ncols, 6)
         if cube_dict['zosga']:
@@ -759,20 +767,6 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
         calc_regression(wfo_linear_dedrifted, soga_linear_dedrifted,
                         'cumulative surface freshwater flux vs global mean salinity anomaly (linear dedrift, decadal mean)', decadal_mean=True)
 
-#    if cube_dict['zostoga']:
-#        zostoga_anomaly = cube_dict['zostoga'].data - cube_dict['zostoga'].data[0]
-#        calc_trend(zostoga_anomaly, 'thermosteric sea level', 'm')
-#        ax_top.plot(zostoga_anomaly, color='purple', linestyle='--', label='change in thermosteric sea level')
-#
-#    if cube_dict['zosga'] and cube_dict['zossga']:
-#        zosga_anomaly = cube_dict['zosga'].data - cube_dict['zosga'].data[0]
-#        zossga_anomaly = cube_dict['zossga'].data - cube_dict['zossga'].data[0]
-#        zosbary_anomaly = zosga_anomaly - zossga_anomaly
-#        calc_trend(zosbary_anomaly, 'barystatic sea level', 'm')
-#        ax_top.plot(zosbary_anomaly, color='purple', label='change in barystatic sea level')
-#        zosbary_cubic_dedrifted = dedrift_data(zosbary_anomaly, fit='cubic')
-#        ax_middle.plot(zosbary_cubic_dedrifted, color='purple')
-    
     if ylim:
         ax_top.set_ylim(ylim[0], ylim[1])
 
