@@ -137,7 +137,7 @@ def save_history(cube, field, filename):
         history.append(cube.attributes['history']) 
 
 
-def check_iris_var(var):
+def check_iris_var(var, model=None):
     """Check if variable is in the list of iris standard variables.
 
     If not, replace underscores with spaces (my convention is to give
@@ -147,6 +147,14 @@ def check_iris_var(var):
 
     if not var in list(iris.std_names.STD_NAMES.keys()):
         var = var.replace('_', ' ')
+
+    wrong_names = {('GISS-E2-1-G', 'atmosphere_mass_content_of_water_vapor'): 'atmosphere_water_vapor_content',
+                   ('GISS-E2-1-G', 'water_evapotranspiration_flux'): 'water_evaporation_flux',
+                   ('GISS-E2-1-G-CC', 'atmosphere_mass_content_of_water_vapor'): 'atmosphere_water_vapor_content',
+                   ('GISS-E2-1-G-CC', 'water_evapotranspiration_flux'): 'water_evaporation_flux'}
+
+    if (model, var) in wrong_names:
+        var = wrong_names[(model, var)]
 
     return var
 
