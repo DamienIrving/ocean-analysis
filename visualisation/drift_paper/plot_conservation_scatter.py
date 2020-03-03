@@ -39,6 +39,23 @@ mpl.rcParams['ytick.labelsize'] = 'x-large'
 mpl.rcParams['legend.fontsize'] = 'large'
 
 # From https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+# '#800000' Maroon
+# '#a9a9a9' Grey
+# '#808000' Olive
+# '#469990' Teal
+# '#000075' Navy
+# '#e6194B' Red
+# '#f58231' Orange
+# '#fabebe' Pink
+# '#ffe119' Yellow
+# '#bfef45' Lime
+# '#3cb44b' Green
+# '#42d4f4' Cyan
+# '#4363d8' Blue
+# '#911eb4' Purple
+# '#f032e6' Magenta
+
+
 institution_colors = {'BCC': '#800000',
                       'BNU': '#a9a9a9',
                       'CMCC': '#808000',
@@ -46,6 +63,7 @@ institution_colors = {'BCC': '#800000',
                       'CSIRO': '#000075',
                       'E3SM-Project': '#e6194B',
                       'EC-Earth-Consortium': '#f58231',
+                      'HAMMOZ-Consortium': '#fabebe',
                       'IPSL': '#ffe119',
                       'MIROC': '#bfef45',
                       'MOHC': '#3cb44b',
