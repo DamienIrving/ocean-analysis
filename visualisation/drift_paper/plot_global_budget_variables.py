@@ -854,8 +854,8 @@ def common_time_period(cube_dict):
             years = cube.coord('year').points
             nyrs = len(years)
             if nyrs < minlen:
-                assert ref_years[0:nyrs][0] == years[0], 'mismatch in time axes'
-                assert ref_years[0:nyrs][-1] == years[-1], 'mismatch in time axes'
+                assert ref_years[0:nyrs][0] == years[0], 'mismatch in time axes between %s and masso (ref)' %(var)
+                assert ref_years[0:nyrs][-1] == years[-1], 'mismatch in time axes between %s and masso (ref)' %(var)
                 ref_years = years
                 minlen = len(years)
 
