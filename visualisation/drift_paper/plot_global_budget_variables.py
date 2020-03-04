@@ -242,15 +242,16 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
         if (variable == 'wfo') and (model in wfo_wrong_sign):
             cube.data = cube.data * -1
 
-        cube_list.append(cube)
-
-    if cube_list:    
-        cube = gio.combine_cubes(cube_list)
         if 'time' in coord_names:
             global_sum = numpy.ma.sum(cube.data, axis=(1,2))
             cube = cube[:, 0, 0].copy()
             cube.data = global_sum
-        else: 
+
+        cube_list.append(cube)
+
+    if cube_list:    
+        cube = gio.combine_cubes(cube_list)
+        if not 'time' in coord_names:
             assert ref_time_coord
             global_sum = numpy.ma.sum(cube.data)
             data = numpy.ones(len(ref_time_coord.points)) * global_sum
@@ -317,16 +318,6 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
     cube_dict['soga'] = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project,
                                              manual_file_dict, inargs.ignore_list, time_constraint) 
 
-    cube_dict['zostoga'] = read_global_variable(inargs.model, 'zostoga', inargs.run, inargs.project,
-                                                manual_file_dict, inargs.ignore_list, time_constraint) 
-    if inargs.project == 'cmip5':
-        cube_dict['zosga'] = read_global_variable(inargs.model, 'zosga', inargs.run, inargs.project,
-                                                  manual_file_dict, inargs.ignore_list, time_constraint) 
-        cube_dict['zossga'] = read_global_variable(inargs.model, 'zossga', inargs.run, inargs.project,
-                                                   manual_file_dict, inargs.ignore_list, time_constraint)
-    else:
-        cube_dict['zosga'] = cube_dict['zossga'] = None
-
     wfo_areavar = 'areacella' if 'wfo' in inargs.areacella else 'areacello'
     cube_dict['wfo'] = read_spatial_flux(inargs.model, 'wfo', inargs.run, inargs.project, cube_dict[wfo_areavar],
                                          manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
@@ -390,6 +381,7 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
         plot_global_variable(ax1, cube_dict['masso'].data, cube_dict['masso'].long_name,
                              cube_dict['masso'].units, 'green', label='piControl', xlabel=False)
         ax1.legend()
+
     if cube_dict['volo']:
         ax2 = fig.add_subplot(nrows, ncols, 2)
         linestyles = itertools.cycle(('-', '--', ':', '-.'))
@@ -402,10 +394,12 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
         plot_global_variable(ax2, cube_dict['volo'].data, cube_dict['volo'].long_name,
                             cube_dict['volo'].units, 'red', label='piControl', xlabel=False)
         ax2.legend()
+
     if cube_dict['masso'] and cube_dict['volo']:
         ax3 = fig.add_subplot(nrows, ncols, 3)
         units = str(cube_dict['masso'].units) + ' / ' + str(cube_dict['volo'].units)
         plot_global_variable(ax3, cube_dict['masso'].data / cube_dict['volo'].data, 'Density', units, 'grey', xlabel=False)
+
     if cube_dict['thetaoga']:
         ax4 = fig.add_subplot(nrows, ncols, 4)
         linestyles = itertools.cycle(('-', '--', ':', '-.'))
@@ -419,6 +413,7 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
         plot_global_variable(ax4, cube_dict['thetaoga'].data, cube_dict['thetaoga'].long_name,
                              cube_dict['thetaoga'].units, 'gold', label='piControl', xlabel=False)
         ax4.legend()
+
     if cube_dict['soga']:
         ax5 = fig.add_subplot(nrows, ncols, 5)
         if cube_dict['sfdsi']:
@@ -429,68 +424,65 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
         plot_global_variable(ax5, cube_dict['soga'].data - cube_dict['soga'].data[0], cube_dict['soga'].long_name, 'g/kg', 'orange',
                              label=cube_dict['soga'].long_name + ' anomaly')
         ax5.legend()
-    if cube_dict['zostoga']:
-        ax6 = fig.add_subplot(nrows, ncols, 6)
-        if cube_dict['zosga']:
-            ax6.plot(cube_dict['zosga'].data, color='purple', label=cube_dict['zosga'].long_name, linestyle=':')
-        if cube_dict['zossga']:
-            ax6.plot(cube_dict['zossga'].data, color='purple', label=cube_dict['zossga'].long_name, linestyle='-.')
-        plot_global_variable(ax6, cube_dict['zostoga'].data, 'Sea Level', cube_dict['zostoga'].units,
-                             'purple', label=cube_dict['zostoga'].long_name, xlabel=False)
-        ax6.legend()
+
     if cube_dict['wfo']:
-        ax7 = fig.add_subplot(nrows, ncols, 7)
+        ax6 = fig.add_subplot(nrows, ncols, 7)
         if cube_dict['wfcorr']:
-            ax7.plot(cube_dict['wfcorr'].data, color='blue', label=cube_dict['wfcorr'].long_name, linestyle=':')
+            ax6.plot(cube_dict['wfcorr'].data, color='blue', label=cube_dict['wfcorr'].long_name, linestyle=':')
         if cube_dict['wfonocorr']:
-            ax7.plot(cube_dict['wfonocorr'].data, color='blue', label=cube_dict['wfonocorr'].long_name, linestyle='-.')
-        plot_global_variable(ax7, cube_dict['wfo'].data, 'Water Flux Into Ocean', cube_dict['wfo'].units,
+            ax6.plot(cube_dict['wfonocorr'].data, color='blue', label=cube_dict['wfonocorr'].long_name, linestyle='-.')
+        plot_global_variable(ax6, cube_dict['wfo'].data, 'Water Flux Into Ocean', cube_dict['wfo'].units,
                              'blue', label=cube_dict['wfo'].long_name, xlabel=False)
-        ax7.legend()
+        ax6.legend()
+
     if cube_dict['hfds']:
-        ax8 = fig.add_subplot(nrows, ncols, 8)
+        ax7 = fig.add_subplot(nrows, ncols, 8)
         if cube_dict['hfcorr']:
-            ax8.plot(cube_dict['hfcorr'].data, color='teal', label=cube_dict['hfcorr'].long_name, linestyle=':')
+            ax7.plot(cube_dict['hfcorr'].data, color='teal', label=cube_dict['hfcorr'].long_name, linestyle=':')
         if cube_dict['hfgeou']:
-            ax8.plot(cube_dict['hfgeou'].data, color='teal', label=cube_dict['hfgeou'].long_name, linestyle='-.')
-        plot_global_variable(ax8, cube_dict['hfds'].data, 'Heat Flux Into Ocean', cube_dict['hfds'].units,
+            ax7.plot(cube_dict['hfgeou'].data, color='teal', label=cube_dict['hfgeou'].long_name, linestyle='-.')
+        plot_global_variable(ax7, cube_dict['hfds'].data, 'Heat Flux Into Ocean', cube_dict['hfds'].units,
                              'teal', label=cube_dict['hfds'].long_name, xlabel=False)
-        ax8.legend()
+        ax7.legend()
+
     if cube_dict['rsdt']:
-        ax9 = fig.add_subplot(nrows, ncols, 9)
-        ax9.plot(cube_dict['rsdt'].data, color='maroon', label=cube_dict['rsdt'].long_name, linestyle=':')
-        ax9.plot(cube_dict['rsut'].data, color='maroon', label=cube_dict['rsut'].long_name, linestyle='-.')
-        plot_global_variable(ax9, cube_dict['rlut'].data, 'TOA Radiative Fluxes',
+        ax8 = fig.add_subplot(nrows, ncols, 9)
+        ax8.plot(cube_dict['rsdt'].data, color='maroon', label=cube_dict['rsdt'].long_name, linestyle=':')
+        ax8.plot(cube_dict['rsut'].data, color='maroon', label=cube_dict['rsut'].long_name, linestyle='-.')
+        plot_global_variable(ax8, cube_dict['rlut'].data, 'TOA Radiative Fluxes',
                              cube_dict['rlut'].units, 'maroon', label=cube_dict['rlut'].long_name, xlabel=False)
-        ax9.legend()
+        ax8.legend()
+
     if cube_dict['vsf'] or cube_dict['vsfcorr'] or cube_dict['sfriver'] or cube_dict['sfdsi']:
-        ax10 = fig.add_subplot(nrows, ncols, 10)
+        ax9 = fig.add_subplot(nrows, ncols, 10)
         if cube_dict['vsf']:
-            plot_global_variable(ax10, cube_dict['vsf'].data, 'Salt Fluxes',
+            plot_global_variable(ax9, cube_dict['vsf'].data, 'Salt Fluxes',
                                  cube_dict['vsf'].units, 'orange', label=cube_dict['vsf'].long_name, xlabel=False)
         if cube_dict['vsfcorr']:
-            plot_global_variable(ax10, cube_dict['vsfcorr'].data, 'Salt Fluxes',
+            plot_global_variable(ax9, cube_dict['vsfcorr'].data, 'Salt Fluxes',
                                 cube_dict['vsfcorr'].units, 'yellow', label=cube_dict['vsfcorr'].long_name, xlabel=False)
         if cube_dict['sfriver']:
-            plot_global_variable(ax10, cube_dict['sfriver'].data, 'Salt Fluxes',
+            plot_global_variable(ax9, cube_dict['sfriver'].data, 'Salt Fluxes',
                                  cube_dict['sfriver'].units, 'red', label=cube_dict['sfriver'].long_name, xlabel=False)
         if cube_dict['sfdsi']:
-            plot_global_variable(ax10, cube_dict['sfdsi'].data, 'Salt Fluxes',
+            plot_global_variable(ax9, cube_dict['sfdsi'].data, 'Salt Fluxes',
                                 cube_dict['sfdsi'].units, 'maroon', label=cube_dict['sfdsi'].long_name, xlabel=False)
-        ax10.legend()
+        ax9.legend()
+
     if cube_dict['pr'] and cube_dict['evspsbl']:
-        ax11 = fig.add_subplot(nrows, ncols, 11)
-        ax11.plot(cube_dict['pr'].data, color='blue', label=cube_dict['pr'].long_name)
-        plot_global_variable(ax11, cube_dict['evspsbl'].data, 'Atmospheric moisture fluxes',
+        ax10 = fig.add_subplot(nrows, ncols, 11)
+        ax10.plot(cube_dict['pr'].data, color='blue', label=cube_dict['pr'].long_name)
+        plot_global_variable(ax10, cube_dict['evspsbl'].data, 'Atmospheric moisture fluxes',
                              cube_dict['evspsbl'].units, 'orange', label=cube_dict['evspsbl'].long_name, xlabel=False)
-        ax11.legend()
+        ax10.legend()
+
     if cube_dict['prw']:
-        ax12 = fig.add_subplot(nrows, ncols, 12)
+        ax11 = fig.add_subplot(nrows, ncols, 12)
         if cube_dict['clwvi']:
-            ax12.plot(cube_dict['clwvi'].data, color='green', label=cube_dict['clwvi'].long_name)
-        plot_global_variable(ax12, cube_dict['prw'].data, 'Atmospheric Water Content',
+            ax11.plot(cube_dict['clwvi'].data, color='green', label=cube_dict['clwvi'].long_name)
+        plot_global_variable(ax11, cube_dict['prw'].data, 'Atmospheric Water Content',
                              cube_dict['prw'].units, 'teal', label=cube_dict['prw'].long_name, xlabel=False)
-        ax12.legend()
+        ax11.legend()
 
     plt.subplots_adjust(top=0.92)
     title = '%s (%s), %s, piControl'  %(inargs.model, inargs.project, inargs.run)
