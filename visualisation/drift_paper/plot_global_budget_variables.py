@@ -219,11 +219,11 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
 
     cube_list = iris.cube.CubeList([])
     for infile in file_list:
-        cube = iris.load_cube(infile, gio.check_iris_var(names[variable], model=model))
-        cube = gio.check_time_units(cube)     
+        cube = iris.load_cube(infile, gio.check_iris_var(names[variable], model=model))     
         coord_names = [coord.name() for coord in cube.dim_coords]
 
         if 'time' in coord_names:
+            cube = gio.check_time_units(cube)
             cube = timeseries.convert_to_annual(cube, chunk=chunk)
             cube = time_check(cube)
             
@@ -327,6 +327,7 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
                                             manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
 
     hfds_areavar = 'areacella' if 'hfds' in inargs.areacella else 'areacello'
+    
     cube_dict['hfds'] = read_spatial_flux(inargs.model, 'hfds', inargs.run, inargs.project, cube_dict[hfds_areavar],
                                           manual_file_dict, inargs.ignore_list, time_constraint, chunk=inargs.chunk)
     cube_dict['hfcorr'] = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project, cube_dict['areacello'],
