@@ -153,7 +153,10 @@ def check_iris_var(var, model=None):
                    ('GISS-E2-1-G-CC', 'atmosphere_mass_content_of_water_vapor'): 'atmosphere_water_vapor_content',
                    ('GISS-E2-1-G-CC', 'water_evapotranspiration_flux'): 'water_evaporation_flux',
                    ('IPSL-CM6A-LR', 'atmosphere_mass_content_of_water_vapor'): 'atmosphere_water_vapor_content',
-                   ('IPSL-CM6A-LR', 'water_evapotranspiration_flux'): 'water_evaporation_flux'}
+                   ('IPSL-CM6A-LR', 'water_evapotranspiration_flux'): 'water_evaporation_flux',
+                   ('GFDL-CM3', 'atmosphere_mass_content_of_water_vapor'): 'atmosphere_water_vapor_content',
+                   ('GFDL-CM3', 'water_evapotranspiration_flux'): 'water_evaporation_flux',
+                   ('GFDL-CM3', 'atmosphere_mass_content_of_cloud_condensed_water'): 'atmosphere_cloud_condensed_water_content'}
 
     if (model, var) in wrong_names:
         var = wrong_names[(model, var)]
