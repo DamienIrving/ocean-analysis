@@ -219,7 +219,11 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
 
     cube_list = iris.cube.CubeList([])
     for infile in file_list:
-        cube = iris.load_cube(infile, gio.check_iris_var(names[variable], model=model))     
+        try:
+            cube = iris.load_cube(infile, gio.check_iris_var(names[variable]))
+        except iris.exceptions.ConstraintMismatchError: 
+            cube = iris.load_cube(infile, gio.check_iris_var(names[variable], alternate_names=True))
+    
         coord_names = [coord.name() for coord in cube.dim_coords]
 
         if 'time' in coord_names:

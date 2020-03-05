@@ -137,29 +137,23 @@ def save_history(cube, field, filename):
         history.append(cube.attributes['history']) 
 
 
-def check_iris_var(var, model=None):
+def check_iris_var(var, alternate_names=False):
     """Check if variable is in the list of iris standard variables.
 
     If not, replace underscores with spaces (my convention is to give
       an appropriate long_name (with spaces) if not an iris standard name.
 
-    """
+    """ 
 
     if not var in list(iris.std_names.STD_NAMES.keys()):
         var = var.replace('_', ' ')
 
-    wrong_names = {('GISS-E2-1-G', 'atmosphere_mass_content_of_water_vapor'): 'atmosphere_water_vapor_content',
-                   ('GISS-E2-1-G', 'water_evapotranspiration_flux'): 'water_evaporation_flux',
-                   ('GISS-E2-1-G-CC', 'atmosphere_mass_content_of_water_vapor'): 'atmosphere_water_vapor_content',
-                   ('GISS-E2-1-G-CC', 'water_evapotranspiration_flux'): 'water_evaporation_flux',
-                   ('IPSL-CM6A-LR', 'atmosphere_mass_content_of_water_vapor'): 'atmosphere_water_vapor_content',
-                   ('IPSL-CM6A-LR', 'water_evapotranspiration_flux'): 'water_evaporation_flux',
-                   ('GFDL-CM3', 'atmosphere_mass_content_of_water_vapor'): 'atmosphere_water_vapor_content',
-                   ('GFDL-CM3', 'water_evapotranspiration_flux'): 'water_evaporation_flux',
-                   ('GFDL-CM3', 'atmosphere_mass_content_of_cloud_condensed_water'): 'atmosphere_cloud_condensed_water_content'}
+    wrong_names = {'atmosphere_mass_content_of_water_vapor': 'atmosphere_water_vapor_content',
+                   'water_evapotranspiration_flux': 'water_evaporation_flux',
+                   'atmosphere_mass_content_of_cloud_condensed_water': 'atmosphere_cloud_condensed_water_content'}
 
-    if (model, var) in wrong_names:
-        var = wrong_names[(model, var)]
+    if alternate_names and (var in wrong_names):
+        var = wrong_names[var]
 
     return var
 
