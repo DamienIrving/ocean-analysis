@@ -271,21 +271,24 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
     
     """
 
-    cmip5_institution_counts = {'BCC': 0, 'BNU': 0, 'CMCC': 0, 'CNRM-CERFACS': 0,
-                                'CSIRO': 0, 'E3SM-Project': 0, 'EC-Earth-Consortium': 0,
-                                'IPSL': 0, 'MIROC': 0, 'MOHC': 0, 'MPI-M': 0, 'NASA-GISS': 0,
-                                'NCC': 0, 'NOAA-GFDL': 0}
+    cmip5_institution_counts = {}
+    for institution in institution_colors.keys():
+        cmip5_institution_counts[institution] = 0
     cmip6_institution_counts = cmip5_institution_counts.copy()
     cmip6_xdata = []
     cmip6_ydata = []
     cmip5_xdata = []
     cmip5_ydata = []
 
-    x_input_units = get_units(xvar) 
+    if not xvar == 'model_number':
+        x_input_units = get_units(xvar) 
     y_input_units = get_units(yvar)
     for dotnum in range(len(df['model'])):
         area = df['ocean area (m2)'][dotnum]
-        x = convert_units(df[xvar][dotnum], x_input_units, plot_units, ocean_area=area) * 10**scale_factor
+        if xvar == 'model_number':
+            x = dotnum
+        else:
+            x = convert_units(df[xvar][dotnum], x_input_units, plot_units, ocean_area=area) * 10**scale_factor
         y = convert_units(df[yvar][dotnum], y_input_units, plot_units, ocean_area=area) * 10**scale_factor
         institution = df['institution'][dotnum]
         label = df['model'][dotnum] + ' (' + df['run'][dotnum] + ')'
@@ -372,53 +375,58 @@ def main(inargs):
 
     df = pd.read_csv(inargs.infile)
     df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
- 
-    fig = plt.figure(figsize=[18.5, 14])
-    eei_sps, thermal_sps, mass_sps, salt_sps = GridSpec(2, 2)
+    fig = plt.figure(figsize=[18.5, 21])  # width, height
+    gs = GridSpec(3, 2)
 
     # EEI conservation
-    eei_ax = fig.add_subplot(eei_sps)
+    eei_ax = fig.add_subplot(gs[0, 0])
     plot_broken_comparison(eei_ax, df, '(a) planetary energy imbalance', 'netTOA (J yr-1)',
                            'thermal OHC (J yr-1)', 'W m-2', legend=True)
     handles, labels = get_legend_info(eei_ax, df[['netTOA (J yr-1)', 'thermal OHC (J yr-1)']])
 
-    # Thermal conservation
+    # Ocean energy conservation
     xlims=[(-41.05, -40.82), (-0.55, 0.55)]
     ylims=[(-0.55, 0.66)]
     wspace = hspace = 0.08
-    thermal_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace,
-                            subplot_spec=thermal_sps, d=0.0)
-    plot_broken_comparison(thermal_ax, df, '(b) thermal energy conservation', 'hfds (J yr-1)',
+    ocean_energy_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace,
+                                 subplot_spec=gs[0, 1], d=0.0)
+    plot_broken_comparison(ocean_energy_ax, df, '(b) ocean energy conservation', 'hfds (J yr-1)',
                            'thermal OHC (J yr-1)', 'W m-2', xpad=25, ypad=45, broken=True)
-    handles, labels = update_legend_info(thermal_ax, df[['hfds (J yr-1)', 'thermal OHC (J yr-1)']],
+    handles, labels = update_legend_info(ocean_energy_ax, df[['hfds (J yr-1)', 'thermal OHC (J yr-1)']],
                                          handles, labels)
-    
-    # Mass conservation
+
+    # Ocean mass conservation
     xlims=[(-8, 6.2)]
     ylims=[(-1.9, 0.6)]
-    mass_ax = brokenaxes(xlims=xlims, ylims=ylims, subplot_spec=mass_sps)
-    plot_broken_comparison(mass_ax, df, '(c) mass conservation', 'wfo (kg yr-1)', 'masso (kg yr-1)',
+    ocean_mass_ax = brokenaxes(xlims=xlims, ylims=ylims, subplot_spec=gs[1, 0])
+    plot_broken_comparison(ocean_mass_ax, df, '(c) ocean mass conservation', 'wfo (kg yr-1)', 'masso (kg yr-1)',
                            'mm yr-1', broken=True, xpad=30, ypad=50)
-    handles, labels = update_legend_info(mass_ax, df[['wfo (kg yr-1)', 'masso (kg yr-1)']],
+    handles, labels = update_legend_info(ocean_mass_ax, df[['wfo (kg yr-1)', 'masso (kg yr-1)']],
                                          handles, labels)
 
     # Salt conservation
     xlims=[(-2, 5)]
     ylims=[(-19, -17.5), (-2.3, 5.1)]
     hspace = 0.1
-    salt_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=salt_sps, d=0.0)
+    salt_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=gs[1, 1], d=0.0)
     plot_broken_comparison(salt_ax, df, '(d) salt conservation', 'masso (g/kg yr-1)', 'soga (g/kg yr-1)',
                            'g/kg s-1', scale_factor=13, broken=True, xpad=30, ypad=40)
     handles, labels = update_legend_info(salt_ax, df[['masso (g/kg yr-1)', 'soga (g/kg yr-1)']],
                                          handles, labels)
 
+    # Atmosphere mass conservation
+    atmos_mass_ax = fig.add_subplot(gs[2, :])
+    plot_broken_comparison(atmos_mass_ax, df, '(e) atmospheric mass conservation', 'model_number', 'wfa (kg yr-1)',
+                           'kg yr-1', scale_factor=-14)
+    handles, labels = get_legend_info(atmos_mass_ax, df[['wfa (kg yr-1)']])
+
     fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.815, 0.5))
     plt.tight_layout(rect=(0, 0, 0.8, 1))
 
-    for variable, data in cmip6_data_points.items():
-        record_quartiles(variable, data, 'cmip6')
-    for variable, data in cmip5_data_points.items():
-        record_quartiles(variable, data, 'cmip5')
+    #for variable, data in cmip6_data_points.items():
+    #    record_quartiles(variable, data, 'cmip6')
+    #for variable, data in cmip5_data_points.items():
+    #    record_quartiles(variable, data, 'cmip5')
     
     plt.savefig(inargs.outfile, dpi=200)
     log_file = re.sub('.png', '.met', inargs.outfile)
