@@ -76,11 +76,12 @@ institution_colors = {'BCC': '#800000',
 markers = ['o', '^', 's', '<', '>', 'v', 'p', 'D', 'd', 'h', 'H', 'X']
 
 axis_labels = {'thermal OHC': 'change in OHC temperature component, $dH_T/dt$',
-               'masso': 'change in ocean mass, $dM/dt$',
+               'masso': 'change in ocean mass, $dM_o/dt$',
                'netTOA': 'cumulative netTOA, $dQ_r/dt$',
                'hfds': 'cumulative ocean surface heat flux, $dQ_h/dt$',
                'soga': 'change in ocean salinity, $dS/dt$',
-               'wfo': 'cumulative freshwater flux, $dQ_m/dt$'}
+               'wfo': 'cumulative freshwater flux into ocean, $dQ_m/dt$',
+               'wfa': 'cumulative moisture flux into atmosphere, $dQ_{ep}/dt$'}
 
 stats_done = []
 quartiles = []
@@ -178,8 +179,8 @@ def format_axis_label(orig_label, units, scale_factor):
     return label 
 
 
-def plot_aesthetics(ax, yvar, xvar, units, scinotation, shading, scale_factor,
-                    xpad=None, ypad=None, non_square=True):
+def plot_two_var_aesthetics(ax, yvar, xvar, units, scinotation, shading, scale_factor,
+                            xpad=None, ypad=None, non_square=True):
     """Set the plot aesthetics"""
     
     plot_abline(ax, 1, 0, static_bounds=non_square)
@@ -212,6 +213,27 @@ def plot_aesthetics(ax, yvar, xvar, units, scinotation, shading, scale_factor,
         ax.axhline(y=1.8, color='0.5', linewidth=0.5, linestyle='--')
         ax.axvline(x=-1.8, color='0.5', linewidth=0.5, linestyle='--')
         ax.axvline(x=1.8, color='0.5', linewidth=0.5, linestyle='--')
+
+    return xlabel, ylabel
+
+
+def plot_one_var_aesthetics(ax, yvar, units, scinotation, scale_factor, ypad=None):
+    """Set the plot aesthetics"""
+    
+    ax.axhline(y=0, color='black', linewidth=1.0)
+
+    ylabel = format_axis_label(yvar, units, scale_factor)
+    if ypad:
+        ax.set_ylabel(ylabel, labelpad=ypad)
+    else:
+        ax.set_ylabel(ylabel)
+    xlabel = 'model'
+    if scinotation:
+        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
+
+    ax.set_yscale('symlog')
+    ax.grid(axis='y')
+    ax.get_xaxis().set_visible(False)
 
     return xlabel, ylabel
 
@@ -286,7 +308,7 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
     for dotnum in range(len(df['model'])):
         area = df['ocean area (m2)'][dotnum]
         if xvar == 'model_number':
-            x = dotnum
+            x = dotnum + 1
         else:
             x = convert_units(df[xvar][dotnum], x_input_units, plot_units, ocean_area=area) * 10**scale_factor
         y = convert_units(df[yvar][dotnum], y_input_units, plot_units, ocean_area=area) * 10**scale_factor
@@ -316,11 +338,15 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
         non_square = False
     else:
         non_square = True
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
+        if not xvar == 'model_number':
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
     ax.set_title(title)
-    xlabel, ylabel = plot_aesthetics(ax, yvar, xvar, plot_units, scinotation, shading, scale_factor,
-                                     xpad=xpad, ypad=ypad, non_square=non_square)
+    if xvar == 'model_number':
+        xlabel, ylabel = plot_one_var_aesthetics(ax, yvar, plot_units, scinotation, scale_factor, ypad=ypad)
+    else:
+        xlabel, ylabel = plot_two_var_aesthetics(ax, yvar, xvar, plot_units, scinotation, shading, scale_factor,
+                                                 xpad=xpad, ypad=ypad, non_square=non_square)
 
     if not xlabel in stats_done:
         cmip6_data_points[xlabel] = cmip6_xdata
@@ -421,7 +447,7 @@ def main(inargs):
     # Atmosphere mass conservation
     atmos_mass_ax = fig.add_subplot(gs[2, :])
     plot_broken_comparison(atmos_mass_ax, df, '(e) atmospheric mass conservation', 'model_number', 'wfa (kg yr-1)',
-                           'kg yr-1', scale_factor=-14)
+                           'kg yr-1', scale_factor=-12, ypad=20)
     handles, labels = get_legend_info(atmos_mass_ax, df[['wfa (kg yr-1)']])
 
     fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.815, 0.5))
