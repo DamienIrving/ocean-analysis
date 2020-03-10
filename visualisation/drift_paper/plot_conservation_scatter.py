@@ -390,25 +390,29 @@ def main(inargs):
     wspace = hspace = 0.08
     ocean_energy_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace,
                                  subplot_spec=gs[0, 1], d=0.0)
+    #ocean_energy_ax = fig.add_subplot(gs[0, 1])
     plot_broken_comparison(ocean_energy_ax, df, '(b) ocean energy conservation', 'hfds (J yr-1)',
                            'thermal OHC (J yr-1)', 'W m-2', xpad=25, ypad=45, broken=True)
     handles, labels = update_legend_info(ocean_energy_ax, df[['hfds (J yr-1)', 'thermal OHC (J yr-1)']],
                                          handles, labels)
 
     # Ocean mass conservation
-    xlims=[(-8, 6.2)]
+    xlims=[(-930, -925), (-8, 6.2), (1305, 1310)]
     ylims=[(-1.9, 0.6)]
-    ocean_mass_ax = brokenaxes(xlims=xlims, ylims=ylims, subplot_spec=gs[1, 0])
+    hspace = 0.1
+    ocean_mass_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=gs[1, 0], d=0.0)
+    #ocean_mass_ax = fig.add_subplot(gs[1, 0])
     plot_broken_comparison(ocean_mass_ax, df, '(c) ocean mass conservation', 'wfo (kg yr-1)', 'masso (kg yr-1)',
                            'mm yr-1', broken=True, xpad=30, ypad=50)
     handles, labels = update_legend_info(ocean_mass_ax, df[['wfo (kg yr-1)', 'masso (kg yr-1)']],
                                          handles, labels)
 
     # Salt conservation
-    xlims=[(-2, 5)]
-    ylims=[(-19, -17.5), (-2.3, 5.1)]
+    xlims=[(-30, -28), (-2, 5)]
+    ylims=[(-24, -17.5), (-2.3, 5.1)]
     hspace = 0.1
     salt_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=gs[1, 1], d=0.0)
+    #salt_ax = fig.add_subplot(gs[1, 1])
     plot_broken_comparison(salt_ax, df, '(d) salt conservation', 'masso (g/kg yr-1)', 'soga (g/kg yr-1)',
                            'g/kg s-1', scale_factor=13, broken=True, xpad=30, ypad=40)
     handles, labels = update_legend_info(salt_ax, df[['masso (g/kg yr-1)', 'soga (g/kg yr-1)']],
