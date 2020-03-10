@@ -235,6 +235,9 @@ def plot_one_var_aesthetics(ax, yvar, units, scinotation, scale_factor, ypad=Non
     ax.grid(axis='y')
     ax.get_xaxis().set_visible(False)
 
+    ax.axhline(y=-1.68e13 * 10**scale_factor, color='0.5', linewidth=0.5, linestyle='--')
+    ax.axhline(y=1.68e13 * 10**scale_factor, color='0.5', linewidth=0.5, linestyle='--')
+
     return xlabel, ylabel
 
 
