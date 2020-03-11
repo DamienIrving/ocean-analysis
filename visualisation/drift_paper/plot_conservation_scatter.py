@@ -456,10 +456,10 @@ def main(inargs):
     fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.815, 0.5))
     plt.tight_layout(rect=(0, 0, 0.8, 1))
 
-    #for variable, data in cmip6_data_points.items():
-    #    record_quartiles(variable, data, 'cmip6')
-    #for variable, data in cmip5_data_points.items():
-    #    record_quartiles(variable, data, 'cmip5')
+    for variable, data in cmip6_data_points.items():
+        record_quartiles(variable, data, 'cmip6')
+    for variable, data in cmip5_data_points.items():
+        record_quartiles(variable, data, 'cmip5')
     
     plt.savefig(inargs.outfile, dpi=200)
     log_file = re.sub('.png', '.met', inargs.outfile)
