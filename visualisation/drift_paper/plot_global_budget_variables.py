@@ -89,6 +89,7 @@ amon_vars = ['rsdt', 'rsut', 'rlut', 'pr', 'evspsbl', 'clwvi', 'prw']
 wfo_wrong_sign = ['MIROC-ESM-CHEM', 'MIROC-ESM', 'CNRM-CM6-1', 'CNRM-ESM2-1',
                   'IPSL-CM5A-LR', 'IPSL-CM5A-MR', 'IPSL-CM5B-LR', 'IPSL-CM6A-LR',
                   'CMCC-CM', 'EC-Earth3', 'EC-Earth3-Veg']
+evspsbl_wrong_sign = ['EC-Earth3', 'EC-Earth3-Veg']
 
 
 def get_latest(results):
@@ -245,6 +246,8 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
         cube.units = units.replace('m-2', '')
         cube.data = cube.data * area_array
         if (variable == 'wfo') and (model in wfo_wrong_sign):
+            cube.data = cube.data * -1
+        elif (variable == 'evspsbl') and (model in evspsbl_wrong_sign):
             cube.data = cube.data * -1
 
         if 'time' in coord_names:
