@@ -185,8 +185,8 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict,
 def read_area(model, variable, ensemble, project, manual_file_dict):
     """Read area data."""
 
-    if (variable, 'piControl') in manual_file_dict.keys():
-        area_files = manual_file_dict[(variable, 'piControl')]
+    if variable in manual_file_dict.keys():
+        area_files = manual_file_dict[variable]
     else:
         area_run = 'r0i0p0' if project == 'cmip5' else ensemble
         area_files = clef_search(model, variable, area_run, project)
@@ -861,7 +861,10 @@ def get_manual_file_dict(file_list):
     for files in file_list:
         variable = files[0].split('/')[-1].split('_')[0]
         experiment = files[0].split('/')[-1].split('_')[3]
-        file_dict[(variable, experiment)] = files
+        if 'area' in variable:
+            file_dict[variable] = files
+        else:
+            file_dict[(variable, experiment)] = files
 
     return file_dict 
 
