@@ -213,11 +213,13 @@ def plot_two_var_aesthetics(ax, yvar, xvar, units, scinotation, shading, scale_f
         ax.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
         ax.axvline(x=-0.5, color='0.5', linewidth=0.5, linestyle='--')
         ax.axvline(x=0.5, color='0.5', linewidth=0.5, linestyle='--')
-    elif 'mm \; yr^{-1}' in ylabel:
-        ax.axhline(y=-1.8, color='0.5', linewidth=0.5, linestyle='--')
-        ax.axhline(y=1.8, color='0.5', linewidth=0.5, linestyle='--')
-        ax.axvline(x=-1.8, color='0.5', linewidth=0.5, linestyle='--')
-        ax.axvline(x=1.8, color='0.5', linewidth=0.5, linestyle='--')
+    elif xvar == 'wfo (kg yr-1)':
+        ref = convert_units(1.8, 'mm yr-1', 'kg yr-1')
+        ref = ref * 10**scale_factor
+        ax.axhline(y=-1 * ref, color='0.5', linewidth=0.5, linestyle='--')
+        ax.axhline(y=ref, color='0.5', linewidth=0.5, linestyle='--')
+        ax.axvline(x=-1 * ref, color='0.5', linewidth=0.5, linestyle='--')
+        ax.axvline(x=ref, color='0.5', linewidth=0.5, linestyle='--')
 
     return xlabel, ylabel
 
@@ -254,16 +256,18 @@ def get_units(column_header):
     return units
     
     
-def convert_units(value, start_units, end_units, ocean_area=None):
+def convert_units(value, start_units, end_units):
     """Convert units."""
     
     sec_in_year = 365.25 * 24 * 60 * 60
+    ocean_density = 1026  # kg m-3
+    ocean_area = 3.6e14  #m2
     
     if start_units == end_units:
         new_value = value
     else:    
-        assert start_units in ['J yr-1', 'm yr-1', 'kg yr-1', 'g/kg yr-1', 'm yr-1']
-        assert end_units in ['PW', 'W m-2', 'mm yr-1', 'kg s-1', 'g/kg s-1', 'm s-1']
+        assert start_units in ['J yr-1', 'm yr-1', 'kg yr-1', 'g/kg yr-1', 'm yr-1', 'mm yr-1']
+        assert end_units in ['PW', 'W m-2', 'mm yr-1', 'kg s-1', 'g/kg s-1', 'm s-1', 'kg yr-1']
 
         if start_units == 'J yr-1':
             new_value = value / sec_in_year 
@@ -277,9 +281,12 @@ def convert_units(value, start_units, end_units, ocean_area=None):
             new_value = value * 1000
 
         elif (start_units == 'kg yr-1') and (end_units == 'mm yr-1'):
-            assert ocean_area
-            new_value = value / ocean_area
-            
+            volume_trend = value / ocean_density
+            new_value = (volume_trend / ocean_area) * 1000
+        
+        elif (start_units == 'mm yr-1') and (end_units == 'kg yr-1'):
+            new_value = (value / 1000) * ocean_area * ocean_density
+        
         elif (start_units == 'kg yr-1') and (end_units == 'kg s-1'):
             new_value = value / sec_in_year 
             
@@ -312,10 +319,9 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
 
     x_input_units = get_units(xvar) 
     y_input_units = get_units(yvar)
-    for dotnum in range(len(df['model'])):
-        area = df['ocean area (m2)'][dotnum]        
-        x = convert_units(df[xvar][dotnum], x_input_units, plot_units, ocean_area=area) * 10**scale_factor
-        y = convert_units(df[yvar][dotnum], y_input_units, plot_units, ocean_area=area) * 10**scale_factor
+    for dotnum in range(len(df['model'])):       
+        x = convert_units(df[xvar][dotnum], x_input_units, plot_units) * 10**scale_factor
+        y = convert_units(df[yvar][dotnum], y_input_units, plot_units) * 10**scale_factor
         label = df['model'][dotnum] + ' (' + df['run'][dotnum] + ')'
         institution = df['institution'][dotnum]
         color = institution_colors[institution]
@@ -428,13 +434,13 @@ def main(inargs):
                                          handles, labels)
 
     # Ocean mass conservation
-    xlims=[(-930, -925), (-8, 6.2), (1305, 1310)]
-    ylims=[(-1.9, 0.6)]
+    xlims=[(-474, -472), (-7, 4), (492, 495)]
+    ylims=[(-0.7, 0.25)]
     hspace = 0.1
     ocean_mass_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=gs[1, 0], d=0.0)
     #ocean_mass_ax = fig.add_subplot(gs[1, 0])
     plot_broken_comparison(ocean_mass_ax, df, '(c) ocean mass conservation', 'wfo (kg yr-1)', 'masso (kg yr-1)',
-                           'mm yr-1', broken=True, xpad=30, ypad=50)
+                           'kg yr-1', scale_factor=-15, broken=True, xpad=30, ypad=50)
     handles, labels = update_legend_info(ocean_mass_ax, df[['wfo (kg yr-1)', 'masso (kg yr-1)']],
                                          handles, labels)
 
