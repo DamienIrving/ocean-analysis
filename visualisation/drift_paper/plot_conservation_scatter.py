@@ -77,6 +77,7 @@ markers = ['o', '^', 's', '<', '>', 'v', 'p', 'D', 'd', 'h', 'H', 'X']
 
 axis_labels = {'thermal OHC': 'change in OHC temperature component, $dH_T/dt$',
                'masso': 'change in ocean mass, $dM_o/dt$',
+               'massa': 'change in mass of atmospheric water vapor, $dM_a/dt$',
                'netTOA': 'cumulative netTOA, $dQ_r/dt$',
                'hfds': 'cumulative ocean surface heat flux, $dQ_h/dt$',
                'soga': 'change in ocean salinity, $dS/dt$',
@@ -102,14 +103,18 @@ def record_quartiles(variable, data, project):
     upper_quartile = np.percentile(clean_abs_data, 75)
     median = np.percentile(clean_abs_data, 50)
     lower_quartile = np.percentile(clean_abs_data, 25)
+    nmodels = len(data)
+    valid_nmodels = len(clean_abs_data)
         
     upper_quartile_text = "%s upper quartile: %f" %(project, upper_quartile)
     median_text = "%s median: %f" %(project, median)
     lower_quartile_text = "%s lower quartile: %f" %(project, lower_quartile)
+    nmodels_text = "%s number of models: %i (%i not nan)" %(project, nmodels, valid_nmodels)
         
     quartiles.append(upper_quartile_text)
     quartiles.append(median_text)
     quartiles.append(lower_quartile_text)
+    quartiles.append(nmodels_text)
 
 
 def plot_abline(ax, slope, intercept, static_bounds=True):
@@ -227,7 +232,7 @@ def plot_one_var_aesthetics(ax, yvar, units, scinotation, scale_factor, ypad=Non
         ax.set_ylabel(ylabel, labelpad=ypad)
     else:
         ax.set_ylabel(ylabel)
-    xlabel = 'model'
+        
     if scinotation:
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
 
@@ -238,7 +243,7 @@ def plot_one_var_aesthetics(ax, yvar, units, scinotation, scale_factor, ypad=Non
     ax.axhline(y=-1.68e13 * 10**scale_factor, color='0.5', linewidth=0.5, linestyle='--')
     ax.axhline(y=1.68e13 * 10**scale_factor, color='0.5', linewidth=0.5, linestyle='--')
 
-    return xlabel, ylabel
+    return ylabel
 
 
 def get_units(column_header):
@@ -305,19 +310,14 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
     cmip5_xdata = []
     cmip5_ydata = []
 
-    if not xvar == 'model_number':
-        x_input_units = get_units(xvar) 
+    x_input_units = get_units(xvar) 
     y_input_units = get_units(yvar)
     for dotnum in range(len(df['model'])):
-        area = df['ocean area (m2)'][dotnum]
-        if xvar == 'model_number':
-            x = dotnum + 1
-        else:
-            x = convert_units(df[xvar][dotnum], x_input_units, plot_units, ocean_area=area) * 10**scale_factor
+        area = df['ocean area (m2)'][dotnum]        
+        x = convert_units(df[xvar][dotnum], x_input_units, plot_units, ocean_area=area) * 10**scale_factor
         y = convert_units(df[yvar][dotnum], y_input_units, plot_units, ocean_area=area) * 10**scale_factor
-        institution = df['institution'][dotnum]
         label = df['model'][dotnum] + ' (' + df['run'][dotnum] + ')'
-
+        institution = df['institution'][dotnum]
         color = institution_colors[institution]
         if df['project'][dotnum] == 'cmip6':
             facecolors = color
@@ -334,19 +334,21 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
             cmip5_xdata.append(x)
             cmip5_ydata.append(y)
         marker = markers[marker_num]
-        ax.scatter(x, y, label=label, s=130, linewidth=1.2, marker=marker,
+        x_for_plot = dotnum + 1 if 'massa' in xvar else x
+        ax.scatter(x_for_plot, y, label=label, s=130, linewidth=1.2, marker=marker,
                    facecolors=facecolors, edgecolors=edgecolors)
 
     if broken:
         non_square = False
     else:
         non_square = True
-        if not xvar == 'model_number':
+        if not 'massa' in xvar:
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
     ax.set_title(title)
-    if xvar == 'model_number':
-        xlabel, ylabel = plot_one_var_aesthetics(ax, yvar, plot_units, scinotation, scale_factor, ypad=ypad)
+    if 'massa' in xvar:
+        ylabel = plot_one_var_aesthetics(ax, yvar, plot_units, scinotation, scale_factor, ypad=ypad)
+        xlabel = format_axis_label(xvar, plot_units, scale_factor)
     else:
         xlabel, ylabel = plot_two_var_aesthetics(ax, yvar, xvar, plot_units, scinotation, shading, scale_factor,
                                                  xpad=xpad, ypad=ypad, non_square=non_square)
@@ -449,7 +451,7 @@ def main(inargs):
 
     # Atmosphere mass conservation
     atmos_mass_ax = fig.add_subplot(gs[2, :])
-    plot_broken_comparison(atmos_mass_ax, df, '(e) atmospheric mass conservation', 'model_number', 'wfa (kg yr-1)',
+    plot_broken_comparison(atmos_mass_ax, df, '(e) atmospheric mass conservation', 'massa (kg yr-1)', 'wfa (kg yr-1)',
                            'kg yr-1', scale_factor=-12, ypad=20)
     handles, labels = get_legend_info(atmos_mass_ax, df[['wfa (kg yr-1)']])
 
