@@ -683,19 +683,6 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
             calc_regression(nettoa_linear_dedrifted, hfds_linear_dedrifted,
                             'cumulative netTOA radiative flux vs cumulative surface heat flux (linear dedrift, decadal mean)', decadal_mean=True)
 
-#    if cube_dict['wfo']:
-#        wfo_cumsum_data = numpy.cumsum(cube_dict['wfo'].data)
-#        wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
-#        wfo_inferred_barystatic = cp * cube_dict['thetaoga'].data[0] * wfo_cumsum_anomaly
-#        ax_top.plot(wfo_inferred_barystatic, color='blue', linestyle='--', label='cumulative surface freshwater flux')
-
-#    if cube_dict['hfds'] and cube_dict['wfo']:
-#        total_surface_flux = hfds_cumsum_anomaly + wfo_inferred_barystatic
-#        calc_trend(total_surface_flux, 'cumulative surface total flux', 'J')
-#        ax_top.plot(total_surface_flux, color='black', linestyle='--', label='inferred OHC anomaly from suface fluxes')
-#        surface_flux_cubic_dedrifted = dedrift_data(total_surface_flux, fit='cubic')
-#        ax_bottom.plot(surface_flux_cubic_dedrifted, color='black', linestyle='--')
-
     if ylim:
         ax_top.set_ylim(ylim[0] * 1e24, ylim[1] * 1e24)
 
@@ -709,7 +696,7 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
     ax_top.legend()
 
 
-def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density, ylim=None):
+def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
     """Plot the sea level timeseries and it's components"""
 
     # Compulsory variables
@@ -725,50 +712,43 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
     masso_anomaly_data = masso_data - masso_data[0]
     calc_trend(masso_anomaly_data, 'global ocean mass', 'kg')
 
-    if ocean_area:
-        sea_level_anomaly_from_masso = sea_level_from_mass(masso_anomaly_data, ocean_area, density)
-        sea_level_anomaly_from_soga = sea_level_from_mass(masso_from_soga, ocean_area, density)
-        calc_trend(sea_level_anomaly_from_masso, 'global ocean mass', 'm')
+    ax_top.grid(linestyle=':')
+    ax_top.plot(masso_anomaly_data, color='tab:blue', label='ocean mass ($M$)')
+    ax_top.plot(masso_from_soga, color='tab:green', label='ocean salinity ($S$)')
 
-        ax_top.grid(linestyle=':')
-        ax_top.plot(sea_level_anomaly_from_masso, color='tab:blue', label='ocean mass ($M$)')
-        ax_top.plot(sea_level_anomaly_from_soga, color='tab:green', label='ocean salinity ($S$)')
+    masso_linear_dedrifted = dedrift_data(masso_anomaly_data, fit='linear')
+    masso_cubic_dedrifted = dedrift_data(masso_anomaly_data, fit='cubic')
+    ax_middle.grid(linestyle=':')
+    ax_middle.plot(masso_cubic_dedrifted, color='tab:blue', label='ocean mass ($M$)')
 
-        masso_linear_dedrifted = dedrift_data(sea_level_anomaly_from_masso, fit='linear')
-        masso_cubic_dedrifted = dedrift_data(sea_level_anomaly_from_masso, fit='cubic')
-        ax_middle.grid(linestyle=':')
-        ax_middle.plot(masso_cubic_dedrifted, color='tab:blue', label='ocean mass ($M$)')
-
-        soga_linear_dedrifted = dedrift_data(sea_level_anomaly_from_soga, fit='linear')
-        soga_cubic_dedrifted = dedrift_data(sea_level_anomaly_from_soga, fit='cubic')
-        ax_middle.plot(soga_cubic_dedrifted, color='tab:green', label='ocean salinity ($S$)')
-        calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
-                        'change in global ocean mass vs global mean salinity anomaly (cubic dedrift, annual mean)')
-        calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
-                        'change in global ocean mass vs global mean salinity anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
-        calc_regression(masso_linear_dedrifted, soga_linear_dedrifted,
-                        'change in global ocean mass vs global mean salinity anomaly (linear dedrift, annual mean)')
-        calc_regression(masso_linear_dedrifted, soga_linear_dedrifted,
-                        'change in global ocean mass vs global mean salinity anomaly (linear dedrift, decadal mean)', decadal_mean=True)
+    soga_linear_dedrifted = dedrift_data(masso_from_soga, fit='linear')
+    soga_cubic_dedrifted = dedrift_data(masso_from_soga, fit='cubic')
+    ax_middle.plot(soga_cubic_dedrifted, color='tab:green', label='ocean salinity ($S$)')
+    calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
+                    'change in global ocean mass vs global mean salinity anomaly (cubic dedrift, annual mean)')
+    calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
+                    'change in global ocean mass vs global mean salinity anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
+    calc_regression(masso_linear_dedrifted, soga_linear_dedrifted,
+                    'change in global ocean mass vs global mean salinity anomaly (linear dedrift, annual mean)')
+    calc_regression(masso_linear_dedrifted, soga_linear_dedrifted,
+                    'change in global ocean mass vs global mean salinity anomaly (linear dedrift, decadal mean)', decadal_mean=True)
 
     # Optional variables
-    if cube_dict['wfonocorr'] and ocean_area:
+    if cube_dict['wfonocorr']:
         wfonocorr_cumsum_data = numpy.cumsum(cube_dict['wfonocorr'].data)
         wfonocorr_cumsum_anomaly = wfonocorr_cumsum_data - wfonocorr_cumsum_data[0]
-        sea_level_anomaly_from_wfonocorr = sea_level_from_mass(wfonocorr_cumsum_anomaly, ocean_area, density)
-        ax_top.plot(sea_level_anomaly_from_wfonocorr, color='tab:gray', linestyle=':',
+        ax_top.plot(wfonocorr_cumsum_anomaly, color='tab:gray', linestyle=':',
                     label='cumulative surface freshwater flux (no flux correction)')
 
-    if cube_dict['wfo'] and ocean_area:
+    if cube_dict['wfo']:
         wfo_cumsum_data = numpy.cumsum(cube_dict['wfo'].data)
         wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
-        sea_level_anomaly_from_wfo = sea_level_from_mass(wfo_cumsum_anomaly, ocean_area, density)
         calc_trend(wfo_cumsum_anomaly, 'cumulative wfo', 'kg')
-        ax_top.plot(sea_level_anomaly_from_wfo, color='tab:gray',
+        ax_top.plot(wfo_cumsum_anomaly, color='tab:gray',
                     label='cumulative freshwater flux ($Q_m$)')
 
-        wfo_linear_dedrifted = dedrift_data(sea_level_anomaly_from_wfo, fit='linear')
-        wfo_cubic_dedrifted = dedrift_data(sea_level_anomaly_from_wfo, fit='cubic')
+        wfo_linear_dedrifted = dedrift_data(wfo_cumsum_anomaly, fit='linear')
+        wfo_cubic_dedrifted = dedrift_data(wfo_cumsum_anomaly, fit='cubic')
         ax_middle.plot(wfo_cubic_dedrifted, color='tab:gray',
                        label='cumulative freshwater flux ($Q_m$)')
         
@@ -796,7 +776,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ocean_area, density
     ax_top.set_title('(b) ocean mass budget')
     ax_middle.set_title('(e) ocean mass budget (de-drifted)')
     ax_middle.set_xlabel('year')
-    ax_top.set_ylabel('equivalent change in global sea level (m)')
+    ax_top.set_ylabel('change in water mass (kg)')
     ax_top.yaxis.set_label_coords(-0.12, 0.2)
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
@@ -843,15 +823,6 @@ def plot_atmosphere(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
     ax_top.legend()
-
-
-def sea_level_from_mass(mass_anomaly_data, ocean_area, density):
-    """Infer a change in sea level from change in mass"""
-    
-    volume_anomaly_data = mass_anomaly_data / density
-    sea_level_anomaly_data = volume_anomaly_data / ocean_area     
-        
-    return sea_level_anomaly_data
 
 
 def get_manual_file_dict(file_list):
@@ -902,23 +873,6 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
     else:
         masso_data = cube_dict['masso'].data
 
-    if cube_dict['areacello']:
-        ocean_area = cube_dict['areacello'].data.sum()
-        ocean_area_text = 'ocean surface area: %s %s'  %(str(ocean_area), cube_dict['areacello'].units) 
-    else:
-        ocean_area = None
-        ocean_area_text = 'ocean surface area: nan'
-
-    if cube_dict['areacella']:
-        surface_area = cube_dict['areacella'].data.sum()
-        area_text = 'surface area: %s %s'  %(str(surface_area), cube_dict['areacella'].units) 
-    else:
-        surface_area = None
-        area_text = 'surface area: nan'
-
-    numbers_out_list.append(area_text)
-    numbers_out_list.append(ocean_area_text)
-
     fig = plt.figure(figsize=[30, 12])
     gs = gridspec.GridSpec(3, 3, hspace=0.3)
     ax1 = plt.subplot(gs[0:2, 0])
@@ -934,7 +888,7 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
         ax2.axvline(branch_year, linestyle=next(linestyles), color='0.5', alpha=0.5, label=experiment+' branch time')
 
     plot_ohc(ax1, ax4, masso_data, inargs.cpocean, cube_dict, ylim=inargs.ohc_ylim)
-    plot_sea_level(ax2, ax5, masso_data, cube_dict, ocean_area, inargs.density, ylim=inargs.sealevel_ylim)
+    plot_sea_level(ax2, ax5, masso_data, cube_dict, ylim=inargs.sealevel_ylim)
     plot_atmosphere(ax3, ax6, masso_data, cube_dict)
 
     plt.subplots_adjust(top=0.92)
