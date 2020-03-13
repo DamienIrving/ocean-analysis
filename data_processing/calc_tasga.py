@@ -36,7 +36,7 @@ def main(inargs):
     """Run the program."""
 
     area_cube = iris.load_cube(inargs.area_file, 'cell_area')
-    tas_cube = gio.combine_files(inargs.tas_files, 'surface_air_temperature')
+    tas_cube, history = gio.combine_files(inargs.tas_files, 'surface_air_temperature')
     weights = uconv.broadcast_array(area_cube.data, [1, 2], tas_cube.shape)
     coord_names = [coord.name() for coord in tas_cube.dim_coords]
     tasga_cube = tas_cube.collapsed(coord_names[1:], iris.analysis.MEAN, weights=weights)
