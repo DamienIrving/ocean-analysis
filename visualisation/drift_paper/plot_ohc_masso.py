@@ -44,7 +44,8 @@ import convenient_universal as uconv
 
 names = {'masso': 'sea_water_mass',
          'volo': 'sea_water_volume',
-         'thetaoga': 'sea_water_potential_temperature'}
+         'thetaoga': 'sea_water_potential_temperature',
+         'massa': 'atmosphere_mass_content_of_water_vapor'}
 
 extra_log = []
 
@@ -126,7 +127,7 @@ def read_global_variable(model, variable, ensemble, manual_files):
     """Read data for a global variable"""
 
     manual = file_match(manual_files, model, variable, ensemble)
-    if manual:
+    if manual or variable == 'massa':
         file_list = manual
     else:
         file_list = clef_search(model, variable, ensemble) 
@@ -219,7 +220,7 @@ def record_trend(data, label, units):
 def main(inargs):
     """Run the program."""
 
-    volo_models = ['CNRM-CM6-1', 'CNRM-ESM2-1', 'E3SM-1-0', 'IPSL-CM6A-LR']
+    volo_models = ['CNRM-CM6-1', 'CNRM-ESM2-1', 'E3SM-1-0', 'E3SM-1-1', 'EC-Earth3', 'EC-Earth3-Veg', 'IPSL-CM6A-LR']
     cpocean_dict = {'HadGEM3-GC31-LL': 3991.867957, 'UKESM1-0-LL': 3991.867957}
     rhozero_dict = {'HadGEM3-GC31-LL': 1026, 'UKESM1-0-LL': 1026}
     if inargs.colors:
@@ -238,19 +239,23 @@ def main(inargs):
     else:
         manual_files = {}
 
-    fig = plt.figure(figsize=[14, 8])
-    nrows = 2
+    fig = plt.figure(figsize=[14, 12])
+    nrows = 3
     ncols = 2
     ax_ohc = fig.add_subplot(nrows, ncols, 1)
     ax_ohcd = fig.add_subplot(nrows, ncols, 2)
-    ax_mass = fig.add_subplot(nrows, ncols, 3)
-    ax_massd = fig.add_subplot(nrows, ncols, 4)
+    ax_masso = fig.add_subplot(nrows, ncols, 3)
+    ax_massod = fig.add_subplot(nrows, ncols, 4)
+    ax_massa = fig.add_subplot(nrows, ncols, 5)
+    ax_massad = fig.add_subplot(nrows, ncols, 6)
 
     max_time = 0
     count = 0
     for model, run in zip(inargs.models, inargs.runs):
         print(model, run)
         extra_log.append(['# ' + model + ', ' + run])
+        
+        # OHC and masso
         if model in volo_models:
             volo = read_global_variable(model, 'volo', run, manual_files)
             rhozero = 1026
@@ -270,11 +275,12 @@ def main(inargs):
             if outlier_idx:
                 print('%s (%s) outliers:' %(model, run), outlier_idx)
 
-        ohc_anomaly = ohc - ohc[0]
-        masso_anomaly = masso.data - masso.data[0]
         if inargs.runmean_window:
-            ohc_anomaly = timeseries.runmean(ohc_anomaly, inargs.runmean_window)
-            masso_anomaly = timeseries.runmean(masso_anomaly, inargs.runmean_window)
+            ohc = timeseries.runmean(ohc, inargs.runmean_window)
+            masso = timeseries.runmean(masso.data, inargs.runmean_window)
+
+        ohc_anomaly = ohc - ohc[0]
+        masso_anomaly = masso - masso[0]
         
         ohc_dedrifted = dedrift_data(ohc_anomaly)
         masso_dedrifted = dedrift_data(masso_anomaly)
@@ -289,42 +295,65 @@ def main(inargs):
         record_trend(ohc_anomaly, 'OHC linear trend', 'C/yr')
         ax_ohcd.plot(ohc_dedrifted_anomaly, color=color, label=label, linestyle=style)
 
-        ax_mass.plot(masso_anomaly, color=color, label=label, linestyle=style)
+        ax_masso.plot(masso_anomaly, color=color, label=label, linestyle=style)
         record_trend(masso_anomaly, 'Mass linear trend', 'kg/yr')
-        ax_massd.plot(masso_dedrifted_anomaly, color=color, label=label, linestyle=style)
+        ax_massod.plot(masso_dedrifted_anomaly, color=color, label=label, linestyle=style)
 
         if len(ohc) > max_time:
             max_time = len(ohc)
 
+        # massa
 
-    ax_ohc.set_title('(a) OHC anomaly')
+        massa = read_global_variable(model, 'massa', run, manual_files)
+        if inargs.runmean_window:
+            massa = timeseries.runmean(massa.data, inargs.runmean_window)
+        massa_anomaly = massa - massa[0]
+        massa_dedrifted = dedrift_data(massa_anomaly)
+        massa_dedrifted_anomaly = massa_dedrifted - massa_dedrifted[0]
+        ax_massa.plot(massa_anomaly, color=color, label=label, linestyle=style)
+        record_trend(massa_anomaly, 'Atmospheric water mass linear trend', 'kg/yr')
+        ax_massad.plot(massa_dedrifted_anomaly, color=color, label=label, linestyle=style)
+
+    ax_ohc.set_title('(a) OHC')
     ax_ohc.set_ylabel('J')
     ax_ohc.grid(linestyle=':')
     ax_ohc.ticklabel_format(useOffset=False)
     ax_ohc.yaxis.major.formatter._useMathText = True
     #plot_reference_eei(ax_ohc, max_time)
 
-    ax_ohcd.set_title('(b) OHC anomaly (linear trend removed)')
+    ax_ohcd.set_title('(b) OHC (linear trend removed)')
     ax_ohcd.set_ylabel('J')
     ax_ohcd.grid(linestyle=':')
     ax_ohcd.ticklabel_format(useOffset=False)
     ax_ohcd.yaxis.major.formatter._useMathText = True
 
-    ax_mass.set_title('(c) ocean mass anomaly')
-    ax_mass.set_xlabel('year')
-    ax_mass.set_ylabel('kg')
-    ax_mass.grid(linestyle=':')
-    ax_mass.ticklabel_format(useOffset=False)
-    ax_mass.yaxis.major.formatter._useMathText = True
+    ax_masso.set_title('(c) ocean mass')
+    ax_masso.set_ylabel('kg')
+    ax_masso.grid(linestyle=':')
+    ax_masso.ticklabel_format(useOffset=False)
+    ax_masso.yaxis.major.formatter._useMathText = True
     #plot_reference_mass(ax_mass, max_time)
 
-    ax_massd.set_title('(d) ocean mass anomaly (linear trend removed)')
-    ax_massd.set_xlabel('year')
-    ax_massd.set_ylabel('kg')
-    ax_massd.grid(linestyle=':')
-    ax_massd.ticklabel_format(useOffset=False)
-    ax_massd.yaxis.major.formatter._useMathText = True
-    ax_massd.legend(loc='center left', bbox_to_anchor=(1, 1))
+    ax_massod.set_title('(d) ocean mass (linear trend removed)')
+    ax_massod.set_ylabel('kg')
+    ax_massod.grid(linestyle=':')
+    ax_massod.ticklabel_format(useOffset=False)
+    ax_massod.yaxis.major.formatter._useMathText = True
+    ax_massod.legend(loc='center left', bbox_to_anchor=(1, 1))
+
+    ax_massa.set_title('(e) atmos water mass')
+    ax_massa.set_xlabel('year')
+    ax_massa.set_ylabel('kg')
+    ax_massa.grid(linestyle=':')
+    ax_massa.ticklabel_format(useOffset=False)
+    ax_massa.yaxis.major.formatter._useMathText = True
+
+    ax_massad.set_title('(f) atmos water mass (linear trend removed)')
+    ax_massad.set_xlabel('year')
+    ax_massad.set_ylabel('kg')
+    ax_massad.grid(linestyle=':')
+    ax_massad.ticklabel_format(useOffset=False)
+    ax_massad.yaxis.major.formatter._useMathText = True
 
     plt.savefig(inargs.outfile, bbox_inches='tight')  # dpi=400
     log_text = get_log_text(extra_log)
