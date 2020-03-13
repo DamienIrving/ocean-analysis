@@ -4,7 +4,12 @@ ACCESS-CM2_r1i1p1f1_masso: /g/data/fs38/publications/CMIP6/CMIP/CSIRO-ARCCSS/ACC
 ACCESS-ESM1-5_r1i1p1f1_thetaoga: /g/data/r87/dbi599/CMIP6/CMIP/CSIRO/ACCESS-ESM1-5/piControl/r1i1p1f1/Omon/thetaoga/gn/v20191214/thetaoga_Omon_ACCESS-ESM1-5_piControl_r1i1p1f1_gn_010101-100012.nc
 ACCESS-ESM1-5_r1i1p1f1_masso: /g/data/fs38/publications/CMIP6/CMIP/CSIRO/ACCESS-ESM1-5/piControl/r1i1p1f1/Omon/masso/gn/latest/masso_Omon_ACCESS-ESM1-5_piControl_r1i1p1f1_gn_*.nc
 E3SM-1-0_r1i1p1f1_volo: /g/data/r87/dbi599/CMIP6/CMIP/E3SM-Project/E3SM-1-0/piControl/r1i1p1f1/Omon/volo/gr/v20191007/volo_Omon_E3SM-1-0_piControl_r1i1p1f1_gr_*.nc
+E3SM-1-1_r1i1p1f1_volo: /g/data/r87/dbi599/CMIP6/CMIP/E3SM-Project/E3SM-1-1/piControl/r1i1p1f1/Omon/volo/gr/v20191028/volo_Omon_E3SM-1-1_piControl_r1i1p1f1_gr_*.nc
+EC-Earth3-Veg_r1i1p1f1_volo: /g/data/r87/dbi599/CMIP6/CMIP/EC-Earth-Consortium/EC-Earth3-Veg/piControl/r1i1p1f1/Omon/volo/gn/v20190619/volo_Omon_EC-Earth3-Veg_piControl_r1i1p1f1_gn_*.nc
+EC-Earth3-Veg_r1i1p1f1_thetaoga: /g/data/r87/dbi599/CMIP6/CMIP/EC-Earth-Consortium/EC-Earth3-Veg/piControl/r1i1p1f1/Omon/thetaoga/gn/v20190619/thetaoga_Omon_EC-Earth3-Veg_piControl_r1i1p1f1_gn_*.nc
 GISS-E2-1-G_r1i1p1f1_thetaoga: /g/data/r87/dbi599/CMIP6/CMIP/NASA-GISS/GISS-E2-1-G/piControl/r1i1p1f1/Omon/thetaoga/gn/v20180824/thetaoga_Omon_GISS-E2-1-G_piControl_r1i1p1f1_gn_415001-500012.nc
 GISS-E2-1-G-CC_r1i1p1f1_masso: /g/data/r87/dbi599/CMIP6/CMIP/NASA-GISS/GISS-E2-1-G-CC/piControl/r1i1p1f1/Omon/masso/gn/v20190815/masso_Omon_GISS-E2-1-G-CC_piControl_r1i1p1f1_gn_*.nc
 GISS-E2-1-G-CC_r1i1p1f1_thetaoga: /g/data/r87/dbi599/CMIP6/CMIP/NASA-GISS/GISS-E2-1-G-CC/piControl/r1i1p1f1/Omon/thetaoga/gn/v20190815/thetaoga_Omon_GISS-E2-1-G-CC_piControl_r1i1p1f1_gn_185001-201412.nc
+MPI-ESM-1-2-HAM_r1i1p1f1_masso: /g/data/r87/dbi599/CMIP6/CMIP/HAMMOZ-Consortium/MPI-ESM-1-2-HAM/piControl/r1i1p1f1/Omon/masso/gn/v20190627/masso_Omon_MPI-ESM-1-2-HAM_piControl_r1i1p1f1_gn_*.nc
 MPI-ESM1-2-HR_r1i1p1f1_masso: /g/data/r87/dbi599/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/piControl/r1i1p1f1/Omon/masso/gn/v20190710/masso_Omon_MPI-ESM1-2-HR_piControl_r1i1p1f1_gn_*.nc
+MPI-ESM1-2-LR_r1i1p1f1_masso: /g/data/r87/dbi599/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/piControl/r1i1p1f1/Omon/masso/gn/v20190710/masso_Omon_MPI-ESM1-2-LR_piControl_r1i1p1f1_gn_*.nc
