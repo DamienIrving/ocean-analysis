@@ -26,6 +26,7 @@ sys.path.append(modules_dir)
 try:
     import general_io as gio
     import convenient_universal as uconv
+    import spatial_weights
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -35,9 +36,13 @@ except ImportError:
 def main(inargs):
     """Run the program."""
 
-    area_cube = iris.load_cube(inargs.area_file, 'cell_area')
     prw_cube, history = gio.combine_files(inargs.prw_files, 'atmosphere_mass_content_of_water_vapor')
-    weights = uconv.broadcast_array(area_cube.data, [1, 2], prw_cube.shape)
+    if inargs.area_file:
+        area_cube = iris.load_cube(inargs.area_file, 'cell_area')
+        weights = uconv.broadcast_array(area_cube.data, [1, 2], prw_cube.shape)
+    else:
+        weights = spatial_weights.area_array(prw_cube)
+
     coord_names = [coord.name() for coord in prw_cube.dim_coords]
     massa_cube = prw_cube.collapsed(coord_names[1:], iris.analysis.SUM, weights=weights)
     units = str(massa_cube.units)
@@ -65,8 +70,9 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
                                      
     parser.add_argument("prw_files", type=str, nargs='*', help="Input prw files")
-    parser.add_argument("area_file", type=str, help="areacella file")
     parser.add_argument("outfile", type=str, help="Output file")
+
+    parser.add_argument("--area_file", type=str, default=None, help="areacella file")
 
     args = parser.parse_args()
     main(args)
