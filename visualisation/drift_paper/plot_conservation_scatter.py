@@ -76,7 +76,7 @@ institution_colors = {'BCC': '#800000',
 markers = ['o', '^', 's', '<', '>', 'v', 'p', 'D', 'd', 'h', 'H', 'X']
 
 axis_labels = {'thermal OHC': 'change in OHC temperature component, $dH_T/dt$',
-               'masso': 'change in ocean mass, $dM_o/dt$',
+               'masso': 'change in ocean mass, $dM/dt$',
                'massa': 'change in mass of atmospheric water vapor, $dM_a/dt$',
                'netTOA': 'cumulative netTOA, $dQ_r/dt$',
                'hfds': 'cumulative ocean surface heat flux, $dQ_h/dt$',
