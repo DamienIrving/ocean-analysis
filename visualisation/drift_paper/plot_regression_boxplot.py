@@ -37,7 +37,8 @@ def set_legend(ax):
                   "netTOA vs thermal OHC": "$Q_r$ vs. $H_T$",
                   "wfo vs masso": "$Q_m$ vs. $M$",
                   "wfo vs soga": "$Q_m$ vs. $S$",
-                  "masso vs soga": "$M$ vs. $S$"}
+                  "masso vs soga": "$M$ vs. $S$",
+                  "wfa vs massa": "$Q_{pe}$ vs. $M_a$"}
     
     handles, old_labels = ax.get_legend_handles_labels()
     new_labels = []
@@ -57,9 +58,10 @@ def main(inargs):
     
     sns.boxplot(x="project", y="regression coefficient", hue="comparison",
                 data=df[df['realm'] == 'energy'], ax=axes[0], palette='hot')
-    axes[0].set_title('(a) heat budget')
+    axes[0].set_title('(a) energy budget')
     axes[0].set_ylim(-0.25, 1.75)
     axes[0].axhline(y=1.0, color='0.5', linewidth=0.2)
+    axes[0].xaxis.label.set_visible(False)
     set_legend(axes[0])
     
     sns.boxplot(x="project", y="regression coefficient", hue="comparison",
@@ -67,6 +69,7 @@ def main(inargs):
     axes[1].set_title('(b) mass budget')
     axes[1].set_ylim(-0.25, 1.75)
     axes[1].axhline(y=1.0, color='0.5', linewidth=0.2)
+    axes[1].xaxis.label.set_visible(False)
     set_legend(axes[1])
     
     for ax in axes.flat:
