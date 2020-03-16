@@ -745,7 +745,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
         wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
         calc_trend(wfo_cumsum_anomaly, 'cumulative wfo', 'kg')
         ax_top.plot(wfo_cumsum_anomaly, color='tab:gray',
-                    label='cumulative freshwater flux ($Q_m$)')
+                    label='cumulative ocean freshwater flux ($Q_m$)')
 
         wfo_linear_dedrifted = dedrift_data(wfo_cumsum_anomaly, fit='linear')
         wfo_cubic_dedrifted = dedrift_data(wfo_cumsum_anomaly, fit='cubic')
@@ -791,7 +791,7 @@ def plot_atmosphere(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
         massa_anomaly_data = massa_data - massa_data[0]
         calc_trend(massa_anomaly_data, 'global atmospheric water mass', 'kg')
         ax_top.grid(linestyle=':')
-        ax_top.plot(massa_anomaly_data, color='tab:purple', label='atmospheric water mass')
+        ax_top.plot(massa_anomaly_data, color='tab:purple', label='atmospheric water vapor mass ($M_a$)')
         massa_cubic_dedrifted = dedrift_data(massa_anomaly_data, fit='cubic')
         ax_middle.grid(linestyle=':')
 
@@ -801,7 +801,7 @@ def plot_atmosphere(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
         wfa_cumsum_anomaly = wfa_cumsum_data - wfa_cumsum_data[0]
         calc_trend(wfa_cumsum_anomaly, 'cumulative wfa', 'kg')
         ax_top.plot(wfa_cumsum_anomaly, color='tab:cyan',
-                    label='cumulative water flux into atmosphere (E-P)')
+                    label='cumulative moisture flux into atmosphere ($Q_{ep}$)')
         wfa_cubic_dedrifted = dedrift_data(wfa_cumsum_anomaly, fit='cubic')
 
     if cube_dict['prw'] and cube_dict['evspsbl'] and cube_dict['pr']:
