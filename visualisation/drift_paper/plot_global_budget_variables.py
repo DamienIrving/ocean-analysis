@@ -629,8 +629,9 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
 
     thermal_data_linear_dedrifted = dedrift_data(thermal_data, fit='linear')
     thermal_data_cubic_dedrifted = dedrift_data(thermal_data, fit='cubic')
+    thermal_data_cubic_dedrifted_smoothed = timeseries.runmean(thermal_data_cubic_dedrifted, 10)
     ax_middle.grid(linestyle=':')
-    ax_middle.plot(thermal_data_cubic_dedrifted, color='tab:red', label='OHC temperature component ($H_T$)')
+    ax_middle.plot(thermal_data_cubic_dedrifted_smoothed, color='tab:red', label='OHC temperature component ($H_T$)')
 
     # Optional data
 
@@ -642,7 +643,8 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         ax_top.plot(nettoa_cumsum_anomaly, color='tab:olive', label='cumulative netTOA ($Q_r$)')
         nettoa_linear_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='linear')
         nettoa_cubic_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='cubic')
-        ax_middle.plot(nettoa_cubic_dedrifted, color='tab:olive', label='cumulative netTOA ($Q_r$)')
+        nettoa_cubic_dedrifted_smoothed = timeseries.runmean(nettoa_cubic_dedrifted, 10)
+        ax_middle.plot(nettoa_cubic_dedrifted_smoothed, color='tab:olive', label='cumulative netTOA ($Q_r$)')
         calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
                         'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, annual mean)')
         calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
@@ -664,7 +666,8 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         ax_top.plot(hfds_cumsum_anomaly, color='tab:orange', label='cumulative ocean surface heat flux ($Q_h$)')
         hfds_linear_dedrifted = dedrift_data(hfds_cumsum_anomaly, fit='linear')
         hfds_cubic_dedrifted = dedrift_data(hfds_cumsum_anomaly, fit='cubic')
-        ax_middle.plot(hfds_cubic_dedrifted, color='tab:orange', label='cumulative ocean surface heat flux ($Q_h$)')
+        hfds_cubic_dedrifted_smoothed = timeseries.runmean(hfds_cubic_dedrifted, 10)
+        ax_middle.plot(hfds_cubic_dedrifted_smoothed, color='tab:orange', label='cumulative ocean surface heat flux ($Q_h$)')
         calc_regression(hfds_cubic_dedrifted, thermal_data_cubic_dedrifted,
                         'cumulative surface heat flux vs thermal OHC anomaly (cubic dedrift, annual mean)')
         calc_regression(hfds_cubic_dedrifted, thermal_data_cubic_dedrifted,
@@ -718,12 +721,14 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
 
     masso_linear_dedrifted = dedrift_data(masso_anomaly_data, fit='linear')
     masso_cubic_dedrifted = dedrift_data(masso_anomaly_data, fit='cubic')
+    masso_cubic_dedrifted_smoothed = timeseries.runmean(masso_cubic_dedrifted, 10)
     ax_middle.grid(linestyle=':')
-    ax_middle.plot(masso_cubic_dedrifted, color='tab:blue', label='ocean mass ($M$)')
+    ax_middle.plot(masso_cubic_dedrifted_smoothed, color='tab:blue', label='ocean mass ($M$)')
 
     soga_linear_dedrifted = dedrift_data(masso_from_soga, fit='linear')
     soga_cubic_dedrifted = dedrift_data(masso_from_soga, fit='cubic')
-    ax_middle.plot(soga_cubic_dedrifted, color='tab:green', label='ocean salinity ($S$)')
+    soga_cubic_dedrifted_smoothed = timeseries.runmean(soga_cubic_dedrifted, 10)
+    ax_middle.plot(soga_cubic_dedrifted_smoothed, color='tab:green', label='ocean salinity ($S$)')
     calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
                     'change in global ocean mass vs global mean salinity anomaly (cubic dedrift, annual mean)')
     calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
@@ -749,7 +754,8 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
 
         wfo_linear_dedrifted = dedrift_data(wfo_cumsum_anomaly, fit='linear')
         wfo_cubic_dedrifted = dedrift_data(wfo_cumsum_anomaly, fit='cubic')
-        ax_middle.plot(wfo_cubic_dedrifted, color='tab:gray',
+        wfo_cubic_dedrifted_smoothed = timeseries.runmean(wfo_cubic_dedrifted, 10)
+        ax_middle.plot(wfo_cubic_dedrifted_smoothed, color='tab:gray',
                        label='cumulative freshwater flux ($Q_m$)')
         
         calc_regression(wfo_cubic_dedrifted, masso_cubic_dedrifted,
