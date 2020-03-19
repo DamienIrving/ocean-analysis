@@ -72,6 +72,10 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | SAM0-UNICON | Website, [Reference](https://journals.ametsoc.org/doi/full/10.1175/JCLI-D-18-0796.1), [ES-DOC](https://explore.es-doc.org/cmip6/models/snu/sam0-unicon) | POP2 | BO, FS, *FWF* | 1. `wfo` values are zero everywhere |
 | UKESM1-0-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2019MS001739), [ES-DOC](https://explore.es-doc.org/cmip6/models/mohc/ukesm1-0-ll) | NEMO 3.6 | BO, *FS*, *FWF* | 1. constant `wfo` |
 
-
-
 *Assumed characteristics.*
+
+## Acknowledgement
+
+The [recommended acknowledgement](https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsOfUse6-1.html) when using CMIP6 data:
+
+"We acknowledge the World Climate Research Programme, which, through its Working Group on Coupled Modelling, coordinated and promoted CMIP6. We thank the climate modeling groups for producing and making available their model output, the Earth System Grid Federation (ESGF) for archiving the data and providing access, and the multiple funding agencies who support CMIP6 and ESGF."
