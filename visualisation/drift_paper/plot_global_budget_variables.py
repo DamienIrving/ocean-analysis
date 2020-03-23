@@ -655,36 +655,47 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
                         'cumulative netTOA radiative flux vs thermal OHC anomaly (linear dedrift, decadal mean)', decadal_mean=True)
 
     if cube_dict['hfds']:
-        net_surface_heat_flux_data = cube_dict['hfds'].data
+        net_surface_ocean_heat_flux_data = cube_dict['hfds'].data
+        net_ocean_heat_flux_data = cube_dict['hfds'].data
         if cube_dict['hfds'] and cube_dict['hfgeou']:
-            net_surface_heat_flux_data = net_surface_heat_flux_data + cube_dict['hfgeou'].data
+            net_ocean_heat_flux_data = net_ocean_heat_flux_data + cube_dict['hfgeou'].data
         if cube_dict['hfds'] and cube_dict['hfcorr']:
-            net_surface_heat_flux_data = net_surface_heat_flux_data + cube_dict['hfcorr'].data
-        hfds_cumsum_data = numpy.cumsum(net_surface_heat_flux_data)
-        hfds_cumsum_anomaly = hfds_cumsum_data - hfds_cumsum_data[0]
-        calc_trend(hfds_cumsum_anomaly, 'cumulative hfds', 'J')
-        ax_top.plot(hfds_cumsum_anomaly, color='tab:orange', label='cumulative ocean surface heat flux ($Q_h$)')
-        hfds_linear_dedrifted = dedrift_data(hfds_cumsum_anomaly, fit='linear')
-        hfds_cubic_dedrifted = dedrift_data(hfds_cumsum_anomaly, fit='cubic')
-        hfds_cubic_dedrifted_smoothed = timeseries.runmean(hfds_cubic_dedrifted, 10)
-        ax_middle.plot(hfds_cubic_dedrifted_smoothed, color='tab:orange', label='cumulative ocean surface heat flux ($Q_h$)')
-        calc_regression(hfds_cubic_dedrifted, thermal_data_cubic_dedrifted,
-                        'cumulative surface heat flux vs thermal OHC anomaly (cubic dedrift, annual mean)')
-        calc_regression(hfds_cubic_dedrifted, thermal_data_cubic_dedrifted,
-                        'cumulative surface heat flux vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
-        calc_regression(hfds_linear_dedrifted, thermal_data_linear_dedrifted,
-                        'cumulative surface heat flux vs thermal OHC anomaly (linear dedrift, annual mean)')
-        calc_regression(hfds_linear_dedrifted, thermal_data_linear_dedrifted,
-                        'cumulative surface heat flux vs thermal OHC anomaly (linear dedrift, decadal mean)', decadal_mean=True)
+            net_ocean_heat_flux_data = net_ocean_heat_flux_data + cube_dict['hfcorr'].data
+
+        hfdsgeou_cumsum_data = numpy.cumsum(net_ocean_heat_flux_data)
+        hfdsgeou_cumsum_anomaly = hfdsgeou_cumsum_data - hfdsgeou_cumsum_data[0]
+        calc_trend(hfdsgeou_cumsum_anomaly, 'cumulative hfdsgeou', 'J')
+        ax_top.plot(hfdsgeou_cumsum_anomaly, color='tab:orange', label='cumulative heat flux into ocean ($Q_h$)')
+
+        if cube_dict['hfgeou'] or cube_dict['hfcorr']:
+            hfds_cumsum_data = numpy.cumsum(net_surface_ocean_heat_flux_data)
+            hfds_cumsum_anomaly = hfds_cumsum_data - hfds_cumsum_data[0]
+            calc_trend(hfds_cumsum_anomaly, 'cumulative hfds', 'J')
+            ax_top.plot(hfds_cumsum_anomaly, color='tab:orange', linestyle=':', label='cumulative surface ocean heat flux')
+        else:
+            calc_trend(hfdsgeou_cumsum_anomaly, 'cumulative hfds', 'J')
+
+        hfdsgeou_linear_dedrifted = dedrift_data(hfdsgeou_cumsum_anomaly, fit='linear')
+        hfdsgeou_cubic_dedrifted = dedrift_data(hfdsgeou_cumsum_anomaly, fit='cubic')
+        hfdsgeou_cubic_dedrifted_smoothed = timeseries.runmean(hfdsgeou_cubic_dedrifted, 10)
+        ax_middle.plot(hfdsgeou_cubic_dedrifted_smoothed, color='tab:orange', label='cumulative heat flux into ocean ($Q_h$)')
+        calc_regression(hfdsgeou_cubic_dedrifted, thermal_data_cubic_dedrifted,
+                        'cumulative heat flux into ocean vs thermal OHC anomaly (cubic dedrift, annual mean)')
+        calc_regression(hfdsgeou_cubic_dedrifted, thermal_data_cubic_dedrifted,
+                        'cumulative heat flux into ocean vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
+        calc_regression(hfdsgeou_linear_dedrifted, thermal_data_linear_dedrifted,
+                        'cumulative heat flux into ocean vs thermal OHC anomaly (linear dedrift, annual mean)')
+        calc_regression(hfdsgeou_linear_dedrifted, thermal_data_linear_dedrifted,
+                        'cumulative heat flux into ocean vs thermal OHC anomaly (linear dedrift, decadal mean)', decadal_mean=True)
         if cube_dict['rsdt'] and cube_dict['rlut'] and cube_dict['rsut']:
-            calc_regression(nettoa_cubic_dedrifted, hfds_cubic_dedrifted,
-                            'cumulative netTOA radiative flux vs cumulative surface heat flux (cubic dedrift, annual mean)')
-            calc_regression(nettoa_cubic_dedrifted, hfds_cubic_dedrifted,
-                            'cumulative netTOA radiative flux vs cumulative surface heat flux (cubic dedrift, decadal mean)', decadal_mean=True)
-            calc_regression(nettoa_linear_dedrifted, hfds_linear_dedrifted,
-                            'cumulative netTOA radiative flux vs cumulative surface heat flux (linear dedrift, annual mean)')
-            calc_regression(nettoa_linear_dedrifted, hfds_linear_dedrifted,
-                            'cumulative netTOA radiative flux vs cumulative surface heat flux (linear dedrift, decadal mean)', decadal_mean=True)
+            calc_regression(nettoa_cubic_dedrifted, hfdsgeou_cubic_dedrifted,
+                            'cumulative netTOA radiative flux vs cumulative heat flux into ocean (cubic dedrift, annual mean)')
+            calc_regression(nettoa_cubic_dedrifted, hfdsgeou_cubic_dedrifted,
+                            'cumulative netTOA radiative flux vs cumulative heat flux into ocean (cubic dedrift, decadal mean)', decadal_mean=True)
+            calc_regression(nettoa_linear_dedrifted, hfdsgeou_linear_dedrifted,
+                            'cumulative netTOA radiative flux vs cumulative heat flux into ocean (linear dedrift, annual mean)')
+            calc_regression(nettoa_linear_dedrifted, hfdsgeou_linear_dedrifted,
+                            'cumulative netTOA radiative flux vs cumulative heat flux into ocean (linear dedrift, decadal mean)', decadal_mean=True)
 
     if ylim:
         ax_top.set_ylim(ylim[0] * 1e24, ylim[1] * 1e24)
