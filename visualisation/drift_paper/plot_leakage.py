@@ -74,8 +74,8 @@ def main(inargs):
         cmip_line = ncmip5 - 0.5
         print('x-value for CMIP dividing line:', cmip_line)
 
-    df['atmos energy leakage (J yr-1)'] = df['netTOA (J yr-1)'] - df['hfds (J yr-1)']
-    df['ocean energy leakage (J yr-1)'] = df['hfds (J yr-1)'] - df['thermal OHC (J yr-1)']
+    df['atmos energy leakage (J yr-1)'] = df['netTOA (J yr-1)'] - df['hfdsgeou (J yr-1)']
+    df['ocean energy leakage (J yr-1)'] = df['hfdsgeou (J yr-1)'] - df['thermal OHC (J yr-1)']
     df['total energy leakage (J yr-1)'] = df['netTOA (J yr-1)'] - df['thermal OHC (J yr-1)']
 
     df_leakage = df[['total energy leakage (J yr-1)',

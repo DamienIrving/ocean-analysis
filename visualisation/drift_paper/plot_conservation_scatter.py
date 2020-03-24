@@ -79,7 +79,7 @@ axis_labels = {'thermal OHC': 'change in OHC temperature component, $dH_T/dt$',
                'masso': 'change in ocean mass, $dM/dt$',
                'massa': 'change in mass of atmospheric water vapor, $dM_a/dt$',
                'netTOA': 'cumulative netTOA, $dQ_r/dt$',
-               'hfds': 'cumulative ocean surface heat flux, $dQ_h/dt$',
+               'hfdsgeou': 'cumulative heat flux into ocean, $dQ_h/dt$',
                'soga': 'change in ocean salinity, $dS/dt$',
                'wfo': 'cumulative freshwater flux into ocean, $dQ_m/dt$',
                'wfa': 'cumulative moisture flux into atmosphere, $dQ_{ep}/dt$'}
@@ -428,9 +428,9 @@ def main(inargs):
     ocean_energy_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace,
                                  subplot_spec=gs[0, 1], d=0.0)
     #ocean_energy_ax = fig.add_subplot(gs[0, 1])
-    plot_broken_comparison(ocean_energy_ax, df, '(b) ocean energy conservation', 'hfds (J yr-1)',
+    plot_broken_comparison(ocean_energy_ax, df, '(b) ocean energy conservation', 'hfdsgeou (J yr-1)',
                            'thermal OHC (J yr-1)', 'W m-2', xpad=25, ypad=45, broken=True)
-    handles, labels = update_legend_info(ocean_energy_ax, df[['hfds (J yr-1)', 'thermal OHC (J yr-1)']],
+    handles, labels = update_legend_info(ocean_energy_ax, df[['hfdsgeou (J yr-1)', 'thermal OHC (J yr-1)']],
                                          handles, labels)
 
     # Ocean mass conservation
