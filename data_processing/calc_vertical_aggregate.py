@@ -38,7 +38,7 @@ except ImportError:
 def main(inargs):
     """Run the program."""
 
-    cube, history = gio.combine_files(inargs.infiles, inargs.var)
+    cube, history = gio.combine_files(inargs.infiles, inargs.var, checks=True)
 
     if inargs.annual:
         cube = timeseries.convert_to_annual(cube, chunk=False)  

@@ -302,11 +302,20 @@ def combine_cubes(cube_list, new_calendar=None):
     return cube
 
 
-def combine_files(files, var, new_calendar=None):
+def combine_files(files, var, new_calendar=None, checks=False):
     """Create an iris cube from multiple input files."""
 
     cube_list = iris.load(files, check_iris_var(var), callback=save_history)
     cube = combine_cubes(cube_list, new_calendar=new_calendar)   
+    if checks:
+        if var == 'water_flux_into_sea_water':
+            cube = check_wfo_sign(cube)
+        if cube.long_name == 'Ocean Grid-Cell Area':
+            global_area = cube.data.sum()
+            check_global_ocean_area(global_area)
+        if var == 'ocean_volume':
+            global_volume = cube.data.sum()
+            check_global_ocean_volume(global_volume)
 
     return cube, history
 
