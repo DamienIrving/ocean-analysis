@@ -175,6 +175,7 @@ def time_adjustment(first_data_cube, coefficient_cube, timescale, branch_time=No
         branch_time_value = float(branch_time) + adjustment
     else:
         branch_time_value = float(first_data_cube.attributes['branch_time']) + adjustment
+        # TODO: In CMIP6 'branch_time' is 'branch_time_in_parent' 
     branch_time_unit = coefficient_cube.attributes['time_unit']
     assert 'days' in branch_time_unit
     branch_time_calendar = coefficient_cube.attributes['time_calendar']
@@ -230,26 +231,29 @@ def check_data(new_cube, orig_cube, infile):
 def main(inargs):
     """Run the program."""
     
-    first_data_cube = iris.load_cube(inargs.data_files[0], gio.check_iris_var(inargs.var))
-    if inargs.annual:
-        assert inargs.timescale == 'annual'
-        first_data_cube = timeseries.convert_to_annual(first_data_cube, chunk=12)
-
+    # Read drift coefficients
     coefficient_a_cube = iris.load_cube(inargs.coefficient_file, 'coefficient a')
     coefficient_b_cube = iris.load_cube(inargs.coefficient_file, 'coefficient b')
     coefficient_c_cube = iris.load_cube(inargs.coefficient_file, 'coefficient c')
     coefficient_d_cube = iris.load_cube(inargs.coefficient_file, 'coefficient d')
-
-    coord_names = [coord.name() for coord in first_data_cube.coords(dim_coords=True)]
-    assert coord_names[0] == 'time'
     if inargs.coefficient_check and (inargs.var in ['sea_water_potential_temperature', 'sea_water_salinity']):
         sanity_summary = coefficient_sanity_check(coefficient_a_cube, coefficient_b_cube, coefficient_c_cube, 
                                                   coefficient_d_cube, inargs.var)
     else:
         sanity_summary = None
 
+    # Read first data cube to get some information
+    first_data_cube = iris.load_cube(inargs.data_files[0], gio.check_iris_var(inargs.var))
+    coord_names = [coord.name() for coord in first_data_cube.coords(dim_coords=True)]
+    assert coord_names[0] == 'time'
+    
+    if inargs.annual:
+        assert inargs.timescale == 'annual'
+        first_data_cube = timeseries.convert_to_annual(first_data_cube, chunk=12)
+
     time_diff, branch_time, new_time_unit = time_adjustment(first_data_cube, coefficient_a_cube,
                                                             inargs.timescale, branch_time=inargs.branch_time)
+                
     data_history = first_data_cube.attributes['history']
     del first_data_cube
 
