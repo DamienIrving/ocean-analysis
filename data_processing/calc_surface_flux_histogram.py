@@ -41,9 +41,29 @@ except ImportError:
 
 # Define functions
 
+def add_globe(outdata, basin_values, basin_cube):
+    """Add a global basin.
+
+    Includes all basins (including Arctic) but not marginal seas.
+
+    """
+
+    global_data = outdata[:, :, 0:-1].sum(axis=-1)
+    global_data = global_data[..., numpy.newaxis]
+    outdata = numpy.ma.concatenate((outdata, global_data), axis=-1)
+
+    basin_values = numpy.append(basin_values, 18)
+    flag_values = basin_cube.attributes['flag_values'] + ' 18'
+    flag_meanings = basin_cube.attributes['flag_meanings'] + ' globe'
+
+    return outdata, basin_values, flag_values, flag_meanings
+
+
 def construct_cube(outdata, flux_cube, bin_cube, basin_cube, years, 
                    bin_values, bin_edges, bin_units, basin_values, log):
     """Create the iris cube for output"""
+    
+    outdata, basin_values, flag_values, flag_meanings = add_globe(outdata, basin_values, basin_cube)
 
     year_coord = iris.coords.DimCoord(years,
                                       standard_name=flux_cube.coord('year').standard_name,
@@ -64,8 +84,8 @@ def construct_cube(outdata, flux_cube, bin_cube, basin_cube, years,
                                        long_name=basin_cube.long_name,
                                        var_name=basin_cube.var_name,
                                        units=basin_cube.units,
-                                       attributes={'flag_values': basin_cube.attributes['flag_values'],
-                                                   'flag_meanings': basin_cube.attributes['flag_meanings']})
+                                       attributes={'flag_values': flag_values,
+                                                   'flag_meanings': flag_meanings})
     
     dim_coords_list = [(year_coord, 0), (bin_coord, 1), (basin_coord, 2)]
 
@@ -124,6 +144,10 @@ def main(inargs):
     bin_step = inargs.bin_size
     bin_edges = numpy.arange(bin_min, bin_max + bin_step, bin_step)
     bin_values = (bin_edges[1:] + bin_edges[:-1]) / 2
+    if bin_cube.ndim == 4:
+        bin_coord_names = [coord.name() for coord in bin_cube.dim_coords]
+        bin_cube = bin_cube[:, 0, ::]
+        bin_cube.remove_coord(bin_coord_names[1])
 
     # Multiply flux by area
 
