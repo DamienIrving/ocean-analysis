@@ -296,9 +296,6 @@ def combine_cubes(cube_list, new_calendar=None):
     if 'time' in coord_names:
         cube = check_time_units(cube, new_calendar=new_calendar)
 
-    #if 'salinity' in cube.standard_name:
-    #    cube = salinity_unit_check(cube)
-
     return cube
 
 
@@ -316,6 +313,8 @@ def combine_files(files, var, new_calendar=None, checks=False):
         if var == 'ocean_volume':
             global_volume = cube.data.sum()
             check_global_ocean_volume(global_volume)
+        if var == 'sea_water_salinity':
+            cube = salinity_unit_check(cube)
 
     return cube, history
 
