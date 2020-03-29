@@ -89,6 +89,7 @@ def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False
 
     """
     
+    time_var = coord_names[0]
     if 'depth' in coord_names:
         assert coord_names[1] == 'depth', 'coordinate order must be time, depth, ...'
         out_shape = list(cube.shape)
@@ -98,7 +99,7 @@ def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False
             print('Depth:', cube_slice.coord('depth').points[0])
             if convert_annual:
                 cube_slice = timeseries.convert_to_annual(cube_slice, chunk=chunk_annual)
-            time_axis = cube_slice.coord('time').points  #.astype(numpy.float32)
+            time_axis = cube_slice.coord(time_var).points  #.astype(numpy.float32)
             coefficients[:,d, ::] = numpy.ma.apply_along_axis(polyfit, 0, cube_slice.data, time_axis,
                                                               masked_array, outlier_threshold)
         fill_value = cube_slice.data.fill_value 
@@ -106,7 +107,7 @@ def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False
     else:
         if convert_annual:
             cube = timeseries.convert_to_annual(cube)
-        time_axis = cube.coord('time').points  # .astype(numpy.float32)
+        time_axis = cube.coord(time_var).points  # .astype(numpy.float32)
         if cube.ndim == 1:
             coefficients = polyfit(cube.data, time_axis, masked_array, outlier_threshold)
         else:   
@@ -122,65 +123,40 @@ def calc_coefficients(cube, coord_names, masked_array=True, convert_annual=False
     return coefficients, time_start, time_end
 
 
-def set_global_atts(inargs, cube):
+def set_global_atts(inargs, cube, infile1, history):
     """Set global attributes."""
 
     atts = copy.copy(cube.attributes)
     atts['polynomial'] = 'a + bx + cx^2 + dx^3'
-    try:
-        #atts['history'] = gio.write_metadata(file_info={inargs.infiles[0]: history[0]})   
-        atts['history'] = cmdprov.new_log(infile_history={inargs.infiles[0]: history[0]}, git_repo=repo_dir)
+    try:   
+        atts['history'] = cmdprov.new_log(infile_history={infile1: history}, git_repo=repo_dir)
     except IndexError:
         pass
 
     return atts
 
 
-def check_units(cube, variable, magnitude_check=True):
-    """Check that the units are valid."""
-
-    if variable == 'sea_water_salinity':
-        if magnitude_check:
-            salinity_mean = cube.data.mean() 
-            assert 2.0 < salinity_mean < 55.0
-        cube.units = 'g/kg' 
-
-    return cube
-
-
-def concatenate_cube(cube_list):
-    """Concatenate cube_list"""
-
-    equalise_attributes(cube_list)
-    cube = cube_list.concatenate_cube()
-    cube = gio.check_time_units(cube)
-
-    coord_names = [coord.name() for coord in cube.coords(dim_coords=True)]
-    assert coord_names[0] == 'time', "First axis must be time"
-
-    return cube, coord_names
-
-
 def main(inargs):
     """Run the program."""
 
     # Read the data
-    cubes = iris.load(inargs.infiles, gio.check_iris_var(inargs.var), callback=save_history)
-    global_atts = set_global_atts(inargs, cubes[0])
-    masked_array = is_masked_array(cubes[0].data)
-
-    iris.util.unify_time_units(cubes)
-    cube, coord_names = concatenate_cube(cubes)
+    cube, history = gio.combine_files(inargs.infiles, inargs.var, checks=True)
+    global_atts = set_global_atts(inargs, cube, inargs.infiles[0], history)
+    masked_array = is_masked_array(cube[0, ::].data)
+    coord_names = [coord.name() for coord in cube.coords(dim_coords=True)]
+    time_var = coord_names[0]
+    assert time_var in ['time', 'year']
 
     # Coefficients cube
     coefficients, time_start, time_end = calc_coefficients(cube, coord_names, masked_array=masked_array,
                                                            convert_annual=inargs.annual,
                                                            chunk_annual=inargs.chunk,
                                                            outlier_threshold=inargs.outlier_threshold)
-    global_atts['time_unit'] = str(cube.coord('time').units)
-    global_atts['time_calendar'] = str(cube.coord('time').units.calendar)
-    global_atts['time_start'] = time_start
-    global_atts['time_end'] = time_end
+    if time_var == 'time':
+        global_atts['time_unit'] = str(cube.coord('time').units)
+        global_atts['time_calendar'] = str(cube.coord('time').units.calendar)
+    global_atts['time_start'] = str(time_start)
+    global_atts['time_end'] = str(time_end)
 
     dim_coords = []
     for i, coord_name in enumerate(coord_names[1:]):
@@ -209,27 +185,17 @@ def main(inargs):
                                   attributes=global_atts,
                                   dim_coords_and_dims=dim_coords,
                                   aux_coords_and_dims=aux_coords) 
-        if letter == 'a':
-            new_cube = check_units(new_cube, inargs.var, magnitude_check=True)
-        else:
-            new_cube = check_units(new_cube, inargs.var, magnitude_check=False)
         out_cubes.append(new_cube)
 
     # First decadal mean cube
-    assert coord_names[0] == 'time'
     end = 10 
-    time_mean = cube[0:end, ::].collapsed('time', iris.analysis.MEAN)
-    time_mean.remove_coord('time')
-    time_mean = check_units(time_mean, inargs.var, magnitude_check=True)
+    time_mean = cube[0:end, ::].collapsed(time_var, iris.analysis.MEAN)
+    time_mean.remove_coord(time_var)
     time_mean.attributes = global_atts
     out_cubes.append(time_mean)
 
     # Write output file  
-  
-#    for cube in out_cubes:
-#        assert cube.data.dtype == numpy.float32
     cube_list = iris.cube.CubeList(out_cubes)
-
     iris.save(cube_list, inargs.outfile)
 
 
