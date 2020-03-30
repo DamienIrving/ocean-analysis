@@ -104,9 +104,9 @@ def construct_cube(outdata_dict,
                                           units=sunits,
                                           bounds=s_bounds)
 
-    basin_values = numpy.append(basin_values, 18)
-    flag_values = basin_cube.attributes['flag_values'] + ' 18'
-    flag_meanings = basin_cube.attributes['flag_meanings'] + ' globe'
+    b_values = numpy.append(b_values, 18)
+    flag_values = bcube.attributes['flag_values'] + ' 18'
+    flag_meanings = bcube.attributes['flag_meanings'] + ' globe'
     basin_coord = iris.coords.DimCoord(b_values,
                                        standard_name=bcube.standard_name,
                                        long_name=bcube.long_name,
