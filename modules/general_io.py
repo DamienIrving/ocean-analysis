@@ -279,7 +279,7 @@ def combine_cubes(cube_list, new_calendar=None):
 
     equalise_attributes(cube_list)
     iris.util.unify_time_units(cube_list)
-    ref_dtype = cube_list[0].data.dtype
+    ref_dtype = cube_list[0].dtype
     for cube in cube_list:
         dim_coord_names = [coord.name() for coord in cube.dim_coords]
         if 'time' in dim_coord_names:
@@ -287,7 +287,7 @@ def combine_cubes(cube_list, new_calendar=None):
         aux_coord_names = [coord.name() for coord in cube.aux_coords]
         if 'year' in aux_coord_names:
             cube.coord('year').attributes = {}
-        if cube.data.dtype != ref_dtype:
+        if cube.dtype != ref_dtype:
             cube.data = cube.data.astype(ref_dtype)
     cube = cube_list.concatenate_cube()
     cube = iris.util.squeeze(cube)
