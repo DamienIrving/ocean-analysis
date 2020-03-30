@@ -57,17 +57,31 @@ def get_bounds_list(edges):
     return numpy.array(bounds_list)
 
 
-def construct_cube(w_tbin_data, ws_tbin_data, wt_tbin_data,
-                   w_sbin_data, ws_sbin_data, wt_sbin_data,
+def add_globe(data):
+    """Add a global basin.
+
+    Includes all basins (including Arctic) but not marginal seas.
+    """
+
+    global_data = data[:, :, 0:-1].sum(axis=-1)
+    global_data = global_data[..., numpy.newaxis]
+    data = numpy.ma.concatenate((data, global_data), axis=-1)
+
+    return data
+
+
+def construct_cube(outdata_dict,
                    wobj, wattributes, bcube, scube, tcube, sunits, tunits, years,
                    t_values, t_edges, s_values, s_edges, b_values, log):
     """Create the iris cube for output
 
     wobj is an iris.cube.Cube or xarray.core.dataarray.DataArray
 
+    """
 
-"""
-
+    for key, data in outdata_dict.items():
+        outdata_dict[key] = add_globe(data)
+    
     year_coord = iris.coords.DimCoord(years,
                                       standard_name=scube.coord('year').standard_name,
                                       long_name=scube.coord('year').long_name,
@@ -90,13 +104,16 @@ def construct_cube(w_tbin_data, ws_tbin_data, wt_tbin_data,
                                           units=sunits,
                                           bounds=s_bounds)
 
+    basin_values = numpy.append(basin_values, 18)
+    flag_values = basin_cube.attributes['flag_values'] + ' 18'
+    flag_meanings = basin_cube.attributes['flag_meanings'] + ' globe'
     basin_coord = iris.coords.DimCoord(b_values,
                                        standard_name=bcube.standard_name,
                                        long_name=bcube.long_name,
                                        var_name=bcube.var_name,
                                        units=bcube.units,
-                                       attributes={'flag_values': bcube.attributes['flag_values'],
-                                                   'flag_meanings': bcube.attributes['flag_meanings']})
+                                       attributes={'flag_values': flag_values,
+                                                   'flag_meanings': flag_meanings})
     
     tbin_dim_coords_list = [(year_coord, 0), (temperature_coord, 1), (basin_coord, 2)]
     sbin_dim_coords_list = [(year_coord, 0), (salinity_coord, 1), (basin_coord, 2)]
@@ -104,7 +121,7 @@ def construct_cube(w_tbin_data, ws_tbin_data, wt_tbin_data,
 
     w_tbin_std_name = wobj.standard_name + '_binned_by_temperature'
     iris.std_names.STD_NAMES[w_tbin_std_name] = {'canonical_units': str(wobj.units)}
-    w_tbin_cube = iris.cube.Cube(w_tbin_data,
+    w_tbin_cube = iris.cube.Cube(outdata_dict['w_tbin'],
                                  standard_name=w_tbin_std_name,
                                  long_name=wobj.long_name + ' binned by temperature',
                                  var_name=wvar + '_tbin',
@@ -115,7 +132,7 @@ def construct_cube(w_tbin_data, ws_tbin_data, wt_tbin_data,
     ws_tbin_std_name = scube.standard_name + '_times_' + wobj.standard_name + '_binned_by_temperature'
     ws_units = str(sunits) + ' ' + str(wobj.units)
     iris.std_names.STD_NAMES[ws_tbin_std_name] = {'canonical_units': ws_units}
-    ws_tbin_cube = iris.cube.Cube(ws_tbin_data,
+    ws_tbin_cube = iris.cube.Cube(outdata_dict['ws_tbin'],
                                   standard_name=ws_tbin_std_name,
                                   long_name=scube.long_name + ' times ' + wobj.long_name + ' binned by temperature',
                                   var_name=scube.var_name + '_' + wvar + '_tbin',
@@ -126,7 +143,7 @@ def construct_cube(w_tbin_data, ws_tbin_data, wt_tbin_data,
     wt_tbin_std_name = tcube.standard_name + '_times_' + wobj.standard_name + '_binned_by_temperature'
     wt_units = str(tunits) + ' ' + str(wobj.units)
     iris.std_names.STD_NAMES[wt_tbin_std_name] = {'canonical_units': wt_units}
-    wt_tbin_cube = iris.cube.Cube(wt_tbin_data,
+    wt_tbin_cube = iris.cube.Cube(outdata_dict['wt_tbin'],
                                   standard_name=wt_tbin_std_name,
                                   long_name=tcube.long_name + ' times ' + wobj.long_name + ' binned by temperature',
                                   var_name=tcube.var_name + '_' + wvar + '_tbin',
@@ -136,7 +153,7 @@ def construct_cube(w_tbin_data, ws_tbin_data, wt_tbin_data,
 
     w_sbin_std_name = wobj.standard_name + '_binned_by_salinity'
     iris.std_names.STD_NAMES[w_sbin_std_name] = {'canonical_units': str(wobj.units)}
-    w_sbin_cube = iris.cube.Cube(w_sbin_data,
+    w_sbin_cube = iris.cube.Cube(outdata_dict['w_sbin'],
                                  standard_name=w_sbin_std_name,
                                  long_name=wobj.long_name + ' binned by salinity',
                                  var_name=wvar + '_sbin',
@@ -146,7 +163,7 @@ def construct_cube(w_tbin_data, ws_tbin_data, wt_tbin_data,
 
     ws_sbin_std_name = scube.standard_name + '_times_' + wobj.standard_name + '_binned_by_salinity'
     iris.std_names.STD_NAMES[ws_sbin_std_name] = {'canonical_units': ws_units}
-    ws_sbin_cube = iris.cube.Cube(ws_sbin_data,
+    ws_sbin_cube = iris.cube.Cube(outdata_dict['ws_sbin'],
                                   standard_name=ws_sbin_std_name,
                                   long_name=scube.long_name + ' times ' + wobj.long_name + ' binned by salinity',
                                   var_name=scube.var_name + '_' + wvar + '_sbin',
@@ -156,7 +173,7 @@ def construct_cube(w_tbin_data, ws_tbin_data, wt_tbin_data,
 
     wt_sbin_std_name = tcube.standard_name + '_times_' + wobj.standard_name + '_binned_by_salinity'
     iris.std_names.STD_NAMES[wt_sbin_std_name] = {'canonical_units': wt_units}
-    wt_sbin_cube = iris.cube.Cube(wt_sbin_data,
+    wt_sbin_cube = iris.cube.Cube(outdata_dict['wt_sbin'],
                                   standard_name=wt_sbin_std_name,
                                   long_name=tcube.long_name + ' times ' + wobj.long_name + ' binned by salinity',
                                   var_name=tcube.var_name + '_' + wvar + '_sbin',
@@ -286,14 +303,14 @@ def main(inargs):
         w_tbin_outdata[index, :, :], ws_tbin_outdata[index, :, :], wt_tbin_outdata[index, :, :] = bin_data(df, 'temperature', t_edges, b_edges, ntimes)
         w_sbin_outdata[index, :, :], ws_sbin_outdata[index, :, :], wt_sbin_outdata[index, :, :] = bin_data(df, 'salinity', s_edges, b_edges, ntimes)
 
-    w_tbin_outdata = numpy.ma.masked_invalid(w_tbin_outdata)
-    ws_tbin_outdata = numpy.ma.masked_invalid(ws_tbin_outdata)
-    wt_tbin_outdata = numpy.ma.masked_invalid(wt_tbin_outdata)
-    w_sbin_outdata = numpy.ma.masked_invalid(w_sbin_outdata)
-    ws_sbin_outdata = numpy.ma.masked_invalid(ws_sbin_outdata)
-    wt_sbin_outdata = numpy.ma.masked_invalid(wt_sbin_outdata)
-    outcube_list = construct_cube(w_tbin_outdata, ws_tbin_outdata, wt_tbin_outdata,
-                                  w_sbin_outdata, ws_sbin_outdata, wt_sbin_outdata,
+    outdata_dict = {}
+    outdata_dict['w_tbin'] = numpy.ma.masked_invalid(w_tbin_outdata)
+    outdata_dict['ws_tbin'] = numpy.ma.masked_invalid(ws_tbin_outdata)
+    outdata_dict['wt_tbin'] = numpy.ma.masked_invalid(wt_tbin_outdata)
+    outdata_dict['w_sbin'] = numpy.ma.masked_invalid(w_sbin_outdata)
+    outdata_dict['ws_sbin'] = numpy.ma.masked_invalid(ws_sbin_outdata)
+    outdata_dict['wt_sbin'] = numpy.ma.masked_invalid(wt_sbin_outdata)
+    outcube_list = construct_cube(outdata_dict,
                                   wobj, wattributes, bcube, scube, tcube, sunits, tunits, years, 
                                   t_values, t_edges, s_values, s_edges, b_values, log)
 
