@@ -12,11 +12,10 @@ import os
 import re
 import pdb
 import argparse
-
 import numpy
 import matplotlib.pyplot as plt
-
 import iris
+import cf_units
 import cmdline_provenance as cmdprov
 
 
@@ -42,6 +41,20 @@ import general_io as gio
 
 # Define functions 
 
+def get_title(infile, var, index_list):
+    """Get the plot title."""
+
+    cube = iris.load_cube(infile, var)
+    title = ''
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    for posnum, index in enumerate(index_list):
+        point_name = coord_names[posnum + 1]
+        point_value = cube.coord(point_name).points[index]
+        title = f"{title} {point_name}: {point_value};"
+
+    return title
+
+
 def select_point(cube, index_list, timeseries=False):
     """Select a given grid point."""
 
@@ -59,7 +72,7 @@ def select_point(cube, index_list, timeseries=False):
     elif len(index_list) == 3:
         a, b, c = index_list
         point = cube[:, a, b, c] if timeseries else cube[a, b, c]
-
+        
     return point
  
 
@@ -96,16 +109,6 @@ def cubic_fit(infile, grid_point, time_axis):
     return cubic_data, a_cube
 
 
-def get_title(grid_point):
-    """Get the plot title."""
-
-    title = "Grid point: "
-    for index in grid_point:
-        title = title + str(index) + " "
-
-    return title
-
-
 def main(inargs):
     """Run the program."""
 
@@ -113,9 +116,9 @@ def main(inargs):
 
     # Read data
     control_cube, control_history = read_data(inargs.control_files, inargs.variable,
-                                              inargs.grid_point, convert_to_annual=True)
+                                              inargs.grid_point, convert_to_annual=False)
     experiment_cube, experiment_history = read_data(inargs.experiment_files, inargs.variable,
-                                                    inargs.grid_point, convert_to_annual=True)
+                                                    inargs.grid_point, convert_to_annual=False)
     dedrifted_cube, dedrifted_history = read_data(inargs.dedrifted_files, inargs.variable,
                                                   inargs.grid_point, convert_to_annual=False)
 
@@ -123,37 +126,49 @@ def main(inargs):
     metadata_dict[inargs.experiment_files[0]] = experiment_history
     metadata_dict[inargs.dedrifted_files[0]] = dedrifted_history
 
+    coord_names = [coord.name() for coord in control_cube.dim_coords]
+    time_var = coord_names[0]
+    assert time_var in ['time', 'year']
     cubic_data, a_cube = cubic_fit(inargs.coefficient_file, inargs.grid_point,
-                                   control_cube.coord('time').points)
+                                   control_cube.coord(time_var).points)
     #TODO: coeff metadata    
 
     # Time axis adjustment
-    first_data_cube = iris.load_cube(inargs.experiment_files[0], inargs.variable)
-    first_data_cube = select_point(first_data_cube, inargs.grid_point, timeseries=True)
-    first_data_cube = timeseries.convert_to_annual(first_data_cube)
-    time_diff, branch_time, new_time_unit = remove_drift.time_adjustment(first_data_cube, a_cube, 'annual')
-
-    time_coord = experiment_cube.coord('time')
-    time_coord.convert_units(new_time_unit)
-    experiment_time_values = time_coord.points.astype(numpy.float32) - time_diff
+    if time_var == 'time':
+        first_data_cube = iris.load_cube(inargs.experiment_files[0], inargs.variable)
+        first_data_cube = select_point(first_data_cube, inargs.grid_point, timeseries=True)
+        #first_data_cube = timeseries.convert_to_annual(first_data_cube)
+        time_diff, branch_time, new_time_unit = remove_drift.time_adjustment(first_data_cube, a_cube, 'annual')
+        time_coord = experiment_cube.coord('time')
+        time_coord.convert_units(new_time_unit)
+        experiment_time_values = time_coord.points.astype(numpy.float32) - time_diff
+    elif time_var == 'year':
+        control_time_units = experiment_cube.attributes['parent_time_units']
+        branch_time = experiment_cube.attributes['branch_time_in_parent']
+        branch_datetime = cf_units.num2date(branch_time, control_time_units, cf_units.CALENDAR_STANDARD)
+        branch_year = branch_datetime.year
+        experiment_time_values = numpy.arange(branch_year, branch_year + experiment_cube.shape[0])
 
     # Plot
     fig = plt.figure(figsize=[14, 7])
-    plt.plot(control_cube.coord('time').points, control_cube.data, label='control')
+    plt.plot(control_cube.coord(time_var).points, control_cube.data, label='control')
     plt.plot(experiment_time_values, experiment_cube.data, label='experiment')
     plt.plot(experiment_time_values, dedrifted_cube.data, label='dedrifted')
-    plt.plot(control_cube.coord('time').points, cubic_data, label='cubic fit')
+    plt.plot(control_cube.coord(time_var).points, cubic_data, label='cubic fit')
     if inargs.outlier_threshold:
         data, outlier_idx = timeseries.outlier_removal(control_cube.data, inargs.outlier_threshold)
-        plt.plot(control_cube.coord('time').points[outlier_idx], control_cube.data[outlier_idx],
+        plt.plot(control_cube.coord(time_var).points[outlier_idx], control_cube.data[outlier_idx],
                  marker='o', linestyle='none', color='r', alpha=0.3)
     if inargs.ylim:
         ymin, ymax = inargs.ylim
         plt.ylim(ymin, ymax)
     plt.ylabel(inargs.variable)
-    plt.xlabel(str(new_time_unit))
+    if time_var == 'time':
+        plt.xlabel(str(new_time_unit))
+    else:
+        plt.xlabel('control run year')
     plt.legend()
-    title = get_title(inargs.grid_point)
+    title = get_title(inargs.control_files, inargs.variable, inargs.grid_point)
     plt.title(title)
 
     # Save output
