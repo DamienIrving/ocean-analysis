@@ -44,7 +44,7 @@ import general_io as gio
 def get_title(infile, var, index_list):
     """Get the plot title."""
 
-    cube = iris.load_cube(infile, var)
+    cube = iris.load_cube(infile, gio.check_iris_var(var))
     title = ''
     coord_names = [coord.name() for coord in cube.dim_coords]
     for posnum, index in enumerate(index_list):
@@ -162,7 +162,7 @@ def main(inargs):
     if inargs.ylim:
         ymin, ymax = inargs.ylim
         plt.ylim(ymin, ymax)
-    plt.ylabel(inargs.variable)
+    plt.ylabel(f"{gio.check_iris_var(inargs.variable)} ({control_cube.units})")
     if time_var == 'time':
         plt.xlabel(str(new_time_unit))
     else:
