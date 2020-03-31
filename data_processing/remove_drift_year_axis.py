@@ -66,7 +66,7 @@ def main(inargs):
                                                                    coefficient_d_cube.data, poly_start=None)
 
     new_cube = data_cube - drift_signal
-    remove_drift.check_data(new_cube, data_cube, inargs.data_file)
+    #remove_drift.check_data(new_cube, data_cube, inargs.data_file)
     new_cube.metadata = data_cube.metadata
             
     metadata_dict = {inargs.data_file: data_cube.attributes['history'], 
