@@ -5,31 +5,52 @@
 # To execute:
 #   make -n -B -f water_mass_dedrift.mk  (-n is a dry run) (-B is a force make)
 
-all : ${TARGET}
+all : plot
 
-# System configuration
+include water_mass_dedrift_config.mk
 
-PYTHON=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
-DATA_SCRIPT_DIR=/home/599/dbi599/ocean-analysis/data_processing
 
-# Analysis configuration
+# File definitions
 
-MODEL = ACCESS-CM2
-INSTITUTION = CSIRO-ARCCSS
-RUN = r1i1p1f1
-GRID = gn
-HIST_VERSION = v20191108
-HIST_TIME = 185001-201412
-CNTRL_VERSION = v20191112
-NCI_DATA_DIR = /g/data/fs38/publications/CMIP6/CMIP
-MY_DATA_DIR = /g/data/r87/dbi599/CMIP6/CMIP
+VOLCELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Ofx/volcello/${GRID}/${HIST_VERSION}/volcello_Ofx_${MODEL}_historical_${RUN}_${GRID}.nc
+BASIN_FILE=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Ofx/basin/${GRID}/${HIST_VERSION}/basin_Ofx_${MODEL}_historical_${RUN}_${GRID}.nc
+SALINITY_FILES_HIST := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/so/${GRID}/${HIST_VERSION}/so*.nc) 
+TEMPERATURE_FILES_HIST := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/thetao/${GRID}/${HIST_VERSION}/thetao*.nc)
+SALINITY_FILES_CNTRL := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/so/${GRID}/${CNTRL_VERSION}/so*.nc) 
+TEMPERATURE_FILES_CNTRL := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/thetao/${GRID}/${CNTRL_VERSION}/thetao*.nc)
 
-VOLCELLO_FILE = ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Ofx/volcello/${GRID}/${HIST_VERSION}/volcello_Ofx_${MODEL}_historical_${RUN}_${GRID}.nc
-BASIN_FILE = ${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Ofx/basin/${GRID}/${HIST_VERSION}/basin_Ofx_${MODEL}_historical_${RUN}_${GRID}.nc
-SALINITY_FILES := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/so/${GRID}/${HIST_VERSION}/so*.nc) 
-TEMPERATURE_FILES := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/thetao/${GRID}/${HIST_VERSION}/thetao*.nc)
 
-${WATER_MASS_FILE_HIST} = ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/water-mass/${GRID}/${HIST_VERSION}/water-mass_Omon_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}.nc
-${WATER_MASS_FILE_HIST} : ${VOLCELLO_FILE} ${BASIN_FILE} ${SALINITY_FILES} ${TEMPERATURE_FILES}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_water_mass_components.py $< $(word 2,$^) $@ --salinity_files $(word 3,$^) --temperature_files $(word 4,$^) 
-	
+# Water mass files
+
+WATER_MASS_DIR_HIST=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/water-mass/${GRID}/${HIST_VERSION}
+WATER_MASS_FILE_HIST=${WATER_MASS_DIR_HIST}/water-mass_Omon_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}.nc
+${WATER_MASS_FILE_HIST} : ${VOLCELLO_FILE} ${BASIN_FILE}
+	mkdir -p ${WATER_MASS_DIR_HIST}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_water_mass_components.py $< $(word 2,$^) $@ --salinity_files ${SALINITY_FILES_HIST} --temperature_files ${TEMPERATURE_FILES_HIST}
+
+WATER_MASS_DIR_CNTRL=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/water-mass/${GRID}/${CNTRL_VERSION}
+WATER_MASS_FILE_CNTRL=${WATER_MASS_DIR_CNTRL}/water-mass_Omon_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}.nc
+${WATER_MASS_FILE_CNTRL} : ${VOLCELLO_FILE} ${BASIN_FILE}
+	mkdir -p ${WATER_MASS_DIR_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_water_mass_components.py $< $(word 2,$^) $@ --salinity_files ${SALINITY_FILES_CNTRL} --temperature_files ${TEMPERATURE_FILES_CNTRL}
+
+
+# Drift removal
+
+DRIFT_COEFFICIENT_FILE=${WATER_MASS_DIR_CNTRL}/volcello-tbin-coefficients_Omon_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}.nc
+${DRIFT_COEFFICIENT_FILE} : ${WATER_MASS_FILE_CNTRL}
+	${PYTHON}  ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< Ocean_Grid-Cell_Volume_binned_by_temperature $@
+
+DEDRIFTED_FILE=${WATER_MASS_DIR_HIST}/volcello-tbin-dedrifted_Omon_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}.nc
+${DEDRIFTED_FILE} : ${WATER_MASS_FILE_HIST} ${DRIFT_COEFFICIENT_FILE}
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift_year_axis.py $< Ocean_Grid-Cell_Volume_binned_by_temperature $(word 2,$^) $@
+
+# Plot
+
+PLOT_FILE=/g/data/r87/dbi599/temp/volcello-tbin-dedrifted_Omon_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}_bin6.png
+plot : ${DRIFT_COEFFICIENT_FILE} ${WATER_MASS_FILE_CNTRL} ${WATER_MASS_FILE_HIST} ${DEDRIFTED_FILE}
+	echo ${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py Ocean_Grid-Cell_Volume_binned_by_temperature $< ${PLOT_FILE} --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 6 -1
+
+
+
+
