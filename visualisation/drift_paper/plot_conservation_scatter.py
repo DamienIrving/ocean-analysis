@@ -414,7 +414,7 @@ def main(inargs):
     df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
     fig = plt.figure(figsize=[18.5, 21])  # width, height
     gs = GridSpec(3, 2)
-
+    pdb.set_trace()
     # EEI conservation
     eei_ax = fig.add_subplot(gs[0, 0])
     plot_broken_comparison(eei_ax, df, '(a) planetary energy imbalance', 'netTOA (J yr-1)',
@@ -459,7 +459,7 @@ def main(inargs):
     atmos_mass_ax = fig.add_subplot(gs[2, :])
     plot_broken_comparison(atmos_mass_ax, df, '(e) atmospheric mass conservation', 'massa (kg yr-1)', 'wfa (kg yr-1)',
                            'kg yr-1', scale_factor=-12, ypad=20)
-    handles, labels = get_legend_info(atmos_mass_ax, df[['wfa (kg yr-1)']])
+    handles, labels = update_legend_info(atmos_mass_ax, df[['wfa (kg yr-1)']], handles, labels)
 
     fig.legend(handles, labels, loc='center left', bbox_to_anchor=(0.815, 0.5))
     plt.tight_layout(rect=(0, 0, 0.8, 1))
