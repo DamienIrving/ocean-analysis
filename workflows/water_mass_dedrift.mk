@@ -12,8 +12,8 @@ include water_mass_dedrift_config.mk
 
 # File definitions
 
-VOLCELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Ofx/volcello/${GRID}/${HIST_VERSION}/volcello_Ofx_${MODEL}_historical_${RUN}_${GRID}.nc
-BASIN_FILE=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Ofx/basin/${GRID}/${HIST_VERSION}/basin_Ofx_${MODEL}_historical_${RUN}_${GRID}.nc
+VOLCELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_historical_${RUN}_${GRID}.nc
+BASIN_FILE=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Ofx/basin/${GRID}/${BASIN_VERSION}/basin_Ofx_${MODEL}_historical_${RUN}_${GRID}.nc
 SALINITY_FILES_HIST := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/so/${GRID}/${HIST_VERSION}/so*.nc) 
 TEMPERATURE_FILES_HIST := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/thetao/${GRID}/${HIST_VERSION}/thetao*.nc)
 SALINITY_FILES_CNTRL := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/so/${GRID}/${CNTRL_VERSION}/so*.nc) 
@@ -49,7 +49,7 @@ ${DEDRIFTED_FILE} : ${WATER_MASS_FILE_HIST} ${DRIFT_COEFFICIENT_FILE}
 
 PLOT_FILE=/g/data/r87/dbi599/temp/volcello-tbin-dedrifted_Omon_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}_bin6.png
 plot : ${DRIFT_COEFFICIENT_FILE} ${WATER_MASS_FILE_CNTRL} ${WATER_MASS_FILE_HIST} ${DEDRIFTED_FILE}
-	echo ${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py Ocean_Grid-Cell_Volume_binned_by_temperature $< ${PLOT_FILE} --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 6 -1
+	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py Ocean_Grid-Cell_Volume_binned_by_temperature $< ${PLOT_FILE} --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 6 -1
 
 
 
