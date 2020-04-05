@@ -287,6 +287,9 @@ def combine_cubes(cube_list, new_calendar=None):
         aux_coord_names = [coord.name() for coord in cube.aux_coords]
         if 'year' in aux_coord_names:
             cube.coord('year').attributes = {}
+        for coord_name in aux_coord_names:
+            if 'history' in cube.coord(coord_name).attributes:
+                del cube.coord(coord_name).attributes['history']
         if cube.dtype != ref_dtype:
             cube.data = cube.data.astype(ref_dtype)
     cube = cube_list.concatenate_cube()
