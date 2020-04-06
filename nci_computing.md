@@ -78,5 +78,7 @@ $ cat job.txt
 command...
 
 ```
-Use `qstat -u dbi599` to check status of jobs (job state definitions [here](https://www.jlab.org/hpc/PBS/qstat.html)) and `qdel <jobid>` to kill one.
+Use `qstat -u dbi599 -sw` to check status of jobs (job state definitions [here](https://www.jlab.org/hpc/PBS/qstat.html)) and `qdel <jobid>` to kill one.
+
+For large memory, single core jobs it's better to submit to the `hugemem` instead of `normal` queue. 
   
