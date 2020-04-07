@@ -143,10 +143,13 @@ def main(inargs):
         time_coord.convert_units(new_time_unit)
         experiment_time_values = time_coord.points.astype(numpy.float32) - time_diff
     elif time_var == 'year':
-        control_time_units = experiment_cube.attributes['parent_time_units']
-        branch_time = experiment_cube.attributes['branch_time_in_parent']
-        branch_datetime = cf_units.num2date(branch_time, control_time_units, cf_units.CALENDAR_STANDARD)
-        branch_year = branch_datetime.year
+        if inargs.branch_year:
+            branch_year = inargs.branch_year
+        else:
+            control_time_units = experiment_cube.attributes['parent_time_units']
+            branch_time = experiment_cube.attributes['branch_time_in_parent']
+            branch_datetime = cf_units.num2date(branch_time, control_time_units, cf_units.CALENDAR_STANDARD)
+            branch_year = branch_datetime.year
         experiment_time_values = numpy.arange(branch_year, branch_year + experiment_cube.shape[0])
 
     # Plot
@@ -213,6 +216,8 @@ author:
 
     parser.add_argument("--ylim", type=float, nargs=2, metavar=('MIN', 'MAX'), default=None,
                         help="limits for y axis")
+    
+    parser.add_argument("--branch_year", type=int, default=None, help="override metadata")
 
     args = parser.parse_args()             
     main(args)

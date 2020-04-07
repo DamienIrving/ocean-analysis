@@ -43,6 +43,7 @@ def get_branch_year(data_cube):
     branch_time = data_cube.attributes['branch_time_in_parent']
     branch_datetime = cf_units.num2date(branch_time, control_time_units, cf_units.CALENDAR_STANDARD)
     branch_year = branch_datetime.year
+    print(branch_year)
 
     return branch_year
 
@@ -59,7 +60,10 @@ def main(inargs):
     coord_names = [coord.name() for coord in data_cube.coords(dim_coords=True)]
     assert coord_names[0] == 'year'
     
-    branch_year = get_branch_year(data_cube)
+    if inargs.branch_year:
+        branch_year = inargs.branch_year
+    else:
+        branch_year = get_branch_year(data_cube)
     time_values = numpy.arange(branch_year, branch_year + data_cube.shape[0]) 
     drift_signal, start_polynomial = remove_drift.apply_polynomial(time_values, coefficient_a_cube.data,
                                                                    coefficient_b_cube.data, coefficient_c_cube.data,
@@ -97,6 +101,8 @@ notes:
     parser.add_argument("var", type=str, help="Variable standard_name")
     parser.add_argument("coefficient_file", type=str, help="Drift coefficient file")
     parser.add_argument("outfile", type=str, help="outfile")
+
+    parser.add_argument("--branch_year", type=int, default=None, help="override metadata")
 
     args = parser.parse_args()            
 
