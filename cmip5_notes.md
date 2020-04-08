@@ -1,5 +1,11 @@
 # CMIP5 data
 
+## Citing the data
+
+Get the DataCite DOI for each model/experiment at [this table](http://www.ipcc-data.org/sim/gcm_monthly/AR5/Reference-Archive.html).
+
+"We acknowledge the World Climate Research Programme’s Working Group on Coupled Modelling, which is responsible for CMIP, and we thank the climate modeling groups for producing and making available their model output. CMIP data can be accessed at the ESGF website (https://esgf‐node.llnl.gov/projects/esgf‐llnl/). For CMIP the U.S. Department of Energy’s Program for Climate Model Diagnosis and Intercomparison provides coordinating support and led development of software infrastructure in partnership with the Global Organization for Earth System Science Portals."
+
 ## Model documentation
 
 * New [PCMDI website](http://pcmdi.github.io/)
