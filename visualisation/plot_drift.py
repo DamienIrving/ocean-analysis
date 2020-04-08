@@ -146,7 +146,7 @@ def main(inargs):
         if inargs.branch_year:
             branch_year = inargs.branch_year
         else:
-            control_time_units = experiment_cube.attributes['parent_time_units']
+            control_time_units = gio.fix_time_descriptor(experiment_cube.attributes['parent_time_units'])
             branch_time = experiment_cube.attributes['branch_time_in_parent']
             branch_datetime = cf_units.num2date(branch_time, control_time_units, cf_units.CALENDAR_STANDARD)
             branch_year = branch_datetime.year

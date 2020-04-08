@@ -158,23 +158,42 @@ def check_iris_var(var, alternate_names=False):
     return var
 
 
-def check_time_units(cube, new_calendar=None):
-    """Check time axis units.
+def fix_time_descriptor(time_unit_text):
+    """Fix common problems with netCDF time descriptor if necessary.
 
     Iris requires "days since YYYY-MM-DD".
 
     Known issues in CMIP data files:
       Not including the day (e.g. days since 0001-01)
+      Including hours, minutes and seconds (e.g. days since 1850-01-01-00-00-00)
 
     """
+
+    missing_day_pattern = 'days since ([0-9]{4})-([0-9]{2})$'
+    if bool(re.search(missing_day_pattern, time_unit_text)):
+        time_unit_text = time_unit_text + '-01'
+    
+    hr_min_sec_pattern = 'days since ([0-9]{4})-([0-9]{2})-([0-9]{2})-([0-9]{2})-([0-9]{2})-([0-9]{2})$'
+    if bool(re.search(hr_min_sec_pattern, time_unit_text)):
+        time_unit_text = time_unit_text[0:-9]
+
+    valid_pattern = 'days since ([0-9]{4})-([0-9]{2})-([0-9]{2})$'
+    assert bool(re.search(valid_pattern, time_unit_text)), 'Time units not in days since YYYY-MM-DD format'
+
+    return time_unit_text
+
+
+def check_time_units(cube, new_calendar=None):
+    """Check time axis units."""
 
     time_units = str(cube.coord('time').units)
     calendar = new_calendar if new_calendar else cube.coord('time').units.calendar
     
-    missing_day_pattern = 'days since ([0-9]{4})-([0-9]{2})$'
-    if bool(re.search(missing_day_pattern, time_units)):
-        cube.coord('time').units = cf_units.Unit(time_units+'-01', calendar=calendar)
-    elif new_calendar:
+    fixed_time_units = fix_time_descriptor(time_unit_text)
+    altered_units_flag = fixed_time_units != time_unit_text
+    time_units = fixed_time_units
+    
+    if altered_units_flag or new_calendar:
         cube.coord('time').units = cf_units.Unit(time_units, calendar=calendar)
 
     return cube

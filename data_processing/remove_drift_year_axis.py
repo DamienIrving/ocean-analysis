@@ -39,11 +39,11 @@ except ImportError:
 def get_branch_year(data_cube):
     """Get the year of the branching in control run."""
 
-    control_time_units = data_cube.attributes['parent_time_units']
+    control_time_units = gio.fix_time_descriptor(data_cube.attributes['parent_time_units'])
     branch_time = data_cube.attributes['branch_time_in_parent']
     branch_datetime = cf_units.num2date(branch_time, control_time_units, cf_units.CALENDAR_STANDARD)
     branch_year = branch_datetime.year
-    print(branch_year)
+    print(f"Branch year: {branch_year}")
 
     return branch_year
 
