@@ -1,5 +1,12 @@
 # CMIP6
 
+## Citation
+
+Get the dataset DOI from the [lookup tables](https://redmine.dkrz.de/projects/cmip6-lta-and-data-citation/wiki/CMIP6_Data_References).
+
+"We acknowledge the World Climate Research Programme, which, through its Working Group on Coupled Modelling, coordinated and promoted CMIP6. We thank the climate modeling groups for producing and making available their model output, the Earth System Grid Federation (ESGF) for archiving the data and providing access, and the multiple funding agencies who support CMIP6 and ESGF."
+
+
 ## Resources
 
 * [ESMValTool](http://esmvaltool.org) is the global community tool for simple analysis
