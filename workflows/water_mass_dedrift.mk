@@ -12,8 +12,8 @@ include water_mass_dedrift_config.mk
 
 # File definitions
 
-VOLCELLO_FILE=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_historical_${RUN}_${GRID}.nc
-BASIN_FILE=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Ofx/basin/${GRID}/${BASIN_VERSION}/basin_Ofx_${MODEL}_historical_${RUN}_${GRID}.nc
+VOLCELLO_FILE=${VOLCELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
+BASIN_FILE=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/basin/${GRID}/${BASIN_VERSION}/basin_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
 SALINITY_FILES_HIST := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/so/${GRID}/${HIST_VERSION}/so*.nc) 
 TEMPERATURE_FILES_HIST := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/thetao/${GRID}/${HIST_VERSION}/thetao*.nc)
 SALINITY_FILES_CNTRL := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/so/${GRID}/${CNTRL_VERSION}/so*.nc) 
