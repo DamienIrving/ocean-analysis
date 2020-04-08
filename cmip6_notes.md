@@ -4,8 +4,9 @@
 
 Get the dataset DOI from the [lookup tables](https://redmine.dkrz.de/projects/cmip6-lta-and-data-citation/wiki/CMIP6_Data_References).
 
-"We acknowledge the World Climate Research Programme, which, through its Working Group on Coupled Modelling, coordinated and promoted CMIP6. We thank the climate modeling groups for producing and making available their model output, the Earth System Grid Federation (ESGF) for archiving the data and providing access, and the multiple funding agencies who support CMIP6 and ESGF."
+The [recommended acknowledgement](https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsOfUse6-1.html) when using CMIP6 data:
 
+"We acknowledge the World Climate Research Programme, which, through its Working Group on Coupled Modelling, coordinated and promoted CMIP6. We thank the climate modeling groups for producing and making available their model output, the Earth System Grid Federation (ESGF) for archiving the data and providing access, and the multiple funding agencies who support CMIP6 and ESGF."
 
 ## Resources
 
@@ -58,7 +59,7 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | CESM2 | Website, Reference, [ES-DOC](https://explore.es-doc.org/cmip6/models/ncar/cesm2) |  |  |  |
 | CESM2-WACCM | Website, [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2017MS001232), ES-DOC |  |  |  |
 | CNRM-CM6-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019MS001683), ES-DOC | NEMO 3.6 | BO, *FS*, *FWF* | 1. `wfo` wrong sign <br> 2. `masso` is not `volo` * `rhozero` <br> 3. missing dimension coordinates for x and y <br> 4. `so` and `thetao` files use different time chunks |
-| CNRM-ESM2-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), Reference, ES-DOC | NEMO 3.6 | BO, *FS*, *FWF* | 1. `wfo` wrong sign <br> 2. `masso` is not `volo` * `rhozero` <br> 3. `so` and `thetao` files use different time chunks |
+| CNRM-ESM2-1 | [Website](http://www.umr-cnrm.fr/cmip6/spip.php?rubrique8), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2019MS001791), ES-DOC | NEMO 3.6 | BO, *FS*, *FWF* | 1. `wfo` wrong sign <br> 2. `masso` is not `volo` * `rhozero` <br> 3. `so` and `thetao` files use different time chunks |
 | E3SM-1-0 | [Website](https://e3sm.org/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2018MS001603), ES-DOC |  |  | 1. the missing value for land in `so` and `thetao` files (and possibly others) is 1.0 <br> 2. the historical experiment data doesn't span 1850-2014 |
 | EC-Earth3 | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | 1. missing years in piControl `thetaoga` data <br>  2. `masso` is not `volo` * `rhozero` <br> 3. `wfo` wrong sign |
 | EC-Earth3-Veg | [Website](http://www.ec-earth.org/cmip6/ec-earth-in-cmip6/),  Reference, ES-DOC | NEMO v? | BO, *FS*, *FWF* | 1. missing years in control `thetaoga` data <br> 2. `wfo` does not equal `wfonocorr` <br> 3. `masso` is not `volo` * `rhozero` <br> 4. `wfo` wrong sign <br> 5. The `branch_time` is listed as the year 2030 when it should be 1930 |
@@ -73,6 +74,7 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | MIROC6 | Website, [Reference](https://www.geosci-model-dev.net/12/2727/2019/), [ES-DOC](https://explore.es-doc.org/cmip6/models/miroc/miroc6) | | | |
 | MIROC-ES2L | Website, [Reference](https://www.geosci-model-dev-discuss.net/gmd-2019-275/), [ES-DOC](https://explore.es-doc.org/cmip6/models/miroc/miroc-es2l) | | | |
 | MPI-ESM1-2-HR | [Website](https://www.mpimet.mpg.de/en/science/projects/integrated-activities/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2018MS001400), ES-DOC |  |  |  |
+| MPI-ESM1-2-LR | [Website](https://www.mpimet.mpg.de/en/science/projects/integrated-activities/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2018MS001400@10.1002/(ISSN)1942-2466.MPIESM1-2), ES-DOC |  |  |  |
 | NESM3 | Website, [Reference](https://www.geosci-model-dev.net/11/2975/2018/), ES-DOC |  |  | 1. historical data doesn't go beyond 1999 <br> 2. curvilinear ocean grid and no `Ofx` data, so must be regridded using `regrid.py` first | 
 | NorCPM1 | [Website](https://wiki.uib.no/norcpm/index.php/Norwegian_Climate_Prediction_Model), Reference, ES-DOC | | | 1. can use the gn `areacello` data (which has depth coord in metres) with gr data |
 | NorESM2-LM | Website, Reference, ES-DOC | | | 1. bogus gn `volcello` data |
@@ -80,9 +82,3 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | UKESM1-0-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2019MS001739), [ES-DOC](https://explore.es-doc.org/cmip6/models/mohc/ukesm1-0-ll) | NEMO 3.6 | BO, *FS*, *FWF* | 1. constant `wfo` |
 
 *Assumed characteristics.*
-
-## Acknowledgement
-
-The [recommended acknowledgement](https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsOfUse6-1.html) when using CMIP6 data:
-
-"We acknowledge the World Climate Research Programme, which, through its Working Group on Coupled Modelling, coordinated and promoted CMIP6. We thank the climate modeling groups for producing and making available their model output, the Earth System Grid Federation (ESGF) for archiving the data and providing access, and the multiple funding agencies who support CMIP6 and ESGF."
