@@ -165,7 +165,9 @@ def fix_time_descriptor(time_unit_text):
 
     Known issues in CMIP data files:
       Not including the day (e.g. days since 0001-01)
-      Including hours, minutes and seconds (e.g. days since 1850-01-01-00-00-00)
+      Including hours, minutes and seconds 
+        e.g. days since 1850-01-01-00-00-00
+        e.g. days since 1850-01-01 00:00:00
 
     """
 
@@ -173,7 +175,7 @@ def fix_time_descriptor(time_unit_text):
     if bool(re.search(missing_day_pattern, time_unit_text)):
         time_unit_text = time_unit_text + '-01'
     
-    hr_min_sec_pattern = 'days since ([0-9]{4})-([0-9]{2})-([0-9]{2})-([0-9]{2})-([0-9]{2})-([0-9]{2})$'
+    hr_min_sec_pattern = 'days since ([0-9]{4})-([0-9]{2})-([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2})$'
     if bool(re.search(hr_min_sec_pattern, time_unit_text)):
         time_unit_text = time_unit_text[0:-9]
 
@@ -189,8 +191,8 @@ def check_time_units(cube, new_calendar=None):
     time_units = str(cube.coord('time').units)
     calendar = new_calendar if new_calendar else cube.coord('time').units.calendar
     
-    fixed_time_units = fix_time_descriptor(time_unit_text)
-    altered_units_flag = fixed_time_units != time_unit_text
+    fixed_time_units = fix_time_descriptor(time_units)
+    altered_units_flag = fixed_time_units != time_units
     time_units = fixed_time_units
     
     if altered_units_flag or new_calendar:
