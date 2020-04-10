@@ -168,16 +168,14 @@ def fix_time_descriptor(time_unit_text):
       Including hours, minutes and seconds 
         e.g. days since 1850-01-01-00-00-00
         e.g. days since 1850-01-01 00:00:00
-
+        e.g. days since 1850-01-01 0:0:0.0
     """
 
     missing_day_pattern = 'days since ([0-9]{4})-([0-9]{2})$'
     if bool(re.search(missing_day_pattern, time_unit_text)):
         time_unit_text = time_unit_text + '-01'
-    
-    hr_min_sec_pattern = 'days since ([0-9]{4})-([0-9]{2})-([0-9]{2}).([0-9]{2}).([0-9]{2}).([0-9]{2})$'
-    if bool(re.search(hr_min_sec_pattern, time_unit_text)):
-        time_unit_text = time_unit_text[0:-9]
+
+    time_unit_text = time_unit_text[0:21]  # gets rid of hours, minutes, seconds
 
     valid_pattern = 'days since ([0-9]{4})-([0-9]{2})-([0-9]{2})$'
     assert bool(re.search(valid_pattern, time_unit_text)), 'Time units not in days since YYYY-MM-DD format'
