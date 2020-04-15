@@ -17,7 +17,7 @@ VOLCELLO_FILE=${VOLCELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/volce
 BASIN_FILE=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/basin/${GRID}/${BASIN_VERSION}/basin_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
 SALINITY_FILES_HIST := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/so/${GRID}/${HIST_VERSION}/so*.nc) 
 TEMPERATURE_FILES_HIST := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/thetao/${GRID}/${HIST_VERSION}/thetao*.nc)
-TOS_FILES_HIST := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/tos/${GRID}/${HIST_VERSION}/tos*.nc)
+TOS_FILES_HIST := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/${TOS_VAR}/${GRID}/${HIST_VERSION}/${TOS_VAR}*.nc)
 WFO_FILES_HIST := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/wfo/${GRID}/${HIST_VERSION}/wfo*.nc)
 SALINITY_FILES_CNTRL := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/so/${GRID}/${CNTRL_VERSION}/so*.nc) 
 TEMPERATURE_FILES_CNTRL := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/thetao/${GRID}/${CNTRL_VERSION}/thetao*.nc)
@@ -25,10 +25,10 @@ TEMPERATURE_FILES_CNTRL := $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/pi
 # wfo(year, tos, basin), "Water Flux Into Sea Water"
 
 WFO_BINNED_DIR_HIST=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/wfo/${GRID}/${HIST_VERSION}
-WFO_BINNED_FILE_HIST=${WFO_BINNED_DIR_HIST}/wfo-tos-binned_Omon_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}.nc
+WFO_BINNED_FILE_HIST=${WFO_BINNED_DIR_HIST}/wfo-${TOS_VAR}-binned_Omon_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}.nc
 ${WFO_BINNED_FILE_HIST} : ${AREACELLO_FILE} ${BASIN_FILE}
 	mkdir -p ${WFO_BINNED_DIR_HIST}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_surface_flux_histogram.py ${WFO_FILES_HIST} water_flux_into_sea_water $< $(word 2,$^) $@ --bin_files ${TOS_FILES_HIST} --bin_var sea_surface_temperature
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_surface_flux_histogram.py ${WFO_FILES_HIST} water_flux_into_sea_water $< $(word 2,$^) $@ --bin_files ${TOS_FILES_HIST} --bin_var ${TOS_LONG_NAME}
 
 
 # surface water mass variables
@@ -90,7 +90,7 @@ ${SOVOL_PLOT_FILE} : ${SOVOL_DRIFT_COEFFICIENT_FILE} ${WATER_MASS_FILE_CNTRL} ${
 # targets
 
 wfo : ${WFO_BINNED_FILE_HIST}
-	echo "wfo only"
+	echo ${WFO_BINNED_FILE_HIST}
 	
 volcello-tbin : ${VOL_PLOT_FILE}
 	echo "volcello_tbin"
@@ -103,5 +103,8 @@ surface : ${SURFACE_WATER_MASS_FILE_HIST}
 
 all-but-volcello-tbin : wfo surface so-volcello-tbin
 	echo "all but volcello-tbin"
+	echo ${WFO_BINNED_FILE_HIST}
+	echo ${SOVOL_DEDRIFTED_FILE}
+	echo ${SURFACE_WATER_MASS_FILE_HIST}
 
 all : wfo volcello-tbin so-volcello-tbin surface
