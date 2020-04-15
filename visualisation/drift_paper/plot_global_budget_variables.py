@@ -510,7 +510,11 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
     if cube_dict['prw']:
         ax11 = fig.add_subplot(nrows, ncols, 12)
         if cube_dict['clwvi']:
-            ax11.plot(cube_dict['clwvi'].data, color='green', label=cube_dict['clwvi'].long_name)
+            ax11a = ax11.twinx()
+            ax11a.plot(cube_dict['clwvi'].data, color='green', label=cube_dict['clwvi'].long_name)
+            ax11a.set_ylabel(cube_dict['clwvi'].units)
+            ax11a.ticklabel_format(useOffset=False)
+            ax11a.yaxis.major.formatter._useMathText = True
         plot_global_variable(ax11, cube_dict['prw'].data, 'Atmospheric Water Content',
                              cube_dict['prw'].units, 'teal', label=cube_dict['prw'].long_name, xlabel=False)
         ax11.legend()
