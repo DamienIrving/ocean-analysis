@@ -173,7 +173,7 @@ def fix_time_descriptor(time_unit_text):
     """
 
     assert 'days since' in time_unit_text
-    pdb.set_trace()
+
     missing_day_pattern = 'days since ([0-9]{4})-([0-9]{1,2})$'
     if bool(re.search(missing_day_pattern, time_unit_text)):
         time_unit_text = time_unit_text + '-01'
