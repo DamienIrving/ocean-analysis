@@ -173,14 +173,14 @@ def fix_time_descriptor(time_unit_text):
     """
 
     assert 'days since' in time_unit_text
-
+    pdb.set_trace()
     missing_day_pattern = 'days since ([0-9]{4})-([0-9]{1,2})$'
     if bool(re.search(missing_day_pattern, time_unit_text)):
         time_unit_text = time_unit_text + '-01'
 
     time_unit_text = time_unit_text[0:21]  # gets rid of hours, minutes, seconds
 
-    year, month, day = re.findall("(\d{4})-(\d{1,2})-(\d{1,2})", time_unit_text)[0]
+    year, month, day = re.findall("(\d{3,4})-(\d{1,2})-(\d{1,2})", time_unit_text)[0]
     time_unit_text = f"days since {year:0>4}-{month:0>2}-{day:0>2}"
 
     valid_pattern = 'days since ([0-9]{4})-([0-9]{2})-([0-9]{2})$'
