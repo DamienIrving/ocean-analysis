@@ -1,7 +1,7 @@
 """
 Filename:     plot_ohc_masso.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  Plot variables relevant for the global energy and water budget  
+Description:  Plot time series relevant for the global energy and water budget  
 
 """
 
@@ -356,7 +356,9 @@ def main(inargs):
     #ax_massad.ticklabel_format(useOffset=False)
     #ax_massad.yaxis.major.formatter._useMathText = True
 
-    plt.savefig(inargs.outfile, bbox_inches='tight')  # dpi=400
+    dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
+    print('dpi =', dpi)
+    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=dpi)
     log_text = get_log_text(extra_log)
     log_file = re.sub('.png', '.met', inargs.outfile)
     cmdprov.write_log(log_file, log_text)
@@ -393,8 +395,8 @@ author:
                         help="window for running mean") 
     parser.add_argument("--manual_files", type=str, default=None,
                         help="YAML file with manually entered files instead of the clef search. Keys: model_ripf_var")    
-    
-
+    parser.add_argument("--dpi", type=float, default=None,
+                        help="Figure resolution in dots per square inch [default=auto]")
 
     args = parser.parse_args()  
     assert len(args.models) == len(args.runs)

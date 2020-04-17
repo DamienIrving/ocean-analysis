@@ -447,13 +447,8 @@ def plot_raw(inargs, cube_dict, branch_year_dict, manual_file_dict):
 
     if cube_dict['soga']:
         ax5 = fig.add_subplot(nrows, ncols, 5)
-        if cube_dict['sfdsi']:
-            sfdsi_cumsum_data = numpy.cumsum(cube_dict['sfdsi'].data)
-            sfdsi_cumsum_anomaly = sfdsi_cumsum_data - sfdsi_cumsum_data[0]
-            sfdsi_cumsum_anomaly = (sfdsi_cumsum_anomaly * 1000) / cube_dict['masso'].data  #kg to g/kg
-            ax5.plot(sfdsi_cumsum_anomaly, color='red', label=cube_dict['sfdsi'].long_name, linestyle=':')
-        plot_global_variable(ax5, cube_dict['soga'].data - cube_dict['soga'].data[0], cube_dict['soga'].long_name, 'g/kg', 'orange',
-                             label=cube_dict['soga'].long_name + ' anomaly')
+        plot_global_variable(ax5, cube_dict['soga'].data, cube_dict['soga'].long_name, 'g/kg', 'orange',
+                             label=cube_dict['soga'].long_name)
         ax5.legend()
 
     if cube_dict['wfo']:
@@ -628,10 +623,6 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
     ax_top.plot(thermal_data, color='tab:red', label='OHC temperature component ($H_T$)')
     ax_top.plot(barystatic_data, color='tab:blue', label='OHC barystatic component ($H_M$)')
 
-    #ohc_anomaly_cubic_dedrifted = dedrift_data(ohc_anomaly_data, fit='cubic')
-    #ax_bottom.plot(ohc_anomaly_cubic_dedrifted, color='black')
-
-    thermal_data_linear_dedrifted = dedrift_data(thermal_data, fit='linear')
     thermal_data_cubic_dedrifted = dedrift_data(thermal_data, fit='cubic')
     thermal_data_cubic_dedrifted_smoothed = timeseries.runmean(thermal_data_cubic_dedrifted, 10)
     ax_middle.grid(linestyle=':')
@@ -645,18 +636,11 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         nettoa_cumsum_anomaly = nettoa_cumsum_data - nettoa_cumsum_data[0]
         calc_trend(nettoa_cumsum_anomaly, 'cumulative netTOA', 'J')
         ax_top.plot(nettoa_cumsum_anomaly, color='tab:olive', label='cumulative netTOA ($Q_r$)')
-        nettoa_linear_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='linear')
         nettoa_cubic_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='cubic')
         nettoa_cubic_dedrifted_smoothed = timeseries.runmean(nettoa_cubic_dedrifted, 10)
         ax_middle.plot(nettoa_cubic_dedrifted_smoothed, color='tab:olive', label='cumulative netTOA ($Q_r$)')
         calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
-                        'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, annual mean)')
-        calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
                         'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
-        calc_regression(nettoa_linear_dedrifted, thermal_data_linear_dedrifted,
-                        'cumulative netTOA radiative flux vs thermal OHC anomaly (linear dedrift, annual mean)')
-        calc_regression(nettoa_linear_dedrifted, thermal_data_linear_dedrifted,
-                        'cumulative netTOA radiative flux vs thermal OHC anomaly (linear dedrift, decadal mean)', decadal_mean=True)
 
     if cube_dict['hfds']:
         net_surface_ocean_heat_flux_data = cube_dict['hfds'].data
@@ -679,27 +663,14 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         else:
             calc_trend(hfdsgeou_cumsum_anomaly, 'cumulative hfds', 'J')
 
-        hfdsgeou_linear_dedrifted = dedrift_data(hfdsgeou_cumsum_anomaly, fit='linear')
         hfdsgeou_cubic_dedrifted = dedrift_data(hfdsgeou_cumsum_anomaly, fit='cubic')
         hfdsgeou_cubic_dedrifted_smoothed = timeseries.runmean(hfdsgeou_cubic_dedrifted, 10)
         ax_middle.plot(hfdsgeou_cubic_dedrifted_smoothed, color='tab:orange', label='cumulative heat flux into ocean ($Q_h$)')
         calc_regression(hfdsgeou_cubic_dedrifted, thermal_data_cubic_dedrifted,
-                        'cumulative heat flux into ocean vs thermal OHC anomaly (cubic dedrift, annual mean)')
-        calc_regression(hfdsgeou_cubic_dedrifted, thermal_data_cubic_dedrifted,
                         'cumulative heat flux into ocean vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
-        calc_regression(hfdsgeou_linear_dedrifted, thermal_data_linear_dedrifted,
-                        'cumulative heat flux into ocean vs thermal OHC anomaly (linear dedrift, annual mean)')
-        calc_regression(hfdsgeou_linear_dedrifted, thermal_data_linear_dedrifted,
-                        'cumulative heat flux into ocean vs thermal OHC anomaly (linear dedrift, decadal mean)', decadal_mean=True)
         if cube_dict['rsdt'] and cube_dict['rlut'] and cube_dict['rsut']:
             calc_regression(nettoa_cubic_dedrifted, hfdsgeou_cubic_dedrifted,
-                            'cumulative netTOA radiative flux vs cumulative heat flux into ocean (cubic dedrift, annual mean)')
-            calc_regression(nettoa_cubic_dedrifted, hfdsgeou_cubic_dedrifted,
                             'cumulative netTOA radiative flux vs cumulative heat flux into ocean (cubic dedrift, decadal mean)', decadal_mean=True)
-            calc_regression(nettoa_linear_dedrifted, hfdsgeou_linear_dedrifted,
-                            'cumulative netTOA radiative flux vs cumulative heat flux into ocean (linear dedrift, annual mean)')
-            calc_regression(nettoa_linear_dedrifted, hfdsgeou_linear_dedrifted,
-                            'cumulative netTOA radiative flux vs cumulative heat flux into ocean (linear dedrift, decadal mean)', decadal_mean=True)
 
     if ylim:
         ax_top.set_ylim(ylim[0] * 1e24, ylim[1] * 1e24)
@@ -734,24 +705,16 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
     ax_top.plot(masso_anomaly_data, color='tab:blue', label='ocean mass ($M$)')
     ax_top.plot(masso_from_soga, color='tab:green', label='ocean salinity ($S$)')
 
-    masso_linear_dedrifted = dedrift_data(masso_anomaly_data, fit='linear')
     masso_cubic_dedrifted = dedrift_data(masso_anomaly_data, fit='cubic')
     masso_cubic_dedrifted_smoothed = timeseries.runmean(masso_cubic_dedrifted, 10)
     ax_middle.grid(linestyle=':')
     ax_middle.plot(masso_cubic_dedrifted_smoothed, color='tab:blue', label='ocean mass ($M$)')
 
-    soga_linear_dedrifted = dedrift_data(masso_from_soga, fit='linear')
     soga_cubic_dedrifted = dedrift_data(masso_from_soga, fit='cubic')
     soga_cubic_dedrifted_smoothed = timeseries.runmean(soga_cubic_dedrifted, 10)
     ax_middle.plot(soga_cubic_dedrifted_smoothed, color='tab:green', label='ocean salinity ($S$)')
     calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
-                    'change in global ocean mass vs global mean salinity anomaly (cubic dedrift, annual mean)')
-    calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
                     'change in global ocean mass vs global mean salinity anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
-    calc_regression(masso_linear_dedrifted, soga_linear_dedrifted,
-                    'change in global ocean mass vs global mean salinity anomaly (linear dedrift, annual mean)')
-    calc_regression(masso_linear_dedrifted, soga_linear_dedrifted,
-                    'change in global ocean mass vs global mean salinity anomaly (linear dedrift, decadal mean)', decadal_mean=True)
 
     # Optional variables
     if cube_dict['wfonocorr']:
@@ -767,29 +730,15 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
         ax_top.plot(wfo_cumsum_anomaly, color='tab:gray',
                     label='cumulative ocean freshwater flux ($Q_m$)')
 
-        wfo_linear_dedrifted = dedrift_data(wfo_cumsum_anomaly, fit='linear')
         wfo_cubic_dedrifted = dedrift_data(wfo_cumsum_anomaly, fit='cubic')
         wfo_cubic_dedrifted_smoothed = timeseries.runmean(wfo_cubic_dedrifted, 10)
         ax_middle.plot(wfo_cubic_dedrifted_smoothed, color='tab:gray',
                        label='cumulative freshwater flux ($Q_m$)')
         
         calc_regression(wfo_cubic_dedrifted, masso_cubic_dedrifted,
-                        'cumulative surface freshwater flux vs change in global ocean mass (cubic dedrift, annual mean)')
-        calc_regression(wfo_cubic_dedrifted, masso_cubic_dedrifted,
-                        'cumulative surface freshwater flux vs change in global ocean mass (cubic dedrift, decadal mean)', decadal_mean=True)
-        calc_regression(wfo_linear_dedrifted, masso_linear_dedrifted,
-                        'cumulative surface freshwater flux vs change in global ocean mass (linear dedrift, annual mean)')
-        calc_regression(wfo_linear_dedrifted, masso_linear_dedrifted,
-                        'cumulative surface freshwater flux vs change in global ocean mass (linear dedrift, decadal mean)', decadal_mean=True)
-        
-        calc_regression(wfo_cubic_dedrifted, soga_cubic_dedrifted,
-                        'cumulative surface freshwater flux vs global mean salinity anomaly (cubic dedrift, annual mean)')
+                        'cumulative surface freshwater flux vs change in global ocean mass (cubic dedrift, decadal mean)', decadal_mean=True)        
         calc_regression(wfo_cubic_dedrifted, soga_cubic_dedrifted,
                         'cumulative surface freshwater flux vs global mean salinity anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
-        calc_regression(wfo_linear_dedrifted, soga_linear_dedrifted,
-                        'cumulative surface freshwater flux vs global mean salinity anomaly (linear dedrift, annual mean)')
-        calc_regression(wfo_linear_dedrifted, soga_linear_dedrifted,
-                        'cumulative surface freshwater flux vs global mean salinity anomaly (linear dedrift, decadal mean)', decadal_mean=True)
 
     if ylim:
         ax_top.set_ylim(ylim[0], ylim[1])
@@ -922,7 +871,9 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
         title = '%s, %s, piControl'  %(inargs.model, inargs.run)
         plt.suptitle(title)
 
-    plt.savefig(inargs.compfile, bbox_inches='tight')
+    dpi = inargs.dpi if inargs.dpi else plt.savefig.__globals__['rcParams']['figure.dpi']
+    print('dpi =', dpi)
+    plt.savefig(inargs.compfile, bbox_inches='tight', dpi=dpi)
 
 
 def get_branch_years(inargs, manual_file_dict, manual_branch_time):
@@ -1037,6 +988,8 @@ author:
     
     parser.add_argument("--title", action="store_true", default=False,
                         help="Include a plot title [default=False]")
+    parser.add_argument("--dpi", type=float, default=None,
+                        help="Figure resolution in dots per square inch [default=auto]")
 
     args = parser.parse_args()             
     main(args)
