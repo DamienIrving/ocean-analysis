@@ -414,7 +414,7 @@ def main(inargs):
     df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
     fig = plt.figure(figsize=[18.5, 21])  # width, height
     gs = GridSpec(3, 2)
-    pdb.set_trace()
+
     # EEI conservation
     eei_ax = fig.add_subplot(gs[0, 0])
     plot_broken_comparison(eei_ax, df, '(a) planetary energy imbalance', 'netTOA (J yr-1)',
@@ -469,7 +469,7 @@ def main(inargs):
     for variable, data in cmip5_data_points.items():
         record_quartiles(variable, data, 'cmip5')
     
-    plt.savefig(inargs.outfile, dpi=200)
+    plt.savefig(inargs.outfile, dpi=400)
     log_file = re.sub('.png', '.met', inargs.outfile)
     log_text = cmdprov.new_log(git_repo=repo_dir, extra_notes=quartiles)
     cmdprov.write_log(log_file, log_text)
