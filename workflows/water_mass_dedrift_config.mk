@@ -121,6 +121,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #NCI_DATA_DIR=/g/data1b/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
 #FX_EXP=historical
+#BRANCH_YEAR=--branch_year 1930
 
 # GISS-E2-1-G
 #
