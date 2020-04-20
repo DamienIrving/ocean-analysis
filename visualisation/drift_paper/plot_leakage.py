@@ -144,7 +144,7 @@ def main(inargs):
                     "non-ocean leakage ($dQ_r/dt - dQ_h/dt$)"]
     quartiles = get_quartiles(df_leakage, column_names, df['project'], units)
 
-    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=200)
+    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=400)
     log_file = re.sub('.png', '.met', inargs.outfile)
     log_text = cmdprov.new_log(git_repo=repo_dir, extra_notes=quartiles)
     cmdprov.write_log(log_file, log_text)

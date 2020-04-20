@@ -75,7 +75,7 @@ def main(inargs):
     for ax in axes.flat:
         ax.label_outer()
     
-    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=200)
+    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=400)
     log_file = re.sub('.png', '.met', inargs.outfile)
     log_text = cmdprov.new_log(git_repo=repo_dir)
     cmdprov.write_log(log_file, log_text)

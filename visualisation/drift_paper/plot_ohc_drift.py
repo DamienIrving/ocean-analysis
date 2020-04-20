@@ -89,7 +89,7 @@ def main(inargs):
     
     quartiles = get_quartiles(df_ohc, "change in OHC ($dH/dt$)", df['project'], units)
 
-    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=200)
+    plt.savefig(inargs.outfile, bbox_inches='tight', dpi=400)
     log_file = re.sub('.png', '.met', inargs.outfile)
     log_text = cmdprov.new_log(git_repo=repo_dir, extra_notes=quartiles)
     cmdprov.write_log(log_file, log_text)
