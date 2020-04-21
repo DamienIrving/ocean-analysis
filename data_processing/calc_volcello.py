@@ -68,13 +68,17 @@ def main(inargs):
     # Area data
     if inargs.area_file:
         area_cube = iris.load_cube(inargs.area_file)
+        gio.check_global_ocean_area(area_cube.data.sum())
         area_data = uconv.broadcast_array(area_cube.data, [1, 2], depth_data.shape)
     else:
         area_data = spatial_weights.area_array(data_cube)
-    
+
     volume_data = depth_data * area_data
     volume_data = numpy.ma.asarray(volume_data)
-    volume_data.mask = data_cube.data.mask
+
+    data = numpy.ma.masked_invalid(data_cube.data)
+    volume_data.mask = data.mask
+
     volume_cube = construct_volume_cube(volume_data, data_cube.attributes, data_cube.dim_coords)    
     volume_cube.attributes['history'] = gio.write_metadata()
 
