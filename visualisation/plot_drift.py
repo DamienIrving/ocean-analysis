@@ -79,9 +79,9 @@ def select_point(cube, index_list, timeseries=False):
 def read_data(file_list, var, grid_point, convert_to_annual=False):
     """Read input data."""
 
-    cube, history = gio.combine_files(file_list, var)   
-    cube = select_point(cube, grid_point, timeseries=True)
-
+    cube, history = gio.combine_files(file_list, var)
+    if grid_point:  
+        cube = select_point(cube, grid_point, timeseries=True)
     if convert_to_annual:
         cube = timeseries.convert_to_annual(cube)
     
@@ -116,29 +116,34 @@ def main(inargs):
 
     # Read data
     control_cube, control_history = read_data(inargs.control_files, inargs.variable,
-                                              inargs.grid_point, convert_to_annual=False)
-    experiment_cube, experiment_history = read_data(inargs.experiment_files, inargs.variable,
-                                                    inargs.grid_point, convert_to_annual=False)
-    dedrifted_cube, dedrifted_history = read_data(inargs.dedrifted_files, inargs.variable,
-                                                  inargs.grid_point, convert_to_annual=False)
-
+                                              inargs.grid_point, convert_to_annual=inargs.annual)
     metadata_dict[inargs.control_files[0]] = control_history
-    metadata_dict[inargs.experiment_files[0]] = experiment_history
-    metadata_dict[inargs.dedrifted_files[0]] = dedrifted_history
-
     coord_names = [coord.name() for coord in control_cube.dim_coords]
     time_var = coord_names[0]
     assert time_var in ['time', 'year']
-    cubic_data, a_cube = cubic_fit(inargs.coefficient_file, inargs.grid_point,
-                                   control_cube.coord(time_var).points)
-    #TODO: coeff metadata    
+
+    experiment_cube, experiment_history = read_data(inargs.experiment_files, inargs.variable,
+                                                    inargs.grid_point, convert_to_annual=inargs.annual)
+    metadata_dict[inargs.experiment_files[0]] = experiment_history
+
+    if inargs.dedrifted_files:
+        dedrifted_cube, dedrifted_history = read_data(inargs.dedrifted_files, inargs.variable,
+                                                      inargs.grid_point, convert_to_annual=inargs.annual)
+        metadata_dict[inargs.dedrifted_files[0]] = dedrifted_history   
+
+    if inargs.coefficient_file:
+        cubic_data, a_cube = cubic_fit(inargs.coefficient_file, inargs.grid_point,
+                                       control_cube.coord(time_var).points)
+        #TODO: coeff metadata    
 
     # Time axis adjustment
     if time_var == 'time':
         first_data_cube = iris.load_cube(inargs.experiment_files[0], inargs.variable)
-        first_data_cube = select_point(first_data_cube, inargs.grid_point, timeseries=True)
-        #first_data_cube = timeseries.convert_to_annual(first_data_cube)
-        time_diff, branch_time, new_time_unit = remove_drift.time_adjustment(first_data_cube, a_cube, 'annual')
+        if inargs.grid_point:
+            first_data_cube = select_point(first_data_cube, inargs.grid_point, timeseries=True)
+        if inargs.annual:
+            first_data_cube = timeseries.convert_to_annual(first_data_cube)
+        time_diff, branch_time, new_time_unit = remove_drift.time_adjustment(first_data_cube, control_cube, 'annual')
         time_coord = experiment_cube.coord('time')
         time_coord.convert_units(new_time_unit)
         experiment_time_values = time_coord.points.astype(numpy.float32) - time_diff
@@ -156,8 +161,10 @@ def main(inargs):
     fig = plt.figure(figsize=[14, 7])
     plt.plot(control_cube.coord(time_var).points, control_cube.data, label='control')
     plt.plot(experiment_time_values, experiment_cube.data, label='experiment')
-    plt.plot(experiment_time_values, dedrifted_cube.data, label='dedrifted')
-    plt.plot(control_cube.coord(time_var).points, cubic_data, label='cubic fit')
+    if inargs.dedrifted_files:
+        plt.plot(experiment_time_values, dedrifted_cube.data, label='dedrifted')
+    if inargs.coefficient_file:
+        plt.plot(control_cube.coord(time_var).points, cubic_data, label='cubic fit')
     if inargs.outlier_threshold:
         data, outlier_idx = timeseries.outlier_removal(control_cube.data, inargs.outlier_threshold)
         plt.plot(control_cube.coord(time_var).points[outlier_idx], control_cube.data[outlier_idx],
@@ -171,8 +178,9 @@ def main(inargs):
     else:
         plt.xlabel('control run year')
     plt.legend()
-    title = get_title(inargs.control_files, inargs.variable, inargs.grid_point)
-    plt.title(title)
+    if inargs.grid_point:
+        title = get_title(inargs.control_files, inargs.variable, inargs.grid_point)
+        plt.title(title)
 
     # Save output
     plt.savefig(inargs.outfile, bbox_inches='tight')
@@ -198,26 +206,31 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
  
     parser.add_argument("variable", type=str, help="Variable")
-    parser.add_argument("coefficient_file", type=str, help="Drift coefficient file name")
     parser.add_argument("outfile", type=str, help="Output file name")
 
     parser.add_argument("--control_files", nargs='*', type=str, required=True,
                         help="control data files")
     parser.add_argument("--experiment_files", nargs='*', type=str, required=True,
                         help="experiment data files")
-    parser.add_argument("--dedrifted_files", nargs='*', type=str, required=True,
+
+    parser.add_argument("--coefficient_file", type=str, default=None,
+                        help="Drift coefficient file name")
+    parser.add_argument("--dedrifted_files", nargs='*', type=str, default=None,
                         help="dedrifted experiment data files")
 
     parser.add_argument("--outlier_threshold", type=float, default=None,
                         help="Indicate points that were removed from control in drift calculation [default: None]")
 
-    parser.add_argument("--grid_point", type=int, nargs='*',
+    parser.add_argument("--grid_point", type=int, nargs='*', default=None,
                         help="Array indexes for grid point to plot (e.g. 0 58 35)")
 
     parser.add_argument("--ylim", type=float, nargs=2, metavar=('MIN', 'MAX'), default=None,
                         help="limits for y axis")
     
     parser.add_argument("--branch_year", type=int, default=None, help="override metadata")
+
+    parser.add_argument("--annual", action="store_true", default=False,
+                        help="Apply annual smoothing [default=False]")
 
     args = parser.parse_args()             
     main(args)
