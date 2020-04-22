@@ -56,12 +56,12 @@ def construct_basin_cube(basin_array, global_atts, dim_coords):
 
 
 def check_lon_coord(lon_coord):
-    """Check that the lon coord is [0, 360]"""
+    """Check that the lon coord is [0, 360)"""
 
     lon_coord.points = numpy.where(lon_coord.points < 0.0, lon_coord.points + 360, lon_coord.points)
     lon_coord.points = numpy.where(lon_coord.points >= 360.0, lon_coord.points - 360, lon_coord.points)
 
-    assert lon_coord.points.min() > 0
+    assert lon_coord.points.min() >= 0
     assert lon_coord.points.max() < 360
 
     return lon_coord
