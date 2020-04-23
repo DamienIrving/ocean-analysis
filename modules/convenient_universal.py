@@ -243,11 +243,17 @@ def flux_to_magnitude(cube):
     """
     orig_units = str(cube.units)
     assert ('W' in orig_units) or ('s-1' in orig_units)
-    assert 'days' in str(cube.coord('time').units)
-    
-    time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
-    time_span_seconds = time_span_days * 60 * 60 * 24
-    
+
+    dim_coord_names = [coord.name() for coord in cube.dim_coords]
+    if 'year' in dim_coord_names:
+        assert 'time' not in dim_coord_names
+        time_span_days = [365.25] * cube.coord('year').shape[0]
+        time_span_days = numpy.array(time_span_days)
+    else:
+        assert 'days' in str(cube.coord('time').units)
+        time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
+
+    time_span_seconds = time_span_days * 60 * 60 * 24    
     cube.data = cube.data * broadcast_array(time_span_seconds, 0, cube.shape)
 
     if 'W' in orig_units:
