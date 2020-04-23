@@ -150,12 +150,12 @@ def coefficient_sanity_check(coefficient_a_cube, coefficient_b_cube, coefficient
     return summary
 
 
-def time_adjustment(first_data_cube, coefficient_cube, timescale, branch_time=None):
+def time_adjustment(first_data_cube, control_cube, timescale, branch_time=None):
     """Determine the adjustment that needs to be made to time axis.
 
     Args:
         first_data_cube (iris.Cube.cube)
-        coefficient_cube (iris.Cube.cube)
+        control_cube (iris.Cube.cube) - can be the control data or coefficient data cube
         timescale (str): annual or monthly
         branch_time (float): Override the branch time in the file metadata
 
@@ -174,11 +174,19 @@ def time_adjustment(first_data_cube, coefficient_cube, timescale, branch_time=No
     if branch_time:
         branch_time_value = float(branch_time) + adjustment
     else:
-        branch_time_value = float(first_data_cube.attributes['branch_time']) + adjustment
-        # TODO: In CMIP6 'branch_time' is 'branch_time_in_parent' 
-    branch_time_unit = coefficient_cube.attributes['time_unit']
+        try:
+            branch_time_value = float(first_data_cube.attributes['branch_time']) + adjustment
+        except KeyError:
+            branch_time_value = float(first_data_cube.attributes['branch_time_in_parent']) + adjustment
+
+    try:
+        branch_time_unit = control_cube.attributes['time_unit']
+        branch_time_calendar = control_cube.attributes['time_calendar']
+    except KeyError:
+        branch_time_unit = str(control_cube.coord('time').units)
+        branch_time_calendar = str(control_cube.coord('time').units.calendar)
     assert 'days' in branch_time_unit
-    branch_time_calendar = coefficient_cube.attributes['time_calendar']
+
     data_time_coord = first_data_cube.coord('time')
 
     new_unit = cf_units.Unit(branch_time_unit, calendar=branch_time_calendar)  
