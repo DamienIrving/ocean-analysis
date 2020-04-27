@@ -129,7 +129,7 @@ def bin_data(df, bin_edges, basin_edges, ntimes):
     hist = hist / ntimes
     binned_total_flux = hist.sum()
     orig_total_flux = df['flux'].values.sum() / ntimes
-    numpy.testing.assert_allclose(orig_total_flux, binned_total_flux, rtol=1e-02)
+    numpy.testing.assert_allclose(orig_total_flux, binned_total_flux, rtol=1.5e-02)
 
     return hist
 
