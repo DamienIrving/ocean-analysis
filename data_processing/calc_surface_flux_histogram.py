@@ -134,10 +134,21 @@ def bin_data(df, bin_edges, basin_edges, ntimes):
     return hist
 
 
+def multiply_flux_by_area(flux_per_unit_area_cube, area_cube, var):
+    """Multiply the flux by area."""
+
+    if var == 'water_flux_into_sea_water':
+        flux_per_unit_area_cube = gio.check_wfo_sign(flux_per_unit_area_cube)
+    area_data = uconv.broadcast_array(area_cube.data, [1, 2], flux_per_unit_area_cube.shape)
+    flux_cube = flux_per_unit_area_cube.copy()
+    flux_cube.data = flux_per_unit_area_cube.data * area_data
+    flux_cube.units = str(flux_cube.units).replace('m-2 ', "")
+
+    return flux_cube
+
+
 def main(inargs):
     """Run the program."""
-
-    # Define bins
 
     bin_cube, bin_history = gio.combine_files(inargs.bin_files, inargs.bin_var)
     bin_min, bin_max = inargs.bin_bounds
@@ -149,19 +160,9 @@ def main(inargs):
         bin_cube = bin_cube[:, 0, ::]
         bin_cube.remove_coord(bin_coord_names[1])
 
-    # Multiply flux by area
-
-    flux_per_unit_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var)
-    assert flux_per_unit_area_cube.shape == bin_cube.shape
-    if inargs.flux_var == 'water_flux_into_sea_water':
-        flux_per_unit_area_cube = gio.check_wfo_sign(flux_per_unit_area_cube)
+    flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var)
+    assert flux_per_area_cube.shape == bin_cube.shape
     area_cube = iris.load_cube(inargs.area_file)
-    area_data = uconv.broadcast_array(area_cube.data, [1, 2], flux_per_unit_area_cube.shape)
-    flux_cube = flux_per_unit_area_cube.copy()
-    flux_cube.data = flux_per_unit_area_cube.data * area_data
-    flux_cube.units = str(flux_cube.units).replace('m-2 ', "")
-
-    # Define basins
 
     basin_cube = iris.load_cube(inargs.basin_file, 'region')
     basin_edges = numpy.array([10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5])
@@ -169,23 +170,20 @@ def main(inargs):
    
     log = get_log(inargs, basin_cube.attributes, area_cube.attributes, flux_history, bin_history)
 
-    # Year information
-
-    iris.coord_categorisation.add_year(flux_cube, 'time')
+    iris.coord_categorisation.add_year(flux_per_area_cube, 'time')
     iris.coord_categorisation.add_year(bin_cube, 'time')
-    flux_years = set(flux_cube.coord('year').points)
+    flux_years = set(flux_per_area_cube.coord('year').points)
     bin_years = set(bin_cube.coord('year').points)
     assert flux_years == bin_years
     years = numpy.array(list(flux_years))
     years.sort()
-
-    # Generate the output historgram
   
     outdata = numpy.ma.zeros([len(years), len(bin_values), len(basin_values)])
     for index, year in enumerate(years):
         print(year)
         year_constraint = iris.Constraint(year=year)
-        flux_year_cube = flux_cube.extract(year_constraint)
+        flux_per_area_year_cube = flux_per_area_cube.extract(year_constraint)
+        flux_year_cube = multiply_flux_by_area(flux_per_area_year_cube, area_cube, inargs.flux_var)
         bin_year_cube = bin_cube.extract(year_constraint)
         df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube)
         assert df['bin'].values.min() > bin_min, "Bin minimum not low enough"
@@ -194,7 +192,7 @@ def main(inargs):
         outdata[index, :, :] = bin_data(df, bin_edges, basin_edges, ntimes)
 
     outdata = numpy.ma.masked_invalid(outdata)
-    outcube = construct_cube(outdata, flux_cube, bin_cube, basin_cube, years, 
+    outcube = construct_cube(outdata, flux_year_cube, bin_cube, basin_cube, years, 
                              bin_values, bin_edges, bin_units, basin_values, log)
     iris.save(outcube, inargs.outfile)
 
