@@ -260,8 +260,8 @@ def main(inargs):
     b_edges = numpy.array([10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5])
     b_values = numpy.array([11, 12, 13, 14, 15, 16, 17])
    
-    tcube, thistory = gio.combine_files(inargs.temperature_files, 'sea_water_potential_temperature')
-    scube, shistory = gio.combine_files(inargs.salinity_files, 'sea_water_salinity')
+    tcube, thistory = gio.combine_files(inargs.temperature_files, 'sea_water_potential_temperature', checks=True)
+    scube, shistory = gio.combine_files(inargs.salinity_files, 'sea_water_salinity', checks=True)
 
     assert tcube.shape == scube.shape
     coord_names = [coord.name() for coord in tcube.dim_coords]

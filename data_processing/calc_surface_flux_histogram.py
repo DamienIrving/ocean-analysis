@@ -150,7 +150,7 @@ def multiply_flux_by_area(flux_per_unit_area_cube, area_cube, var):
 def main(inargs):
     """Run the program."""
 
-    bin_cube, bin_history = gio.combine_files(inargs.bin_files, inargs.bin_var)
+    bin_cube, bin_history = gio.combine_files(inargs.bin_files, inargs.bin_var, checks=True)
     bin_min, bin_max = inargs.bin_bounds
     bin_step = inargs.bin_size
     bin_edges = numpy.arange(bin_min, bin_max + bin_step, bin_step)
@@ -160,7 +160,7 @@ def main(inargs):
         bin_cube = bin_cube[:, 0, ::]
         bin_cube.remove_coord(bin_coord_names[1])
 
-    flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var)
+    flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var, checks=True)
     assert flux_per_area_cube.shape == bin_cube.shape
     area_cube = iris.load_cube(inargs.area_file)
 

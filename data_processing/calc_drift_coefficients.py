@@ -140,7 +140,7 @@ def main(inargs):
     """Run the program."""
 
     # Read the data
-    cube, history = gio.combine_files(inargs.infiles, inargs.var, checks=True)
+    cube, history = gio.combine_files(inargs.infiles, inargs.var, checks=not inargs.no_data_checks)
     global_atts = set_global_atts(inargs, cube, inargs.infiles[0], history)
     masked_array = is_masked_array(cube[0, ::].data)
     coord_names = [coord.name() for coord in cube.coords(dim_coords=True)]
@@ -228,6 +228,8 @@ notes:
                         help="Chunk annual timescale conversion to avoid memory errors [default: False]")
     parser.add_argument("--outlier_threshold", type=float, default=None,
                         help="Remove points that deviate from the rolling median by greater than this threshold [default: None]")
+    parser.add_argument("--no_data_checks", action="store_true", default=False,
+                        help="Do not do data checks when reading infiles [default: False]")
 
     args = parser.parse_args()
     main(args)

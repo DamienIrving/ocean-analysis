@@ -61,7 +61,7 @@ ${WFO_BINNED_CUMSUM_FILE_CNTRL} : ${WFO_BINNED_FILE_CNTRL}
 
 WFO_BINNED_CUMSUM_COEFFICIENT_FILE=${WFO_BINNED_DIR_CNTRL}/wfo-${TOS_VAR}-binned-coefficients_Omon_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
 ${WFO_BINNED_CUMSUM_COEFFICIENT_FILE} : ${WFO_BINNED_CUMSUM_FILE_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< water_flux_into_sea_water $@
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< water_flux_into_sea_water $@ --no_data_check
 
 WFO_ANOMALY_BINNED_CUMSUM_FILE=${WFO_BINNED_DIR_HIST}/wfo-anomaly-${TOS_VAR}-binned_Omon_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}-cumsum.nc
 ${WFO_ANOMALY_BINNED_CUMSUM_FILE} : ${WFO_BINNED_CUMSUM_FILE_HIST} ${WFO_BINNED_CUMSUM_COEFFICIENT_FILE}
@@ -115,7 +115,7 @@ ${VOL_DEDRIFTED_FILE} : ${WATER_MASS_FILE_HIST} ${VOL_DRIFT_COEFFICIENT_FILE}
 
 SOVOL_DRIFT_COEFFICIENT_FILE=${WATER_MASS_DIR_CNTRL}/so-volcello-tbin-coefficients_Omon_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}.nc
 ${SOVOL_DRIFT_COEFFICIENT_FILE} : ${WATER_MASS_FILE_CNTRL}
-	${PYTHON}  ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume_binned_by_temperature $@
+	${PYTHON}  ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume_binned_by_temperature $@ --no_data_check
 
 SOVOL_DEDRIFTED_FILE=${WATER_MASS_DIR_HIST}/so-volcello-tbin-dedrifted_Omon_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}.nc
 ${SOVOL_DEDRIFTED_FILE} : ${WATER_MASS_FILE_HIST} ${SOVOL_DRIFT_COEFFICIENT_FILE}
