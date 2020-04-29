@@ -160,7 +160,7 @@ def main(inargs):
         bin_cube = bin_cube[:, 0, ::]
         bin_cube.remove_coord(bin_coord_names[1])
 
-    flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var, checks=True)
+    flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var)
     assert flux_per_area_cube.shape == bin_cube.shape
     area_cube = iris.load_cube(inargs.area_file)
 
