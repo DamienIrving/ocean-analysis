@@ -39,6 +39,8 @@ def main(inargs):
     cube = iris.load_cube(inargs.infile, inargs.var)
 
     cube.data = numpy.ma.masked_invalid(cube.data)
+    if inargs.fill_value:
+        cube.data = numpy.ma.masked_where(cube.data >= cube.data.fill_value, cube.data)
     if inargs.mask_value:
         cube.data = numpy.ma.masked_where(cube.data == inargs.mask_value, cube.data)
 
@@ -63,6 +65,9 @@ author:
     parser.add_argument("infile", type=str, help="Input files")
     parser.add_argument("var", type=str, help="Variable standard_name")
     parser.add_argument("outfile", type=str, help="Output file name")
+
+    parser.add_argument("--fill_value", action="store_true", default=False,
+                        help="Mask points greater or equal to the fill value")
 
     parser.add_argument("--mask_value", type=float, default=None,
                         help="Value to mask")
