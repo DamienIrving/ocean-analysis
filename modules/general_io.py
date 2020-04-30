@@ -588,18 +588,19 @@ def salinity_unit_check(cube, valid_min=-1, valid_max=90, abort=True):
         assert data_max < valid_max, 'Salinity max is %f' %(data_max)
         assert data_min >= valid_min , 'Salinity min is %f' %(data_min)
     else: 
+        npoints = cube.data.size
         if data_max > valid_max:
             masked_points_before = cube.data.mask.sum()
             cube.data = numpy.ma.masked_where(cube.data > valid_max, cube.data)
             masked_points_after = cube.data.mask.sum()
             new_masked_points = masked_points_after - masked_points_before
-            print('Salinity max is %f. New masked points = %f' %(data_max, new_masked_points))
+            print(f'Salinity max is {data_max}. New masked points = {new_masked_points} of {npoints}')
         if data_min < valid_min:
             masked_points_before = cube.data.mask.sum()
             cube.data = numpy.ma.masked_where(cube.data < valid_min, cube.data)
             masked_points_after = cube.data.mask.sum()
             new_masked_points = masked_points_after - masked_points_before
-            print('Salinity min is %f. New masked points = %f' %(data_min, new_masked_points))
+            print(f'Salinity min is {data_min}. New masked points = {new_masked_points} of {npoints}')
 
     cube.units = 'g/kg'   #cf_units.Unit('unknown')
 
