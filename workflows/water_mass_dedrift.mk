@@ -21,8 +21,8 @@ TOS_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/hist
 WFO_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/wfo/${GRID}/${HIST_VERSION}/wfo*.nc))
 SALINITY_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/so/${GRID}/${CNTRL_VERSION}/so*.nc)) 
 TEMPERATURE_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/thetao/${GRID}/${CNTRL_VERSION}/thetao*.nc))
-TOS_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/${TOS_VAR}/${GRID}/${CNTRL_VERSION}/${TOS_VAR}*912.nc))
-WFO_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/wfo/${GRID}/${CNTRL_VERSION}/wfo*912.nc))
+TOS_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/${TOS_VAR}/${GRID}/${CNTRL_VERSION}/${TOS_VAR}*.nc))
+WFO_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/wfo/${GRID}/${CNTRL_VERSION}/wfo*.nc))
 
 
 # basin file
