@@ -62,9 +62,7 @@ def main(inargs):
     depth_name = coord_names[1]
     data_cube = data_cube[0, ::]
     data_cube.remove_coord('time')
-
     depth_data = spatial_weights.get_depth_array(data_cube, depth_name)
-
     # Area data
     if inargs.area_file:
         area_cube = iris.load_cube(inargs.area_file)
@@ -72,10 +70,16 @@ def main(inargs):
         area_data = uconv.broadcast_array(area_cube.data, [1, 2], depth_data.shape)
     else:
         area_data = spatial_weights.area_array(data_cube)
-
+    
     volume_data = depth_data * area_data
-    volume_data = numpy.ma.asarray(volume_data)
+    
+    if inargs.sftof_file:
+        sftof_cube = iris.load_cube(inargs.sftof_file)
+        assert sftof_cube.data.max() == 100
+        sftof_data = uconv.broadcast_array(sftof_cube.data, [1, 2], depth_data.shape)
+        volume_data = volume_data * (sftof_data / 100.0)
 
+    volume_data = numpy.ma.asarray(volume_data)
     data = numpy.ma.masked_invalid(data_cube.data)
     volume_data.mask = data.mask
 
@@ -105,8 +109,10 @@ author:
     parser.add_argument("dummy_var", type=str, help="Dummy variable")
     parser.add_argument("outfile", type=str, help="Output file name")
 
+    parser.add_argument("--sftof_file", type=str, default=None,
+                        help="Sea area fraction file name")
     parser.add_argument("--area_file", type=str, default=None,
-                        help="Area file name (required for curvilinear grids, optional otherwise")
+                        help="Area file name (required for curvilinear grids, optional otherwise)")
 
     args = parser.parse_args()
     main(args)
