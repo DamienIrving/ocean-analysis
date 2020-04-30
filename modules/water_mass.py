@@ -42,7 +42,7 @@ def create_df(tcube, scube, wdata, wvar, bcube):
       bcube (iris.cube.Cube)            -- basin cube
 
     """
- 
+
     assert wvar in ['areacello', 'volcello']
     assert bcube.ndim == 2
     assert bcube.data.min() == 11
@@ -137,7 +137,9 @@ def create_flux_df(flux_cube, bin_cube, basin_cube):
     basin_data = uconv.broadcast_array(basin_cube.data, [1, 2], flux_cube.shape)
 
     if not flux_cube.data.mask.sum() == bin_cube.data.mask.sum():
-        print("Applying common mask...")
+        npoints = flux_cube.data.size
+        diff = flux_cube.data.mask.sum() - bin_cube.data.mask.sum()
+        print(f"Applying common mask... difference of {diff} data points (flux minus bin mask) for {npoints} total data points")
     common_mask = flux_cube.data.mask + bin_cube.data.mask
             
     lats = numpy.ma.masked_array(lats, common_mask)
