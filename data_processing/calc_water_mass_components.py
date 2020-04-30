@@ -294,7 +294,8 @@ def main(inargs):
             salinity_year_cube = scube.extract(year_constraint)
             temperature_year_cube = tcube.extract(year_constraint)
 
-        df, sunits, tunits = water_mass.create_df(temperature_year_cube, salinity_year_cube, wdata, wvar, bcube)
+        df, sunits, tunits = water_mass.create_df(temperature_year_cube, salinity_year_cube, wdata, wvar, bcube,
+                                                  sbounds=(s_edges[0], s_edges[-1]))
         assert df['temperature'].values.min() > tmin, "Temperature minimum of %s is outside bin range" %(str(df['temperature'].values.min()))
         assert df['temperature'].values.max() < tmax, "Temperature maximum of %s is outside bin range" %(str(df['temperature'].values.max()))
         assert df['salinity'].values.min() > smin, "Salinity minimum of %s is outside bin range" %(str(df['salinity'].values.min()))

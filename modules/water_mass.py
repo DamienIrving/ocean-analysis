@@ -31,7 +31,7 @@ except ImportError:
 
 # Define functions
 
-def create_df(tcube, scube, wdata, wvar, bcube):
+def create_df(tcube, scube, wdata, wvar, bcube, sbounds=None):
     """Create DataFrame for water mass analysis.
 
     Args:
@@ -50,7 +50,11 @@ def create_df(tcube, scube, wdata, wvar, bcube):
     coord_names = [coord.name() for coord in tcube.dim_coords]
 
     tcube = gio.temperature_unit_check(tcube, 'C', abort=False)
-    scube = gio.salinity_unit_check(scube, abort=False)
+    if sbounds:
+        smin, smax = sbounds
+        scube = gio.salinity_unit_check(scube, valid_min=smin, valid_max=smax, abort=False)
+    else:
+        scube = gio.salinity_unit_check(scube, abort=False)
 
     if tcube.coord('latitude').points.ndim == 1:
         lat_pos = coord_names.index('latitude')
