@@ -1,8 +1,8 @@
 # System configuration
 
-PYTHON = /g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
-DATA_SCRIPT_DIR = /home/599/dbi599/ocean-analysis/data_processing
-VIZ_SCRIPT_DIR = /home/599/dbi599/ocean-analysis/visualisation
+PYTHON=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
+DATA_SCRIPT_DIR=/home/599/dbi599/ocean-analysis/data_processing
+VIZ_SCRIPT_DIR=/home/599/dbi599/ocean-analysis/visualisation
 MY_DATA_DIR=/g/data/r87/dbi599/CMIP6/CMIP
 
 #defaults
@@ -22,6 +22,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=095001-144912
 #NCI_DATA_DIR=/g/data/fs38/publications/CMIP6/CMIP
 #VOLCELLO_DIR=${NCI_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 
@@ -38,6 +39,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=010101-100012
 #NCI_DATA_DIR=/g/data/fs38/publications/CMIP6/CMIP
 #VOLCELLO_DIR=${NCI_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # BCC-CSM2-MR
@@ -53,6 +55,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-244912
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # CanESM5
@@ -68,6 +71,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=520101-620012
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # CNRM-CM6-1
@@ -83,6 +87,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-234912
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # CNRM-CM6-1-HR
@@ -98,6 +103,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-214912
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # CNRM-ESM2-1
@@ -113,6 +119,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-234912
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # E3SM-1-0
@@ -130,6 +137,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=000101-050012
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # E3SM-1-1
@@ -145,6 +153,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-201412
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # EC-Earth3
@@ -160,6 +169,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=225901-275912
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # EC-Earth3-Veg
@@ -176,6 +186,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-234912
 #NCI_DATA_DIR=/g/data1b/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 #BRANCH_YEAR=--branch_year 1930
 #TOS_VAR=thetao
@@ -183,18 +194,19 @@ TOS_LONG_NAME=sea_surface_temperature
 
 # FGOALS-f3-L
 #
-#MODEL=FGOALS-f3-L
-#INSTITUTION=CAS
-#RUN=r1i1p1f1
-#GRID=gn
-#VOLCELLO_VERSION=v20190918
-#HIST_VERSION=v20191007
-#HIST_TIME=185001-201412
-#CNTRL_VERSION=v20191028
-#CNTRL_TIME=060001-109912
-#NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
-#VOLCELLO_DIR=${NCI_DATA_DIR}
-#FX_EXP=historical
+MODEL=FGOALS-f3-L
+INSTITUTION=CAS
+RUN=r1i1p1f1
+GRID=gn
+VOLCELLO_VERSION=v20190918
+HIST_VERSION=v20191007
+HIST_TIME=185001-201412
+CNTRL_VERSION=v20191028
+CNTRL_TIME=060001-109912
+NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
+VOLCELLO_DIR=${MY_DATA_DIR}
+AREACELLO_DIR=${MY_DATA_DIR}
+FX_EXP=historical
 
 # GISS-E2-1-G
 
@@ -209,6 +221,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=415001-500012
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=piControl
 #BRANCH_YEAR=--branch_year 4150
 #TOS_VAR=thetao
@@ -227,6 +240,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-201412
 #NCI_DATA_DIR=/g/data1b/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=piControl
 #TOS_VAR=thetao
 #TOS_LONG_NAME=sea_water_potential_temperature
@@ -245,6 +259,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-304912
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # MIROC-ES2L
@@ -260,6 +275,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-234912
 #NCI_DATA_DIR=/g/data1b/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # MPI-ESM-1-2-HAM
@@ -275,6 +291,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-262912
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${NCI_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # MPI-ESM1-2-HR
@@ -290,6 +307,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-234912
 #NCI_DATA_DIR=/g/data1b/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${NCI_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # MPI-ESM1-2-LR
@@ -305,6 +323,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-284912
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${NCI_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # MRI-ESM2-0
@@ -320,6 +339,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=185001-255012
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 
@@ -338,6 +358,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=160001-210012
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${NCI_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # NorESM2-MM
@@ -355,6 +376,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=120001-169912
 #NCI_DATA_DIR=/g/data/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${NCI_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # SAM0-UNICON
@@ -370,6 +392,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=000101-070012
 #NCI_DATA_DIR=/g/data1b/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 
 # UKESM1-0-LL
@@ -385,4 +408,5 @@ TOS_LONG_NAME=sea_surface_temperature
 #CNTRL_TIME=196001-305912
 #NCI_DATA_DIR=/g/data1b/oi10/replicas/CMIP6/CMIP
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=piControl
