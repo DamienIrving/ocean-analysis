@@ -229,6 +229,7 @@ def check_wfo_sign(cube):
     wrong_sign_models = ['CMCC-CM',
                          'CNRM-CM6-1', 'CNRM-ESM2-1',
                          'EC-Earth3', 'EC-Earth3-Veg',
+                         'FGOALS-f3-L',
                          'GISS-E2-1-G', 'GISS-E2-1-G-CC', 
                          'IPSL-CM5A-LR', 'IPSL-CM6A-LR',
                          'MIROC-ESM', 'MIROC-ESM-CHEM']
