@@ -128,6 +128,7 @@ def _chunked_year_aggregation(cube, agg_method, step=12):
     for index in start_indexes:
         start_year = cube[index:index+step, ...].coord('year').points[0]
         assert start_year != end_year
+        print(start_year)
         end_year = cube[index:index+step, ...].coord('year').points[-1]
         chunk = cube[index:index+step, ...].aggregated_by(['year'], agg_method)
         chunk_list.append(chunk)
