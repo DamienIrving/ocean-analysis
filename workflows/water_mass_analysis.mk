@@ -1,13 +1,13 @@
-# water_mass_dedrift.mk
+# water_mass_analysis.mk
 #
-# Description: De-drift the ocean volume binned by temperature
+# Description: Ocean water mass analysis
 #
 # To execute:
-#   make all -n -B -f water_mass_dedrift.mk  (-n is a dry run) (-B is a force make)
+#   make all -n -B -f water_mass_analysis.mk  (-n is a dry run) (-B is a force make)
 #
 #   (Options besides all: volcello-tbin so-volcello-tbin surface wfo-anomaly)  
 
-include water_mass_dedrift_config.mk
+include cmip_config.mk
 
 
 # File definitions
@@ -125,11 +125,11 @@ ${SOVOL_DEDRIFTED_FILE} : ${WATER_MASS_FILE_HIST} ${SOVOL_DRIFT_COEFFICIENT_FILE
 
 VOL_PLOT_FILE=/g/data/r87/dbi599/temp/volcello-tbin-dedrifted_Omon_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}_bin6.png
 ${VOL_PLOT_FILE} : ${VOL_DRIFT_COEFFICIENT_FILE} ${WATER_MASS_FILE_CNTRL} ${WATER_MASS_FILE_HIST} ${VOL_DEDRIFTED_FILE}
-	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py Ocean_Grid-Cell_Volume_binned_by_temperature ${VOL_PLOT_FILE} --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 6 -1 ${BRANCH_YEAR}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py Ocean_Grid-Cell_Volume_binned_by_temperature $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 6 -1 ${BRANCH_YEAR}
 
 SOVOL_PLOT_FILE=/g/data/r87/dbi599/temp/so-volcello-tbin-dedrifted_Omon_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}_bin6.png
 ${SOVOL_PLOT_FILE} : ${SOVOL_DRIFT_COEFFICIENT_FILE} ${WATER_MASS_FILE_CNTRL} ${WATER_MASS_FILE_HIST} ${SOVOL_DEDRIFTED_FILE}
-	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume_binned_by_temperature ${SOVOL_PLOT_FILE} --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 6 -1 ${BRANCH_YEAR}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume_binned_by_temperature $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 6 -1 ${BRANCH_YEAR}
 
 volcello-tbin : ${VOL_PLOT_FILE}
 so-volcello-tbin : ${SOVOL_PLOT_FILE}
