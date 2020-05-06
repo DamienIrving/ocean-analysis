@@ -211,8 +211,8 @@ def check_time_adjustment(time_values, coefficient_cube, branch_time, fnum):
     
     """
 
-    assert time_values[0] > coefficient_cube.attributes['time_start'] - 1.0 
-    assert time_values[-1] < coefficient_cube.attributes['time_end'] + 1.0
+    assert time_values[0] > float(coefficient_cube.attributes['time_start']) - 1.0 
+    assert time_values[-1] < float(coefficient_cube.attributes['time_end']) + 1.0
     # 1.0 allows wriggle room for time_adjustment
 
     if fnum == 0:
