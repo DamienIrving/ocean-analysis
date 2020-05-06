@@ -58,7 +58,7 @@ def main(inargs):
 
     if inargs.weights:
         weights_cube = gio.get_ocean_weights(inargs.weights)
-        metadata_dict[inargs.weights] = weights_atts['history']        
+        metadata_dict[inargs.weights] = weights_cube.attributes['history']        
 
     output_cubelist = iris.cube.CubeList([])
     for infile in inargs.infiles:
