@@ -48,11 +48,11 @@ def main(inargs):
 
     standard_names = {'thetao': 'sea_water_potential_temperature',
                       'so': 'sea_water_salinity'}
-    volume_data, volume_var, volume_atts, volume_obj = gio.get_ocean_weights(inargs.volfile)
+    volume_cube = gio.get_ocean_weights(inargs.volfile)
     output_cubelist = iris.cube.CubeList([])
     for infile in inargs.infiles:
         cube = iris.load_cube(infile, standard_names[inargs.invar])
-        weights = uconv.broadcast_array(volume_data, [1, 3], cube.shape)
+        weights = uconv.broadcast_array(volume_cube.data, [1, 3], cube.shape)
         coord_names = [coord.name() for coord in cube.dim_coords]
         aux_coord_names = [coord.name() for coord in cube.aux_coords]
         ga = cube.collapsed(coord_names[1:], iris.analysis.MEAN, weights=weights)
@@ -65,7 +65,7 @@ def main(inargs):
     outcube = gio.combine_cubes(output_cubelist)
     metadata_dict = {}
     metadata_dict[infile] = cube.attributes['history'] 
-    metadata_dict[inargs.volfile] = volume_atts['history'] 
+    metadata_dict[inargs.volfile] = volume_cube.attributes['history'] 
     outcube.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     iris.save(outcube, inargs.outfile)
         

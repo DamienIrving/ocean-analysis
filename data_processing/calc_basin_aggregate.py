@@ -57,13 +57,17 @@ def main(inargs):
                                                    'flag_meanings': flag_meanings})
 
     if inargs.weights:
-        weights_cube = iris.load_cube(inargs.weights)
-        metadata_dict[inargs.weights] = weights_cube.attributes['history']        
+        weights_cube = gio.get_ocean_weights(inargs.weights)
+        metadata_dict[inargs.weights] = weights_atts['history']        
 
     output_cubelist = iris.cube.CubeList([])
     for infile in inargs.infiles:
         print(infile)
-        cube, history = gio.combine_files(infile, inargs.var, checks=True)
+        if inargs.var == 'ocean_volume':
+            cube = gio.get_ocean_weights(infile)
+            history = [cube.attributes['history']]
+        else:
+            cube, history = gio.combine_files(infile, inargs.var, checks=True)
         assert cube.ndim in [3, 4]
         coord_names = [coord.name() for coord in cube.dim_coords]
         if inargs.annual:
@@ -72,7 +76,7 @@ def main(inargs):
         assert basin_cube.shape == cube.shape[-2:]
         basin_array = uconv.broadcast_array(basin_cube.data, [cube.ndim - 2, cube.ndim - 1], cube.shape)
         if inargs.weights:
-            assert weights_cube.shape == cube.shape[-3:]
+            assert weights_cube.data.shape == cube.shape[-3:]
             if cube.ndim == 4:
                 weights_array = uconv.broadcast_array(weights_cube.data, [1, 3], cube.shape)
             else:

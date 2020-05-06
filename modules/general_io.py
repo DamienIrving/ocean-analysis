@@ -398,24 +398,19 @@ def get_ocean_weights(infile):
     """
 
     try:
-        wobj = iris.load_cube(infile)
-        wdata = wobj.data
-        wvar = wobj.var_name
-        atts = wobj.attributes
+        cube = iris.load_cube(infile)
     except iris.exceptions.ConstraintMismatchError:
         dset = xr.open_dataset(infile)
-        wobj = dset.volcello
-        wdata = numpy.ma.masked_invalid(wobj.data)
-        wvar = 'volcello'
-        atts = dset.attrs
+        cube = dset['volcello'].to_iris()
+        cube.attributes = dset.attrs
 
-    assert wvar in ['areacello', 'volcello']
-    if wvar == 'volcello':
-        check_global_ocean_volume(wdata.sum())
+    assert cube.var_name in ['areacello', 'volcello']
+    if cube.var_name == 'volcello':
+        check_global_ocean_volume(cube.data.sum())
     else:
-        check_global_ocean_area(wdata.sum())
+        check_global_ocean_area(cube.data.sum())
 
-    return wdata, wvar, atts, wobj 
+    return cube 
 
 
 def get_subset_kwargs(namespace):

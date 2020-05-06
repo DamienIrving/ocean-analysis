@@ -52,19 +52,19 @@ def construct_area_cube(area_data, global_atts, dim_coords):
 
     return area_cube
 
-     
+
 def main(inargs):
     """Run the program."""
 
     data_cube = iris.load_cube(inargs.dummy_file, inargs.dummy_var)
-    coord_names = [coord.name() for coord in data_cube.dim_coords]       
+    coord_names = [coord.name() for coord in data_cube.dim_coords]
     if inargs.volcello_file:
         assert data_cube.ndim == 4
-        wdata, wvar, atts, wobj = gio.get_ocean_weights(inargs.volcello_file)
+        volume_cube = gio.get_ocean_weights(inargs.volcello_file)
         depth_coord = data_cube.coord(coord_names[1])
         assert depth_coord.units in ['m', 'dbar']
         surface_depth = depth_coord.bounds[0][1] - depth_coord.bounds[0][0]
-        area_data = wdata[0, ::] / surface_depth
+        area_data = volume_cube.data[0, ::] / surface_depth
         data_cube = data_cube[0, 0, ::]
         data_cube.remove_coord(coord_names[0])
         data_cube.remove_coord(coord_names[1])
