@@ -188,6 +188,10 @@ def time_adjustment(first_data_cube, control_cube, timescale, branch_time=None):
     assert 'days' in branch_time_unit
 
     data_time_coord = first_data_cube.coord('time')
+    data_time_calendar = str(data_time_coord.units.calendar)
+    if branch_time_calendar != data_time_calendar:
+        if ('gregorian' in branch_time_calendar) and ('gregorian' in data_time_calendar):
+            branch_time_calendar = data_time_calendar
 
     new_unit = cf_units.Unit(branch_time_unit, calendar=branch_time_calendar)  
     data_time_coord.convert_units(new_unit)
