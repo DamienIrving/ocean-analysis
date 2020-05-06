@@ -143,7 +143,9 @@ def main(inargs):
             first_data_cube = select_point(first_data_cube, inargs.grid_point, timeseries=True)
         if inargs.annual:
             first_data_cube = timeseries.convert_to_annual(first_data_cube)
-        time_diff, branch_time, new_time_unit = remove_drift.time_adjustment(first_data_cube, control_cube, 'annual')
+        time_diff, branch_time, new_time_unit = remove_drift.time_adjustment(first_data_cube, control_cube, 'annual',
+                                                                             branch_time=inargs.branch_time)
+        print(f'branch time: {branch_time - 182.5}')
         time_coord = experiment_cube.coord('time')
         time_coord.convert_units(new_time_unit)
         experiment_time_values = time_coord.points.astype(numpy.float32) - time_diff
@@ -155,6 +157,7 @@ def main(inargs):
             branch_time = experiment_cube.attributes['branch_time_in_parent']
             branch_datetime = cf_units.num2date(branch_time, control_time_units, cf_units.CALENDAR_STANDARD)
             branch_year = branch_datetime.year
+        print(f'branch year: {branch_year}')
         experiment_time_values = numpy.arange(branch_year, branch_year + experiment_cube.shape[0])
 
     # Plot
@@ -228,6 +231,7 @@ author:
                         help="limits for y axis")
     
     parser.add_argument("--branch_year", type=int, default=None, help="override metadata")
+    parser.add_argument("--branch_time", type=float, default=None, help="override metadata")
 
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Apply annual smoothing [default=False]")

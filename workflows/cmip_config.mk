@@ -106,6 +106,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #VOLCELLO_DIR=${MY_DATA_DIR}
 #AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
+#CHUNK_ANNUAL=--chunk
 
 # CNRM-CM6-1-HR
 #
@@ -206,6 +207,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
 #BRANCH_YEAR=--branch_year 1930
+#BRANCH_TIME=--branch_time 29244
 #TOS_VAR=thetao
 #TOS_LONG_NAME=sea_water_potential_temperature
 
