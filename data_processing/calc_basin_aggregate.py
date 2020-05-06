@@ -95,11 +95,16 @@ def main(inargs):
                 temp_cube.data = numpy.ma.masked_where(basin_array == 17, temp_cube.data)
             else:
                 temp_cube.data = numpy.ma.masked_where(basin_array != basin_number, temp_cube.data)
-            horiz_agg = temp_cube.collapsed(coord_names[-2:], agg_functions[inargs.agg], weights=weights_array)
+            if len(coord_names) == cube.ndim:
+                horiz_agg = temp_cube.collapsed(coord_names[-2:], agg_functions[inargs.agg], weights=weights_array).data
+            elif inargs.agg == 'mean':
+                horiz_agg = numpy.ma.average(temp_cube.data, axis=(-2,-1), weights=weights_array)
+            elif inargs.agg == 'sum':
+                horiz_agg = numpy.ma.sum(temp_cube.data, axis=(-2,-1))
             if outdata.ndim == 2:
-                outdata[:, basin_index] = horiz_agg.data
+                outdata[:, basin_index] = horiz_agg
             else:
-                outdata[:, :, basin_index] = horiz_agg.data
+                outdata[:, :, basin_index] = horiz_agg
 
         coord_list = [(cube.dim_coords[0], 0)]
         if cube.ndim == 4:
