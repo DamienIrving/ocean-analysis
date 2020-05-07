@@ -1,7 +1,7 @@
 """
 Filename:     plot_zonal_water_budget_change.py
 Author:       Damien Irving, irving.damien@gmail.com
-Description:  corresponds to energy_budget_in_one_plot.ipynb
+Description:  
 
 """
 
@@ -112,18 +112,13 @@ def ensemble_mean(cube_list):
     return ensemble_mean
 
 
-def calc_anomaly(cube):
+def calc_anomaly(cube, ref_cube=None):
     """Calculate the anomaly."""
-    
-    if cube.var_name == 'wfo':
-        anomaly = cube.copy()
-        anomaly.data = anomaly.data - anomaly.data[0]
-        anomaly = anomaly[-1, ::]
-        anomaly.remove_coord('time')
-    elif cube.var_name == 'so':
-        ##FIXME
-        so_anomaly = wfo_anomaly.copy()
-        so_anomaly.data = inferred_wfo(so_cube[0, ::].data, so_cube[-1, ::].data, volume_zonal_sum.data)    
+
+    anomaly = cube.copy()
+    anomaly.data = anomaly.data - anomaly.data[0]
+    anomaly = anomaly[-1, ::]
+    anomaly.remove_coord('time')
 
     return anomaly
 
@@ -145,7 +140,22 @@ def regrid(anomaly, ref_cube):
     return new_anomaly
 
 
-def read_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_cube=False):
+def calc_ofm_anomaly(so_cube, m_orig):
+    """Calculate the ocean freshwater mass anomaly."""
+
+    s_orig = so_cube.data[0, :]
+    s_new = so_cube.data[-1, :]
+    ofm_anomaly_from_so = m_orig.data * ((s_orig / s_new) - 1) 
+    
+    anomaly = so_cube[0, :].copy()
+    anomaly.remove_coord('time')
+    anomaly.data = ofm_anomaly_from_so
+    anomaly.units = 'kg'
+
+    return anomaly
+
+
+def read_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_cube=False, m_orig=False):
     """Read data and calculate anomaly"""
 
     if infile:
@@ -156,7 +166,11 @@ def read_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_
             pass         
         metadata_dict[infile] = cube.attributes['history']
 
-        anomaly = calc_anomaly(cube)
+        if var == 'sea_water_salinity':
+            assert m_orig
+            anomaly = calc_ofm_anomaly(cube, m_orig)
+        else:
+            anomaly = calc_anomaly(cube)
         final_value = anomaly.data.sum()
         print(var, 'final global total:', final_value)
 
@@ -183,21 +197,22 @@ def read_data(infile, var, metadata_dict, time_constraint, ensemble_number, ref_
     return cube, anomaly, metadata_dict
 
 
-def get_anomalies(wfo_file, so_file, time_constraint,
+def get_anomalies(wfo_file, so_file, masscello_orig, time_constraint,
                   model_num, ensemble_ref_cube, anomaly_dict, metadata_dict):
     """Get the cumulative sum anomaly."""
     
     wfo_cube, wfo_anomaly, metadata_dict = read_data(wfo_file,
-                                                     'water flux into sea water',
+                                                     'water_flux_into_sea_water',
                                                       metadata_dict, time_constraint, 
                                                       model_num, 
                                                       ref_cube=ensemble_ref_cube)
 
     ref_cube = ensemble_ref_cube if ensemble_ref_cube else wfo_cube
   
-    cube, so_anomaly, metadata_dict = read_data(so_file, 'sea water salinity',
+    cube, so_anomaly, metadata_dict = read_data(so_file, 'sea_water_salinity',
                                                 metadata_dict, time_constraint,
-                                                model_num, ref_cube=ref_cube)
+                                                model_num, ref_cube=ref_cube,
+                                                m_orig=masscello_orig)
 
     ocean_convergence = so_anomaly - wfo_anomaly
     transport_inferred = ocean_convergence.copy()
@@ -328,11 +343,14 @@ def main(inargs):
         anomaly_dict[combo] = iris.cube.CubeList([])
 
     # Get data for the experiments
+    volcello_vzsum = gio.get_ocean_weights(inargs.volcello_file)
+    masscello_orig = volcello_vzsum * inargs.density
+
     for exp_files in [inargs.ghg_files, inargs.aa_files, inargs.hist_files, inargs.pctCO2_files]:
         for model_num, model_files in enumerate(exp_files):
             wfo_file, so_file = model_files
             metadata_dict = {}
-            anomaly_dict, metadata_dict = get_anomalies(wfo_file, so_file,
+            anomaly_dict, metadata_dict = get_anomalies(wfo_file, so_file, masscello_orig,
                                                         time_constraint, model_num,
                                                         ensemble_ref_cube, anomaly_dict,
                                                         metadata_dict)
@@ -414,6 +432,10 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("outfile", type=str, help="name of output file")
+    parser.add_argument("volcello_file", type=str, help="volcello-vertical-zonal-sum")
+
+    parser.add_argument("--density", type=float, default=1026,
+                        help="Reference density in kg / m3")
 
     parser.add_argument("--hist_files", type=str, nargs=2, action='append', default=[],
                         help="historical experiment wfo and so files for a given model (in that order)")
