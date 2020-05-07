@@ -54,7 +54,7 @@ ${DRIFT_COEFFICIENT_FILE} : ${TEMPERATURE_MEAN_FILE_CNTRL}
 
 TEMPERATURE_MEAN_DEDRIFTED_FILE=${TEMPERATURE_MEAN_DIR_HIST}/thetao-basin-mean-dedrifted_Oyr_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}.nc
 ${TEMPERATURE_MEAN_DEDRIFTED_FILE} : ${TEMPERATURE_MEAN_FILE_HIST} ${DRIFT_COEFFICIENT_FILE}
-	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< sea_water_potential_temperature annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< sea_water_potential_temperature annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_time_check
 
 TEMPERATURE_MEAN_PLOT_FILE=/g/data/r87/dbi599/temp/temperature-basin-mean-dedrifted_Oyr_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}_bin20.png
 ${TEMPERATURE_MEAN_PLOT_FILE} : ${DRIFT_COEFFICIENT_FILE} ${TEMPERATURE_MEAN_FILE_CNTRL} ${TEMPERATURE_MEAN_FILE_HIST} ${TEMPERATURE_MEAN_DEDRIFTED_FILE}
