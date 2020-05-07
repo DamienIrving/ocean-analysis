@@ -9,7 +9,7 @@
 include cmip_config.mk
 PR_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Amon/pr/${GRID}/${HIST_VERSION}/pr*.nc))
 PR_FILE_HIST := $(firstword ${PR_FILES_HIST})
-REF_FILE=--ref_file ${PR_FILE_HIST}
+REF_FILE=--ref_file ${PR_FILE_HIST} precipitation_flux
 
 #EXPERIMENT=historical
 OFX_DIR=fx
@@ -61,5 +61,26 @@ VOLCELLO_VERTICAL_SUM=${MY_VOLCELLO_DIR}/volcello-vertical-sum_Ofx_${MODEL}_${FX
 ${VOLCELLO_VERTICAL_SUM} : ${VOLCELLO_FILE}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_vertical_aggregate.py $< ocean_volume sum $@
 
+VOLCELLO_VERTICAL_ZONAL_SUM=${MY_VOLCELLO_DIR}/volcello-vertical-zonal-sum_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
+${VOLCELLO_VERTICAL_ZONAL_SUM} : ${VOLCELLO_VERTICAL_SUM}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py $< zonal sum $@
+
+## historical vertical zonal mean
+
+MY_SO_HIST_DIR=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Oyr/so/${GRID}/${HIST_VERSION}/
+SO_VZM_HIST=${MY_SO_HIST_DIR}/so-vertical-zonal-mean_Oyr_${MODEL}_historical_${RUN}_${HIST_TIME}.nc
+${SO_VZM_HIST} : ${VOLCELLO_VERTICAL_SUM}
+	mkdir -p ${MY_SO_HIST_DIR}
+	bash ${DATA_SCRIPT_DIR}/calc_vertical_aggregate.sh ${MY_SO_HIST_DIR} ${SALINITY_FILES_HIST}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py ${MY_SO_HIST_DIR}/so-vertical-mean_*.nc sea_water_salinity zonal mean $@ --weights $< ${REF_FILE}
+
+## control vertical zonal mean
+
+MY_SO_CNTRL_DIR=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Oyr/so/${GRID}/${CNTRL_VERSION}/
+SO_VZM_CNTRL=${MY_SO_CNTRL_DIR}/so-vertical-zonal-mean_Oyr_${MODEL}_piControl_${RUN}_${CNTRL_TIME}.nc
+${SO_VZM_CNTRL} : ${VOLCELLO_VERTICAL_SUM}
+	mkdir -p ${MY_SO_CNTRL_DIR}
+	bash ${DATA_SCRIPT_DIR}/calc_vertical_aggregate.sh ${MY_SO_CNTRL_DIR} ${SALINITY_FILES_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py ${MY_SO_CNTRL_DIR}/so-vertical-mean_*.nc sea_water_salinity zonal mean $@ --weights $< ${REF_FILE}
 
 
