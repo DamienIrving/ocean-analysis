@@ -12,10 +12,7 @@ import argparse
 import numpy
 import iris
 from iris.experimental.equalise_cubes import equalise_attributes
-import dask
-dask.set_options(get=dask.get)
 import cmdline_provenance as cmdprov
-import multiprocessing_on_dill as multiprocessing
 
 # Import my modules
 
@@ -109,33 +106,6 @@ def horiz_aggregate(cube, coord_names, keep_coord, horiz_bounds, agg_method):
     return horiz_agg
 
 
-#def parallel_zonal_agg(cube, coord_names, nlat, new_lat_bounds, agg_method, target_shape):
-#    """Calculate the zonal aggregate in parallel."""
-#
-#    # Start my pool
-#    print('CPUs:', multiprocessing.cpu_count())
-#    pool = multiprocessing.Pool( multiprocessing.cpu_count() )
-#
-#    # Build task list
-#    tasks = []
-#    for lat_index in range(0, nlat):
-#        tasks.append( (cube, coord_names, new_lat_bounds[lat_index], agg_method) )
-#    
-#    # Run tasks
-#    results = [pool.apply_async( lat_aggregate, t ) for t in tasks]
-#
-#    # Process results
-#    new_data = numpy.ma.zeros(target_shape)
-#    for lat_index, result in enumerate(results):
-#        lat_agg = result.get()
-#        new_data[..., lat_index] = lat_agg.data
-#        
-#    pool.close()
-#    pool.join()
-#
-#    return new_data
-
-
 def curvilinear_agg(cube, ref_cube, keep_coord, agg_method, weights=None):
     """Horizontal aggregation for curvilinear data."""
 
@@ -160,7 +130,6 @@ def curvilinear_agg(cube, ref_cube, keep_coord, agg_method, weights=None):
     for horiz_index in range(0, nhoriz):
         horiz_agg = horiz_aggregate(cube, coord_names, keep_coord, new_horiz_bounds[horiz_index], agg_method)
         new_data[..., horiz_index] = horiz_agg.data
-    #new_data = parallel_zonal_agg(cube, coord_names, nlat, new_lat_bounds, agg_method, target_shape)
 
     target_coords.append((ref_cube.coord(keep_coord), target_horiz_index))
     new_cube = iris.cube.Cube(new_data,
@@ -263,7 +232,7 @@ def main(inargs):
             metadata_dict[filename] = cube.attributes['history'] 
             horiz_aggregate.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
 
-            iris.save(horiz_aggregate, outfile)   #netcdf_format='NETCDF3_CLASSIC')
+            iris.save(horiz_aggregate, outfile)
             print('output:', outfile)
             del horiz_aggregate
 
@@ -277,7 +246,7 @@ def main(inargs):
 
         metadata_dict[filename] = cube.attributes['history']
         output_cubelist.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
-        iris.save(output_cubelist, inargs.outfile)  # netcdf_format='NETCDF3_CLASSIC')
+        iris.save(output_cubelist, inargs.outfile) 
 
 
 if __name__ == '__main__':
@@ -295,7 +264,7 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
                                      
-    parser.add_argument("infiles", type=str, nargs='*', help="Input file")
+    parser.add_argument("infiles", type=str, nargs='*', help="Input files")
     parser.add_argument("var", type=str, help="Variable")
     parser.add_argument("direction", type=str, choices=('zonal', 'meridional'), help="Calculate the zonal or meridional aggregate")
     parser.add_argument("aggregation", type=str, choices=('mean', 'sum'), help="Method for horizontal aggregation")
