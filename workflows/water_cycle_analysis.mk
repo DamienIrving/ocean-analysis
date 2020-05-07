@@ -7,14 +7,22 @@
 #
 
 include cmip_config.mk
+PR_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Amon/pr/${GRID}/${HIST_VERSION}/pr*.nc))
+PR_FILE_HIST := $(firstword ${PR_FILES_HIST})
+REF_FILE=--ref_file ${PR_FILE_HIST}
+
+#EXPERIMENT=historical
+OFX_DIR=fx
 
 
-# File definitions
+# File definitions (path might be different for CMIP5 models)
 
 AREACELLO_FILE=${AREACELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/areacello/${GRID}/${VOLCELLO_VERSION}/areacello_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
+VOLCELLO_FILE=${VOLCELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
 WFO_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/wfo/${GRID}/${HIST_VERSION}/wfo*.nc))
 WFO_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/wfo/${GRID}/${CNTRL_VERSION}/wfo*.nc))
-
+SALINITY_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/so/${GRID}/${HIST_VERSION}/so*.nc)) 
+SALINITY_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/so/${GRID}/${CNTRL_VERSION}/so*.nc)) 
 
 # wfo
 
@@ -24,7 +32,34 @@ WFO_DIR_HIST=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Oyr/wfo/${
 WFO_ZONAL_SUM_FILE_HIST=${WFO_DIR_HIST}/wfo-zonal-sum_Oyr_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}-cumsum.nc
 ${WFO_ZONAL_SUM_FILE_HIST} : ${AREACELLO_FILE}
 	mkdir -p ${WFO_DIR_HIST}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py ${WFO_FILES_HIST} water_flux_into_sea_water zonal sum $@ --area $< --annual --cumsum --flux_to_mag 
-#--ref_file /g/data1/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/historical/mon/atmos/Amon/r1i1p1/v20110518/pr/pr_Amon_CSIRO-Mk3-6-0_historical_r1i1p1_185001-200512.nc precipitation_flux
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py ${WFO_FILES_HIST} water_flux_into_sea_water zonal sum $@ --area $< --annual --cumsum --flux_to_mag ${REF_FILE}
+
+## historical zonal sum
+
+WFO_DIR_CNTRL=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Oyr/wfo/${GRID}/${CNTRL_VERSION}
+WFO_ZONAL_SUM_FILE_CNTRL=${WFO_DIR_CNTRL}/wfo-zonal-sum_Oyr_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
+${WFO_ZONAL_SUM_FILE_CNTRL} : ${AREACELLO_FILE}
+	mkdir -p ${WFO_DIR_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py ${WFO_FILES_CNTRL} water_flux_into_sea_water zonal sum $@ --area $< --annual --cumsum --flux_to_mag ${REF_FILE}
+
+## cumulative anomaly
+
+WFO_COEFFICIENTS=${WFO_DIR_CNTRL}/wfo-zonal-sum-coefficients_Oyr_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
+${WFO_COEFFICIENTS} : ${WFO_ZONAL_SUM_FILE_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< water_flux_into_sea_water $@
+
+WFO_ANOMALY_CUMSUM=${WFO_DIR_HIST}/wfo-zonal-sum-anomaly_Oyr_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}-cumsum.nc
+${WFO_ANOMALY_CUMSUM} : ${WFO_ZONAL_SUM_FILE_HIST} ${WFO_COEFFICIENTS} 
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< water_flux_into_sea_water annual $(word 2,$^) $@
+
+# so
+
+## volcello
+
+MY_VOLCELLO_DIR=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/
+VOLCELLO_VERTICAL_SUM=${MY_VOLCELLO_DIR}/volcello-vertical-sum_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
+${VOLCELLO_VERTICAL_SUM} : ${VOLCELLO_FILE}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_vertical_aggregate.py $< ocean_volume sum $@
+
 
 
