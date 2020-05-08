@@ -175,9 +175,9 @@ def time_adjustment(first_data_cube, control_cube, timescale, branch_time=None):
         branch_time_value = float(branch_time) + adjustment
     else:
         try:
-            branch_time_value = float(first_data_cube.attributes['branch_time']) + adjustment
-        except KeyError:
             branch_time_value = float(first_data_cube.attributes['branch_time_in_parent']) + adjustment
+        except KeyError:
+            branch_time_value = float(first_data_cube.attributes['branch_time']) + adjustment
 
     try:
         branch_time_unit = control_cube.attributes['time_unit']
