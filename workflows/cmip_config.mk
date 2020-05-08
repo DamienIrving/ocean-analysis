@@ -3,11 +3,13 @@
 PYTHON=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 DATA_SCRIPT_DIR=/home/599/dbi599/ocean-analysis/data_processing
 VIZ_SCRIPT_DIR=/home/599/dbi599/ocean-analysis/visualisation
-MY_DATA_DIR=/g/data/r87/dbi599/CMIP6/CMIP
 
 #defaults
+MY_DATA_DIR=/g/data/r87/dbi599/CMIP6/CMIP
 TOS_VAR=tos
 TOS_LONG_NAME=sea_surface_temperature
+
+# CMIP6 #
 
 # ACCESS-CM2
 #
@@ -41,6 +43,7 @@ TOS_LONG_NAME=sea_surface_temperature
 #VOLCELLO_DIR=${NCI_DATA_DIR}
 #AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=historical
+
 
 # BCC-CSM2-MR
 #
@@ -431,3 +434,23 @@ TOS_LONG_NAME=sea_surface_temperature
 #VOLCELLO_DIR=${MY_DATA_DIR}
 #AREACELLO_DIR=${NCI_DATA_DIR}
 #FX_EXP=piControl
+
+
+# CMIP5 #
+
+# CSIRO-Mk3-6-0
+#
+#MODEL=CSIRO-Mk3-6-0
+#INSTITUTION=CSIRO-QCCCE
+#RUN=r1i1p1
+#GRID=gn
+#VOLCELLO_VERSION=v20110518
+#HIST_VERSION=v20110518
+#HIST_TIME=185001-200512
+#CNTRL_VERSION=v20110518
+#CNTRL_TIME=000101-050012
+#MY_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#NCI_DATA_DIR=/g/data/rr3/publications/CMIP5/output1
+#VOLCELLO_DIR=${NCI_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
+#FX_EXP=historical

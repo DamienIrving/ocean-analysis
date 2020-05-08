@@ -7,22 +7,33 @@
 #
 
 include cmip_config.mk
-PR_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Amon/pr/${GRID}/${HIST_VERSION}/pr*.nc))
-PR_FILE_HIST := $(firstword ${PR_FILES_HIST})
-REF_FILE=--ref_file ${PR_FILE_HIST} precipitation_flux
-
 #EXPERIMENT=historical
-OFX_DIR=fx
+
+# File definitions, CMIP6 models
+
+#FX_RUN=${RUN}
+#AREACELLO_FILE=${AREACELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/areacello/${GRID}/${VOLCELLO_VERSION}/areacello_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
+#VOLCELLO_FILE=${VOLCELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
+#WFO_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/wfo/${GRID}/${HIST_VERSION}/wfo*.nc))
+#WFO_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/wfo/${GRID}/${CNTRL_VERSION}/wfo*.nc))
+#SALINITY_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/so/${GRID}/${HIST_VERSION}/so*.nc)) 
+#SALINITY_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/so/${GRID}/${CNTRL_VERSION}/so*.nc)) 
+#PR_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Amon/pr/${GRID}/${HIST_VERSION}/pr*.nc))
+
+# File definitions, CMIP5 models (CSIRO-Mk3-6-0)
+
+FX_RUN=r0i0p0
+AREACELLO_FILE=${AREACELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+VOLCELLO_FILE=${VOLCELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/volcello/volcello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+WFO_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/mon/ocean/Omon/${RUN}/files/wfo_20110518/wfo*.nc))
+WFO_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/mon/ocean/Omon/${RUN}/${CNTRL_VERSION}/wfo/wfo*.nc))
+SALINITY_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/mon/ocean/Omon/${RUN}/${HIST_VERSION}/so/so*.nc))
+SALINITY_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/mon/ocean/Omon/${RUN}/${CNTRL_VERSION}/so/so*.nc))
+#PR_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/mon/atmos/Amon/${RUN}/${HIST_VERSION}/pr/pr*.nc))
 
 
-# File definitions (path might be different for CMIP5 models)
-
-AREACELLO_FILE=${AREACELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/areacello/${GRID}/${VOLCELLO_VERSION}/areacello_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
-VOLCELLO_FILE=${VOLCELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
-WFO_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/wfo/${GRID}/${HIST_VERSION}/wfo*.nc))
-WFO_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/wfo/${GRID}/${CNTRL_VERSION}/wfo*.nc))
-SALINITY_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Omon/so/${GRID}/${HIST_VERSION}/so*.nc)) 
-SALINITY_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Omon/so/${GRID}/${CNTRL_VERSION}/so*.nc)) 
+#PR_FILE_HIST := $(firstword ${PR_FILES_HIST})
+#REF_FILE=--ref_file ${PR_FILE_HIST} precipitation_flux
 
 # wfo
 
@@ -52,35 +63,61 @@ WFO_ANOMALY_CUMSUM=${WFO_DIR_HIST}/wfo-zonal-sum-anomaly_Oyr_${MODEL}_historical
 ${WFO_ANOMALY_CUMSUM} : ${WFO_ZONAL_SUM_FILE_HIST} ${WFO_COEFFICIENTS} 
 	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< water_flux_into_sea_water annual $(word 2,$^) $@
 
+
 # so
 
 ## volcello
 
-MY_VOLCELLO_DIR=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/
-VOLCELLO_VERTICAL_SUM=${MY_VOLCELLO_DIR}/volcello-vertical-sum_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
-${VOLCELLO_VERTICAL_SUM} : ${VOLCELLO_FILE}
+MY_VOLCELLO_DIR=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}
+VOLCELLO_VS=${MY_VOLCELLO_DIR}/volcello-vertical-sum_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+${VOLCELLO_VS} : ${VOLCELLO_FILE}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_vertical_aggregate.py $< ocean_volume sum $@
 
-VOLCELLO_VERTICAL_ZONAL_SUM=${MY_VOLCELLO_DIR}/volcello-vertical-zonal-sum_Ofx_${MODEL}_${FX_EXP}_${RUN}_${GRID}.nc
-${VOLCELLO_VERTICAL_ZONAL_SUM} : ${VOLCELLO_VERTICAL_SUM}
+VOLCELLO_VZS=${MY_VOLCELLO_DIR}/volcello-vertical-zonal-sum_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+${VOLCELLO_VZS} : ${VOLCELLO_VS}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py $< zonal sum $@
 
 ## historical vertical zonal mean
 
-MY_SO_HIST_DIR=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Oyr/so/${GRID}/${HIST_VERSION}/
-SO_VZM_HIST=${MY_SO_HIST_DIR}/so-vertical-zonal-mean_Oyr_${MODEL}_historical_${RUN}_${HIST_TIME}.nc
-${SO_VZM_HIST} : ${VOLCELLO_VERTICAL_SUM}
-	mkdir -p ${MY_SO_HIST_DIR}
-	bash ${DATA_SCRIPT_DIR}/calc_vertical_aggregate.sh ${MY_SO_HIST_DIR} ${SALINITY_FILES_HIST}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py ${MY_SO_HIST_DIR}/so-vertical-mean_*.nc sea_water_salinity zonal mean $@ --weights $< ${REF_FILE}
+SO_DIR_HIST=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/historical/${RUN}/Oyr/so/${GRID}/${HIST_VERSION}
+SO_VZM_HIST=${SO_DIR_HIST}/so-vertical-zonal-mean_Oyr_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}.nc
+${SO_VZM_HIST} : ${VOLCELLO_VS}
+	mkdir -p ${SO_DIR_HIST}
+	bash ${DATA_SCRIPT_DIR}/calc_vertical_aggregate.sh ${SO_DIR_HIST} ${SALINITY_FILES_HIST}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py ${SO_DIR_HIST}/so-vertical-mean_*.nc sea_water_salinity zonal mean $@ --weights $< ${REF_FILE}
 
 ## control vertical zonal mean
 
-MY_SO_CNTRL_DIR=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Oyr/so/${GRID}/${CNTRL_VERSION}/
-SO_VZM_CNTRL=${MY_SO_CNTRL_DIR}/so-vertical-zonal-mean_Oyr_${MODEL}_piControl_${RUN}_${CNTRL_TIME}.nc
-${SO_VZM_CNTRL} : ${VOLCELLO_VERTICAL_SUM}
-	mkdir -p ${MY_SO_CNTRL_DIR}
-	bash ${DATA_SCRIPT_DIR}/calc_vertical_aggregate.sh ${MY_SO_CNTRL_DIR} ${SALINITY_FILES_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py ${MY_SO_CNTRL_DIR}/so-vertical-mean_*.nc sea_water_salinity zonal mean $@ --weights $< ${REF_FILE}
+SO_DIR_CNTRL=${MY_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${RUN}/Oyr/so/${GRID}/${CNTRL_VERSION}
+SO_VZM_CNTRL=${SO_DIR_CNTRL}/so-vertical-zonal-mean_Oyr_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}.nc
+${SO_VZM_CNTRL} : ${VOLCELLO_VS}
+	mkdir -p ${SO_DIR_CNTRL}
+	bash ${DATA_SCRIPT_DIR}/calc_vertical_aggregate.sh ${SO_DIR_CNTRL} ${SALINITY_FILES_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py ${SO_DIR_CNTRL}/so-vertical-mean_*.nc sea_water_salinity zonal mean $@ --weights $< ${REF_FILE}
+
+## dedrifting
+
+SO_COEFFICIENTS=${SO_DIR_CNTRL}/so-vertical-zonal-mean-coefficients_Oyr_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}.nc
+${SO_COEFFICIENTS} : ${SO_VZM_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< sea_water_salinity $@ --outlier_threshold 0.01
+
+SO_VZM_HIST_DEDRIFTED=${SO_DIR_HIST}/so-vertical-zonal-mean-dedrifted_Oyr_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}.nc
+${SO_VZM_HIST_DEDRIFTED} : ${SO_VZM_HIST} ${SO_COEFFICIENTS}
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< sea_water_salinity annual $(word 2,$^) $@
+
+SO_VZM_PLOT=/g/data/r87/dbi599/temp/so-vertical-zonal-mean-dedrifted_Oyr_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}_grid-point-50.png
+${SO_VZM_PLOT} : ${SO_COEFFICIENTS} ${SO_VZM_CNTRL} ${SO_VZM_HIST} ${SO_VZM_HIST_DEDRIFTED}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py sea_water_salinity $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 50 --outlier_threshold 0.01 ${BRANCH_TIME} --ylim 34.5 35.5
+
+
+# final plot
+
+FINAL_PLOT=/g/data/r87/dbi599/temp/water-cycle-change_Oyr_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}.png
+${FINAL_PLOT} : ${VOLCELLO_VZS} ${WFO_ANOMALY_CUMSUM} ${SO_VZM_HIST_DEDRIFTED}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_zonal_water_budget_change.py $@ $< --hist_files $(word 2,$^) $(word 3,$^) --experiments historical 
+
+# targets
+
+all : ${FINAL_PLOT} ${SO_VZM_PLOT}
 
 
