@@ -180,7 +180,7 @@ def fix_time_descriptor(time_unit_text):
 
     time_unit_text = time_unit_text[0:21]  # gets rid of hours, minutes, seconds
 
-    year, month, day = re.findall("(\d{3,4})-(\d{1,2})-(\d{1,2})", time_unit_text)[0]
+    year, month, day = re.findall("(\d{1,4})-(\d{1,2})-(\d{1,2})", time_unit_text)[0]
     time_unit_text = f"days since {year:0>4}-{month:0>2}-{day:0>2}"
 
     valid_pattern = 'days since ([0-9]{4})-([0-9]{2})-([0-9]{2})$'
@@ -235,7 +235,10 @@ def check_wfo_sign(cube):
                          'MIROC-ESM', 'MIROC-ESM-CHEM']
 
     assert cube.standard_name == 'water_flux_into_sea_water'
-    model = cube.attributes['source_id']
+    try:
+        model = cube.attributes['source_id']
+    except KeyError:
+        model = cube.attributes['model_id']
                   
     if model in wrong_sign_models:
         cube.data = cube.data * -1
