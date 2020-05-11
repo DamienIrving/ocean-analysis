@@ -53,10 +53,10 @@ panel_labels = {0: '(a)', 1: '(b)', 2: '(c)', 3: '(d)',
 
 seaborn.set(style='whitegrid')
 
-mpl.rcParams['axes.labelsize'] = 24
-mpl.rcParams['axes.titlesize'] = 28
-mpl.rcParams['xtick.labelsize'] = 24
-mpl.rcParams['ytick.labelsize'] = 24
+mpl.rcParams['axes.labelsize'] = 16
+mpl.rcParams['axes.titlesize'] = 24
+mpl.rcParams['xtick.labelsize'] = 20
+mpl.rcParams['ytick.labelsize'] = 20
 mpl.rcParams['legend.fontsize'] = 16
 
 
@@ -239,7 +239,7 @@ def plot_uptake_storage(gs, wfo_anomaly, so_anomaly,
         plt.title(title)
 
     if decorate:
-        labels = ['wfo', 'so']
+        labels = ['surface freshwater flux', 'ocean salinity']
     else:
         labels = [None, None]
 
@@ -258,7 +258,7 @@ def plot_uptake_storage(gs, wfo_anomaly, so_anomaly,
 
     if decorate:
         if exp_num == 0:
-            plt.ylabel('Freshwater uptake/storage ($kg \; lat^{-1}$)')
+            plt.ylabel('Anomalous freshwater uptake/storage ($kg \; lat^{-1}$)')
         plt.xlim(-90, 90)
 
         #plt.axhline(y=0, color='0.5', linestyle='--')
@@ -295,7 +295,7 @@ def plot_transport(gs, transport,
     if decorate:
         plt.xlabel('Latitude')
         if exp_num == 0:
-            plt.ylabel('Accumulated freshwater transport ($kg$)')
+            plt.ylabel('Accumulated anomalous freshwater transport ($kg$)')
         plt.xlim(-90, 90)
 
         #plt.axhline(y=0, color='0.5', linestyle='--')
