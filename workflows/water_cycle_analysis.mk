@@ -20,17 +20,13 @@ include cmip_config.mk
 #SALINITY_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Omon/so/${GRID}/${CNTRL_VERSION}/so*.nc)) 
 #PR_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/pr/${GRID}/${HIST_VERSION}/pr*.nc))
 
-# File definitions, CMIP5 models (CSIRO-Mk3-6-0)
+# File definitions, CMIP5 models
 
-FX_RUN=r0i0p0
-AREACELLO_FILE=${AREACELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
-VOLCELLO_FILE=${VOLCELLO_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/volcello/volcello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
-WFO_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/ocean/Omon/${HIST_RUN}/files/wfo_20110518/wfo*.nc))
+WFO_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/ocean/Omon/${HIST_RUN}/${HIST_VERSION}/wfo/wfo*.nc))
 WFO_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/mon/ocean/Omon/${CNTRL_RUN}/${CNTRL_VERSION}/wfo/wfo*.nc))
 SALINITY_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/ocean/Omon/${HIST_RUN}/${HIST_VERSION}/so/so*.nc))
 SALINITY_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/mon/ocean/Omon/${CNTRL_RUN}/${CNTRL_VERSION}/so/so*.nc))
 #PR_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${HIST_VERSION}/pr/pr*.nc))
-
 
 #PR_FILE_HIST := $(firstword ${PR_FILES_HIST})
 #REF_FILE=--ref_file ${PR_FILE_HIST} precipitation_flux

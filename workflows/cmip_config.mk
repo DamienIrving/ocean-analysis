@@ -443,21 +443,96 @@ MIP=CMIP
 
 # CSIRO-Mk3-6-0
 #
-MODEL=CSIRO-Mk3-6-0
-INSTITUTION=CSIRO-QCCCE
-RUN=r1i1p1
+# unique wfo DRS: ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/ocean/Omon/${HIST_RUN}/files/wfo_20110518/wfo*.nc
+#
+#MODEL=CSIRO-Mk3-6-0
+#INSTITUTION=CSIRO-QCCCE
+#HIST_RUN=r1i1p1
+##r1i1p1 r1i1p4
+#CNTRL_RUN=r1i1p1
+#GRID=gn
+#VOLCELLO_VERSION=v20110518
+#HIST_VERSION=v20110518
+#HIST_TIME=185001-200512
+#CNTRL_VERSION=v20110518
+#CNTRL_TIME=000101-050012
+#EXPERIMENT=historical
+##historical historicalGHG historicalMisc
+#MIP=CMIP
+##DAMIP CMIP
+#MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
+#MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#NCI_DATA_DIR=/g/data/rr3/publications/CMIP5/output1
+#FX_EXP=historical
+#FX_RUN=r0i0p0
+#AREACELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#VOLCELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/volcello/volcello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+
+# GFDL-CM3
+#
+MODEL=GFDL-CM3
+INSTITUTION=NOAA-GFDL
+HIST_RUN=r1i1p1
+CNTRL_RUN=r1i1p1
 GRID=gn
-VOLCELLO_VERSION=v20110518
-HIST_VERSION=v20110518
-HIST_TIME=185001-200512
-CNTRL_VERSION=v20110518
-CNTRL_TIME=000101-050012
-EXPERIMENT=historicalGHG
-MIP=DAMIP
+VOLCELLO_VERSION=v20120227
+HIST_VERSION=v20110601
+HIST_TIME=186001-200512
+CNTRL_VERSION=v20110601
+CNTRL_TIME=000101-080012
+EXPERIMENT=historical
+#historical historicalGHG historicalMisc
+MIP=CMIP
+#DAMIP CMIP
 MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
 MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
 NCI_DATA_DIR=/g/data/rr3/publications/CMIP5/output1
 FX_EXP=historical
-VOLCELLO_DIR=${NCI_DATA_DIR}
-AREACELLO_DIR=${NCI_DATA_DIR}
+FX_RUN=r0i0p0
+AREACELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+VOLCELLO_FILE=${MY_FX_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
 
+
+# GISS-E2-R
+#
+#MODEL=GISS-E2-R
+#INSTITUTION=NASA-GISS
+#HIST_RUN=r1i1p1
+## r1i1p1 r1i1p310
+#CNTRL_RUN=r1i1p1
+#GRID=gn
+#VOLCELLO_VERSION=v20160502
+#HIST_VERSION=v20160502
+## hist=v20160502, ghg=v20160429, aa=v20160503
+#HIST_TIME=185001-200512
+#CNTRL_VERSION=v20160930
+#CNTRL_TIME=333101-453012
+## wfo=333101-453012, so=333101-920512
+#EXPERIMENT=historical
+##historical historicalGHG historicalMisc
+#MIP=CMIP
+##DAMIP CMIP
+#MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
+#MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#NCI_DATA_DIR=/g/data/al33/replicas/CMIP5/combined
+#FX_EXP=historical
+#VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
+
+# GFDL-ESM2M
+#/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/historical/mon/ocean/Omon/r1i1p1/v20130226/so/
+#/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/historical/mon/ocean/Omon/r1i1p1/v20130226/wfo/
+#/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/historicalGHG/mon/ocean/Omon/r1i1p1/v20130226/so/
+#/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/historicalGHG/mon/ocean/Omon/r1i1p1/v20130226/wfo/
+#/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/historicalMisc/mon/ocean/Omon/r1i1p5/v20130226/wfo/
+#/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/piControl/mon/ocean/Omon/r1i1p1/v20130226/so/
+#/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/piControl/mon/ocean/Omon/r1i1p1/v20130226/wfo/
+
+# NorESM1-M
+#/g/data/al33/replicas/CMIP5/combined/NCC/NorESM1-M/historical/mon/ocean/Omon/r1i1p1/v20110901/so/
+#/g/data/al33/replicas/CMIP5/combined/NCC/NorESM1-M/historical/mon/ocean/Omon/r1i1p1/v20110901/wfo/
+#/g/data/al33/replicas/CMIP5/combined/NCC/NorESM1-M/historicalGHG/mon/ocean/Omon/r1i1p1/v20110918/so/
+#/g/data/al33/replicas/CMIP5/combined/NCC/NorESM1-M/historicalGHG/mon/ocean/Omon/r1i1p1/v20110918/wfo/
+#/g/data/al33/replicas/CMIP5/combined/NCC/NorESM1-M/historicalMisc/mon/ocean/Omon/r1i1p1/v20110918/wfo/
+#/g/data/al33/replicas/CMIP5/combined/NCC/NorESM1-M/piControl/mon/ocean/Omon/r1i1p1/v20110901/so/
+#/g/data/al33/replicas/CMIP5/combined/NCC/NorESM1-M/piControl/mon/ocean/Omon/r1i1p1/v20110901/wfo/
