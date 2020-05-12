@@ -79,8 +79,11 @@ def select_basin(cube, basin_cube, basin_name):
 def multiply_by_area(cube, area_cube):
     """Multiply by cell area."""
 
-    assert cube.ndim == 3
-    area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
+    assert cube.ndim in [2, 3]
+    if cube.ndim == 3:
+        area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
+    else:
+        area_data = area_cube.data
 
     units = str(cube.units)
     cube.data = cube.data * area_data   
@@ -111,10 +114,14 @@ def curvilinear_agg(cube, ref_cube, keep_coord, agg_method, weights=None):
 
     coord_names = [coord.name() for coord in cube.dim_coords]
 
-    assert coord_names[0] == 'time'
-    target_shape = [cube.shape[0]]
-    target_coords = [(cube.coord('time'), 0)]
-    target_horiz_index = 1
+    target_shape = []
+    target_coords = []
+    target_horiz_index = 0
+    if cube.ndim >= 3:
+        assert coord_names[0] == 'time'
+        target_shape.append(cube.shape[0])
+        target_coords.append((cube.coord('time'), 0))
+        target_horiz_index = 1
 
     if cube.ndim == 4:
         assert coord_names[1] == 'depth'
