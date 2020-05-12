@@ -113,7 +113,6 @@ def curvilinear_agg(cube, ref_cube, keep_coord, agg_method, weights=None):
     """Horizontal aggregation for curvilinear data."""
 
     coord_names = [coord.name() for coord in cube.dim_coords]
-
     target_shape = []
     target_coords = []
     target_horiz_index = 0
@@ -190,7 +189,7 @@ def main(inargs):
         cube = iris.load_cube(filename, gio.check_iris_var(inargs.var) & depth_constraint)
 
         if inargs.annual:
-            cube = timeseries.convert_to_annual(cube, full_months=True, chunk=False)
+            cube = timeseries.convert_to_annual(cube)
     
         if basin_cube:
             cube = select_basin(cube, basin_cube, basin_name)        
