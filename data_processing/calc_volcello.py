@@ -34,21 +34,19 @@ except ImportError:
 
 # Define functions
 
-def construct_volume_cube(volume_data, global_atts, dim_coords):
+def construct_volume_cube(volume_data, data_cube, global_atts):
     """Construct the new volume cube """
 
-    dim_coords_list = []
-    for i, coord in enumerate(dim_coords):
-        dim_coords_list.append((coord, i))
-
-    volume_cube = iris.cube.Cube(volume_data,
-                                 standard_name='ocean_volume',
-                                 long_name='Ocean Grid-Cell Volume',
-                                 var_name='volcello',
-                                 units='m3',
-                                 attributes=global_atts,
-                                 dim_coords_and_dims=dim_coords_list) 
-
+    volume_cube = data_cube.copy()
+    volume_cube.data = volume_data
+    volume_cube.standard_name = 'ocean_volume'
+    volume_cube.long_name = 'Ocean Grid-Cell Volume'
+    volume_cube.var_name = 'volcello'
+    volume_cube.units = 'm3'
+    volume_cube.cell_methods = ()
+    if global_atts:
+        volume_cube.attributes = global_atts
+                              
     return volume_cube
 
      
@@ -57,9 +55,10 @@ def main(inargs):
 
     # Depth data
     data_cube = iris.load_cube(inargs.dummy_file, inargs.dummy_var)
-    coord_names = [coord.name() for coord in data_cube.dim_coords]
-    assert coord_names[0] == 'time'
-    depth_name = coord_names[1]
+    dim_coord_names = [coord.name() for coord in data_cube.dim_coords]
+    aux_coord_names = [coord.name() for coord in data_cube.aux_coords]
+    assert dim_coord_names[0] == 'time'
+    depth_name = dim_coord_names[1]
     data_cube = data_cube[0, ::]
     data_cube.remove_coord('time')
     depth_data = spatial_weights.get_depth_array(data_cube, depth_name)
@@ -82,8 +81,8 @@ def main(inargs):
     volume_data = numpy.ma.asarray(volume_data)
     data = numpy.ma.masked_invalid(data_cube.data)
     volume_data.mask = data.mask
-
-    volume_cube = construct_volume_cube(volume_data, data_cube.attributes, data_cube.dim_coords)    
+    global_atts = area_cube.attributes if inargs.area_file else None
+    volume_cube = construct_volume_cube(volume_data, data_cube, global_atts)    
     volume_cube.attributes['history'] = gio.write_metadata()
 
     gio.check_global_ocean_volume(volume_cube.data.sum()) 
