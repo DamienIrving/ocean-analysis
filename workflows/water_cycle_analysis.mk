@@ -26,10 +26,10 @@ WFO_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EX
 WFO_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/mon/ocean/Omon/${CNTRL_RUN}/${CNTRL_VERSION}/wfo/wfo*.nc))
 SALINITY_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/ocean/Omon/${HIST_RUN}/${HIST_VERSION}/so/so*.nc))
 SALINITY_FILES_CNTRL := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/mon/ocean/Omon/${CNTRL_RUN}/${CNTRL_VERSION}/so/so*.nc))
-#PR_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${HIST_VERSION}/pr/pr*.nc))
+PR_FILES_HIST := $(sort $(wildcard ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/pr/pr*.nc))
 
-#PR_FILE_HIST := $(firstword ${PR_FILES_HIST})
-#REF_FILE=--ref_file ${PR_FILE_HIST} precipitation_flux
+PR_FILE_HIST := $(firstword ${PR_FILES_HIST})
+REF_FILE=--ref_file ${PR_FILE_HIST} precipitation_flux
 
 # wfo
 
@@ -72,7 +72,7 @@ ${VOLCELLO_VS} : ${VOLCELLO_FILE}
 
 VOLCELLO_VZS=${MY_VOLCELLO_DIR}/volcello-vertical-zonal-sum_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
 ${VOLCELLO_VZS} : ${VOLCELLO_VS}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py $< ocean_volume zonal sum $@
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_horizontal_aggregate.py $< ocean_volume zonal sum $@ ${REF_FILE}
 
 ## experiment vertical zonal mean
 
