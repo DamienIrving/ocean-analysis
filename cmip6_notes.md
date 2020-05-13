@@ -14,6 +14,7 @@ The [recommended acknowledgement](https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsO
 * Model documentation, errata submission etc at [ES-DOC](https://es-doc.org/cmip6/)
   * At the [ES-DOC Search](https://search.es-doc.org/) page you can find detailed documentation about each of the models, including the values for static variables like `cpocean` and `rhozero`
   * [Errata service](https://errata.es-doc.org/static/index.html)
+* [CMIP6 preprocessing](https://github.com/jbusecke/cmip6_preprocessing) python package
 * [FAFMIP website](http://www.fafmip.org/)
 * [DAMIP website](http://damip.lbl.gov/about)
 * [CLEX CMS team CMIP6 quality checks repository](https://github.com/coecms/QCmip6)
