@@ -10,13 +10,16 @@ The [recommended acknowledgement](https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsO
 
 ## Resources
 
+* [A Guide to CMIP6 Participation](https://pcmdi.llnl.gov/CMIP6/Guide/index.html)
+* Model documentation, errata submission etc at [ES-DOC](https://es-doc.org/cmip6/)
+  * At the [ES-DOC Search](https://search.es-doc.org/) page you can find detailed documentation about each of the models, including the values for static variables like `cpocean` and `rhozero`
+  * [Errata service](https://errata.es-doc.org/static/index.html)
+* [FAFMIP website](http://www.fafmip.org/)
+* [DAMIP website](http://damip.lbl.gov/about)
+* [CLEX CMS team CMIP6 quality checks repository](https://github.com/coecms/QCmip6)
 * [ESMValTool](http://esmvaltool.org) is the global community tool for simple analysis
   * There is a [website](http://cmip-esmvaltool.dkrz.de/) to view ESMValTool results
   * The source code is on [GitHub](https://github.com/ESMValGroup/ESMValTool) (you can contribute indices/metrics)
-* Model documentation, errata submission etc at [ES-DOC](https://es-doc.org/cmip6/)
-  * At the [ES-DOC Search](https://search.es-doc.org/) page you can find detailed documentation about each of the models, including the values for static variables like `cpocean` and `rhozero`
-* [FAFMIP website](http://www.fafmip.org/)
-* [CLEX CMS team CMIP6 quality checks repository](https://github.com/coecms/QCmip6)
 
 ## Data access at NCI
   
