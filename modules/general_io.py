@@ -137,6 +137,23 @@ def save_history(cube, field, filename):
         history.append(cube.attributes['history']) 
 
 
+def check_evap_sign(cube):
+    """Check that the evaporation variable has correct sign."""
+
+    wrong_sign_models = ['EC-Earth3', 'EC-Earth3-Veg']
+
+    assert 'evap' in cube.standard_name
+    try:
+        model = cube.attributes['source_id']
+    except KeyError:
+        model = cube.attributes['model_id']
+                  
+    if model in wrong_sign_models:
+        cube.data = cube.data * -1
+
+    return cube
+
+
 def check_iris_var(var, alternate_names=False):
     """Check if variable is in the list of iris standard variables.
 
@@ -158,53 +175,6 @@ def check_iris_var(var, alternate_names=False):
     return var
 
 
-def fix_time_descriptor(time_unit_text):
-    """Fix common problems with netCDF time descriptor if necessary.
-
-    Iris requires "days since YYYY-MM-DD".
-
-    Known issues in CMIP data files:
-      Not including the day (e.g. days since 0001-01)
-      Including hours, minutes and seconds 
-        e.g. days since 1850-01-01-00-00-00
-        e.g. days since 1850-01-01 00:00:00
-        e.g. days since 1850-01-01 0:0:0.0
-      No zero padding (e.g. days since 4150-1-1)
-    """
-
-    assert 'days since' in time_unit_text
-
-    missing_day_pattern = 'days since ([0-9]{4})-([0-9]{1,2})$'
-    if bool(re.search(missing_day_pattern, time_unit_text)):
-        time_unit_text = time_unit_text + '-01'
-
-    time_unit_text = time_unit_text[0:21]  # gets rid of hours, minutes, seconds
-
-    year, month, day = re.findall("(\d{1,4})-(\d{1,2})-(\d{1,2})", time_unit_text)[0]
-    time_unit_text = f"days since {year:0>4}-{month:0>2}-{day:0>2}"
-
-    valid_pattern = 'days since ([0-9]{4})-([0-9]{2})-([0-9]{2})$'
-    assert bool(re.search(valid_pattern, time_unit_text)), 'Time units not in days since YYYY-MM-DD format'
-
-    return time_unit_text
-
-
-def check_time_units(cube, new_calendar=None):
-    """Check time axis units."""
-
-    time_units = str(cube.coord('time').units)
-    calendar = new_calendar if new_calendar else cube.coord('time').units.calendar
-    
-    fixed_time_units = fix_time_descriptor(time_units)
-    altered_units_flag = fixed_time_units != time_units
-    time_units = fixed_time_units
-    
-    if altered_units_flag or new_calendar:
-        cube.coord('time').units = cf_units.Unit(time_units, calendar=calendar)
-
-    return cube
-
-
 def check_global_ocean_area(global_area):
     """Check that the global ocean area is within acceptable bounds.
 
@@ -223,6 +193,22 @@ def check_global_ocean_volume(global_volume):
     assert global_volume < 1.45e+18, "Global ocean volume is %s. Typical value is 1.3e+18 m3" %(str(global_volume))
 
 
+def check_time_units(cube, new_calendar=None):
+    """Check time axis units."""
+
+    time_units = str(cube.coord('time').units)
+    calendar = new_calendar if new_calendar else cube.coord('time').units.calendar
+    
+    fixed_time_units = fix_time_descriptor(time_units)
+    altered_units_flag = fixed_time_units != time_units
+    time_units = fixed_time_units
+    
+    if altered_units_flag or new_calendar:
+        cube.coord('time').units = cf_units.Unit(time_units, calendar=calendar)
+
+    return cube
+
+
 def check_wfo_sign(cube):
     """Check that the wfo variable has correct sign."""
 
@@ -232,6 +218,7 @@ def check_wfo_sign(cube):
                          'FGOALS-f3-L',
                          'GISS-E2-1-G', 'GISS-E2-1-G-CC', 
                          'IPSL-CM5A-LR', 'IPSL-CM6A-LR',
+                         'IPSL-CM5A-MR', 'IPSL-CM5B-LR',
                          'MIROC-ESM', 'MIROC-ESM-CHEM']
 
     assert cube.standard_name == 'water_flux_into_sea_water'
@@ -303,24 +290,68 @@ def check_xarrayDataset(dset, var_list):
         'Longitude axis must be 0 to 360E'
 
 
-def combine_cubes(cube_list, new_calendar=None):
+def clean_coordinate_attributes(cube):
+    """Fix common issues with coordinate attributes."""
+
+    dim_coord_names = [coord.name() for coord in cube.dim_coords]
+    aux_coord_names = [coord.name() for coord in cube.aux_coords]
+    
+    if 'time' in dim_coord_names:
+        cube.coord('time').attributes = {}
+    
+    if 'year' in aux_coord_names:
+        cube.coord('year').attributes = {}
+    
+    for coord_name in aux_coord_names:
+         if 'history' in cube.coord(coord_name).attributes:
+            del cube.coord(coord_name).attributes['history']
+    
+    return cube
+
+
+def check_data(cube):
+    """Check (and fix if needed) the data in an iris cube."""
+
+    try:
+        model = cube.attributes['source_id']
+    except KeyError:
+        model = cube.attributes['model_id']
+
+    if model in ['MRI-ESM2-0']:
+        cube.data = numpy.ma.masked_invalid(cube.data)
+
+    if cube.long_name == 'water_flux_into_sea_water':
+        cube = check_wfo_sign(cube)
+    
+    if 'evap' in cube.long_name:
+        cube = check_evap_sign(cube)
+
+    if cube.long_name == 'Ocean Grid-Cell Area':
+        global_area = cube.data.sum()
+        check_global_ocean_area(global_area)
+    
+    if cube.long_name == 'ocean_volume':
+        global_volume = cube.data.sum()
+        check_global_ocean_volume(global_volume)
+    
+    if cube.long_name == 'sea_water_salinity':
+        cube = salinity_unit_check(cube)
+    
+    return cube
+
+
+def combine_cubes(cube_list, new_calendar=None, data_checks=False):
     """Combine multiple iris cubes."""
 
     equalise_attributes(cube_list)
     iris.util.unify_time_units(cube_list)
     ref_dtype = cube_list[0].dtype
     for cube in cube_list:
-        dim_coord_names = [coord.name() for coord in cube.dim_coords]
-        if 'time' in dim_coord_names:
-            cube.coord('time').attributes = {}
-        aux_coord_names = [coord.name() for coord in cube.aux_coords]
-        if 'year' in aux_coord_names:
-            cube.coord('year').attributes = {}
-        for coord_name in aux_coord_names:
-            if 'history' in cube.coord(coord_name).attributes:
-                del cube.coord(coord_name).attributes['history']
+        cube = clean_coordinate_attributes(cube)
         if cube.dtype != ref_dtype:
             cube.data = cube.data.astype(ref_dtype)
+        if data_checks:
+            cube = check_data(cube)
     cube = cube_list.concatenate_cube()
     cube = iris.util.squeeze(cube)
 
@@ -334,19 +365,12 @@ def combine_cubes(cube_list, new_calendar=None):
 def combine_files(files, var, new_calendar=None, checks=False):
     """Create an iris cube from multiple input files."""
 
-    cube_list = iris.load(files, check_iris_var(var), callback=save_history)
-    cube = combine_cubes(cube_list, new_calendar=new_calendar)   
-    if checks:
-        if var == 'water_flux_into_sea_water':
-            cube = check_wfo_sign(cube)
-        if cube.long_name == 'Ocean Grid-Cell Area':
-            global_area = cube.data.sum()
-            check_global_ocean_area(global_area)
-        if var == 'ocean_volume':
-            global_volume = cube.data.sum()
-            check_global_ocean_volume(global_volume)
-        if var == 'sea_water_salinity':
-            cube = salinity_unit_check(cube)
+    try:
+        cube_list = iris.load(files, check_iris_var(var), callback=save_history)
+    except iris.exceptions.ConstraintMismatchError: 
+        cube_list = iris.load(files, check_iris_var(var, alternate_names=True), callback=save_history)
+    
+    cube = combine_cubes(cube_list, new_calendar=new_calendar, data_checks=checks)
 
     return cube, history
 
@@ -366,6 +390,37 @@ def create_outdir(outfile):
 
     print(mkdir_command)
     os.system(mkdir_command)
+
+
+def fix_time_descriptor(time_unit_text):
+    """Fix common problems with netCDF time descriptor if necessary.
+
+    Iris requires "days since YYYY-MM-DD".
+
+    Known issues in CMIP data files:
+      Not including the day (e.g. days since 0001-01)
+      Including hours, minutes and seconds 
+        e.g. days since 1850-01-01-00-00-00
+        e.g. days since 1850-01-01 00:00:00
+        e.g. days since 1850-01-01 0:0:0.0
+      No zero padding (e.g. days since 4150-1-1)
+    """
+
+    assert 'days since' in time_unit_text
+
+    missing_day_pattern = 'days since ([0-9]{4})-([0-9]{1,2})$'
+    if bool(re.search(missing_day_pattern, time_unit_text)):
+        time_unit_text = time_unit_text + '-01'
+
+    time_unit_text = time_unit_text[0:21]  # gets rid of hours, minutes, seconds
+
+    year, month, day = re.findall("(\d{1,4})-(\d{1,2})-(\d{1,2})", time_unit_text)[0]
+    time_unit_text = f"days since {year:0>4}-{month:0>2}-{day:0>2}"
+
+    valid_pattern = 'days since ([0-9]{4})-([0-9]{2})-([0-9]{2})$'
+    assert bool(re.search(valid_pattern, time_unit_text)), 'Time units not in days since YYYY-MM-DD format'
+
+    return time_unit_text
 
 
 def get_cmip5_file_details(cube):

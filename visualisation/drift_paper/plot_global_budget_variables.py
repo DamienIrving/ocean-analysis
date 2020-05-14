@@ -86,11 +86,6 @@ names = {'masso': 'sea_water_mass',
 
 amon_vars = ['rsdt', 'rsut', 'rlut', 'pr', 'evspsbl', 'clwvi', 'prw']
 
-wfo_wrong_sign = ['MIROC-ESM-CHEM', 'MIROC-ESM', 'CNRM-CM6-1', 'CNRM-ESM2-1',
-                  'IPSL-CM5A-LR', 'IPSL-CM5A-MR', 'IPSL-CM5B-LR', 'IPSL-CM6A-LR',
-                  'CMCC-CM', 'EC-Earth3', 'EC-Earth3-Veg']
-evspsbl_wrong_sign = ['EC-Earth3', 'EC-Earth3-Veg']
-
 
 def get_latest(results):
     """Select the latest results"""
@@ -205,7 +200,8 @@ def read_area(model, variable, ensemble, project, manual_file_dict):
 
 def read_spatial_flux(model, variable, ensemble, project, area_cube,
                       manual_file_dict, ignore_list, time_constraint,
-                      start_index=0, chunk=False, ref_time_coord=None):
+                      start_index=0, chunk=False, mask_nans=False,
+                      ref_time_coord=None):
     """Read spatial flux data and convert to global value.
 
     Accounts for cases where spatial dimensions are unnamed
@@ -223,15 +219,10 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
 
     cube_list = iris.cube.CubeList([])
     for infile in file_list:
-        try:
-            cube = iris.load_cube(infile, gio.check_iris_var(names[variable]))
-        except iris.exceptions.ConstraintMismatchError: 
-            cube = iris.load_cube(infile, gio.check_iris_var(names[variable], alternate_names=True))
-    
+        cube, history = gio.combine_files(infile, names[variable], checks=True)
         coord_names = [coord.name() for coord in cube.dim_coords]
 
         if 'time' in coord_names:
-            cube = gio.check_time_units(cube)
             cube = timeseries.convert_to_annual(cube, chunk=chunk)
             cube = time_check(cube)
             
@@ -247,10 +238,6 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
         assert 'm-2' in units
         cube.units = units.replace('m-2', '')
         cube.data = cube.data * area_array
-        if (variable == 'wfo') and (model in wfo_wrong_sign):
-            cube.data = cube.data * -1
-        elif (variable == 'evspsbl') and (model in evspsbl_wrong_sign):
-            cube.data = cube.data * -1
 
         if 'time' in coord_names:
             global_sum = numpy.ma.sum(cube.data, axis=(1,2))
@@ -670,7 +657,7 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
             hfds_cumsum_data = numpy.cumsum(net_surface_ocean_heat_flux_data)
             hfds_cumsum_anomaly = hfds_cumsum_data - hfds_cumsum_data[0]
             calc_trend(hfds_cumsum_anomaly, 'cumulative hfds', 'J')
-            ax_top.plot(hfds_cumsum_anomaly, color='tab:orange', linestyle=':', label='cumulative surface ocean heat flux')
+            ax_top.plot(hfds_cumsum_anomaly, color='tab:orange', linestyle=':', label='hfds only')
         else:
             calc_trend(hfdsgeou_cumsum_anomaly, 'cumulative hfds', 'J')
 
