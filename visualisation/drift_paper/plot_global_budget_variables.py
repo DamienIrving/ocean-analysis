@@ -169,6 +169,8 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict,
         cube, history = gio.combine_files(file_list, names[variable])
         if variable == 'soga':
             cube = gio.salinity_unit_check(cube)
+        elif variable == 'thetaoga':
+            cube = gio.temperature_unit_check(cube, 'K')
         cube = timeseries.convert_to_annual(cube)
         cube = time_check(cube)
         if time_constraint:
@@ -326,7 +328,6 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
     cube_dict['thetaoga'] = read_global_variable(inargs.model, 'thetaoga', inargs.run, inargs.project,
                                                  manual_file_dict, inargs.ignore_list,
                                                  time_constraint, start_index=inargs.start_index)
-    cube_dict['thetaoga'] = gio.temperature_unit_check(cube_dict['thetaoga'], 'K')
     cube_dict['soga'] = read_global_variable(inargs.model, 'soga', inargs.run, inargs.project,
                                              manual_file_dict, inargs.ignore_list,
                                              time_constraint, start_index=inargs.start_index) 
@@ -350,10 +351,13 @@ def get_data_dict(inargs, manual_file_dict, branch_year_dict):
     cube_dict['hfcorr'] = read_spatial_flux(inargs.model, 'hfcorr', inargs.run, inargs.project, cube_dict['areacello'],
                                             manual_file_dict, inargs.ignore_list, time_constraint,
                                             start_index=inargs.start_index, chunk=inargs.chunk)
-    cube_dict['hfgeou'] = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project, cube_dict['areacello'],
-                                            manual_file_dict, inargs.ignore_list, time_constraint,
-                                            start_index=inargs.start_index, chunk=inargs.chunk,
-                                            ref_time_coord=cube_dict['masso'].coord('time'))
+    if cube_dict['hfds']:
+        cube_dict['hfgeou'] = read_spatial_flux(inargs.model, 'hfgeou', inargs.run, inargs.project, cube_dict['areacello'],
+                                                manual_file_dict, inargs.ignore_list, time_constraint,
+                                                start_index=inargs.start_index, chunk=inargs.chunk,
+                                                ref_time_coord=cube_dict['hfds'].coord('time'))
+    else:
+        cube_dict['hfgeou'] = None
     cube_dict['vsf'] = read_spatial_flux(inargs.model, 'vsf', inargs.run, inargs.project, cube_dict['areacello'],
                                          manual_file_dict, inargs.ignore_list, time_constraint,
                                          start_index=inargs.start_index, chunk=inargs.chunk)
@@ -603,30 +607,36 @@ def dedrift_data(data, fit='cubic'):
 def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
     """Plot the OHC timeseries and it's components"""
 
-    assert cube_dict['thetaoga'].units == 'K'
-
-    ohc_data = masso_data * cube_dict['thetaoga'].data * cp
-    ohc_anomaly_data = ohc_data - ohc_data[0]
-
-    thetaoga_anomaly_data = cube_dict['thetaoga'].data - cube_dict['thetaoga'].data[0]
-    thermal_data = cp * masso_data[0] * thetaoga_anomaly_data
-
-    masso_anomaly_data = masso_data - masso_data[0]
-    barystatic_data = cp * cube_dict['thetaoga'].data[0] * masso_anomaly_data
-
-    calc_trend(ohc_anomaly_data, 'OHC', 'J')
-    calc_trend(thermal_data, 'thermal OHC', 'J')
-    calc_trend(barystatic_data, 'barystatic OHC', 'J')
+    is_masso_timeseries = type(masso_data) != float
+    first_masso = masso_data[0] if is_masso_timeseries else masso_data
 
     ax_top.grid(linestyle=':')
-    ax_top.plot(ohc_anomaly_data, color='#272727', label='OHC ($H$)')
-    ax_top.plot(thermal_data, color='tab:red', label='OHC temperature component ($H_T$)')
-    ax_top.plot(barystatic_data, color='tab:blue', label='OHC barystatic component ($H_M$)')
-
-    thermal_data_cubic_dedrifted = dedrift_data(thermal_data, fit='cubic')
-    thermal_data_cubic_dedrifted_smoothed = timeseries.runmean(thermal_data_cubic_dedrifted, 10)
     ax_middle.grid(linestyle=':')
-    ax_middle.plot(thermal_data_cubic_dedrifted_smoothed, color='tab:red', label='OHC temperature component ($H_T$)')
+
+    if cube_dict['thetaoga']:
+        assert cube_dict['thetaoga'].units == 'K'
+        ohc_data = masso_data * cube_dict['thetaoga'].data * cp
+        ohc_anomaly_data = ohc_data - ohc_data[0]
+
+        thetaoga_anomaly_data = cube_dict['thetaoga'].data - cube_dict['thetaoga'].data[0]
+        thermal_data = cp * first_masso * thetaoga_anomaly_data
+
+        calc_trend(ohc_anomaly_data, 'OHC', 'J')
+        calc_trend(thermal_data, 'thermal OHC', 'J')
+
+        ax_top.plot(ohc_anomaly_data, color='#272727', label='OHC ($H$)')
+        ax_top.plot(thermal_data, color='tab:red', label='OHC temperature component ($H_T$)')
+
+        thermal_data_cubic_dedrifted = dedrift_data(thermal_data, fit='cubic')
+        thermal_data_cubic_dedrifted_smoothed = timeseries.runmean(thermal_data_cubic_dedrifted, 10)
+
+        ax_middle.plot(thermal_data_cubic_dedrifted_smoothed, color='tab:red', label='OHC temperature component ($H_T$)')
+    
+    if is_masso_timeseries:
+        masso_anomaly_data = masso_data - masso_data[0]
+        barystatic_data = cp * cube_dict['thetaoga'].data[0] * masso_anomaly_data    
+        calc_trend(barystatic_data, 'barystatic OHC', 'J')
+        ax_top.plot(barystatic_data, color='tab:blue', label='OHC barystatic component ($H_M$)')
 
     # Optional data
 
@@ -639,8 +649,9 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         nettoa_cubic_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='cubic')
         nettoa_cubic_dedrifted_smoothed = timeseries.runmean(nettoa_cubic_dedrifted, 10)
         ax_middle.plot(nettoa_cubic_dedrifted_smoothed, color='tab:olive', label='cumulative netTOA ($Q_r$)')
-        calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
-                        'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
+        if cube_dict['thetaoga']:
+            calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
+                            'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
 
     if cube_dict['hfds']:
         net_surface_ocean_heat_flux_data = cube_dict['hfds'].data
@@ -666,8 +677,9 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         hfdsgeou_cubic_dedrifted = dedrift_data(hfdsgeou_cumsum_anomaly, fit='cubic')
         hfdsgeou_cubic_dedrifted_smoothed = timeseries.runmean(hfdsgeou_cubic_dedrifted, 10)
         ax_middle.plot(hfdsgeou_cubic_dedrifted_smoothed, color='tab:orange', label='cumulative heat flux into ocean ($Q_h$)')
-        calc_regression(hfdsgeou_cubic_dedrifted, thermal_data_cubic_dedrifted,
-                        'cumulative heat flux into ocean vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
+        if cube_dict['thetaoga']:
+            calc_regression(hfdsgeou_cubic_dedrifted, thermal_data_cubic_dedrifted,
+                            'cumulative heat flux into ocean vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
         if cube_dict['rsdt'] and cube_dict['rlut'] and cube_dict['rsut']:
             calc_regression(nettoa_cubic_dedrifted, hfdsgeou_cubic_dedrifted,
                             'cumulative netTOA radiative flux vs cumulative heat flux into ocean (cubic dedrift, decadal mean)', decadal_mean=True)
@@ -688,33 +700,34 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
 def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
     """Plot the sea level timeseries and it's components"""
 
-    # Compulsory variables
-
-    s_orig = numpy.ones(cube_dict['soga'].data.shape[0]) * cube_dict['soga'].data[0]
-    m_orig = numpy.ones(masso_data.shape[0]) * masso_data[0]
-    masso_from_soga = numpy.fromiter(map(delta_masso_from_soga, s_orig, cube_dict['soga'].data, m_orig), float)
-    soga_from_masso = numpy.fromiter(map(delta_soga_from_masso, m_orig, masso_data, s_orig), float) 
-
-    calc_trend(soga_from_masso, 'global ocean mass', 'g/kg')
-    calc_trend(cube_dict['soga'].data, 'global mean salinity', 'g/kg')
-
-    masso_anomaly_data = masso_data - masso_data[0]
-    calc_trend(masso_anomaly_data, 'global ocean mass', 'kg')
+    is_masso_timeseries = type(masso_data) != float
+    first_masso = masso_data[0] if is_masso_timeseries else masso_data
 
     ax_top.grid(linestyle=':')
-    ax_top.plot(masso_anomaly_data, color='tab:blue', label='ocean mass ($M$)')
-    ax_top.plot(masso_from_soga, color='tab:green', label='ocean salinity ($S$)')
-
-    masso_cubic_dedrifted = dedrift_data(masso_anomaly_data, fit='cubic')
-    masso_cubic_dedrifted_smoothed = timeseries.runmean(masso_cubic_dedrifted, 10)
     ax_middle.grid(linestyle=':')
-    ax_middle.plot(masso_cubic_dedrifted_smoothed, color='tab:blue', label='ocean mass ($M$)')
 
-    soga_cubic_dedrifted = dedrift_data(masso_from_soga, fit='cubic')
-    soga_cubic_dedrifted_smoothed = timeseries.runmean(soga_cubic_dedrifted, 10)
-    ax_middle.plot(soga_cubic_dedrifted_smoothed, color='tab:green', label='ocean salinity ($S$)')
-    calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
-                    'change in global ocean mass vs global mean salinity anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
+    if is_masso_timeseries:
+        masso_anomaly_data = masso_data - masso_data[0]
+        calc_trend(masso_anomaly_data, 'global ocean mass', 'kg')
+        ax_top.plot(masso_anomaly_data, color='tab:blue', label='ocean mass ($M$)')
+        masso_cubic_dedrifted = dedrift_data(masso_anomaly_data, fit='cubic')
+        masso_cubic_dedrifted_smoothed = timeseries.runmean(masso_cubic_dedrifted, 10)
+        ax_middle.plot(masso_cubic_dedrifted_smoothed, color='tab:blue', label='ocean mass ($M$)')
+
+    if cube_dict['soga']:
+        calc_trend(cube_dict['soga'].data, 'global mean salinity', 'g/kg')
+        s_orig = numpy.ones(cube_dict['soga'].data.shape[0]) * cube_dict['soga'].data[0]
+        m_orig = numpy.ones(cube_dict['soga'].data.shape[0]) * first_masso
+        masso_from_soga = numpy.fromiter(map(delta_masso_from_soga, s_orig, cube_dict['soga'].data, m_orig), float)
+        ax_top.plot(masso_from_soga, color='tab:green', label='ocean salinity ($S$)')
+        soga_cubic_dedrifted = dedrift_data(masso_from_soga, fit='cubic')
+        soga_cubic_dedrifted_smoothed = timeseries.runmean(soga_cubic_dedrifted, 10)
+        ax_middle.plot(soga_cubic_dedrifted_smoothed, color='tab:green', label='ocean salinity ($S$)')
+        if is_masso_timeseries:
+            soga_from_masso = numpy.fromiter(map(delta_soga_from_masso, m_orig, masso_data, s_orig), float)
+            calc_trend(soga_from_masso, 'global ocean mass', 'g/kg')
+            calc_regression(masso_cubic_dedrifted, soga_cubic_dedrifted,
+                            'change in global ocean mass vs global mean salinity anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
 
     # Optional variables
     if cube_dict['wfonocorr']:
@@ -735,10 +748,12 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
         ax_middle.plot(wfo_cubic_dedrifted_smoothed, color='tab:gray',
                        label='cumulative freshwater flux ($Q_m$)')
         
-        calc_regression(wfo_cubic_dedrifted, masso_cubic_dedrifted,
-                        'cumulative surface freshwater flux vs change in global ocean mass (cubic dedrift, decadal mean)', decadal_mean=True)        
-        calc_regression(wfo_cubic_dedrifted, soga_cubic_dedrifted,
-                        'cumulative surface freshwater flux vs global mean salinity anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
+        if is_masso_timeseries:
+            calc_regression(wfo_cubic_dedrifted, masso_cubic_dedrifted,
+                            'cumulative surface freshwater flux vs change in global ocean mass (cubic dedrift, decadal mean)', decadal_mean=True)        
+        if cube_dict['soga']:
+            calc_regression(wfo_cubic_dedrifted, soga_cubic_dedrifted,
+                            'cumulative surface freshwater flux vs global mean salinity anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
 
     if ylim:
         ax_top.set_ylim(ylim[0], ylim[1])
@@ -753,7 +768,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
     ax_top.legend()
 
 
-def plot_atmosphere(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
+def plot_atmosphere(ax_top, ax_middle, cube_dict, ylim=None):
     """Plot atmospheric mass reservoir and fluxes"""
     
     if cube_dict['prw']:
@@ -813,16 +828,22 @@ def get_manual_file_dict(file_list):
 def common_time_period(cube_dict):
     """Get the common time period for comparison."""
 
-    # Find the common time period
-    ref_years = cube_dict['masso'].coord('year').points
+    # Define a reference time period
+    for var, cube in cube_dict.items():
+        if cube and var not in ['areacello', 'areacella']:
+            ref_years = cube_dict[var].coord('year').points
+            ref_var = var
+            break
+
+    # Set common time period
     minlen = len(ref_years)
     for var, cube in cube_dict.items():
-        if cube and var not in ['masso', 'areacello', 'areacella']:
+        if cube and var not in [ref_var, 'areacello', 'areacella']:
             years = cube.coord('year').points
             nyrs = len(years)
             if nyrs < minlen:
-                assert ref_years[0:nyrs][0] == years[0], 'mismatch in time axes between %s and masso (ref)' %(var)
-                assert ref_years[0:nyrs][-1] == years[-1], 'mismatch in time axes between %s and masso (ref)' %(var)
+                assert ref_years[0:nyrs][0] == years[0], f'mismatch in time axes between {var} and {ref_var} (reference)'
+                assert ref_years[0:nyrs][-1] == years[-1], f'mismatch in time axes between {var} and {ref_var} (reference)'
                 ref_years = years
                 minlen = len(years)
 
@@ -840,8 +861,10 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
 
     if inargs.volo:
         masso_data = cube_dict['volo'].data * inargs.density
-    else:
+    elif cube_dict['masso']:
         masso_data = cube_dict['masso'].data
+    else:
+        masso_data = 1.35e21
 
     fig = plt.figure(figsize=[30, 12])
     gs = gridspec.GridSpec(3, 3, hspace=0.3)
@@ -859,7 +882,7 @@ def plot_comparison(inargs, cube_dict, branch_year_dict):
 
     plot_ohc(ax1, ax4, masso_data, inargs.cpocean, cube_dict, ylim=inargs.ohc_ylim)
     plot_sea_level(ax2, ax5, masso_data, cube_dict, ylim=inargs.sealevel_ylim)
-    plot_atmosphere(ax3, ax6, masso_data, cube_dict)
+    plot_atmosphere(ax3, ax6, cube_dict)
 
     plt.subplots_adjust(top=0.92)
     #ax1.text(0.03, 0.08, '(a)', transform=ax1.transAxes, fontsize=22, va='top')
