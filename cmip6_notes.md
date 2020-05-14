@@ -81,7 +81,7 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | MIROC-ES2L | Website, [Reference](https://www.geosci-model-dev-discuss.net/gmd-2019-275/), [ES-DOC](https://explore.es-doc.org/cmip6/models/miroc/miroc-es2l) | | | |
 | MPI-ESM1-2-HR | [Website](https://www.mpimet.mpg.de/en/science/projects/integrated-activities/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2018MS001400), ES-DOC |  |  |  |
 | MPI-ESM1-2-LR | [Website](https://www.mpimet.mpg.de/en/science/projects/integrated-activities/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2018MS001400@10.1002/(ISSN)1942-2466.MPIESM1-2), ES-DOC |  |  |  |
-| MRI-ESM2-0 | Website, Reference, ES-DOC | | | 1. No gn `volcello` and when calculated get global value which is slightly too high to be realistic |
+| MRI-ESM2-0 | Website, Reference, ES-DOC | | | 1. No gn `volcello` and when calculated get global value which is slightly too high to be realistic <br> 2. `gn` ocean files use Nanf instead of masked value |
 | NESM3 | Website, [Reference](https://www.geosci-model-dev.net/11/2975/2018/), ES-DOC |  |  | 1. historical data doesn't go beyond 1999 <br> 2. curvilinear ocean grid and no `Ofx` data, so must be regridded using `regrid.py` first | 
 | NorCPM1 | [Website](https://wiki.uib.no/norcpm/index.php/Norwegian_Climate_Prediction_Model), Reference, ES-DOC | | | 1. can use the gn `areacello` data (which has depth coord in metres) with gr data |
 | NorESM2-LM | Website, Reference, ES-DOC | | | 1. bogus gn `volcello` data (so use gr data) |
