@@ -9,9 +9,8 @@ Description:  Calculate precipitation minus evaporation
 
 import sys, os, pdb
 import argparse
-import numpy
 import iris
-from iris.experimental.equalise_cubes import equalise_attributes
+import cmdline_provenance as cmdprov
 
 # Import my modules
 
@@ -33,59 +32,27 @@ except ImportError:
 
 # Define functions
 
-def get_file_names(precip_file, evap_dir, pe_dir, evs=False):
-    """Get evap and p-e file names corresponding to precip file."""
-
-    precip_fname = precip_file.split('/')[-1]
-
-    evap_var = 'evs_' if evs else 'evspsbl_'
-    evap_fname = precip_fname.replace('pr_', evap_var)
-    evap_file = evap_dir + '/' + evap_fname
-
-    pe_fname = precip_fname.replace('pr_', 'pe_')
-    pe_file = pe_dir + '/' + pe_fname
-
-    return evap_file, pe_file
-
-
 def main(inargs):
     """Run the program."""
 
+    pr_cube, pr_history = gio.combine_files(inargs.pr_files, 'precipitation_flux', checks=True)
     try:
-        time_constraint = gio.get_time_constraint(inargs.time)
-    except AttributeError:
-        time_constraint = iris.Constraint()
+        evap_cube, evap_history = gio.combine_files(inargs.evap_files, 'water_evaporation_flux', checks=True)
+    except iris.exceptions.ConstraintMismatchError:
+        evap_cube, evap_history = gio.combine_files(inargs.evap_files, 'water_evapotranspiration_flux', checks=True)
 
-    if inargs.evap_files:
-        assert len(inargs.precip_files) == len(inargs.evap_files)
-        assert inargs.pe_files, "if you specify evap files must also do pe files"
-        assert len(inargs.precip_files) == len(inargs.pe_files)
+    pe_cube = precip_cube - evap_cube
 
-    for filenum, precip_file in enumerate(inargs.precip_files):
-        with iris.FUTURE.context(cell_datetime_objects=True):
-            precip_cube = iris.load_cube(precip_file, inargs.precip_var & time_constraint)
-            if inargs.evap_files:
-                evap_file = inargs.evap_files[filenum]
-                pe_file = inargs.pe_files[filenum]
-            else:
-                evap_file, pe_file = get_file_names(precip_file, inargs.evap_dir, inargs.pe_dir, evs=inargs.evs)
-            evap_cube = iris.load_cube(evap_file, inargs.evap_var & time_constraint)
+    pe_cube.metadata = precip_cube.metadata
+    iris.std_names.STD_NAMES['precipitation_minus_evaporation_flux'] = {'canonical_units': pe_cube.units}
+    pe_cube.standard_name = 'precipitation_minus_evaporation_flux'
+    pe_cube.long_name = 'precipitation minus evaporation flux'
+    pe_cube.var_name = 'pe'
+    metadata_dict = {inargs.pr_files[0]: pr_history[0], 
+                     inargs.evap_files[0]: evap_history[0]}
+    pe_cube.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
 
-        pe_cube = precip_cube - evap_cube
-
-        pe_cube.metadata = precip_cube.metadata
-        iris.std_names.STD_NAMES['precipitation_minus_evaporation_flux'] = {'canonical_units': pe_cube.units}
-        pe_cube.standard_name = 'precipitation_minus_evaporation_flux'
-        pe_cube.long_name = 'precipitation minus evaporation flux'
-        pe_cube.var_name = 'pe'
-        metadata_dict = {precip_file: precip_cube.attributes['history'], 
-                         evap_file: evap_cube.attributes['history']}
-        pe_cube.attributes['history'] = gio.write_metadata(file_info=metadata_dict)
-
-        assert pe_cube.data.dtype == numpy.float32
-        iris.save(pe_cube, pe_file, netcdf_format='NETCDF3_CLASSIC')
-        print(pe_file)
-        del pe_cube
+    iris.save(pe_cube, pe_file)
 
 
 if __name__ == '__main__':
@@ -104,23 +71,12 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("precip_files", type=str, nargs='*', help="Precipitation file")
-    parser.add_argument("precip_var", type=str, help="Precipitation standard_name")
-    parser.add_argument("evap_dir", type=str, help="Evaporation directory")
-    parser.add_argument("evap_var", type=str, help="Evaporation standard_name")
-    parser.add_argument("pe_dir", type=str, help="Output p-e directory")
+    parser.add_argument("outfile", type=str, help="Output file")
 
-    parser.add_argument("--evs", action="store_true", default=False,
-                        help="Evaporation variable is evs instead of evspsbl")
-
-    parser.add_argument("--evap_files", type=str, nargs='*', default=None,
-                        help="Override the automatic evap infile names")
-    parser.add_argument("--pe_files", type=str, nargs='*', default=None,
-                        help="Override the automatic pe outfile names")
-
-    parser.add_argument("--time", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
-                        help="Time period [default = entire]")
+    parser.add_argument("--pr_files", type=str, nargs='*', required=True,
+                        help="precipitation files")
+    parser.add_argument("--evap_files", type=str, nargs='*', required=True,
+                        help="evaporation files")
 
     args = parser.parse_args()            
-
     main(args)

@@ -142,7 +142,7 @@ def check_evap_sign(cube):
 
     wrong_sign_models = ['EC-Earth3', 'EC-Earth3-Veg']
 
-    assert 'evap' in cube.standard_name
+    assert cube.standard_name in ['water_evaporation_flux', 'water_evapotranspiration_flux']
     try:
         model = cube.attributes['source_id']
     except KeyError:
@@ -320,21 +320,21 @@ def check_data(cube):
     if model in ['MRI-ESM2-0']:
         cube.data = numpy.ma.masked_invalid(cube.data)
 
-    if cube.long_name == 'water_flux_into_sea_water':
+    if cube.standard_name == 'water_flux_into_sea_water':
         cube = check_wfo_sign(cube)
     
-    if 'evap' in cube.long_name:
+    if cube.standard_name in ['water_evaporation_flux', 'water_evapotranspiration_flux']:
         cube = check_evap_sign(cube)
 
     if cube.long_name == 'Ocean Grid-Cell Area':
         global_area = cube.data.sum()
         check_global_ocean_area(global_area)
     
-    if cube.long_name == 'ocean_volume':
+    if cube.standard_name == 'ocean_volume':
         global_volume = cube.data.sum()
         check_global_ocean_volume(global_volume)
     
-    if cube.long_name == 'sea_water_salinity':
+    if cube.standard_name == 'sea_water_salinity':
         cube = salinity_unit_check(cube)
     
     return cube
