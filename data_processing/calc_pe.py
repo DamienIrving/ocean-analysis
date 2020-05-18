@@ -41,9 +41,9 @@ def main(inargs):
     except iris.exceptions.ConstraintMismatchError:
         evap_cube, evap_history = gio.combine_files(inargs.evap_files, 'water_evapotranspiration_flux', checks=True)
 
-    pe_cube = precip_cube - evap_cube
+    pe_cube = pr_cube - evap_cube
 
-    pe_cube.metadata = precip_cube.metadata
+    pe_cube.metadata = pr_cube.metadata
     iris.std_names.STD_NAMES['precipitation_minus_evaporation_flux'] = {'canonical_units': pe_cube.units}
     pe_cube.standard_name = 'precipitation_minus_evaporation_flux'
     pe_cube.long_name = 'precipitation minus evaporation flux'
@@ -52,7 +52,7 @@ def main(inargs):
                      inargs.evap_files[0]: evap_history[0]}
     pe_cube.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
 
-    iris.save(pe_cube, pe_file)
+    iris.save(pe_cube, inargs.outfile)
 
 
 if __name__ == '__main__':
