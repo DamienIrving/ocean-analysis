@@ -138,7 +138,7 @@ def main(inargs):
 
     # Time axis adjustment
     if time_var == 'time':
-        first_data_cube = iris.load_cube(inargs.experiment_files[0], inargs.variable)
+        first_data_cube = iris.load_cube(inargs.experiment_files[0], gio.check_iris_var(inargs.variable))
         if inargs.grid_point:
             first_data_cube = select_point(first_data_cube, inargs.grid_point, timeseries=True)
         if inargs.annual:
