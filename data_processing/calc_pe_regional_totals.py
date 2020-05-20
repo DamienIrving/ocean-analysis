@@ -41,7 +41,7 @@ def get_boundary_indexes(xintercept_indexes, lat_coord):
         lat = lat_coord[index]
         if (lat < -25) and (lat > -50) and not sh_south_bound:
             sh_south_bound = index
-        if (lat < -7) and (lat > -25) and not sh_north_bound:
+        if (lat < -3) and (lat > -25) and not sh_north_bound:
             sh_north_bound = index
         if sh_south_bound and sh_north_bound:
             break
@@ -52,14 +52,16 @@ def get_boundary_indexes(xintercept_indexes, lat_coord):
         lat = lat_coord[index]
         if (lat > 25) and (lat < 50) and not nh_north_bound:
             nh_north_bound = index
-        if (lat > 7) and (lat < 25) and not nh_south_bound:
+        if (lat > 3) and (lat < 25) and not nh_south_bound:
             nh_south_bound = index
         if nh_south_bound and nh_north_bound:
             break
 
+    print(sh_south_bound, sh_north_bound, nh_south_bound, nh_north_bound)
+
     assert (lat_coord[sh_south_bound] < -25) and (lat_coord[sh_south_bound] > -50)
-    assert (lat_coord[sh_north_bound] < -7) and (lat_coord[sh_north_bound] > -25)
-    assert (lat_coord[nh_south_bound] > 7) and (lat_coord[nh_south_bound] < 25)
+    assert (lat_coord[sh_north_bound] < -3) and (lat_coord[sh_north_bound] > -25)
+    assert (lat_coord[nh_south_bound] > 3) and (lat_coord[nh_south_bound] < 25)
     assert (lat_coord[nh_north_bound] > 25) and (lat_coord[nh_north_bound] < 50)
     
     print(lat_coord[sh_south_bound], lat_coord[sh_north_bound],
