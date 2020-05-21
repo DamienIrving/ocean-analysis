@@ -479,68 +479,107 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 #VOLCELLO_FILE=${MY_FX_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
 
 
+# CCSM4 #
+#
+#MODEL=CCSM4
+#INSTITUTION=NCAR
+#HIST_RUN=r1i1p10
+##r1i1p1 r1i1p10
+#CNTRL_RUN=r1i1p1
+#GRID=gn
+##VOLCELLO_VERSION=
+#AREACELLA_VERSION=v20130312
+##HIST_VERSION=
+#ATMOS_HIST_VERSION=v20120604
+## v20160829 (historical) v20120604 (historicalGHG) v20120604 (historicalMisc)
+#HIST_TIME=185001-200512
+#CNTRL_VERSION=
+#ATMOS_CNTRL_VERSION=v20160829
+#CNTRL_TIME=025001-130012
+#EXPERIMENT=historicalMisc
+##historical historicalGHG historicalMisc
+#MIP=DAMIP
+##DAMIP CMIP
+#MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
+#MY_CNTRL_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#NCI_DATA_DIR=/g/data/al33/replicas/CMIP5/combined
+#FX_EXP=historical
+#FX_RUN=r0i0p0
+#AREACELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#AREACELLA_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${AREACELLA_VERSION}/areacella/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#VOLCELLO_FILE=${MY_FX_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+#BRANCH_TIME=--branch_time 342005
+
+
 # CSIRO-Mk3-6-0
 #
 # unique wfo DRS: ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/ocean/Omon/${HIST_RUN}/files/wfo_20110518/wfo*.nc
+#                 ${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/files/evspsbl_20110518/evspsbl*.nc
 #
 #MODEL=CSIRO-Mk3-6-0
 #INSTITUTION=CSIRO-QCCCE
-#HIST_RUN=r1i1p1
+#HIST_RUN=r1i1p4
 ##r1i1p1 r1i1p4
 #CNTRL_RUN=r1i1p1
 #GRID=gn
 #VOLCELLO_VERSION=v20110518
+#AREACELLA_VERSION=v20110518
 #HIST_VERSION=v20110518
-#HIST_TIME=185001-200512
+#ATMOS_HIST_VERSION=v20110518
+#HIST_TIME=185001-201212
+## 201212 (historicalGHG, Misc); 200512 (historical)
 #CNTRL_VERSION=v20110518
+#ATMOS_CNTRL_VERSION=v20110518
 #CNTRL_TIME=000101-050012
-#EXPERIMENT=historical
+#EXPERIMENT=historicalMisc
 ##historical historicalGHG historicalMisc
-#MIP=CMIP
-##DAMIP CMIP
+#MIP=DAMIP
+#DAMIP CMIP
 #MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
 #MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#MY_CNTRL_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
 #NCI_DATA_DIR=/g/data/rr3/publications/CMIP5/output1
 #FX_EXP=historical
 #FX_RUN=r0i0p0
 #AREACELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#AREACELLA_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${AREACELLA_VERSION}/areacella/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
 #VOLCELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/volcello/volcello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
 
 
 # FGOALS-g2 #
-
-MODEL=FGOALS-g2
-INSTITUTION=LASG-CESS
-HIST_RUN=r1i1p1
-#r1i1p1 r2i1p1
-CNTRL_RUN=r1i1p1
-GRID=gn
+#
+#MODEL=FGOALS-g2
+#INSTITUTION=LASG-CESS
+#HIST_RUN=r1i1p1
+##r1i1p1 r2i1p1
+#CNTRL_RUN=r1i1p1
+#GRID=gn
 #VOLCELLO_VERSION=
-AREACELLA_VERSION=v1
-# v20161204 v1
+#AREACELLA_VERSION=v1
 #HIST_VERSION=
-ATMOS_HIST_VERSION=v1
-#v20161204 v1 (historicalGHG); v1 (historical); v20161204 v1 (historicalMisc)
-HIST_TIME=185001-200912
+#ATMOS_HIST_VERSION=v20161204
+##v20161204 v1 (historicalGHG); v1 (historical); v20161204 v1 (historicalMisc)
+#HIST_TIME=185001-200512
 # 200912 (historicalMisc); 2005 (historicalGHG) 201412 (historical)
 #CNTRL_VERSION=
-ATMOS_CNTRL_VERSION=v1
-# v20161204 v1
-CNTRL_TIME=020101-090012
-EXPERIMENT=historicalGHG
+#ATMOS_CNTRL_VERSION=v20161204
+## v20161204 v1
+#CNTRL_TIME=020101-090012
+#EXPERIMENT=historicalGHG
 ##historical historicalGHG historicalMisc
-MIP=DAMIP
+#MIP=DAMIP
 #DAMIP CMIP
-MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
-MY_CNTRL_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
-MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
-NCI_DATA_DIR=/g/data/al33/replicas/CMIP5/combined
-FX_EXP=historical
-FX_RUN=r0i0p0
+#MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
+#MY_CNTRL_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#NCI_DATA_DIR=/g/data/al33/replicas/CMIP5/combined
+#FX_EXP=historical
+#FX_RUN=r0i0p0
 #AREACELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
-AREACELLA_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${AREACELLA_VERSION}/areacella/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#AREACELLA_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${AREACELLA_VERSION}/areacella/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
 #VOLCELLO_FILE=${MY_FX_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
-BRANCH_TIME=--branch_time 175382.5
+#BRANCH_TIME=--branch_time 175382.5
 
 
 # GFDL-CM3
@@ -573,38 +612,37 @@ BRANCH_TIME=--branch_time 175382.5
 #AREACELLA_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${AREACELLA_VERSION}/areacella/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
 #VOLCELLO_FILE=${MY_FX_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
 
-
-# GISS-E2-R
+# GFDL-ESM2M #
 #
-#MODEL=GISS-E2-R
-#INSTITUTION=NASA-GISS
+#MODEL=GFDL-ESM2M
+#INSTITUTION=NOAA-GFDL
 #HIST_RUN=r1i1p1
-## r1i1p1 r1i1p310
+#r1i1p1 r1i1p5
 #CNTRL_RUN=r1i1p1
 #GRID=gn
-#VOLCELLO_VERSION=v20160511
-#HIST_VERSION=v20160502
-## hist=v20160502, ghg=v20160429, aa=v20160503
+#VOLCELLO_VERSION=
+#AREACELLA_VERSION=v20120123
+#HIST_VERSION=
+#ATMOS_HIST_VERSION=v20130214
+# v20111228 (historical) v20130214 (historicalGHG)
 #HIST_TIME=185001-200512
-#CNTRL_VERSION=v20160930
-#CNTRL_TIME=398101-453012
-## common time period for all variables (gaps before, some extend beyond)
-#EXPERIMENT=historical
-#historical historicalGHG historicalMisc
+#CNTRL_VERSION=
+#ATMOS_CNTRL_VERSION=v20130214
+#CNTRL_TIME=000101-050012
+#EXPERIMENT=historicalGHG
+##historical historicalGHG historicalMisc
 #MIP=CMIP
-##DAMIP CMIP
+#DAMIP CMIP
 #MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
+#MY_CNTRL_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
 #MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
 #NCI_DATA_DIR=/g/data/al33/replicas/CMIP5/combined
 #FX_EXP=historical
-#VOLCELLO_DIR=${MY_DATA_DIR}
-#AREACELLO_DIR=${NCI_DATA_DIR}
-#BRANCH_TIME=--branch_time 0
 #FX_RUN=r0i0p0
 #AREACELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#AREACELLA_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${AREACELLA_VERSION}/areacella/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
 #VOLCELLO_FILE=${MY_FX_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
 
-# GFDL-ESM2M
 #/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/historical/mon/ocean/Omon/r1i1p1/v20130226/so/
 #/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/historical/mon/ocean/Omon/r1i1p1/v20130226/wfo/
 #/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/historicalGHG/mon/ocean/Omon/r1i1p1/v20130226/so/
@@ -613,7 +651,142 @@ BRANCH_TIME=--branch_time 175382.5
 #/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/piControl/mon/ocean/Omon/r1i1p1/v20130226/so/
 #/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/piControl/mon/ocean/Omon/r1i1p1/v20130226/wfo/
 
-# NorESM1-M
+# GISS-E2-H #
+#
+#MODEL=GISS-E2-H
+#INSTITUTION=NASA-GISS
+#HIST_RUN=r1i1p107
+#r1i1p1 r1i1p107
+#CNTRL_RUN=r1i1p1
+#GRID=gn
+#VOLCELLO_VERSION=
+#AREACELLA_VERSION=v20160426
+#HIST_VERSION=
+#ATMOS_HIST_VERSION=v20160427
+## v20160426 (historical) v20160426 (historicalGHG) v20160427 (historicalMisc)
+#HIST_TIME=185001-200512
+## 201212 (historicalGHG)
+#CNTRL_VERSION=
+#ATMOS_CNTRL_VERSION=v20160511
+#CNTRL_TIME=241001-294912
+# (remove first few control files due to time gap)
+#EXPERIMENT=historicalMisc
+##historical historicalGHG historicalMisc
+#MIP=DAMIP
+#DAMIP CMIP
+#MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
+#MY_CNTRL_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#NCI_DATA_DIR=/g/data/al33/replicas/CMIP5/combined
+#FX_EXP=historical
+#FX_RUN=r0i0p0
+#AREACELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#AREACELLA_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${AREACELLA_VERSION}/areacella/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#VOLCELLO_FILE=${MY_FX_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+#BRANCH_TIME=--branch_time 0
+
+
+# GISS-E2-R
+#
+#MODEL=GISS-E2-R
+#INSTITUTION=NASA-GISS
+#HIST_RUN=r1i1p310
+## r1i1p1 r1i1p310
+#CNTRL_RUN=r1i1p1
+#GRID=gn
+#VOLCELLO_VERSION=v20160511
+#AREACELLA_VERSION=v20160502
+#HIST_VERSION=v20160502
+## hist=v20160502, ghg=v20160429, aa=v20160503
+#ATMOS_HIST_VERSION=v20160503
+#HIST_TIME=185001-201212
+# 201212 (historicalMisc, GHG) 2200512 (historical)
+#CNTRL_VERSION=v20160930
+#ATMOS_CNTRL_VERSION=v20161004
+#CNTRL_TIME=398101-453012
+## gaps then 398101-453012
+#EXPERIMENT=historicalMisc
+#historical historicalGHG historicalMisc
+#MIP=DAMIP
+##DAMIP CMIP
+#MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
+#MY_CNTRL_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#NCI_DATA_DIR=/g/data/al33/replicas/CMIP5/combined
+#FX_EXP=historical
+#VOLCELLO_DIR=${MY_DATA_DIR}
+#AREACELLO_DIR=${NCI_DATA_DIR}
+#BRANCH_TIME=--branch_time 0
+#FX_RUN=r0i0p0
+#AREACELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#AREACELLA_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${AREACELLA_VERSION}/areacella/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#VOLCELLO_FILE=${MY_FX_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+
+
+# IPSL-CM5A-LR #
+#
+#MODEL=IPSL-CM5A-LR
+#INSTITUTION=IPSL
+#HIST_RUN=r1i1p1
+##r1i1p1 r1i1p3
+#CNTRL_RUN=r1i1p1
+#GRID=gn
+#VOLCELLO_VERSION=
+#AREACELLA_VERSION=v20110406
+#HIST_VERSION=
+#ATMOS_HIST_VERSION=v20120526
+## v20110406 (historical) v20120526 (historicalGHG) v20111119 (historicalMisc)
+#HIST_TIME=185001-201212
+## 201212 (historicalGHG)
+#CNTRL_VERSION=
+#ATMOS_CNTRL_VERSION=v20130506
+#CNTRL_TIME=180001-279912
+#EXPERIMENT=historicalGHG
+##historical historicalGHG historicalMisc
+#MIP=DAMIP
+#DAMIP CMIP
+#MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
+#MY_CNTRL_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#NCI_DATA_DIR=/g/data/al33/replicas/CMIP5/combined
+#FX_EXP=historical
+#FX_RUN=r0i0p0
+#AREACELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#AREACELLA_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${AREACELLA_VERSION}/areacella/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#VOLCELLO_FILE=${MY_FX_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+
+
+# NorESM1-M #
+#
+#MODEL=NorESM1-M
+#INSTITUTION=NCC
+#HIST_RUN=r1i1p1
+#CNTRL_RUN=r1i1p1
+#GRID=gn
+#VOLCELLO_VERSION=
+#AREACELLA_VERSION=v20110901
+#HIST_VERSION=
+#ATMOS_HIST_VERSION=v20110918
+# v20110901 (historical) v20110918 (historicalGHG) v20110918 (historicalMisc)
+#HIST_TIME=185001-201212
+# 2012 (historicalGHG, Misc)
+#CNTRL_VERSION=
+#ATMOS_CNTRL_VERSION=v20110901
+#CNTRL_TIME=070001-120012
+#EXPERIMENT=historicalMisc
+##historical historicalGHG historicalMisc
+#MIP=DAMIP
+#DAMIP CMIP
+#MY_EXP_DATA_DIR=/g/data/r87/dbi599/CMIP5/${MIP}
+#MY_CNTRL_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#MY_FX_DATA_DIR=/g/data/r87/dbi599/CMIP5/CMIP
+#NCI_DATA_DIR=/g/data/al33/replicas/CMIP5/combined
+#FX_EXP=historical
+#FX_RUN=r0i0p0
+#AREACELLO_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/ocean/fx/${FX_RUN}/${VOLCELLO_VERSION}/areacello/areacello_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#AREACELLA_FILE=${NCI_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${AREACELLA_VERSION}/areacella/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}.nc
+#VOLCELLO_FILE=${MY_FX_DATA_DIR}/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/volcello/${GRID}/${VOLCELLO_VERSION}/volcello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+
 #/g/data/al33/replicas/CMIP5/combined/NCC/NorESM1-M/historical/mon/ocean/Omon/r1i1p1/v20110901/so/
 #/g/data/al33/replicas/CMIP5/combined/NCC/NorESM1-M/historical/mon/ocean/Omon/r1i1p1/v20110901/wfo/
 #/g/data/al33/replicas/CMIP5/combined/NCC/NorESM1-M/historicalGHG/mon/ocean/Omon/r1i1p1/v20110918/so/
