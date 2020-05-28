@@ -5,7 +5,7 @@
 # To execute:
 #   make all -n -B -f water_mass_analysis.mk  (-n is a dry run) (-B is a force make)
 #
-#   (Options besides all: volcello-tbin so-volcello-tbin surface sf-anomaly)  
+#   (Options besides all: volcello-tbin so-volcello-tbin thetao-volcello-tbin surface sf-anomaly)  
 
 include cmip_config.mk
 
@@ -122,6 +122,16 @@ SOVOL_DEDRIFTED_FILE=${WATER_MASS_DIR_HIST}/so-volcello-tbin-dedrifted_Omon_${MO
 ${SOVOL_DEDRIFTED_FILE} : ${WATER_MASS_FILE_HIST} ${SOVOL_DRIFT_COEFFICIENT_FILE}
 	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift_year_axis.py $< Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume_binned_by_temperature $(word 2,$^) $@ ${BRANCH_YEAR}
 
+## drift removal for thetao_volcello_tbin(year, thetao, basin)
+
+TVOL_DRIFT_COEFFICIENT_FILE=${WATER_MASS_DIR_CNTRL}/thetao-volcello-tbin-coefficients_Omon_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}.nc
+${TVOL_DRIFT_COEFFICIENT_FILE} : ${WATER_MASS_FILE_CNTRL}
+	${PYTHON}  ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< Sea_Water_Potential_Temperature_times_Ocean_Grid-Cell_Volume_binned_by_temperature $@ --no_data_check
+
+TVOL_DEDRIFTED_FILE=${WATER_MASS_DIR_HIST}/thetao-volcello-tbin-dedrifted_Omon_${MODEL}_historical_${RUN}_${GRID}_${HIST_TIME}.nc
+${TVOL_DEDRIFTED_FILE} : ${WATER_MASS_FILE_HIST} ${TVOL_DRIFT_COEFFICIENT_FILE}
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift_year_axis.py $< Sea_Water_Potential_Temperature_times_Ocean_Grid-Cell_Volume_binned_by_temperature $(word 2,$^) $@ ${BRANCH_YEAR}
+
 ## plots
 
 VOL_PLOT_FILE=/g/data/r87/dbi599/temp/volcello-tbin-dedrifted_Omon_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}_bin6.png
@@ -132,16 +142,22 @@ SOVOL_PLOT_FILE=/g/data/r87/dbi599/temp/so-volcello-tbin-dedrifted_Omon_${MODEL}
 ${SOVOL_PLOT_FILE} : ${SOVOL_DRIFT_COEFFICIENT_FILE} ${WATER_MASS_FILE_CNTRL} ${WATER_MASS_FILE_HIST} ${SOVOL_DEDRIFTED_FILE}
 	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py Sea_Water_Salinity_times_Ocean_Grid-Cell_Volume_binned_by_temperature $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 6 -1 ${BRANCH_YEAR}
 
+TVOL_PLOT_FILE=/g/data/r87/dbi599/temp/thetao-volcello-tbin-dedrifted_Omon_${MODEL}_piControl_${RUN}_${GRID}_${CNTRL_TIME}_bin6.png
+${TVOL_PLOT_FILE} : ${TVOL_DRIFT_COEFFICIENT_FILE} ${WATER_MASS_FILE_CNTRL} ${WATER_MASS_FILE_HIST} ${TVOL_DEDRIFTED_FILE}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py Sea_Water_Potential_Temperature_times_Ocean_Grid-Cell_Volume_binned_by_temperature $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 6 -1 ${BRANCH_YEAR}
+
 volcello-tbin : ${VOL_PLOT_FILE}
 so-volcello-tbin : ${SOVOL_PLOT_FILE}
-
+thetao-volcello-tbin : ${TVOL_PLOT_FILE}
 
 # targets
 
-all : sf-anomaly surface volcello-tbin so-volcello-tbin 
+all : sf-anomaly surface volcello-tbin so-volcello-tbin thetao-volcello-tbin 
 	echo ${SF_ANOMALY_BINNED_CUMSUM_PLOT}
 	echo ${SURFACE_WATER_MASS_FILE_HIST}
 	echo ${VOL_PLOT_FILE}
 	echo ${SOVOL_PLOT_FILE}
+	echo ${TVOL_PLOT_FILE}
+
 	
 
