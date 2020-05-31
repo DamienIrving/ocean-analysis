@@ -142,7 +142,7 @@ def multiply_flux_by_area(flux_per_unit_area_cube, area_cube, var):
     area_data = uconv.broadcast_array(area_cube.data, [1, 2], flux_per_unit_area_cube.shape)
     flux_cube = flux_per_unit_area_cube.copy()
     flux_cube.data = flux_per_unit_area_cube.data * area_data
-    flux_cube.units = str(flux_cube.units).replace('m-2 ', "")
+    flux_cube.units = str(flux_cube.units).replace('m-2', "").replace("  ", " ")
 
     return flux_cube
 
