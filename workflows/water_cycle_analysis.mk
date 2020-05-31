@@ -43,7 +43,7 @@ ${WFO_ZONAL_SUM_FILE_HIST} : ${AREACELLO_FILE}
 
 ## control zonal sum
 
-WFO_DIR_CNTRL=${MY_EXP_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Oyr/wfo/${GRID}/${CNTRL_VERSION}
+WFO_DIR_CNTRL=${MY_CNTRL_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Oyr/wfo/${GRID}/${CNTRL_VERSION}
 WFO_ZONAL_SUM_FILE_CNTRL=${WFO_DIR_CNTRL}/wfo-zonal-sum_Oyr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
 ${WFO_ZONAL_SUM_FILE_CNTRL} : ${AREACELLO_FILE}
 	mkdir -p ${WFO_DIR_CNTRL}
@@ -57,7 +57,7 @@ ${WFO_COEFFICIENTS} : ${WFO_ZONAL_SUM_FILE_CNTRL}
 
 WFO_ANOMALY_CUMSUM=${WFO_DIR_HIST}/wfo-zonal-sum-anomaly_Oyr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
 ${WFO_ANOMALY_CUMSUM} : ${WFO_ZONAL_SUM_FILE_HIST} ${WFO_COEFFICIENTS} 
-	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< water_flux_into_sea_water annual $(word 2,$^) $@
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< water_flux_into_sea_water annual $(word 2,$^) $@ --no_parent_check
 
 
 # so
@@ -85,7 +85,7 @@ ${SO_VZM_HIST} : ${VOLCELLO_VS}
 
 ## control vertical zonal mean
 
-SO_DIR_CNTRL=${MY_EXP_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Oyr/so/${GRID}/${CNTRL_VERSION}
+SO_DIR_CNTRL=${MY_CNTRL_DATA_DIR}/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Oyr/so/${GRID}/${CNTRL_VERSION}
 SO_VZM_CNTRL=${SO_DIR_CNTRL}/so-vertical-zonal-mean_Oyr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}.nc
 ${SO_VZM_CNTRL} : ${VOLCELLO_VS}
 	mkdir -p ${SO_DIR_CNTRL}
@@ -100,7 +100,7 @@ ${SO_COEFFICIENTS} : ${SO_VZM_CNTRL}
 
 SO_VZM_HIST_DEDRIFTED=${SO_DIR_HIST}/so-vertical-zonal-mean-dedrifted_Oyr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}.nc
 ${SO_VZM_HIST_DEDRIFTED} : ${SO_VZM_HIST} ${SO_COEFFICIENTS}
-	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< sea_water_salinity annual $(word 2,$^) $@
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< sea_water_salinity annual $(word 2,$^) $@ --no_parent_check
 
 SO_VZM_PLOT=/g/data/r87/dbi599/temp/so-vertical-zonal-mean-dedrifted_Oyr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}_grid-point-50.png
 ${SO_VZM_PLOT} : ${SO_COEFFICIENTS} ${SO_VZM_CNTRL} ${SO_VZM_HIST} ${SO_VZM_HIST_DEDRIFTED}
