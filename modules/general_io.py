@@ -367,7 +367,10 @@ def combine_files(files, var, new_calendar=None, checks=False):
 
     try:
         cube_list = iris.load(files, check_iris_var(var), callback=save_history)
-    except iris.exceptions.ConstraintMismatchError: 
+    except iris.exceptions.ConstraintMismatchError:
+        cube_list = []
+
+    if not cube_list: 
         cube_list = iris.load(files, check_iris_var(var, alternate_names=True), callback=save_history)
     
     cube = combine_cubes(cube_list, new_calendar=new_calendar, data_checks=checks)
