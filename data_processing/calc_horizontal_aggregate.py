@@ -30,6 +30,7 @@ try:
     import convenient_universal as uconv
     import timeseries
     import grids
+    import spatial_weights
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -79,15 +80,18 @@ def select_basin(cube, basin_cube, basin_name):
 def multiply_by_area(cube, area_cube):
     """Multiply by cell area."""
 
-    assert cube.ndim in [2, 3]
-    if cube.ndim == 3:
-        area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
+    if area_cube:
+        assert cube.ndim in [2, 3]
+        if cube.ndim == 3:
+            area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
+        else:
+            area_data = area_cube.data
     else:
-        area_data = area_cube.data
+        area_data = spatial_weights.area_array(cube)
 
     units = str(cube.units)
     cube.data = cube.data * area_data   
-    cube.units = units.replace('m-2', '')
+    cube.units = units.replace('m-2', '').replace("  ", " ")
 
     return cube
 
@@ -194,7 +198,7 @@ def main(inargs):
         if basin_cube:
             cube = select_basin(cube, basin_cube, basin_name)        
 
-        if area_cube:
+        if args.multiply_by_area:
             cube = multiply_by_area(cube, area_cube) 
 
         if inargs.realm:
@@ -290,6 +294,8 @@ author:
     
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Output annual mean [default=False]")
+    parser.add_argument("--multiply_by_area", action="store_true", default=False,
+                        help="Multiply by area (calculated if necessary) [default=False]")
     parser.add_argument("--area", type=str, default=None, 
                         help="""Multiply data by area (using this file) [default = None]""")
     parser.add_argument("--weights", type=str, default=None, 
@@ -301,5 +307,7 @@ author:
                         help="Convert units from a flux to a magnitude [default: False]")
 
     args = parser.parse_args()
+    if args.area:
+        args.multiply_by_area = True
     assert bool(args.sftlf_file) == bool(args.realm), "To select a realm, specify --realm and --sftlf_file"             
     main(args)
