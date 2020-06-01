@@ -75,7 +75,7 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | GISS-E2-1-G-CC | [Website](https://data.giss.nasa.gov/modelE/cmip6/), Reference, ES-DOC | | | 1. `wfo` wrong sign |
 | GISS-E2-1-H | [Website](https://data.giss.nasa.gov/modelE/cmip6/), Reference, ES-DOC | | | |
 | HadGEM3-GC31-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2017MS001115), [ES-DOC](https://explore.es-doc.org/cmip6/models/mohc/hadgem3-gc31-ll) | NEMO 3.6 | BO, *FS*, *FWF* | |
-| IPSL-CM6A-LR | [Website](http://forge.ipsl.jussieu.fr/igcmg/wiki/IPSLCMIP6), Reference, [ES-DOC](https://explore.es-doc.org/cmip6/models/ipsl/ipsl-cm6a-lr) | NEMO 3.2 | BO, *FS*, *FWF* | 1. `wfo` wrong sign <br> 2. `masso` is not `volo` * `rhozero` <br> 3. missing dimension coordinates for x and y |
+| IPSL-CM6A-LR | [Website](http://forge.ipsl.jussieu.fr/igcmg/wiki/IPSLCMIP6), Reference, [ES-DOC](https://explore.es-doc.org/cmip6/models/ipsl/ipsl-cm6a-lr) | NEMO 3.2 | BO, *FS*, *FWF* | 1. `wfo` wrong sign <br> 2. `masso` is not `volo` * `rhozero` <br> 3. missing dimension coordinates for x and y <br> 4. Some control `evspsbl` files are `water_evaporation_flux` and others are `water_evapotranspiration_flux` |
 | MCM-UA-1-0 | Website, Reference, ES-DOC |  |  | 1. global ocean volume (from `volcello`) is way too small |
 | MIROC6 | Website, [Reference](https://www.geosci-model-dev.net/12/2727/2019/), [ES-DOC](https://explore.es-doc.org/cmip6/models/miroc/miroc6) | | | |
 | MIROC-ES2L | Website, [Reference](https://www.geosci-model-dev-discuss.net/gmd-2019-275/), [ES-DOC](https://explore.es-doc.org/cmip6/models/miroc/miroc-es2l) | | | |
