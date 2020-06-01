@@ -36,10 +36,7 @@ def main(inargs):
     """Run the program."""
 
     pr_cube, pr_history = gio.combine_files(inargs.pr_files, 'precipitation_flux', checks=True)
-    try:
-        evap_cube, evap_history = gio.combine_files(inargs.evap_files, 'water_evaporation_flux', checks=True)
-    except iris.exceptions.ConstraintMismatchError:
-        evap_cube, evap_history = gio.combine_files(inargs.evap_files, 'water_evapotranspiration_flux', checks=True)
+    evap_cube, evap_history = gio.combine_files(inargs.evap_files, 'water_evapotranspiration_flux', checks=True)
 
     pe_cube = pr_cube - evap_cube
 
