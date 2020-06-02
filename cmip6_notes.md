@@ -58,7 +58,7 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | AWI-CM-1-1-MR | Website, Reference, ES-DOC | FESOM (unstructured grid) |  |  |
 | BCC-CSM2-MR | Website, [Reference](https://www.geosci-model-dev.net/12/1573/2019/), ES-DOC | MOM 4 | BO, *FS*, *FWF* | 1. has two lat and lon coordinates (remove auxillary coords with `fix_bcc_models.sh`) |
 | BCC-ESM1 | Website, [Reference](https://www.geosci-model-dev.net/12/1573/2019/), ES-DOC | MOM 4 | BO, *FS*, *FWF* | 1. has two lat and lon coordinates (remove auxillary coords with `fix_bcc_models.sh`) <br> 2. from sometime in 1930s onwards time values are zero in the `so` historical data files |
-| CAMS-CSM1-0 | Website, Reference, ES-DOC |  |  | 1. curvilinear ocean grid and no `Ofx` data, so must be regridded using `regrid.py` first |
+| CAMS-CSM1-0 | Website, Reference, ES-DOC |  |  | 1. I've downloaded the only `areacello` file (from `1pctCO2` experiment) |
 | CanESM5 | Website, [Reference](https://www.geosci-model-dev-discuss.net/gmd-2019-177/), ES-DOC |  |  |  |
 | CAS-ESM2-0 | Website, Reference, ES-DOC |  |  | 1. The surface ocean variables are split over two versions, e.g. `/g/data/oi10/replicas/CMIP6/CMIP/CAS/CAS-ESM2-0/piControl/r1i1p1f1/Omon/wfo/gn/v2020030[6,7]/` <br> 2. `wfo` wrong sign (I think) and fluxes are way too small in magnitude |
 | CESM2 | Website, Reference, [ES-DOC](https://explore.es-doc.org/cmip6/models/ncar/cesm2) |  |  |  |
