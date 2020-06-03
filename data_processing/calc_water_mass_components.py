@@ -122,7 +122,7 @@ def construct_cube(outdata_dict,
                                  long_name=wcube.long_name + ' binned by temperature',
                                  var_name=wcube.var_name + '_tbin',
                                  units=wcube.units,
-                                 attributes=wcube.attributes,
+                                 attributes=tcube.attributes,
                                  dim_coords_and_dims=tbin_dim_coords_list)
 
     ws_tbin_std_name = scube.standard_name + '_times_' + wcube.standard_name + '_binned_by_temperature'
@@ -154,7 +154,7 @@ def construct_cube(outdata_dict,
                                  long_name=wcube.long_name + ' binned by salinity',
                                  var_name=wcube.var_name + '_sbin',
                                  units=wcube.units,
-                                 attributes=wcube.attributes,
+                                 attributes=scube.attributes,
                                  dim_coords_and_dims=sbin_dim_coords_list)
 
     ws_sbin_std_name = scube.standard_name + '_times_' + wcube.standard_name + '_binned_by_salinity'
