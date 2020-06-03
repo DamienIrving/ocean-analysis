@@ -153,7 +153,10 @@ def main(inargs):
         if inargs.branch_year:
             branch_year = inargs.branch_year
         else:
-            control_time_units = gio.fix_time_descriptor(experiment_cube.attributes['parent_time_units'])
+            if not inargs.control_time_units:
+                control_time_units = gio.fix_time_descriptor(experiment_cube.attributes['parent_time_units'])
+            else:
+                control_time_units = inargs.control_time_units.replace("_", " ")
             branch_time = experiment_cube.attributes['branch_time_in_parent']
             branch_datetime = cf_units.num2date(branch_time, control_time_units, cf_units.CALENDAR_STANDARD)
             branch_year = branch_datetime.year
@@ -232,6 +235,7 @@ author:
     
     parser.add_argument("--branch_year", type=int, default=None, help="override metadata")
     parser.add_argument("--branch_time", type=float, default=None, help="override metadata")
+    parser.add_argument("--control_time_units", type=str, default=None, help="override metadata (e.g. days_since_1850-01-01)")
 
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Apply annual smoothing [default=False]")

@@ -36,10 +36,13 @@ except ImportError:
 
 # Define functions
 
-def get_branch_year(data_cube):
+def get_branch_year(data_cube, control_time_units):
     """Get the year of the branching in control run."""
 
-    control_time_units = gio.fix_time_descriptor(data_cube.attributes['parent_time_units'])
+    if not control_time_units:
+        control_time_units = gio.fix_time_descriptor(data_cube.attributes['parent_time_units'])
+    else:
+        control_time_units = control_time_units.replace("_", " ")
     branch_time = data_cube.attributes['branch_time_in_parent']
     branch_datetime = cf_units.num2date(branch_time, control_time_units, cf_units.CALENDAR_STANDARD)
     branch_year = branch_datetime.year
@@ -59,11 +62,10 @@ def main(inargs):
     data_cube = iris.load_cube(inargs.data_file, gio.check_iris_var(inargs.var))
     coord_names = [coord.name() for coord in data_cube.coords(dim_coords=True)]
     assert coord_names[0] == 'year'
-    
     if inargs.branch_year:
         branch_year = inargs.branch_year
     else:
-        branch_year = get_branch_year(data_cube)
+        branch_year = get_branch_year(data_cube, inargs.control_time_units)
     time_values = numpy.arange(branch_year, branch_year + data_cube.shape[0]) 
     drift_signal, start_polynomial = remove_drift.apply_polynomial(time_values, coefficient_a_cube.data,
                                                                    coefficient_b_cube.data, coefficient_c_cube.data,
@@ -103,6 +105,7 @@ notes:
     parser.add_argument("outfile", type=str, help="outfile")
 
     parser.add_argument("--branch_year", type=int, default=None, help="override metadata")
+    parser.add_argument("--control_time_units", type=str, default=None, help="override metadata (e.g. days_since_1850-01-01)")
 
     args = parser.parse_args()            
 
