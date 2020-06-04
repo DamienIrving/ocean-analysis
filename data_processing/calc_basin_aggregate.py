@@ -124,9 +124,9 @@ def main(inargs):
     equalise_attributes(output_cubelist)
     iris.util.unify_time_units(output_cubelist)
     outcube = output_cubelist.concatenate_cube()
-    metadata_dict[inargs.infiles[-1]] = history[0]
-    log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
-    outcube.attributes['history'] = log
+    if history:
+        metadata_dict[inargs.infiles[-1]] = history[0]
+    outcube.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     iris.save(outcube, inargs.outfile)
 
 
