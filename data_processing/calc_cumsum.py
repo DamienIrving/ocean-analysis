@@ -28,6 +28,7 @@ sys.path.append(modules_dir)
 try:
     import general_io as gio
     import convenient_universal as uconv
+    import timeseries
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -38,7 +39,8 @@ def main(inargs):
     """Run the program."""
 
     cube, history = gio.combine_files(inargs.infiles, inargs.var)
-
+    if inargs.annual:
+        cube = timeseries.convert_to_annual(cube)
     if inargs.flux_to_mag:
         cube = uconv.flux_to_magnitude(cube)
 
@@ -70,8 +72,8 @@ author:
 
     parser.add_argument("--flux_to_mag", action="store_true", default=False,
                         help="Convert units from a flux to a magnitude [default: False]")
-
-    
+    parser.add_argument("--annual", action="store_true", default=False,
+                        help="Output annual mean [default=False]")
 
     args = parser.parse_args()            
     main(args)
