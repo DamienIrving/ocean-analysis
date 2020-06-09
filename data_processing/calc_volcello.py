@@ -64,7 +64,7 @@ def main(inargs):
     depth_data = spatial_weights.get_depth_array(data_cube, depth_name)
     # Area data
     if inargs.area_file:
-        area_cube = iris.load_cube(inargs.area_file)
+        area_cube = iris.load_cube(inargs.area_file, 'cell_area')
         gio.check_global_ocean_area(area_cube.data.sum())
         area_data = uconv.broadcast_array(area_cube.data, [1, 2], depth_data.shape)
     else:
