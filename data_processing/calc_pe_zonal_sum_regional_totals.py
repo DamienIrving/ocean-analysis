@@ -1,5 +1,5 @@
 """
-Filename:     calc_pe_regional_totals.py
+Filename:     calc_pe_zonal_sum_regional_totals.py
 Author:       Damien Irving, irving.damien@gmail.com
 Description:  Calculate precipitation minus evaporation regional totals
 """
@@ -143,7 +143,7 @@ author:
     
 """
 
-    description='Calculate precipitation minus evaporation regional totals'
+    description='Calculate precipitation minus evaporation zonal sum regional totals'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
