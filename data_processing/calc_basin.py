@@ -205,11 +205,14 @@ def main(inargs):
     """Run the program."""
 
     ref_cube = iris.load_cube(inargs.ref_file, inargs.ref_var)
+    coord_names = [coord.name() for coord in ref_cube.dim_coords]
     if ref_cube.ndim == 4:
-        coord_names = [coord.name() for coord in ref_cube.dim_coords]
         ref_cube = ref_cube[0, 0, ::]
         ref_cube.remove_coord(coord_names[0])
         ref_cube.remove_coord(coord_names[1])
+    elif ref_cube.ndim == 3:
+        ref_cube = ref_cube[0, ::]
+        ref_cube.remove_coord(coord_names[0])
     else:
         assert ref_cube.ndim == 2
 
