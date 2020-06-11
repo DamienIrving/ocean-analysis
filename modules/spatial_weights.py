@@ -228,6 +228,29 @@ def guess_depth_bounds(points, bound_position=0.5):
     return bounds
 
 
+def multiply_by_area(cube, area_cube=None):
+    """Multiply by cell area."""
+
+    if area_cube:
+        assert cube.ndim in [2, 3]
+        if cube.ndim == 3:
+            area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
+        else:
+            area_data = area_cube.data
+    else:
+        area_data = area_array(cube)
+
+    units = str(cube.units)
+    cube.data = cube.data * area_data   
+
+    if 'm-2' in units:
+        cube.units = units.replace('m-2', '').replace("  ", " ")
+    else:
+        cube.units = units + ' m2'
+
+    return cube
+
+
 def volume_array(target_cube, volume_cube=None, area_cube=None):
     """Create a volume array.
 

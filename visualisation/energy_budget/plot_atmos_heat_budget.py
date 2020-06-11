@@ -36,6 +36,7 @@ try:
     import timeseries
     import grids
     import convenient_universal as uconv
+    import spatial_weights
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -86,7 +87,7 @@ def get_data(filenames, var, metadata_dict, time_constraint, sftlf_cube=None, re
         cube = timeseries.convert_to_annual(cube, full_months=True)
 
         cube, coord_names, regrid_status = grids.curvilinear_to_rectilinear(cube)
-        cube = multiply_by_area(cube) 
+        cube = spatial_weights.multiply_by_area(cube) 
 
         if 'up' in cube.standard_name:
             cube.data = cube.data * -1
@@ -212,22 +213,6 @@ def get_title(cube_dict, realm):
     title = title.replace('other historical forcing', 'historicalAA')
 
     return title
-
-
-def multiply_by_area(cube):
-    """Multiply by cell area."""
-
-    if not cube.coord('latitude').has_bounds():
-        cube.coord('latitude').guess_bounds()
-    if not cube.coord('longitude').has_bounds():
-        cube.coord('longitude').guess_bounds()
-    area_weights = iris.analysis.cartography.area_weights(cube)
-
-    units = str(cube.units)
-    cube.data = cube.data * area_weights   
-    cube.units = units.replace('m-2', '')
-
-    return cube
 
 
 def main(inargs):

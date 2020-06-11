@@ -77,25 +77,6 @@ def select_basin(cube, basin_cube, basin_name):
     return cube
 
 
-def multiply_by_area(cube, area_cube):
-    """Multiply by cell area."""
-
-    if area_cube:
-        assert cube.ndim in [2, 3]
-        if cube.ndim == 3:
-            area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
-        else:
-            area_data = area_cube.data
-    else:
-        area_data = spatial_weights.area_array(cube)
-
-    units = str(cube.units)
-    cube.data = cube.data * area_data   
-    cube.units = units.replace('m-2', '').replace("  ", " ")
-
-    return cube
-
-
 def horiz_aggregate(cube, coord_names, keep_coord, horiz_bounds, agg_method):
     """Calculate the horizontal aggregate for a given band."""
 
@@ -199,7 +180,7 @@ def main(inargs):
             cube = select_basin(cube, basin_cube, basin_name)        
 
         if args.multiply_by_area:
-            cube = multiply_by_area(cube, area_cube) 
+            cube = spatial_weights.multiply_by_area(cube, area_cube=area_cube) 
 
         if inargs.realm:
             cube = uconv.apply_land_ocean_mask(cube, sftlf_cube, inargs.realm)

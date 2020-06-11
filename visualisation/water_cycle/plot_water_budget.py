@@ -36,6 +36,7 @@ try:
     import timeseries
     import grids
     import convenient_universal as uconv
+    import spatial_weights
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -77,7 +78,7 @@ def get_data(filenames, var, metadata_dict, time_constraint, area=False, invert_
             cube.data = cube.data * -1
 
         if area:
-            cube = multiply_by_area(cube) 
+            cube = spatial_weights.multiply_by_area(cube) 
 
         zonal_mean = cube.collapsed('longitude', iris.analysis.MEAN)
         zonal_mean.remove_coord('longitude')
@@ -149,22 +150,6 @@ def get_title(cube_dict):
             break
     
     return title
-
-
-def multiply_by_area(cube):
-    """Multiply by cell area."""
-
-    if not cube.coord('latitude').has_bounds():
-        cube.coord('latitude').guess_bounds()
-    if not cube.coord('longitude').has_bounds():
-        cube.coord('longitude').guess_bounds()
-    area_weights = iris.analysis.cartography.area_weights(cube)
-
-    units = str(cube.units)
-    cube.data = cube.data * area_weights   
-    cube.units = units + 'm2'
-
-    return cube
 
 
 def main(inargs):
