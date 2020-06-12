@@ -38,9 +38,9 @@ except ImportError:
 def create_region_coord():
     """Create a dimension for the P-E regions"""
     
-    flag_values = '1 2 3 4 5 6 7'
-    flag_meanings = 'SH precip, SH evap, tropical precip, NH evap, NH precip, global precip, global evap'
-    region_coord = iris.coords.DimCoord(np.array([1, 2, 3, 4, 5, 6, 7]),
+    flag_values = '1 2 3 4 5'
+    flag_meanings = 'SH precip, SH evap, tropical precip, NH evap, NH precip'
+    region_coord = iris.coords.DimCoord(np.array([1, 2, 3, 4, 5]),
                                         standard_name='region',
                                         long_name='region',
                                         var_name='region',
@@ -53,19 +53,16 @@ def create_region_coord():
 def get_regional_totals(pe_data, lats):
     """Calculate the regional totals"""
 
-    sh_precip = pe_data[(pe_data > 0) & (lats < -20)].sum()
+    sh_precip = pe_data[(pe_data >= 0) & (lats < -20)].sum()
     sh_evap = pe_data[(pe_data < 0) & (lats < 0)].sum()
-    tropical_precip = pe_data[(pe_data > 0) & (lats <= 20) & (lats >= -20)].sum()
+    tropical_precip = pe_data[(pe_data >= 0) & (lats <= 20) & (lats >= -20)].sum()
     nh_evap = pe_data[(pe_data < 0) & (lats >= 0)].sum()
-    nh_precip = pe_data[(pe_data > 0) & (lats > 20)].sum()
-    global_precip = pe_data[pe_data >= 0].sum()
-    global_evap = pe_data[pe_data < 0].sum()
+    nh_precip = pe_data[(pe_data >= 0) & (lats > 20)].sum()
 
     net_pe = sh_precip + sh_evap + tropical_precip + nh_evap + nh_precip
     assert np.allclose(pe_data.sum(), net_pe)
 
-    output = numpy.array([sh_precip, sh_evap, tropical_precip, nh_evap,
-                          nh_precip, global_precip, global_evap])
+    output = np.array([sh_precip, sh_evap, tropical_precip, nh_evap, nh_precip])
 
     return output 
 
@@ -85,11 +82,10 @@ def main(inargs):
     lat_pos = coord_names.index('latitude')
     lats = uconv.broadcast_array(pe_cube.coord('latitude').points, lat_pos - 1, pe_cube.shape[1:])
 
-    region_data = np.zeros([pe_cube.shape[0], 7])
+    region_data = np.zeros([pe_cube.shape[0], 5])
     tstep = 0
-    pdb.set_trace()
     for yx_slice in pe_cube.slices(coord_names[1:]):
-        region_data[tstep, :] = get_regional_totals(yx_slice, lats)
+        region_data[tstep, :] = get_regional_totals(yx_slice.data, lats)
         
     if inargs.cumsum:
         region_data = np.cumsum(region_data, axis=0)    
