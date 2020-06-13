@@ -86,6 +86,7 @@ def main(inargs):
     tstep = 0
     for yx_slice in pe_cube.slices(coord_names[1:]):
         region_data[tstep, :] = get_regional_totals(yx_slice.data, lats)
+        tstep = tstep + 1
         
     if inargs.cumsum:
         region_data = np.cumsum(region_data, axis=0)    
