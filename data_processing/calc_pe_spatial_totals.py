@@ -125,7 +125,7 @@ author:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("pe_files", type=str, nargs='*', help="P-E zonal sum files")
+    parser.add_argument("pe_files", type=str, nargs='*', help="P-E files")
     parser.add_argument("outfile", type=str, help="Output file")
 
     parser.add_argument("--annual", action="store_true", default=False,
