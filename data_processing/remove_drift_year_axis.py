@@ -62,7 +62,7 @@ def main(inargs):
     data_cube = iris.load_cube(inargs.data_file, gio.check_iris_var(inargs.var))
     coord_names = [coord.name() for coord in data_cube.coords(dim_coords=True)]
     assert coord_names[0] == 'year'
-    if inargs.branch_year:
+    if not inargs.branch_year == None:
         branch_year = inargs.branch_year
     else:
         branch_year = get_branch_year(data_cube, inargs.control_time_units)

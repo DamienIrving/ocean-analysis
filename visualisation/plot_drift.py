@@ -150,7 +150,7 @@ def main(inargs):
         time_coord.convert_units(new_time_unit)
         experiment_time_values = time_coord.points.astype(numpy.float32) - time_diff
     elif time_var == 'year':
-        if inargs.branch_year:
+        if not inargs.branch_year == None:
             branch_year = inargs.branch_year
         else:
             if not inargs.control_time_units:

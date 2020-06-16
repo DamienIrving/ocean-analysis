@@ -171,7 +171,7 @@ def time_adjustment(first_data_cube, control_cube, timescale, branch_time=None):
     elif timescale == 'annual':
         adjustment = 182.5
 
-    if branch_time:
+    if not branch_time == None:
         branch_time_value = float(branch_time) + adjustment
     else:
         try:
