@@ -212,12 +212,15 @@ def bin_data(df, x_var, x_edges, basin_edges, ntimes):
 
     assert x_var in ['temperature', 'salinity']
 
-    w_dist, xbin_edges, ybin_edges = numpy.histogram2d(df[x_var].values, df['basin'].values,
+    var_values = numpy.clip(df[x_var].values, x_edges[0], x_edges[-1])
+    assert numpy.allclose(var_values.mean(), df[x_var].values.mean()), f"Clipping {x_var} data changed mean a lot"
+
+    w_dist, xbin_edges, ybin_edges = numpy.histogram2d(var_values, df['basin'].values,
                                                        weights=df['weight'].values, bins=[x_edges, basin_edges])
-    ws_dist, xbin_edges, ybin_edges = numpy.histogram2d(df[x_var].values, df['basin'].values,
+    ws_dist, xbin_edges, ybin_edges = numpy.histogram2d(var_values, df['basin'].values,
                                                         weights=df['weight'].values * df['salinity'].values,
                                                         bins=[x_edges, basin_edges])
-    wt_dist, xbin_edges, ybin_edges = numpy.histogram2d(df[x_var].values, df['basin'].values,
+    wt_dist, xbin_edges, ybin_edges = numpy.histogram2d(var_values, df['basin'].values,
                                                         weights=df['weight'].values * df['temperature'].values,
                                                         bins=[x_edges, basin_edges])
 
@@ -292,10 +295,6 @@ def main(inargs):
 
         df, sunits, tunits = water_mass.create_df(temperature_year_cube, salinity_year_cube, wcube.data, wcube.var_name, bcube,
                                                   sbounds=(s_edges[0], s_edges[-1]))
-        assert df['temperature'].values.min() >= tmin, "Temperature minimum of %s is outside bin range" %(str(df['temperature'].values.min()))
-        assert df['temperature'].values.max() <= tmax, "Temperature maximum of %s is outside bin range" %(str(df['temperature'].values.max()))
-        assert df['salinity'].values.min() >= smin, "Salinity minimum of %s is outside bin range" %(str(df['salinity'].values.min()))
-        assert df['salinity'].values.max() <= smax, "Salinity maximum of %s is outside bin range" %(str(df['salinity'].values.max()))
         ntimes = salinity_year_cube.shape[0]
         w_tbin_outdata[index, :, :], ws_tbin_outdata[index, :, :], wt_tbin_outdata[index, :, :] = bin_data(df, 'temperature', t_edges, b_edges, ntimes)
         w_sbin_outdata[index, :, :], ws_sbin_outdata[index, :, :], wt_sbin_outdata[index, :, :] = bin_data(df, 'salinity', s_edges, b_edges, ntimes)
