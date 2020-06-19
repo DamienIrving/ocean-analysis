@@ -22,7 +22,7 @@ tfiles=($@)
 
 for tfile in "${tfiles[@]}"; do
  
-    outfile=`echo ${tfile} | sed s:data1b/oi10/replicas:data/r87/dbi599:`
+    outfile=`echo ${tfile} | sed s:oi10/replicas:r87/dbi599:`
     outfile=`echo ${outfile} | sed s:thetao:water-mass:g`
 
     sfile=`echo ${tfile} | sed s:thetao:so:g`
@@ -30,7 +30,7 @@ for tfile in "${tfiles[@]}"; do
     command="${python} ${script_dir}/calc_water_mass_components.py ${vfile} ${bfile} ${outfile} --salinity_files ${sfile} --temperature_files ${tfile}"
 
     echo ${command}
-    ${command}
-    echo ${outfile}
+    #${command}
+    #echo ${outfile}
 
 done
