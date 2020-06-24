@@ -137,8 +137,6 @@ def bin_data(df, bin_edges, basin_edges, ntimes):
 def multiply_flux_by_area(flux_per_unit_area_cube, area_cube, var):
     """Multiply the flux by area."""
 
-    if var == 'water_flux_into_sea_water':
-        flux_per_unit_area_cube = gio.check_wfo_sign(flux_per_unit_area_cube)
     area_data = uconv.broadcast_array(area_cube.data, [1, 2], flux_per_unit_area_cube.shape)
     flux_cube = flux_per_unit_area_cube.copy()
     flux_cube.data = flux_per_unit_area_cube.data * area_data
@@ -160,7 +158,7 @@ def main(inargs):
         bin_cube = bin_cube[:, 0, ::]
         bin_cube.remove_coord(bin_coord_names[1])
 
-    flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var)
+    flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var, checks=True)
     assert flux_per_area_cube.shape == bin_cube.shape
     area_cube = iris.load_cube(inargs.area_file)
 

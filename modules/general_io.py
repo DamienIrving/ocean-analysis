@@ -209,6 +209,24 @@ def check_time_units(cube, new_calendar=None):
     return cube
 
 
+def check_hfds_sign(cube):
+    """Check that the hfds variable has correct sign."""
+
+    wrong_sign_models = ['SAM0-UNICON']
+
+    assert cube.standard_name == 'surface_downward_heat_flux_in_sea_water'
+    try:
+        model = cube.attributes['source_id']
+    except KeyError:
+        model = cube.attributes['model_id']
+                  
+    if model in wrong_sign_models:
+        cube.data = cube.data * -1
+        print('CHANGING HFDS SIGN')
+
+    return cube
+
+
 def check_wfo_sign(cube):
     """Check that the wfo variable has correct sign."""
 
@@ -229,6 +247,7 @@ def check_wfo_sign(cube):
                   
     if model in wrong_sign_models:
         cube.data = cube.data * -1
+        print('CHANGING WFO SIGN')
 
     return cube
 
@@ -323,6 +342,9 @@ def check_data(cube):
     if cube.standard_name == 'water_flux_into_sea_water':
         cube = check_wfo_sign(cube)
     
+    if cube.standard_name == 'surface_downward_heat_flux_in_sea_water':
+        cube = check_hfds_sign(cube)
+
     if cube.standard_name in ['water_evaporation_flux', 'water_evapotranspiration_flux']:
         cube = check_evap_sign(cube)
 
