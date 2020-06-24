@@ -88,7 +88,7 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 | NorCPM1 | [Website](https://wiki.uib.no/norcpm/index.php/Norwegian_Climate_Prediction_Model), Reference, ES-DOC | | | 1. can use the gn `areacello` data (which has depth coord in metres) with gr data <br> 2. historical branch time is wrong in metadata, should be 0 |
 | NorESM2-LM | Website, Reference, ES-DOC | | | 1. bogus gn `volcello` data (so use gr data) |
 | NorESM2-MM | Website, Reference, ES-DOC | | | 1. no gn `volcello` data (so use gr data) <br> 2. `Omon`, `piControl` data has both `145001-145012` and `145002-145912` files. Need latter so use `*912.nc` |
-| SAM0-UNICON | Website, [Reference](https://journals.ametsoc.org/doi/full/10.1175/JCLI-D-18-0796.1), [ES-DOC](https://explore.es-doc.org/cmip6/models/snu/sam0-unicon) | POP2 | BO, FS, *FWF* | 1. `wfo` values are zero everywhere |
+| SAM0-UNICON | Website, [Reference](https://journals.ametsoc.org/doi/full/10.1175/JCLI-D-18-0796.1), [ES-DOC](https://explore.es-doc.org/cmip6/models/snu/sam0-unicon) | POP2 | BO, FS, *FWF* | 1. `wfo` values are zero everywhere <br> 2. `hfds` wrong sign |
 | UKESM1-0-LL | [Website](https://ukesm.ac.uk/cmip6/), [Reference](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2019MS001739), [ES-DOC](https://explore.es-doc.org/cmip6/models/mohc/ukesm1-0-ll) | NEMO 3.6 | BO, *FS*, *FWF* | 1. constant `wfo` |
 
 *Assumed characteristics.*
