@@ -161,6 +161,7 @@ def main(inargs):
     flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var, checks=True)
     assert flux_per_area_cube.shape == bin_cube.shape
     area_cube = iris.load_cube(inargs.area_file)
+    gio.check_global_ocean_area(area_cube.data.sum())
 
     basin_cube = iris.load_cube(inargs.basin_file, 'region')
     basin_edges = numpy.array([10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5])
