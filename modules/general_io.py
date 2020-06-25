@@ -484,7 +484,10 @@ def get_ocean_weights(infile):
         cube = iris.load_cube(infile)
     except iris.exceptions.ConstraintMismatchError:
         dset = xr.open_dataset(infile)
-        cube = dset['volcello'].to_iris()
+        try:
+            cube = dset['volcello'].to_iris()
+        except KeyError:
+            cube = dset['areacello'].to_iris()
         cube.attributes = dset.attrs
 
     assert cube.var_name in ['areacello', 'volcello']
