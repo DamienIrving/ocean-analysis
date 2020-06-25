@@ -59,7 +59,7 @@ def main(inargs):
     coefficient_c_cube = iris.load_cube(inargs.coefficient_file, 'coefficient c')
     coefficient_d_cube = iris.load_cube(inargs.coefficient_file, 'coefficient d')
 
-    data_cube = iris.load_cube(inargs.data_file, gio.check_iris_var(inargs.var))
+    data_cube, data_history = gio.combine_files(inargs.data_files, inargs.var)
     coord_names = [coord.name() for coord in data_cube.coords(dim_coords=True)]
     assert coord_names[0] == 'year'
     if not inargs.branch_year == None:
@@ -75,7 +75,7 @@ def main(inargs):
     #remove_drift.check_data(new_cube, data_cube, inargs.data_file)
     new_cube.metadata = data_cube.metadata
             
-    metadata_dict = {inargs.data_file: data_cube.attributes['history'], 
+    metadata_dict = {inargs.data_files[0]: data_history[0], 
                      inargs.coefficient_file: coefficient_a_cube.attributes['history']}
     new_cube.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     iris.save(new_cube, inargs.outfile)
@@ -99,7 +99,7 @@ notes:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("data_file", type=str, help="Input data file")
+    parser.add_argument("data_files", type=str, nargs='*', help="Input data files")
     parser.add_argument("var", type=str, help="Variable standard_name")
     parser.add_argument("coefficient_file", type=str, help="Drift coefficient file")
     parser.add_argument("outfile", type=str, help="outfile")
