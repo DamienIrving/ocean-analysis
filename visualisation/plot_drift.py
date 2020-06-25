@@ -185,7 +185,7 @@ def main(inargs):
         plt.xlabel('control run year')
     plt.legend()
     if inargs.grid_point:
-        title = get_title(inargs.control_files, inargs.variable, inargs.grid_point)
+        title = get_title(inargs.control_files[0], inargs.variable, inargs.grid_point)
         plt.title(title)
 
     # Save output
