@@ -11,6 +11,7 @@ import sys
 import os
 import pdb
 import argparse
+import logging
 
 import numpy
 import iris
@@ -120,10 +121,30 @@ def get_log(inargs, basin_cube_atts, area_cube_atts, flux_history, bin_history):
     return log
 
 
-def bin_data(df, bin_edges, basin_edges, ntimes):
+def clipping_details(orig_data, clipped_data, bin_min, bin_max, bin_step):
+    """Details of the clipping"""
+
+    npoints_under = numpy.sum(orig_data < bin_min)
+    npoints_min = numpy.sum(orig_data <= bin_min + bin_step) - numpy.sum(orig_data <= bin_min)
+    npoints_clip_min = numpy.sum(clipped_data <= bin_min + bin_step) - numpy.sum(clipped_data <= bin_min)
+    assert npoints_clip_min == npoints_under + npoints_min
+
+    npoints_over = numpy.sum(orig_data > bin_max)
+    npoints_max = numpy.sum(orig_data <= bin_max) - numpy.sum(orig_data <= bin_max - bin_step)
+    npoints_clip_max = numpy.sum(clipped_data <= bin_max) - numpy.sum(clipped_data <= bin_max - bin_step)
+    assert npoints_clip_max == npoints_over + npoints_max
+
+    logging.info(f"First bin had {npoints_min} values, clipping added {npoints_under}")
+    logging.info(f"Last bin had {npoints_max} values, clipping added {npoints_over}")
+
+
+def bin_data(df, bin_edges, bin_step, basin_edges, ntimes):
     """Bin the data"""
 
-    hist, xbin_edges, ybin_edges = numpy.histogram2d(df['bin'].values, df['basin'].values,
+    bin_vals = numpy.clip(df['bin'].values, bin_edges[0], bin_edges[-1])
+    clipping_details(df['bin'].values, bin_vals, bin_edges[0], bin_edges[-1], bin_step)
+
+    hist, xbin_edges, ybin_edges = numpy.histogram2d(bin_vals, df['basin'].values,
                                                      weights=df['flux'].values, bins=[bin_edges, basin_edges])
 
     hist = hist / ntimes
@@ -147,6 +168,8 @@ def multiply_flux_by_area(flux_per_unit_area_cube, area_cube, var):
 
 def main(inargs):
     """Run the program."""
+    
+    logging.basicConfig(level=logging.DEBUG)
 
     bin_cube, bin_history = gio.combine_files(inargs.bin_files, inargs.bin_var, checks=True)
     bin_min, bin_max = inargs.bin_bounds
@@ -184,10 +207,8 @@ def main(inargs):
         flux_year_cube = multiply_flux_by_area(flux_per_area_year_cube, area_cube, inargs.flux_var)
         bin_year_cube = bin_cube.extract(year_constraint)
         df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube)
-        assert df['bin'].values.min() > bin_min, "Bin minimum not low enough"
-        assert df['bin'].values.max() < bin_max, "Bin maximum not high enough"
         ntimes = flux_year_cube.shape[0]
-        outdata[index, :, :] = bin_data(df, bin_edges, basin_edges, ntimes)
+        outdata[index, :, :] = bin_data(df, bin_edges, bin_step, basin_edges, ntimes)
 
     outdata = numpy.ma.masked_invalid(outdata)
     outcube = construct_cube(outdata, flux_year_cube, bin_cube, basin_cube, years, 
@@ -223,5 +244,4 @@ author:
     parser.add_argument("--bin_size", type=float, default=1.0, help='bin size')
 
     args = parser.parse_args()             
-
     main(args)

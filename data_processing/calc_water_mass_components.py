@@ -14,6 +14,7 @@ import os
 import re
 import pdb
 import argparse
+import logging
 
 import numpy
 import pandas
@@ -207,13 +208,35 @@ def get_log(inargs, bcube_atts, wcube_atts, thistory, shistory):
     return log
 
 
+def clipping_details(orig_data, clipped_data, bin_edges, var_name):
+    """Details of the clipping"""
+
+    bin_min = bin_edges[0]
+    bin_second_min = bin_edges[1]
+    bin_max = bin_edges[-1]
+    bin_second_max = bin_edges[-2]
+
+    npoints_under = numpy.sum(orig_data < bin_min)
+    npoints_min = numpy.sum(orig_data <= bin_second_min) - numpy.sum(orig_data <= bin_min)
+    npoints_clip_min = numpy.sum(clipped_data <= bin_second_min) - numpy.sum(clipped_data <= bin_min)
+    assert npoints_clip_min == npoints_under + npoints_min
+
+    npoints_over = numpy.sum(orig_data > bin_max)
+    npoints_max = numpy.sum(orig_data <= bin_max) - numpy.sum(orig_data <= bin_second_max)
+    npoints_clip_max = numpy.sum(clipped_data <= bin_max) - numpy.sum(clipped_data <= bin_second_max)
+    assert npoints_clip_max == npoints_over + npoints_max
+
+    logging.info(f"First {var_name} bin had {npoints_min} values, clipping added {npoints_under}")
+    logging.info(f"Last {var_name} bin had {npoints_max} values, clipping added {npoints_over}")
+
+
 def bin_data(df, x_var, x_edges, basin_edges, ntimes):
     """Bin the data"""
 
     assert x_var in ['temperature', 'salinity']
 
     var_values = numpy.clip(df[x_var].values, x_edges[0], x_edges[-1])
-    assert numpy.allclose(var_values.mean(), df[x_var].values.mean()), f"Clipping {x_var} data changed mean a lot"
+    clipping_details(df[x_var].values, var_values, x_edges, x_var)
 
     w_dist, xbin_edges, ybin_edges = numpy.histogram2d(var_values, df['basin'].values,
                                                        weights=df['weight'].values, bins=[x_edges, basin_edges])
@@ -236,6 +259,8 @@ def bin_data(df, x_var, x_edges, basin_edges, ntimes):
 
 def main(inargs):
     """Run the program."""
+
+    logging.basicConfig(level=logging.DEBUG)
 
     wcube = gio.get_ocean_weights(inargs.weights_file)  
     bcube = iris.load_cube(inargs.basin_file, 'region')
