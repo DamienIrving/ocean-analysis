@@ -46,8 +46,10 @@ ssh-add ~/.ssh/id_rsa_nci_virtuallab
 ### Moving files to local computer  
 
 ```
-$ scp dbi599@raijin.nci.org.au:/g/data/r87/dbi599/figures/tauuo-zm/* .
+$ scp dbi599@gadi.nci.org.au:/g/data/r87/dbi599/figures/tauuo-zm/* .
 ```
+If you want to transfer a file from the VDIs,
+replace `gadi` with the output from `$ hostname` (e.g. `vdi-n1`).
   
 ### Creating symlinks
 
