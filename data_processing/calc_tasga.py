@@ -25,7 +25,8 @@ modules_dir = os.path.join(repo_dir, 'modules')
 sys.path.append(modules_dir)
 try:
     import general_io as gio
-    import convenient_universal as uconv
+    import spatial_weights
+    import timeseries
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
 
@@ -35,11 +36,12 @@ except ImportError:
 def main(inargs):
     """Run the program."""
 
-    area_cube = iris.load_cube(inargs.area_file, 'cell_area')
-    tas_cube, history = gio.combine_files(inargs.tas_files, 'surface_air_temperature')
-    weights = uconv.broadcast_array(area_cube.data, [1, 2], tas_cube.shape)
+    tas_cube, history = gio.combine_files(inargs.tas_files, inargs.var)
+    if inargs.annual:
+        tas_cube = timeseries.convert_to_annual(tas_cube)
+    area_data = spatial_weights.area_array(tas_cube)
     coord_names = [coord.name() for coord in tas_cube.dim_coords]
-    tasga_cube = tas_cube.collapsed(coord_names[1:], iris.analysis.MEAN, weights=weights)
+    tasga_cube = tas_cube.collapsed(coord_names[1:], iris.analysis.MEAN, weights=area_data)
     tasga_cube.remove_coord(coord_names[1])
     tasga_cube.remove_coord(coord_names[2])
 
@@ -63,8 +65,11 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
                                      
     parser.add_argument("tas_files", type=str, nargs='*', help="Input tas files")
-    parser.add_argument("area_file", type=str, help="areacella file")
+    parser.add_argument("var", type=str, help="variable standard name")
     parser.add_argument("outfile", type=str, help="Output file")
+
+    parser.add_argument("--annual", action="store_true", default=False,
+                        help="Output annual mean [default=False]")
 
     args = parser.parse_args()
     main(args)
