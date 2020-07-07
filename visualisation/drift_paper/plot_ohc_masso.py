@@ -169,35 +169,29 @@ def common_time_period(mass_cube, thetaoga_cube):
     return mass_cube, thetaoga_cube
   
 
-def plot_reference_eei(ax, max_time):
-    """Plot a reference line corresponding to current planetary energy imbalance.
+def plot_reference_eei(ax, eei, max_time):
+    """Plot a reference line corresponding to particular planetary energy imbalance (in W m-2)."""
 
-    Based off von Schuckmann et al 2016, who say 
-
-    """
-
-    eei = 0.5 #W/m2 
-    ocean_area = 3.611e14 #m2
+    global_surface_area = 5.1e14 #m2
     sec_in_year = 365.25 * 24 * 60 * 60
 
-    joules_per_year = eei * ocean_area * sec_in_year
+    joules_per_year = eei * global_surface_area * sec_in_year
     ref_eei_timeseries = joules_per_year * numpy.arange(max_time)
 
     ymin, ymax = ax.get_ylim()
-    ax.plot(ref_eei_timeseries, color='0.5', linestyle='dashed')
+    ax.plot(ref_eei_timeseries, color='black', linestyle=':', linewidth=0.25)
     ax.set_ylim(ymin, ymax)
 
 
-def plot_reference_mass(ax, max_time):
-    """Plot a reference line corresponding to current barystatic sea level rise.
+def plot_reference_mass(ax, sea_level_trend, max_time):
+    """Plot a reference line corresponding to particular rate of sea level rise (in m/year).
 
-    Based off Cazenave et al (2018) https://www.earth-syst-sci-data.net/10/1551/2018/
+    For reference from Cazenave et al (2018) https://www.earth-syst-sci-data.net/10/1551/2018/
     - Sea level rise since 2005 is 3.1 mm/year, 42% of which is steric
-      (i.e. 1.8 mm/year is barystatic) 
+      (i.e. 0.0018 m/year is barystatic) 
 
     """
 
-    sea_level_trend = 0.0018 #m/year
     ocean_area = 3.611e14 #m2
     density = 1027 # kg/m3
 
@@ -205,7 +199,7 @@ def plot_reference_mass(ax, max_time):
     ref_mass_timeseries = kg_per_year * numpy.arange(max_time)
 
     ymin, ymax = ax.get_ylim()
-    ax.plot(ref_mass_timeseries, color='0.5', linestyle='dashed')
+    ax.plot(ref_mass_timeseries, color='black', linestyle=':', linewidth=0.25)
     ax.set_ylim(ymin, ymax)
 
 
@@ -287,7 +281,7 @@ def main(inargs):
         ohc_dedrifted_anomaly = ohc_dedrifted - ohc_dedrifted[0]
         masso_dedrifted_anomaly = masso_dedrifted - masso_dedrifted[0]
 
-        label = '%s (%s)' %(model, run)
+        label = model   #'%s (%s)' %(model, run)
         color = next(colors)
         style = next(styles)
         
@@ -313,30 +307,42 @@ def main(inargs):
         #record_trend(massa_anomaly, 'Atmospheric water mass linear trend', 'kg/yr')
         #ax_massad.plot(massa_dedrifted_anomaly, color=color, label=label, linestyle=style)
 
+    ax_ohc.plot()
+
     ax_ohc.set_title('(a) OHC')
-    ax_ohc.set_ylabel('J')
+    ax_ohc.set_ylabel('OHC anomaly (J)')
     ax_ohc.grid(linestyle=':')
     ax_ohc.ticklabel_format(useOffset=False)
     ax_ohc.yaxis.major.formatter._useMathText = True
-    #plot_reference_eei(ax_ohc, max_time)
+    plot_reference_eei(ax_ohc, 0.4, max_time)
+    plot_reference_eei(ax_ohc, 0.2, max_time)
+    plot_reference_eei(ax_ohc, 0.1, max_time)
+    plot_reference_eei(ax_ohc, -0.4, max_time)
+    plot_reference_eei(ax_ohc, -0.2, max_time)
+    plot_reference_eei(ax_ohc, -0.1, max_time)
 
     ax_ohcd.set_title('(b) OHC (linear trend removed)')
-    ax_ohcd.set_ylabel('J')
+    ax_ohcd.set_ylabel('OHC anomaly (J)')
     ax_ohcd.grid(linestyle=':')
     ax_ohcd.ticklabel_format(useOffset=False)
     ax_ohcd.yaxis.major.formatter._useMathText = True
 
     ax_masso.set_title('(c) ocean mass')
     ax_masso.set_xlabel('year')
-    ax_masso.set_ylabel('kg')
+    ax_masso.set_ylabel('ocean mass anomaly (kg)')
     ax_masso.grid(linestyle=':')
     ax_masso.ticklabel_format(useOffset=False)
     ax_masso.yaxis.major.formatter._useMathText = True
-    #plot_reference_mass(ax_mass, max_time)
+    plot_reference_mass(ax_masso, 0.0018, max_time)
+    plot_reference_mass(ax_masso, 0.0009, max_time)
+    plot_reference_mass(ax_masso, 0.00045, max_time)
+    plot_reference_mass(ax_masso, -0.0018, max_time)
+    plot_reference_mass(ax_masso, -0.0009, max_time)
+    plot_reference_mass(ax_masso, -0.00045, max_time)
 
     ax_massod.set_title('(d) ocean mass (linear trend removed)')
     ax_massod.set_xlabel('year')
-    ax_massod.set_ylabel('kg')
+    ax_massod.set_ylabel('ocean mass anomaly (kg)')
     ax_massod.grid(linestyle=':')
     ax_massod.ticklabel_format(useOffset=False)
     ax_massod.yaxis.major.formatter._useMathText = True
