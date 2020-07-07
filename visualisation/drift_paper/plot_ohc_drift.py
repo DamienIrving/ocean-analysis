@@ -65,7 +65,8 @@ def main(inargs):
     """Run the program."""
 
     df = pd.read_csv(inargs.infile)
-    df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
+    df.set_index(df['model'], drop=True, inplace=True)
+    #df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
     x = np.arange(df.shape[0])
     ncmip5 = df['project'].value_counts()['cmip5']
 
@@ -77,11 +78,11 @@ def main(inargs):
     df_ohc = df_ohc.rename(columns={"OHC (J yr-1)": "change in OHC ($dH/dt$)",
                                     "thermal OHC (J yr-1)": "change in OHC temperature component ($dH_T/dt$)",
                                     "barystatic OHC (J yr-1)": "change in OHC barystatic component ($dH_m/dt$)"})
-    
-    df_ohc.plot.bar(figsize=(18,6), color=['#272727', 'tab:red', 'tab:blue'], width=0.9)
+
+    df_ohc.plot.bar(figsize=(18,6), color=['#272727', 'tab:red', 'tab:blue'], width=0.9, zorder=2)
+    plt.axhspan(0.4, 1.0, color='0.95', zorder=1)
     plt.axvline(x=ncmip5 - 0.5, color='0.5', linewidth=2.0)
-    plt.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
-    units = '$W \; m^{-2}$'
+    units = 'equivalent planetary energy imbalance (W m$^{-2}$)'
     plt.ylabel(units)
     plt.axvline(x=x[0]-0.5, color='0.5', linewidth=0.1)
     for val in x:
