@@ -46,11 +46,11 @@ import convenient_universal as uconv
 import spatial_weights
 
 import matplotlib as mpl
-mpl.rcParams['axes.labelsize'] = 'x-large'
-mpl.rcParams['axes.titlesize'] = 'xx-large'
-mpl.rcParams['xtick.labelsize'] = 'x-large'
-mpl.rcParams['ytick.labelsize'] = 'x-large'
-mpl.rcParams['legend.fontsize'] = 'x-large'
+mpl.rcParams['axes.labelsize'] = 16 #'x-large'
+mpl.rcParams['axes.titlesize'] = 18 #'xx-large'
+mpl.rcParams['xtick.labelsize'] = 16 #'x-large'
+mpl.rcParams['ytick.labelsize'] = 16 #'x-large'
+mpl.rcParams['legend.fontsize'] = 15 #'x-large'
 
 
 # Define functions 
@@ -677,7 +677,7 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
     ax_top.set_title('(a) global energy budget')
     ax_middle.set_title('(d) global energy budget (de-drifted)')
     ax_middle.set_xlabel('year')
-    ax_top.set_ylabel('equivalent change in OHC (J)')
+    ax_top.set_ylabel('equivalent OHC anomaly (J)')
     ax_top.yaxis.set_label_coords(-0.1, 0.2)
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
@@ -748,7 +748,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
     ax_top.set_title('(b) ocean mass budget')
     ax_middle.set_title('(e) ocean mass budget (de-drifted)')
     ax_middle.set_xlabel('year')
-    ax_top.set_ylabel('change in water mass (kg)')
+    ax_top.set_ylabel('water mass anomaly (kg)')
     ax_top.yaxis.set_label_coords(-0.12, 0.2)
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
@@ -790,7 +790,7 @@ def plot_atmosphere(ax_top, ax_middle, cube_dict, ylim=None):
     ax_top.set_title('(c) atmospheric water budget')
     ax_middle.set_title('(f) atmospheric water budget (de-drifted)')
     ax_middle.set_xlabel('year')
-    ax_top.set_ylabel('change in water mass (kg)')
+    ax_top.set_ylabel('water mass anomaly (kg)')
     ax_top.yaxis.set_label_coords(-0.12, 0.2)
     ax_top.yaxis.major.formatter._useMathText = True
     ax_middle.yaxis.major.formatter._useMathText = True
