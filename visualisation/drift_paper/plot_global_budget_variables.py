@@ -131,8 +131,12 @@ def clef_search(model, variable, ensemble, project, experiment='piControl'):
         processed_files.append(file_version_list)
     else:
         file_list = []
-
+    
+    if len(file_list) == 2:
+        if file_list[0] == file_list[1]:
+            file_list = [file_list[0]]
     print(file_list)
+
     return file_list
 
 
@@ -706,6 +710,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
         s_orig = numpy.ones(cube_dict['soga'].data.shape[0]) * cube_dict['soga'].data[0]
         m_orig = numpy.ones(cube_dict['soga'].data.shape[0]) * first_masso
         masso_from_soga = numpy.fromiter(map(delta_masso_from_soga, s_orig, cube_dict['soga'].data, m_orig), float)
+        calc_trend(masso_from_soga, 'global_mean_salinity', 'kg')
         ax_top.plot(masso_from_soga, color='tab:green', label='ocean salinity ($S$)')
         soga_cubic_dedrifted = dedrift_data(masso_from_soga, fit='cubic')
         soga_cubic_dedrifted_smoothed = timeseries.runmean(soga_cubic_dedrifted, 10)
