@@ -66,7 +66,8 @@ def main(inargs):
     """Run the program."""
 
     df = pd.read_csv(inargs.infile)
-    df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
+    #df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
+    df.set_index(df['model'], drop=True, inplace=True)
     if inargs.cmip_line:
         cmip_line = inargs.cmip_line
     else:
@@ -128,11 +129,11 @@ def main(inargs):
 
     else:
     
-        df_leakage.plot.bar(figsize=(18,6), color=['tab:olive', 'tab:green', 'tab:blue'], width=0.9)
+        df_leakage.plot.bar(figsize=(18,6), color=['tab:olive', 'tab:green', 'tab:blue'], width=0.9, zorder=2)
         plt.axvline(x=cmip_line, color='0.5', linewidth=2.0)
-        plt.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
-        plt.axhline(y=-0.5, color='0.5', linewidth=0.5, linestyle='--')
-        units = '$W \; m^{-2}$'
+        plt.axhspan(0.4, 1.0, color='0.95', zorder=1)
+        plt.axhspan(-0.4, -1.0, color='0.95', zorder=1)
+        units = 'equivalent planetary energy imbalance (W m$^{-2}$)'
         plt.ylabel(units)
         plt.axvline(x=x[0]-0.5, color='0.5', linewidth=0.1)
         for val in x:
