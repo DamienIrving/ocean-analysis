@@ -32,11 +32,11 @@ for directory in cwd.split('/')[1:]:
         break
 
 import matplotlib as mpl
-mpl.rcParams['axes.labelsize'] = 'x-large'
-mpl.rcParams['axes.titlesize'] = 'xx-large'
+mpl.rcParams['axes.labelsize'] = 'xx-large'
+mpl.rcParams['axes.titlesize'] = 20
 mpl.rcParams['xtick.labelsize'] = 'x-large'
 mpl.rcParams['ytick.labelsize'] = 'x-large'
-mpl.rcParams['legend.fontsize'] = 'large'
+mpl.rcParams['legend.fontsize'] = 'xx-large'
 
 # From https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 # '#800000' Maroon
@@ -75,14 +75,14 @@ institution_colors = {'BCC': '#800000',
 
 markers = ['o', '^', 's', '<', '>', 'v', 'p', 'D', 'd', 'h', 'H', 'X']
 
-axis_labels = {'thermal OHC': 'change in OHC temperature component, $dH_T/dt$',
-               'masso': 'change in ocean mass, $dM/dt$',
-               'massa': 'change in mass of atmospheric water vapor, $dM_a/dt$',
-               'netTOA': 'cumulative netTOA, $dQ_r/dt$',
-               'hfdsgeou': 'cumulative heat flux into ocean, $dQ_h/dt$',
-               'soga': 'change in ocean salinity, $dS/dt$',
-               'wfo': 'cumulative freshwater flux into ocean, $dQ_m/dt$',
-               'wfa': 'cumulative moisture flux into atmosphere, $dQ_{ep}/dt$'}
+axis_labels = {'thermal OHC': 'change in OHC temperature component \n $dH_T/dt$',
+               'masso': 'change in ocean mass \n $dM/dt$',
+               'massa': 'change in mass of atmospheric water vapor \n $dM_a/dt$',
+               'netTOA': 'time-integrated netTOA \n $dQ_r/dt$',
+               'hfdsgeou': 'time-integrated heat flux into ocean \n $dQ_h/dt$',
+               'soga': 'change in ocean salinity \n $dS/dt$',
+               'wfo': 'time-integrated freshwater flux into ocean \n $dQ_m/dt$',
+               'wfa': 'time-integrated moisture flux into atmosphere \n $dQ_{ep}/dt$'}
 
 stats_done = []
 quartiles = []
@@ -167,15 +167,14 @@ def plot_eei_shading(ax):
                       
 def format_axis_label(orig_label, units, scale_factor):
     """Put LaTeX math into axis labels"""
-
+    
     label = orig_label.split('(')[0] + '(' + units + ')'
-    label = label.replace('(', '($').replace(')', '$)')
-    label = label.replace('s-1', '\; s^{-1}')
-    label = label.replace('m-2', '\; m^{-2}')
-    label = label.replace('yr-1', '\; yr^{-1}')
+    label = label.replace('s-1', 's$^{-1}$')
+    label = label.replace('m-2', 'm$^{-2}$')
+    label = label.replace('yr-1', 'yr$^{-1}$')
     if scale_factor:
         scale_factor = int(scale_factor) * -1
-        label = label.replace('($', '($10^{%s} \;' %(str(scale_factor)))
+        label = label.replace('(', '(10$^{%s}$ ' %(str(scale_factor)))
     
     for var in axis_labels.keys():
         if var in label:
@@ -208,11 +207,15 @@ def plot_two_var_aesthetics(ax, yvar, xvar, units, scinotation, shading, scale_f
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True)
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0), useMathText=True)
     
-    if 'W \; m^{-2}' in ylabel:
-        ax.axhline(y=-0.5, color='0.5', linewidth=0.5, linestyle='--')
-        ax.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
-        ax.axvline(x=-0.5, color='0.5', linewidth=0.5, linestyle='--')
-        ax.axvline(x=0.5, color='0.5', linewidth=0.5, linestyle='--')
+    if 'W m$^{-2}$' in ylabel:
+        ax.axhspan(0.4, 1.0, color='0.95', zorder=1)
+        ax.axhspan(-0.4, -1.0, color='0.95', zorder=1)
+        ax.axvspan(0.4, 1.0, color='0.95', zorder=1)
+        ax.axvspan(-0.4, -1.0, color='0.95', zorder=1)
+#        ax.axhline(y=-0.5, color='0.5', linewidth=0.5, linestyle='--')
+#        ax.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
+#        ax.axvline(x=-0.5, color='0.5', linewidth=0.5, linestyle='--')
+#        ax.axvline(x=0.5, color='0.5', linewidth=0.5, linestyle='--')
     elif xvar == 'wfo (kg yr-1)':
         ref = convert_units(1.8, 'mm yr-1', 'kg yr-1')
         ref = ref * 10**scale_factor
@@ -240,7 +243,9 @@ def plot_one_var_aesthetics(ax, yvar, units, scinotation, scale_factor, ypad=Non
 
     ax.set_yscale('symlog')
     ax.grid(axis='y')
-    ax.get_xaxis().set_visible(False)
+    #ax.get_xaxis().set_visible(False)
+    ax.get_xaxis().set_ticks([])
+    ax.set_xlabel('CMIP5/CMIP6 model')
 
     ax.axhline(y=-1.68e13 * 10**scale_factor, color='0.5', linewidth=0.5, linestyle='--')
     ax.axhline(y=1.68e13 * 10**scale_factor, color='0.5', linewidth=0.5, linestyle='--')
@@ -322,7 +327,8 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
     for dotnum in range(len(df['model'])):       
         x = convert_units(df[xvar][dotnum], x_input_units, plot_units) * 10**scale_factor
         y = convert_units(df[yvar][dotnum], y_input_units, plot_units) * 10**scale_factor
-        label = df['model'][dotnum] + ' (' + df['run'][dotnum] + ')'
+        label = df['model'][dotnum]
+        #label = df['model'][dotnum] + ' (' + df['run'][dotnum] + ')'
         institution = df['institution'][dotnum]
         color = institution_colors[institution]
         if df['project'][dotnum] == 'cmip6':
@@ -342,7 +348,7 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
         marker = markers[marker_num]
         x_for_plot = dotnum + 1 if 'massa' in xvar else x
         ax.scatter(x_for_plot, y, label=label, s=130, linewidth=1.2, marker=marker,
-                   facecolors=facecolors, edgecolors=edgecolors)
+                   facecolors=facecolors, edgecolors=edgecolors, zorder=2)
 
     if broken:
         non_square = False
@@ -411,7 +417,8 @@ def main(inargs):
     """Run the program."""
 
     df = pd.read_csv(inargs.infile)
-    df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
+    #df.set_index(df['model'] + ' (' + df['run'] + ')', drop=True, inplace=True)
+    df.set_index(df['model'], drop=True, inplace=True)
     fig = plt.figure(figsize=[18.5, 21])  # width, height
     gs = GridSpec(3, 2)
 
