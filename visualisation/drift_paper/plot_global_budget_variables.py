@@ -15,6 +15,7 @@ import argparse
 import itertools
 
 import numpy
+import pandas as pd
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
@@ -90,15 +91,17 @@ amon_vars = ['rsdt', 'rsut', 'rlut', 'pr', 'evspsbl', 'clwvi', 'prw']
 def get_latest(results):
     """Select the latest results"""
 
-    if results:
-        latest = results[0]
-        for result in results[1:]:
-            current_version = result['version'][1:] if 'v' in result['version'] else result['version']
-            latest_version = latest['version'][1:] if 'v' in latest['version'] else latest['version']
+    if not results.empty:
+        latest = results.iloc[0]
+        for index, row in results.iloc[1:].iterrows():
+            current_version = row.path.split('/')[0]
+            current_version = current_version[1:] if 'v' in current_version else current_version
+            latest_version = latest.path.split('/')[0]
+            latest_version = latest_version[1:] if 'v' in latest_version else latest_version
             if float(current_version) > float(latest_version):
-                latest = result
+                latest = row
     else:
-        latest = []    
+        latest = pd.DataFrame()    
 
     return latest
 
@@ -121,20 +124,20 @@ def clef_search(model, variable, ensemble, project, experiment='piControl'):
 
     results = clef.code.search(session, project=project, **constraints)
     results = get_latest(results)
-    if results:
-        filenames = results['filenames']
+    if not results.empty:
+        filenames = list(results.filename)
         filenames.sort()
-        filedir = results['pdir']
+        filedir = results.path
         file_list = [filedir + '/' + filename for filename in filenames]
-        version = results['version']
+        version = results.path.split('/')[0]
         file_version_list = [filedir + '/' + filename + ', ' + str(version) for filename in filenames]
         processed_files.append(file_version_list)
     else:
         file_list = []
     
-    if len(file_list) == 2:
+    if len(file_list) > 1:
         if file_list[0] == file_list[1]:
-            file_list = [file_list[0]]
+            file_list = file_list[0::2]
     print(file_list)
 
     return file_list
