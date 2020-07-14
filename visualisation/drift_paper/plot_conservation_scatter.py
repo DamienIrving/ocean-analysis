@@ -452,8 +452,8 @@ def main(inargs):
                                          handles, labels)
 
     # Salt conservation
-    xlims=[(-0.7, 0.35), (3.55, 3.7)]
-    ylims=[(-0.7, 3.1)]
+    xlims=[(-0.73, 0.35), (3.55, 3.7)]
+    ylims=[(-0.8, 3.1)]
     hspace = wspace = 0.1
     salt_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace, subplot_spec=gs[1, 1], d=0.0)
     #salt_ax = fig.add_subplot(gs[1, 1])
