@@ -216,7 +216,7 @@ def plot_two_var_aesthetics(ax, yvar, xvar, units, scinotation, shading, scale_f
 #        ax.axhline(y=0.5, color='0.5', linewidth=0.5, linestyle='--')
 #        ax.axvline(x=-0.5, color='0.5', linewidth=0.5, linestyle='--')
 #        ax.axvline(x=0.5, color='0.5', linewidth=0.5, linestyle='--')
-    elif xvar == 'wfo (kg yr-1)':
+    elif 'kg yr-1' in xvar:
         ref = convert_units(1.8, 'mm yr-1', 'kg yr-1')
         ref = ref * 10**scale_factor
         ax.axhline(y=-1 * ref, color='0.5', linewidth=0.5, linestyle='--')
@@ -452,14 +452,14 @@ def main(inargs):
                                          handles, labels)
 
     # Salt conservation
-    xlims=[(-30, -28), (-2, 5)]
-    ylims=[(-24, -17.5), (-2.3, 5.1)]
-    hspace = 0.1
-    salt_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=gs[1, 1], d=0.0)
+    xlims=[(-0.7, 0.35), (3.55, 3.7)]
+    ylims=[(-0.7, 3.1)]
+    hspace = wspace = 0.1
+    salt_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace, subplot_spec=gs[1, 1], d=0.0)
     #salt_ax = fig.add_subplot(gs[1, 1])
-    plot_broken_comparison(salt_ax, df, '(d) salt conservation', 'masso (g/kg yr-1)', 'soga (g/kg yr-1)',
-                           'g/kg s-1', scale_factor=13, broken=True, xpad=30, ypad=40)
-    handles, labels = update_legend_info(salt_ax, df[['masso (g/kg yr-1)', 'soga (g/kg yr-1)']],
+    plot_broken_comparison(salt_ax, df, '(d) salt conservation', 'masso (kg yr-1)', 'soga (kg yr-1)',
+                           'kg yr-1', scale_factor=-15, xpad=30, ypad=40, broken=True)
+    handles, labels = update_legend_info(salt_ax, df[['masso (kg yr-1)', 'soga (kg yr-1)']],
                                          handles, labels)
 
     # Atmosphere mass conservation
