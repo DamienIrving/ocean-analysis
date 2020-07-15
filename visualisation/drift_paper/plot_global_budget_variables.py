@@ -645,10 +645,10 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         nettoa_cumsum_data = numpy.cumsum(nettoa_data)
         nettoa_cumsum_anomaly = nettoa_cumsum_data - nettoa_cumsum_data[0]
         calc_trend(nettoa_cumsum_anomaly, 'cumulative netTOA', 'J')
-        ax_top.plot(nettoa_cumsum_anomaly, color='tab:olive', label='cumulative netTOA ($Q_r$)')
+        ax_top.plot(nettoa_cumsum_anomaly, color='tab:olive', label='time-integrated netTOA ($Q_r$)')
         nettoa_cubic_dedrifted = dedrift_data(nettoa_cumsum_anomaly, fit='cubic')
         nettoa_cubic_dedrifted_smoothed = timeseries.runmean(nettoa_cubic_dedrifted, 10)
-        ax_middle.plot(nettoa_cubic_dedrifted_smoothed, color='tab:olive', label='cumulative netTOA ($Q_r$)')
+        ax_middle.plot(nettoa_cubic_dedrifted_smoothed, color='tab:olive', label='time-integrated netTOA ($Q_r$)')
         if cube_dict['thetaoga']:
             calc_regression(nettoa_cubic_dedrifted, thermal_data_cubic_dedrifted,
                             'cumulative netTOA radiative flux vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
@@ -664,7 +664,7 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
         hfdsgeou_cumsum_data = numpy.cumsum(net_ocean_heat_flux_data)
         hfdsgeou_cumsum_anomaly = hfdsgeou_cumsum_data - hfdsgeou_cumsum_data[0]
         calc_trend(hfdsgeou_cumsum_anomaly, 'cumulative hfdsgeou', 'J')
-        ax_top.plot(hfdsgeou_cumsum_anomaly, color='tab:orange', label='cumulative heat flux into ocean ($Q_h$)')
+        ax_top.plot(hfdsgeou_cumsum_anomaly, color='tab:orange', label='time-integrated heat flux\ninto ocean ($Q_h$)')
 
         if cube_dict['hfgeou'] or cube_dict['hfcorr']:
             hfds_cumsum_data = numpy.cumsum(net_surface_ocean_heat_flux_data)
@@ -676,7 +676,7 @@ def plot_ohc(ax_top, ax_middle, masso_data, cp, cube_dict, ylim=None):
 
         hfdsgeou_cubic_dedrifted = dedrift_data(hfdsgeou_cumsum_anomaly, fit='cubic')
         hfdsgeou_cubic_dedrifted_smoothed = timeseries.runmean(hfdsgeou_cubic_dedrifted, 10)
-        ax_middle.plot(hfdsgeou_cubic_dedrifted_smoothed, color='tab:orange', label='cumulative heat flux into ocean ($Q_h$)')
+        ax_middle.plot(hfdsgeou_cubic_dedrifted_smoothed, color='tab:orange', label='time-integrated heat flux into ocean ($Q_h$)')
         if cube_dict['thetaoga']:
             calc_regression(hfdsgeou_cubic_dedrifted, thermal_data_cubic_dedrifted,
                             'cumulative heat flux into ocean vs thermal OHC anomaly (cubic dedrift, decadal mean)', decadal_mean=True)
@@ -742,12 +742,12 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
         wfo_cumsum_anomaly = wfo_cumsum_data - wfo_cumsum_data[0]
         calc_trend(wfo_cumsum_anomaly, 'cumulative wfo', 'kg')
         ax_top.plot(wfo_cumsum_anomaly, color='tab:gray',
-                    label='cumulative ocean freshwater flux ($Q_m$)')
+                    label='time-integrated ocean\nfreshwater flux ($Q_m$)')
 
         wfo_cubic_dedrifted = dedrift_data(wfo_cumsum_anomaly, fit='cubic')
         wfo_cubic_dedrifted_smoothed = timeseries.runmean(wfo_cubic_dedrifted, 10)
         ax_middle.plot(wfo_cubic_dedrifted_smoothed, color='tab:gray',
-                       label='cumulative freshwater flux ($Q_m$)')
+                       label='time-integrated freshwater flux ($Q_m$)')
         
         if is_masso_timeseries:
             calc_regression(wfo_cubic_dedrifted, masso_cubic_dedrifted,
@@ -787,7 +787,7 @@ def plot_atmosphere(ax_top, ax_middle, cube_dict, ylim=None):
         wfa_cumsum_anomaly = wfa_cumsum_data - wfa_cumsum_data[0]
         calc_trend(wfa_cumsum_anomaly, 'cumulative wfa', 'kg')
         ax_top.plot(wfa_cumsum_anomaly, color='tab:cyan',
-                    label='cumulative moisture flux into atmosphere ($Q_{ep}$)')
+                    label='time-integrated moisture flux\ninto atmosphere ($Q_{ep}$)')
         wfa_cubic_dedrifted = dedrift_data(wfa_cumsum_anomaly, fit='cubic')
 
     if cube_dict['prw'] and cube_dict['evspsbl'] and cube_dict['pr']:
