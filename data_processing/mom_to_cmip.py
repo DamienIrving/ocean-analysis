@@ -31,9 +31,9 @@ def main(inargs):
     ref_cube = iris.load_cube(inargs.ref_file, inargs.ref_var)
     
     assert 'Watt' in dset[inargs.mom_var].units
+    new_units = 'W m-2'
     new_standard_name = dset[inargs.mom_var].long_name.replace(' ', '_')
     iris.std_names.STD_NAMES[new_standard_name] = {'canonical_units': new_units}
-    new_units = 'W m-2'
 
     mom_ndim = dset[inargs.mom_var].ndim
     assert mom_ndim == ref_cube.ndim, \
