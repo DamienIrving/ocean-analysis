@@ -30,10 +30,8 @@ def main(inargs):
     dset = xr.open_mfdataset(inargs.mom_files, decode_times=False)
     ref_cube = iris.load_cube(inargs.ref_file, inargs.ref_var)
     
-    assert 'Watt' in dset[inargs.mom_var].units
+    assert dset[inargs.mom_var].units[0] == 'W'
     new_units = 'W m-2'
-    new_standard_name = dset[inargs.mom_var].long_name.replace(' ', '_')
-    iris.std_names.STD_NAMES[new_standard_name] = {'canonical_units': new_units}
 
     mom_ndim = dset[inargs.mom_var].ndim
     assert mom_ndim == ref_cube.ndim, \
@@ -56,7 +54,6 @@ def main(inargs):
     new_data = dset[inargs.mom_var].to_masked_array()
         
     new_cube = iris.cube.Cube(new_data,
-                              standard_name=new_standard_name,
                               long_name=dset[inargs.mom_var].long_name,
                               var_name=dset[inargs.mom_var].name,
                               units=new_units,
@@ -64,7 +61,8 @@ def main(inargs):
                               dim_coords_and_dims=dim_coord_list,
                               aux_coords_and_dims=[(ref_cube.aux_coords[0], (mom_ndim - 2, mom_ndim - 1)),
                                                    (ref_cube.aux_coords[1], (mom_ndim - 2, mom_ndim - 1))])
-
+    if 'standard_name' in dset[inargs.mom_var].attrs:
+        new_cube.standard_name = dset[inargs.mom_var].standard_name
     new_cube.attributes['history'] = cmdprov.new_log(git_repo=repo_dir)
     iris.save(new_cube, inargs.outfile)
         
