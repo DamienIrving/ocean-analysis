@@ -158,7 +158,9 @@ def bin_data(df, bin_edges, bin_step, basin_edges, ntimes):
 def multiply_flux_by_area(flux_per_unit_area_cube, area_cube, var):
     """Multiply the flux by area."""
 
-    area_data = uconv.broadcast_array(area_cube.data, [1, 2], flux_per_unit_area_cube.shape)
+    flux_ndim = flux_per_unit_area_cube.ndim
+    assert area_cube.ndim == 2
+    area_data = uconv.broadcast_array(area_cube.data, [flux_ndim - 2, flux_ndim - 1], flux_per_unit_area_cube.shape)
     flux_cube = flux_per_unit_area_cube.copy()
     flux_cube.data = flux_per_unit_area_cube.data * area_data
     flux_cube.units = str(flux_cube.units).replace('m-2', "").replace("  ", " ")
@@ -171,18 +173,19 @@ def main(inargs):
     
     logging.basicConfig(level=logging.DEBUG)
 
+    flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var, checks=True)
     bin_cube, bin_history = gio.combine_files(inargs.bin_files, inargs.bin_var, checks=True)
+    if (flux_per_area_cube.ndim == 3) and (bin_cube.ndim == 4):
+        bin_coord_names = [coord.name() for coord in bin_cube.dim_coords]
+        bin_cube = bin_cube[:, 0, ::]
+        bin_cube.remove_coord(bin_coord_names[1])
+    assert flux_per_area_cube.shape == bin_cube.shape
+
     bin_min, bin_max = inargs.bin_bounds
     bin_step = inargs.bin_size
     bin_edges = numpy.arange(bin_min, bin_max + bin_step, bin_step)
     bin_values = (bin_edges[1:] + bin_edges[:-1]) / 2
-    if bin_cube.ndim == 4:
-        bin_coord_names = [coord.name() for coord in bin_cube.dim_coords]
-        bin_cube = bin_cube[:, 0, ::]
-        bin_cube.remove_coord(bin_coord_names[1])
 
-    flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var, checks=True)
-    assert flux_per_area_cube.shape == bin_cube.shape
     area_cube = gio.get_ocean_weights(inargs.area_file)
 
     basin_cube = iris.load_cube(inargs.basin_file, 'region')

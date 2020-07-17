@@ -124,7 +124,6 @@ def create_flux_df(flux_cube, bin_cube, basin_cube):
     assert basin_cube.data.min() == 11
     assert basin_cube.data.max() == 17
 
-    assert flux_cube.ndim == bin_cube.ndim == 3
     coord_names = [coord.name() for coord in flux_cube.dim_coords]
 
     if 'temperature' in bin_cube.long_name:
@@ -138,7 +137,7 @@ def create_flux_df(flux_cube, bin_cube, basin_cube):
     lats = uconv.broadcast_array(flux_cube.coord('latitude').points, lat_pos, flux_cube.shape)
     lons = uconv.broadcast_array(flux_cube.coord('longitude').points, lon_pos, flux_cube.shape)
 
-    basin_data = uconv.broadcast_array(basin_cube.data, [1, 2], flux_cube.shape)
+    basin_data = uconv.broadcast_array(basin_cube.data, [flux_cube.ndim - 2, flux_cube.ndim -1], flux_cube.shape)
 
     if not flux_cube.data.mask.sum() == bin_cube.data.mask.sum():
         npoints = flux_cube.data.size
