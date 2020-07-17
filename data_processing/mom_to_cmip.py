@@ -29,9 +29,11 @@ def main(inargs):
 
     dset = xr.open_mfdataset(inargs.mom_files, decode_times=False)
     ref_cube = iris.load_cube(inargs.ref_file, inargs.ref_var)
-
-    new_units = str(ref_cube.units)
-    assert new_units in ['W m-2', 'degC']
+    
+    assert 'Watt' in dset[inargs.mom_var].units
+    new_standard_name = dset[inargs.mom_var].long_name.replace(' ', '_')
+    iris.std_names.STD_NAMES[new_standard_name] = {'canonical_units': new_units}
+    new_units = 'W m-2'
 
     mom_ndim = dset[inargs.mom_var].ndim
     assert mom_ndim == ref_cube.ndim, \
@@ -52,14 +54,6 @@ def main(inargs):
         dim_coord_list.append((coord, index + 1))
 
     new_data = dset[inargs.mom_var].to_masked_array()
-    if new_units == 'W m-2':
-        assert 'Watt' in dset[inargs.mom_var].units
-        new_standard_name = dset[inargs.mom_var].long_name.replace(' ', '_')
-        iris.std_names.STD_NAMES[new_standard_name] = {'canonical_units': new_units}
-    elif new_units == 'degC':
-        assert 'K' in dset[inargs.mom_var].units
-        new_data = new_data - 273.15
-        new_standard_name = dset[inargs.mom_var].standard_name
         
     new_cube = iris.cube.Cube(new_data,
                               standard_name=new_standard_name,
