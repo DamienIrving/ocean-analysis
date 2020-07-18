@@ -168,6 +168,21 @@ def multiply_flux_by_area(flux_per_unit_area_cube, area_cube, var):
     return flux_cube
 
 
+def process_year(year, flux_per_area_cube, bin_cube, area_cube, basin_cube,
+                 flux_var, bin_edges, bin_step, basin_edges):
+    """Process a year of data."""
+
+    year_constraint = iris.Constraint(year=year)
+    flux_per_area_year_cube = flux_per_area_cube.extract(year_constraint)
+    flux_year_cube = multiply_flux_by_area(flux_per_area_year_cube, area_cube, flux_var)
+    bin_year_cube = bin_cube.extract(year_constraint)
+    df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube)
+    ntimes = flux_year_cube.shape[0]
+    binned_array = bin_data(df, bin_edges, bin_step, basin_edges, ntimes)
+
+    return binned_array
+
+
 def main(inargs):
     """Run the program."""
     
@@ -203,16 +218,21 @@ def main(inargs):
     years.sort()
   
     outdata = numpy.ma.zeros([len(years), len(bin_values), len(basin_values)])
-    for index, year in enumerate(years):
+    for year_index, year in enumerate(years):
         print(year)
-        year_constraint = iris.Constraint(year=year)
-        flux_per_area_year_cube = flux_per_area_cube.extract(year_constraint)
-        flux_year_cube = multiply_flux_by_area(flux_per_area_year_cube, area_cube, inargs.flux_var)
-        bin_year_cube = bin_cube.extract(year_constraint)
-        df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube)
-        ntimes = flux_year_cube.shape[0]
-        outdata[index, :, :] = bin_data(df, bin_edges, bin_step, basin_edges, ntimes)
-
+        if flux_per_area_cube.ndim == 4:
+            running_hist = numpy.ma.zeros([len(bin_values), len(basin_values)])
+            for depth_index in range(flux_per_area_cube.shape[1]):
+                print(depth_index)
+                depth_hist = process_year(year, flux_per_area_cube[:, depth_index, ::],
+                                          bin_cube[:, depth_index, ::], area_cube, basin_cube,
+                                          inargs.flux_var, bin_edges, bin_step, basin_edges)  
+                running_hist = running_hist + depth_hist
+        else:         
+            running_hist = process_year(year, flux_per_area_cube, bin_cube,
+                                        area_cube, basin_cube, inargs.flux_var,
+                                        bin_edges, bin_step, basin_edges)
+        outdata[year_index, :, :] = running_hist
     outdata = numpy.ma.masked_invalid(outdata)
     outcube = construct_cube(outdata, flux_year_cube, bin_cube, basin_cube, years, 
                              bin_values, bin_edges, bin_units, basin_values, log)
