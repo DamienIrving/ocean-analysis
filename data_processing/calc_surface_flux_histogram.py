@@ -180,7 +180,7 @@ def process_year(year, flux_per_area_cube, bin_cube, area_cube, basin_cube,
     ntimes = flux_year_cube.shape[0]
     binned_array = bin_data(df, bin_edges, bin_step, basin_edges, ntimes)
 
-    return binned_array
+    return binned_array, flux_year_cube
 
 
 def main(inargs):
@@ -220,18 +220,19 @@ def main(inargs):
     outdata = numpy.ma.zeros([len(years), len(bin_values), len(basin_values)])
     for year_index, year in enumerate(years):
         print(year)
-        if flux_per_area_cube.ndim == 4:
+        if inargs.chunk:
+            assert flux_per_area_cube.ndim == 4
             running_hist = numpy.ma.zeros([len(bin_values), len(basin_values)])
             for depth_index in range(flux_per_area_cube.shape[1]):
                 print(depth_index)
-                depth_hist = process_year(year, flux_per_area_cube[:, depth_index, ::],
-                                          bin_cube[:, depth_index, ::], area_cube, basin_cube,
-                                          inargs.flux_var, bin_edges, bin_step, basin_edges)  
+                depth_hist, flux_year_cube = process_year(year, flux_per_area_cube[:, depth_index, ::],
+                                                          bin_cube[:, depth_index, ::], area_cube, basin_cube,
+                                                          inargs.flux_var, bin_edges, bin_step, basin_edges)  
                 running_hist = running_hist + depth_hist
         else:         
-            running_hist = process_year(year, flux_per_area_cube, bin_cube,
-                                        area_cube, basin_cube, inargs.flux_var,
-                                        bin_edges, bin_step, basin_edges)
+            running_hist, flux_year_cube = process_year(year, flux_per_area_cube, bin_cube,
+                                                        area_cube, basin_cube, inargs.flux_var,
+                                                        bin_edges, bin_step, basin_edges)
         outdata[year_index, :, :] = running_hist
     outdata = numpy.ma.masked_invalid(outdata)
     outcube = construct_cube(outdata, flux_year_cube, bin_cube, basin_cube, years, 
@@ -265,6 +266,9 @@ author:
      
     parser.add_argument("--bin_bounds", type=float, nargs=2, default=(-4, 40), help='bin bounds')
     parser.add_argument("--bin_size", type=float, default=1.0, help='bin size')
+
+    parser.add_argument("--chunk", action="store_true", default=False,
+                        help="Process each depth interval separately")
 
     args = parser.parse_args()             
     main(args)
