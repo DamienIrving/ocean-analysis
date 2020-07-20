@@ -35,7 +35,13 @@ for date_range in "${date_range_list[@]}"; do
 
 ref_file=${ref_dir}/thetao_Omon_ACCESS-CM2_${experiment}_r1i1p1f1_gn_${date_range}.nc
 
-command="${python} mom_to_cmip.py ${data_dir}/ocean_month.nc-${date_range:0:3}* ${data_var} ${ref_dir}/thetao_Omon_ACCESS-CM2_${experiment}_r1i1p1f1_gn_${date_range}.nc sea_water_potential_temperature ${out_dir}/${file_var}_Omon_ACCESS-CM2_${experiment}_r1i1p1f1_gn_${date_range}.nc"
+if [ "$date_range" == "123001-123912" ]; then
+    single="--single"
+else
+    single=" "
+fi
+
+command="${python} mom_to_cmip.py ${data_dir}/ocean_month.nc-${date_range:0:3}* ${data_var} ${ref_dir}/thetao_Omon_ACCESS-CM2_${experiment}_r1i1p1f1_gn_${date_range}.nc sea_water_potential_temperature ${out_dir}/${file_var}_Omon_ACCESS-CM2_${experiment}_r1i1p1f1_gn_${date_range}.nc ${single}"
 
 echo ${command}
 ${command}

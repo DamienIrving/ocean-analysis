@@ -15,6 +15,8 @@ import iris
 import cf_units
 import cmdline_provenance as cmdprov
 
+# Import my modules
+
 cwd = os.getcwd()
 repo_dir = '/'
 for directory in cwd.split('/')[1:]:
@@ -22,14 +24,20 @@ for directory in cwd.split('/')[1:]:
     if directory == 'ocean-analysis':
         break
 
+modules_dir = os.path.join(repo_dir, 'modules')
+sys.path.append(modules_dir)
+
+try:
+    import general_io as gio
+except ImportError:
+    raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
+
+
 # Define functions
 
-def main(inargs):
-    """Run the program."""
+def xr_to_cube(dset, ref_cube, inargs):
+    """Create iris cube from xarray dataset"""
 
-    dset = xr.open_mfdataset(inargs.mom_files, decode_times=False)
-    ref_cube = iris.load_cube(inargs.ref_file, inargs.ref_var)
-    
     assert dset[inargs.mom_var].units[0] == 'W'
     new_units = 'W m-2'
 
@@ -63,8 +71,28 @@ def main(inargs):
                                                    (ref_cube.aux_coords[1], (mom_ndim - 2, mom_ndim - 1))])
     if 'standard_name' in dset[inargs.mom_var].attrs:
         new_cube.standard_name = dset[inargs.mom_var].standard_name
-    new_cube.attributes['history'] = cmdprov.new_log(git_repo=repo_dir)
-    iris.save(new_cube, inargs.outfile)
+
+    return new_cube
+
+
+def main(inargs):
+    """Run the program."""
+    
+    ref_cube = iris.load_cube(inargs.ref_file, inargs.ref_var)
+    if inargs.single:
+        cube_list = iris.cube.CubeList([])
+        for mom_file in inargs.mom_files:
+            print(mom_file)
+            dset = xr.open_dataset(mom_file, decode_times=False)
+            cube = xr_to_cube(dset, ref_cube, inargs)
+            cube_list.append(cube)
+        outcube = gio.combine_cubes(cube_list) 
+    else:
+        dset = xr.open_mfdataset(inargs.mom_files, decode_times=False, combine='by_coords')
+        outcube = xr_to_cube(dset, ref_cube, inargs)
+    
+    outcube.attributes['history'] = cmdprov.new_log(git_repo=repo_dir)
+    iris.save(outcube, inargs.outfile)
         
 
 if __name__ == '__main__':
@@ -87,6 +115,9 @@ author:
     parser.add_argument("ref_file", type=str, help="reference file")
     parser.add_argument("ref_var", type=str, help="reference variable")
     parser.add_argument("outfile", type=str, help="output file")
+
+    parser.add_argument("--single", action="store_true", default=False,
+                        help="Process each mom_file separately before merging")
 
     args = parser.parse_args()
     main(args)
