@@ -180,7 +180,7 @@ def process_year(year, flux_per_area_cube, bin_cube, area_cube, basin_cube,
     ntimes = flux_year_cube.shape[0]
     binned_array = bin_data(df, bin_edges, bin_step, basin_edges, ntimes)
 
-    return binned_array, flux_year_cube
+    return binned_array, flux_year_cube, bin_units
 
 
 def main(inargs):
@@ -225,14 +225,14 @@ def main(inargs):
             running_hist = numpy.ma.zeros([len(bin_values), len(basin_values)])
             for depth_index in range(flux_per_area_cube.shape[1]):
                 print(depth_index)
-                depth_hist, flux_year_cube = process_year(year, flux_per_area_cube[:, depth_index, ::],
-                                                          bin_cube[:, depth_index, ::], area_cube, basin_cube,
-                                                          inargs.flux_var, bin_edges, bin_step, basin_edges)  
+                depth_hist, flux_year_cube, bin_units = process_year(year, flux_per_area_cube[:, depth_index, ::],
+                                                                     bin_cube[:, depth_index, ::], area_cube, basin_cube,
+                                                                     inargs.flux_var, bin_edges, bin_step, basin_edges)  
                 running_hist = running_hist + depth_hist
         else:         
-            running_hist, flux_year_cube = process_year(year, flux_per_area_cube, bin_cube,
-                                                        area_cube, basin_cube, inargs.flux_var,
-                                                        bin_edges, bin_step, basin_edges)
+            running_hist, flux_year_cube, bin_units = process_year(year, flux_per_area_cube, bin_cube,
+                                                                   area_cube, basin_cube, inargs.flux_var,
+                                                                   bin_edges, bin_step, basin_edges)
         outdata[year_index, :, :] = running_hist
     outdata = numpy.ma.masked_invalid(outdata)
     outcube = construct_cube(outdata, flux_year_cube, bin_cube, basin_cube, years, 
