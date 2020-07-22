@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Description: Run mom_to_cmip.py for a 3D flux variable
+# Description: Run mom_to_cmip.py for a 2D flux variable
 #             
 
 function usage {
@@ -26,14 +26,13 @@ fi
 
 
 file_var=`echo ${data_var} | sed s:_:-:g`
-ref_dir=/g/data/fs38/publications/CMIP6/CMIP/CSIRO-ARCCSS/ACCESS-CM2/${experiment}/r1i1p1f1/Omon/thetao/gn/${version}
+ref_dir=/g/data/fs38/publications/CMIP6/CMIP/CSIRO-ARCCSS/ACCESS-CM2/${experiment}/r1i1p1f1/Omon/tos/gn/${version}
+ref_file=${ref_dir}/tos_Omon_ACCESS-CM2_${experiment}_r1i1p1f1_gn_095001-144912.nc
 out_dir=/g/data/r87/dbi599/CMIP6/CMIP/CSIRO-ARCCSS/ACCESS-CM2/${experiment}/r1i1p1f1/Omon/${file_var}/gn/${version}
 python=/g/data/r87/dbi599/miniconda3/envs/ocean3/bin/python
 
 mkdir -p ${out_dir}
 for date_range in "${date_range_list[@]}"; do
-
-ref_file=${ref_dir}/thetao_Omon_ACCESS-CM2_${experiment}_r1i1p1f1_gn_${date_range}.nc
 
 if [ "$date_range" == "123001-123912" ]; then
     single="--single"
@@ -41,7 +40,7 @@ else
     single=" "
 fi
 
-command="${python} mom_to_cmip.py ${data_dir}/ocean_month.nc-${date_range:0:3}* ${data_var} ${ref_file} sea_water_potential_temperature ${out_dir}/${file_var}_Omon_ACCESS-CM2_${experiment}_r1i1p1f1_gn_${date_range}.nc ${single}"
+command="${python} mom_to_cmip.py ${data_dir}/ocean_month.nc-${date_range:0:3}* ${data_var} ${ref_file} sea_surface_temperature ${out_dir}/${file_var}_Omon_ACCESS-CM2_${experiment}_r1i1p1f1_gn_${date_range}.nc ${single}"
 
 echo ${command}
 ${command}
