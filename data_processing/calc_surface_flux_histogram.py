@@ -138,18 +138,26 @@ def clipping_details(orig_data, clipped_data, bin_min, bin_max, bin_step):
     logging.info(f"Last bin had {npoints_max} values, clipping added {npoints_over}")
 
 
-def bin_data(df, bin_edges, bin_step, basin_edges, ntimes):
+def bin_data(df, bin_edges, bin_step, basin_edges, ntimes, nchunks):
     """Bin the data"""
 
-    bin_vals = numpy.clip(df['bin'].values, bin_edges[0], bin_edges[-1])
-    clipping_details(df['bin'].values, bin_vals, bin_edges[0], bin_edges[-1], bin_step)
+    bin_vals_clipped = numpy.clip(df['bin'].values, bin_edges[0], bin_edges[-1])
+    clipping_details(df['bin'].values, bin_vals_clipped, bin_edges[0], bin_edges[-1], bin_step)
+    
+    flux_data = df['flux'].astype(numpy.float64).values
+    bin_vals_split = numpy.array_split(bin_vals_clipped, nchunks)
+    basin_vals_split = numpy.array_split(df['basin'].values, nchunks)
+    flux_vals_split = numpy.array_split(flux_data, nchunks)
 
-    hist, xbin_edges, ybin_edges = numpy.histogram2d(bin_vals, df['basin'].values,
-                                                     weights=df['flux'].values, bins=[bin_edges, basin_edges])
+    hist = numpy.zeros([len(bin_edges) - 1, len(basin_edges) - 1])
+    for bin_vals, basin_vals, flux_vals in zip(bin_vals_split, basin_vals_split, flux_vals_split):
+        hist_chunk, xbin_edges, ybin_edges = numpy.histogram2d(bin_vals, basin_vals, weights=flux_vals, bins=[bin_edges, basin_edges])
+        numpy.testing.assert_allclose(hist_chunk.sum(), flux_vals.sum(), rtol=1.5e-02)
+        hist = hist + hist_chunk
 
     hist = hist / ntimes
     binned_total_flux = hist.sum()
-    orig_total_flux = df['flux'].values.sum() / ntimes
+    orig_total_flux = flux_data.sum() / ntimes
     numpy.testing.assert_allclose(orig_total_flux, binned_total_flux, rtol=1.5e-02)
 
     return hist
@@ -166,21 +174,6 @@ def multiply_flux_by_area(flux_per_unit_area_cube, area_cube, var):
     flux_cube.units = str(flux_cube.units).replace('m-2', "").replace("  ", " ")
 
     return flux_cube
-
-
-def process_year(year, flux_per_area_cube, bin_cube, area_cube, basin_cube,
-                 flux_var, bin_edges, bin_step, basin_edges):
-    """Process a year of data."""
-
-    year_constraint = iris.Constraint(year=year)
-    flux_per_area_year_cube = flux_per_area_cube.extract(year_constraint)
-    flux_year_cube = multiply_flux_by_area(flux_per_area_year_cube, area_cube, flux_var)
-    bin_year_cube = bin_cube.extract(year_constraint)
-    df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube)
-    ntimes = flux_year_cube.shape[0]
-    binned_array = bin_data(df, bin_edges, bin_step, basin_edges, ntimes)
-
-    return binned_array, flux_year_cube, bin_units
 
 
 def main(inargs):
@@ -219,21 +212,14 @@ def main(inargs):
   
     outdata = numpy.ma.zeros([len(years), len(bin_values), len(basin_values)])
     for year_index, year in enumerate(years):
-        print(year)
-        if inargs.chunk:
-            assert flux_per_area_cube.ndim == 4
-            running_hist = numpy.ma.zeros([len(bin_values), len(basin_values)])
-            for depth_index in range(flux_per_area_cube.shape[1]):
-                print(depth_index)
-                depth_hist, flux_year_cube, bin_units = process_year(year, flux_per_area_cube[:, depth_index, ::],
-                                                                     bin_cube[:, depth_index, ::], area_cube, basin_cube,
-                                                                     inargs.flux_var, bin_edges, bin_step, basin_edges)  
-                running_hist = running_hist + depth_hist
-        else:         
-            running_hist, flux_year_cube, bin_units = process_year(year, flux_per_area_cube, bin_cube,
-                                                                   area_cube, basin_cube, inargs.flux_var,
-                                                                   bin_edges, bin_step, basin_edges)
-        outdata[year_index, :, :] = running_hist
+        print(year)         
+        year_constraint = iris.Constraint(year=year)
+        flux_per_area_year_cube = flux_per_area_cube.extract(year_constraint)
+        flux_year_cube = multiply_flux_by_area(flux_per_area_year_cube, area_cube, inargs.flux_var)
+        bin_year_cube = bin_cube.extract(year_constraint)
+        df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube)
+        ntimes = flux_year_cube.shape[0] 
+        outdata[year_index, :, :] = bin_data(df, bin_edges, bin_step, basin_edges, ntimes, inargs.nchunks)
     outdata = numpy.ma.masked_invalid(outdata)
     outcube = construct_cube(outdata, flux_year_cube, bin_cube, basin_cube, years, 
                              bin_values, bin_edges, bin_units, basin_values, log)
@@ -267,8 +253,8 @@ author:
     parser.add_argument("--bin_bounds", type=float, nargs=2, default=(-4, 40), help='bin bounds')
     parser.add_argument("--bin_size", type=float, default=1.0, help='bin size')
 
-    parser.add_argument("--chunk", action="store_true", default=False,
-                        help="Process each depth interval separately")
+    parser.add_argument("--nchunks", type=int, default=1,
+                        help="Break binning into chunks")
 
     args = parser.parse_args()             
     main(args)
