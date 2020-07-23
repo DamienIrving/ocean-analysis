@@ -51,7 +51,7 @@ mpl.rcParams['axes.labelsize'] = 16 #'x-large'
 mpl.rcParams['axes.titlesize'] = 18 #'xx-large'
 mpl.rcParams['xtick.labelsize'] = 16 #'x-large'
 mpl.rcParams['ytick.labelsize'] = 16 #'x-large'
-mpl.rcParams['legend.fontsize'] = 15 #'x-large'
+mpl.rcParams['legend.fontsize'] = 14.8 #'x-large'
 
 
 # Define functions 
