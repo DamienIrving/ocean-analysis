@@ -181,7 +181,16 @@ def main(inargs):
     
     logging.basicConfig(level=logging.DEBUG)
 
-    flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, inargs.flux_var, checks=True)
+    mom_vars = {"temp_nonlocal_KPP": "cp*rho*dzt*nonlocal tendency from KPP",
+                "temp_vdiffuse_diff_cbt": "vert diffusion of heat due to diff_cbt",
+                "mixdownslope_temp": "cp*mixdownslope*rho*dzt*temp",
+                "temp_sigma_diff" : "thk wghtd sigma-diffusion heating",
+                "temp_vdiffuse_k33": "vert diffusion of heat due to K33 from neutral diffusion",
+                "neutral_diffusion_temp": "rho*dzt*cp*explicit neutral diffusion tendency (heating)",
+                "temp_tendency": "time tendency for tracer Conservative temperature"}
+
+    flux_var = mom_vars[inargs.flux_var] if inargs.flux_var in mom_vars else inargs.flux_var
+    flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, flux_var, checks=True)
     bin_cube, bin_history = gio.combine_files(inargs.bin_files, inargs.bin_var, checks=True)
     if (flux_per_area_cube.ndim == 3) and (bin_cube.ndim == 4):
         bin_coord_names = [coord.name() for coord in bin_cube.dim_coords]
@@ -215,7 +224,7 @@ def main(inargs):
         print(year)         
         year_constraint = iris.Constraint(year=year)
         flux_per_area_year_cube = flux_per_area_cube.extract(year_constraint)
-        flux_year_cube = multiply_flux_by_area(flux_per_area_year_cube, area_cube, inargs.flux_var)
+        flux_year_cube = multiply_flux_by_area(flux_per_area_year_cube, area_cube, flux_var)
         bin_year_cube = bin_cube.extract(year_constraint)
         df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube)
         ntimes = flux_year_cube.shape[0] 
