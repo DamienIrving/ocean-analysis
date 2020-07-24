@@ -163,7 +163,10 @@ def check_iris_var(var, alternate_names=False):
     """ 
 
     if not var in list(iris.std_names.STD_NAMES.keys()):
-        var = var.replace('_', ' ')
+        if var in ['cp*rivermix*rho_dzt*temp', 'vert diffusion of heat due to diff_cbt']:
+           pass
+        else:
+            var = var.replace('_', ' ')
 
     wrong_names = {'atmosphere_mass_content_of_water_vapor': 'atmosphere_water_vapor_content',
                    'water_evapotranspiration_flux': 'water_evaporation_flux',
