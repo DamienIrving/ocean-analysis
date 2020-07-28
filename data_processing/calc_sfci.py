@@ -42,14 +42,12 @@ def main(inargs):
     metadata = {inargs.sfc_file: sfc_cube.attributes['history'],
                 inargs.wfo_file: wfo_cube.attributes['history']}
 
-    rho0 = 1035.0   # kg m-3
     cp = 3992.10322329649   #J kg-1 degC-1
-    svf = np.flip(np.cumsum(np.flip(wfo_cube.data, axis=1), axis=1), axis=1)
     lower_thetao_bounds = sfc_cube.coord('sea_water_potential_temperature').bounds[:, 0]
     theta = uconv.broadcast_array(lower_thetao_bounds, 1, sfc_cube.shape)
 
     sfci_cube = sfc_cube.copy()
-    sfci_cube.data = sfc_cube.data - (rho0 * cp * theta * svf)       # SFCI = SFC - rho0*Cp*THETA*SVF
+    sfci_cube.data = sfc_cube.data - (cp * theta * wfo_cube.data)       # SFCI = SFC - Cp*THETA*SVF
     sfci_cube.var_name = 'sfci'
     sfci_cube.long_name = 'total internal surface forcing'
     log = cmdprov.new_log(infile_history=metadata, git_repo=repo_dir)
