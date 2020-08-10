@@ -70,10 +70,8 @@ def plot_ensemble_lines(df, model_list, experiment):
         axes[plot_num].set_xticklabels(['SH precip', 'SH evap', 'trop precip', 'NH evap', 'NH precip'])
         axes[plot_num].set_title(titles[var_name])
         axes[plot_num].axhline(0, color='0.8')
-        if var_name == 'cumulative_change_anomaly':
-            axes[plot_num].set_ylim(-2.5e17, 2.5e17)
-        elif var_name == 'percentage_change_anomaly':
-            axes[plot_num].set_ylim(-2, 2)
+    
+    #axes[plot_num].set_ylim(lower_ylim, upper_ylim)
      
     plt.suptitle(f'Time-integrated anomaly, 1861-2005, {experiment} experiment')
     handles, labels = axes[0].get_legend_handles_labels()
