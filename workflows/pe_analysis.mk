@@ -155,7 +155,7 @@ ${PE_REGIONS_COEFFICIENTS} : ${PE_REGIONS_FILE_CNTRL}
 
 PE_REGIONS_ANOMALY_CUMSUM=${PE_YR_DIR_HIST}/pe-region-sum-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
 ${PE_REGIONS_ANOMALY_CUMSUM} : ${PE_REGIONS_FILE_HIST} ${PE_REGIONS_COEFFICIENTS} 
-	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< precipitation_minus_evaporation_flux annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< precipitation_minus_evaporation_flux annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_data_check
 
 PE_REGIONS_PLOT=/g/data/r87/dbi599/temp/pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum_region-2.png
 ${PE_REGIONS_PLOT} : ${PE_REGIONS_COEFFICIENTS} ${PE_REGIONS_FILE_CNTRL} ${PE_REGIONS_FILE_HIST} ${PE_REGIONS_ANOMALY_CUMSUM}
@@ -169,7 +169,7 @@ ${PR_PE_REGIONS_COEFFICIENTS} : ${PR_PE_REGIONS_FILE_CNTRL}
 
 PR_PE_REGIONS_ANOMALY_CUMSUM=${PR_YR_DIR_HIST}/pr-pe-region-sum-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
 ${PR_PE_REGIONS_ANOMALY_CUMSUM} : ${PR_PE_REGIONS_FILE_HIST} ${PR_PE_REGIONS_COEFFICIENTS} 
-	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< precipitation_flux annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< precipitation_flux annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_data_check
 
 PR_PE_REGIONS_PLOT=/g/data/r87/dbi599/temp/pr-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum_region-2.png
 ${PR_PE_REGIONS_PLOT} : ${PR_PE_REGIONS_COEFFICIENTS} ${PR_PE_REGIONS_FILE_CNTRL} ${PR_PE_REGIONS_FILE_HIST} ${PR_PE_REGIONS_ANOMALY_CUMSUM}
@@ -183,7 +183,7 @@ ${EVAP_PE_REGIONS_COEFFICIENTS} : ${EVAP_PE_REGIONS_FILE_CNTRL}
 
 EVAP_PE_REGIONS_ANOMALY_CUMSUM=${EVAP_YR_DIR_HIST}/evspsbl-pe-region-sum-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
 ${EVAP_PE_REGIONS_ANOMALY_CUMSUM} : ${EVAP_PE_REGIONS_FILE_HIST} ${EVAP_PE_REGIONS_COEFFICIENTS} 
-	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< water_evapotranspiration_flux annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< water_evapotranspiration_flux annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_data_check
 
 EVAP_PE_REGIONS_PLOT=/g/data/r87/dbi599/temp/evspsbl-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum_region-2.png
 ${EVAP_PE_REGIONS_PLOT} : ${EVAP_PE_REGIONS_COEFFICIENTS} ${EVAP_PE_REGIONS_FILE_CNTRL} ${EVAP_PE_REGIONS_FILE_HIST} ${EVAP_PE_REGIONS_ANOMALY_CUMSUM}
@@ -197,7 +197,7 @@ ${AREA_PE_REGIONS_COEFFICIENTS} : ${AREA_PE_REGIONS_FILE_CNTRL}
 
 AREA_PE_REGIONS_DEDRIFTED=${AREA_YR_DIR_HIST}/areacella-pe-region-sum-dedrifted_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}.nc
 ${AREA_PE_REGIONS_DEDRIFTED} : ${AREA_PE_REGIONS_FILE_HIST} ${AREA_PE_REGIONS_COEFFICIENTS} 
-	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< cell_area annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< cell_area annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_data_check
 
 AREA_PE_REGIONS_PLOT=/g/data/r87/dbi599/temp/areacella-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}_region-2.png
 ${AREA_PE_REGIONS_PLOT} : ${AREA_PE_REGIONS_COEFFICIENTS} ${AREA_PE_REGIONS_FILE_CNTRL} ${AREA_PE_REGIONS_FILE_HIST} ${AREA_PE_REGIONS_DEDRIFTED}
