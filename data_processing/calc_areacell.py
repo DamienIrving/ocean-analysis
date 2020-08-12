@@ -35,17 +35,22 @@ except ImportError:
 
 # Define functions
 
-def construct_area_cube(area_data, global_atts, dim_coords):
+def construct_area_cube(var_name, area_data, global_atts, dim_coords):
     """Construct the new area cube """
 
     dim_coords_list = []
     for i, coord in enumerate(dim_coords):
         dim_coords_list.append((coord, i))
 
+    if var_name == 'areacello':
+        long_name = 'Grid-Cell Area for Ocean Variables'
+    else:
+        long_name = 'Grid-Cell Area for Atmospheric Grid Variables'
+
     area_cube = iris.cube.Cube(area_data,
                                standard_name='cell_area',
-                               long_name='Grid-Cell Area for Ocean Variables',
-                               var_name='areacello',
+                               long_name=long_name,
+                               var_name=var_name,
                                units='m2',
                                attributes=global_atts,
                                dim_coords_and_dims=dim_coords_list) 
@@ -79,12 +84,16 @@ def main(inargs):
             data_cube.remove_coord(coord_names[1])
         area_data = spatial_weights.area_array(data_cube)
         area_data = numpy.ma.asarray(area_data)
-        area_data.mask = data_cube.data.mask
+        if inargs.outvar == 'areacello':
+            area_data.mask = data_cube.data.mask
         
-    area_cube = construct_area_cube(area_data, data_cube.attributes, data_cube.dim_coords)    
+    area_cube = construct_area_cube(inargs.outvar, area_data, data_cube.attributes, data_cube.dim_coords)    
     area_cube.attributes['history'] = cmdprov.new_log(git_repo=repo_dir)
 
-    gio.check_global_ocean_area(area_cube.data.sum()) 
+    if inargs.outvar == 'areacello':
+        gio.check_global_ocean_area(area_cube.data.sum())
+    else:
+        gio.check_global_surface_area(area_cube.data.sum())
 
     iris.save(area_cube, inargs.outfile)
 
@@ -97,7 +106,7 @@ author:
 
 """
 
-    description='Calculate the CMIP areacello variable'
+    description='Calculate the CMIP area variable'
     parser = argparse.ArgumentParser(description=description,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
@@ -106,6 +115,7 @@ author:
     parser.add_argument("dummy_file", type=str, help="Dummy file (for horizontal grid information)")
     parser.add_argument("dummy_var", type=str, help="Dummy variable")
     parser.add_argument("outfile", type=str, help="Output file name")
+    parser.add_argument("outvar", type=str, choices=('areacella', 'areacello'), help="Output variable")
 
     parser.add_argument("--volcello_file", type=str, default=None,
                         help="Volume file (still need dummy file because of iris issues with reading volcello files)")

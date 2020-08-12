@@ -178,6 +178,13 @@ def check_iris_var(var, alternate_names=False):
     return var
 
 
+def check_global_surface_area(global_area):
+    """Check that the global surface area is within acceptable bounds."""
+
+    assert global_area > 4.9e+14, "Global surface area is %s. Typical value is 5.1e+14 m2" %(str(global_area))
+    assert global_area < 5.3e+14, "Global surface area is %s. Typical value is 5.1e+14 m2" %(str(global_area))
+
+
 def check_global_ocean_area(global_area):
     """Check that the global ocean area is within acceptable bounds.
 
@@ -185,8 +192,8 @@ def check_global_ocean_area(global_area):
 
     """
 
-    assert global_area > 3.4e+14, "Global ocean area is %s. Typical value (ocean masked) is 3.6e+14 m3" %(str(global_area))
-    assert global_area < 7.0e+14, "Global ocean area is %s. Typical value (ocean masked) is 3.6e+14 m3" %(str(global_area))
+    assert global_area > 3.4e+14, "Global ocean area is %s. Typical value (ocean masked) is 3.6e+14 m2" %(str(global_area))
+    assert global_area < 7.0e+14, "Global ocean area is %s. Typical value (ocean masked) is 3.6e+14 m2" %(str(global_area))
 
 
 def check_global_ocean_volume(global_volume):
