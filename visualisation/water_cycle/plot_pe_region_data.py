@@ -31,10 +31,10 @@ except ImportError:
 
 # Define functions
 
-def get_data(infile, time_constraint):
+def get_data(infile, variable, time_constraint):
     """Get the data for a particular model"""
     
-    cube, history = gio.combine_files(infile, 'precipitation minus evaporation flux', new_calendar='365_day')
+    cube, history = gio.combine_files(infile, variable, new_calendar='365_day')
     #cube = iris.load_cube(infile, 'precipitation minus evaporation flux' & time_constraint)
     cube = cube.extract(time_constraint)
     iris.coord_categorisation.add_year(cube, 'time')
@@ -52,10 +52,10 @@ def main(inargs):
     anomaly_data = {}
     start_data = {}
     
-    hist_cube, anomaly_data['historical'], start_data['historical'] = get_data(inargs.hist_file, time_constraint)
-    ghg_cube, anomaly_data['GHG-only'], start_data['GHG-only'] = get_data(inargs.ghg_file, time_constraint)
+    hist_cube, anomaly_data['historical'], start_data['historical'] = get_data(inargs.hist_file, inargs.variable, time_constraint)
+    ghg_cube, anomaly_data['GHG-only'], start_data['GHG-only'] = get_data(inargs.ghg_file, inargs.variable, time_constraint)
     if inargs.aa_file:
-        aa_cube, anomaly_data['AA-only'], start_data['AA-only'] = get_data(inargs.aa_file, time_constraint)
+        aa_cube, anomaly_data['AA-only'], start_data['AA-only'] = get_data(inargs.aa_file, inargs.variable, time_constraint)
     else:
         aa_cube = anomaly_data['AA-only'] = start_data['AA-only'] = None
     
@@ -86,7 +86,7 @@ def main(inargs):
     if aa_cube:
         ax1.plot(aa_years, anomaly_data['AA-only'][:,0], color='blue', label='AA-only')
     ax1.set_title('SH precip')
-    ax1.set_ylabel('kg')
+    ax1.set_ylabel('time-integrated anomaly (kg)')
     ax1.set_ylim([-max_value, max_value])
     ax1.grid(True, color='0.8', linestyle='--')
     ax1.legend()
@@ -96,7 +96,7 @@ def main(inargs):
     if aa_cube:
         ax4.plot(aa_years, anomaly_data['AA-only'][:,1], color='blue', label='AA-only')
     ax4.set_title('SH evap')
-    ax4.set_ylabel('kg')
+    ax4.set_ylabel('time-integrated anomaly (kg)')
     ax4.set_ylim([-max_value, max_value])
     ax4.grid(True, color='0.8', linestyle='--')
 
@@ -124,6 +124,7 @@ def main(inargs):
     ax3.set_ylim([-max_value, max_value])
     ax3.grid(True, color='0.8', linestyle='--')
 
+    plt.suptitle(inargs.variable)
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info={inargs.hist_file: hist_cube.attributes['history']})
 
@@ -149,6 +150,7 @@ example:
     parser.add_argument("hist_file", type=str, help="historical file")
     parser.add_argument("ghg_file", type=str, help="GHG file")
     parser.add_argument("aa_file", type=str, help="aa file")
+    parser.add_argument("variable", type=str, help="variable")
     parser.add_argument("outfile", type=str, help="Output file") 
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
