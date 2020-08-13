@@ -397,6 +397,8 @@ def combine_cubes(cube_list, new_calendar=None, data_checks=False):
 def combine_files(files, var, new_calendar=None, checks=False):
     """Create an iris cube from multiple input files."""
 
+    assert type(files) in (list, tuple)
+
     try:
         cube_list = iris.load(files, check_iris_var(var), callback=save_history)
     except iris.exceptions.ConstraintMismatchError:
@@ -405,6 +407,13 @@ def combine_files(files, var, new_calendar=None, checks=False):
     if not cube_list: 
         cube_list = iris.load(files, check_iris_var(var, alternate_names=True), callback=save_history)
     
+    if (len(cube_list) < len(files)) and check_iris_var(var, alternate_names=True) == 'water_evaporation_flux':
+        cube_list = iris.load(files, callback=save_history)
+        assert len(cube_list) == len(files)
+        for cube in cube_list:
+            cube.standard_name = 'water_evaporation_flux'
+            cube.long_name = 'Evaporation'
+
     cube = combine_cubes(cube_list, new_calendar=new_calendar, data_checks=checks)
 
     return cube, history
