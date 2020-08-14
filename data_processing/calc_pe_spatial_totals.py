@@ -68,7 +68,7 @@ def get_regional_totals(var_data, pe_data, lats):
 
 
 def read_data(infiles, var, annual=False):
-    """Read the input data."""
+    """Read the input data."""    
 
     cube, history = gio.combine_files(infiles, var)
 
@@ -89,7 +89,7 @@ def read_data(infiles, var, annual=False):
 def main(inargs):
     """Run the program."""
 
-    pe_cube, pe_lats, pe_history = read_data(inargs.pe_files, 'precipitation minus evaporation flux', annual=inargs.annual)
+    pe_cube, pe_lats, pe_history = read_data(inargs.pe_files, 'precipitation minus evaporation flux', annual=inargs.annual)     
 
     if inargs.data_var == 'cell_area':   
         data_cube = iris.load_cube(inargs.data_files[0], 'cell_area')

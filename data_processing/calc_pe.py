@@ -38,6 +38,7 @@ def main(inargs):
     pr_cube, pr_history = gio.combine_files(inargs.pr_files, 'precipitation_flux', checks=True)
     evap_cube, evap_history = gio.combine_files(inargs.evap_files, 'water_evapotranspiration_flux', checks=True)
 
+    assert pr_cube.shape == evap_cube.shape
     pe_cube = pr_cube - evap_cube
 
     pe_cube.metadata = pr_cube.metadata

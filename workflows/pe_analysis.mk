@@ -12,18 +12,21 @@ include cmip_config.mk
 
 # File definitions, CMIP6 models
  
-PR_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/pr/${GRID}/${ATMOS_HIST_VERSION}/pr*.nc))
-EVAP_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/evspsbl/${GRID}/${ATMOS_HIST_VERSION}/evspsbl*.nc))
-PR_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/pr/${GRID}/${ATMOS_CNTRL_VERSION}/pr*.nc))
-EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/evspsbl/${GRID}/${ATMOS_CNTRL_VERSION}/evspsbl*.nc))
-AREACELLA_FILE=${AREACELLA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/areacella/${GRID}/${FX_VERSION}/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+#PR_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/pr/${GRID}/${ATMOS_HIST_VERSION}/pr*.nc))
+#EVAP_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/evspsbl/${GRID}/${ATMOS_HIST_VERSION}/evspsbl*.nc))
+#PR_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/pr/${GRID}/${ATMOS_CNTRL_VERSION}/pr*.nc))
+#EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/evspsbl/${GRID}/${ATMOS_CNTRL_VERSION}/evspsbl*.nc))
+#AREACELLA_FILE=${AREACELLA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/areacella/${GRID}/${FX_VERSION}/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+#EVAP_VAR=water_evapotranspiration_flux
 
 # File definitions, CMIP5 models
 
-#PR_FILES_HIST := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/pr/pr*.nc))
-#EVAP_FILES_HIST := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/evspsbl/evspsbl*.nc))
-#PR_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/pr/pr*.nc))
-#EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/evspsbl/evspsbl*.nc))
+PR_FILES_HIST := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/pr/pr*.nc))
+EVAP_FILES_HIST := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/evspsbl/evspsbl*.nc))
+PR_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/pr/pr*.nc))
+EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/evspsbl/evspsbl*.nc))
+
+EVAP_VAR=water_evaporation_flux
 
 # Directories
 
@@ -126,12 +129,12 @@ ${PR_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL}
 EVAP_PE_REGIONS_FILE_HIST=${EVAP_YR_DIR_HIST}/evspsbl-pe-region-sum_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
 ${EVAP_PE_REGIONS_FILE_HIST}: ${PE_FILE_HIST}
 	mkdir -p ${EVAP_YR_DIR_HIST}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $@ --data_files ${EVAP_FILES_HIST} --data_var water_evapotranspiration_flux --annual --cumsum
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $@ --data_files ${EVAP_FILES_HIST} --data_var ${EVAP_VAR} --annual --cumsum
 
 EVAP_PE_REGIONS_FILE_CNTRL=${EVAP_YR_DIR_CNTRL}/evspsbl-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
 ${EVAP_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL}
 	mkdir -p ${EVAP_YR_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $@ --data_files ${EVAP_FILES_CNTRL} --data_var water_evapotranspiration_flux --annual --cumsum
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $@ --data_files ${EVAP_FILES_CNTRL} --data_var ${EVAP_VAR} --annual --cumsum
 
 ### area
 
@@ -179,15 +182,15 @@ ${PR_PE_REGIONS_PLOT} : ${PR_PE_REGIONS_COEFFICIENTS} ${PR_PE_REGIONS_FILE_CNTRL
 
 EVAP_PE_REGIONS_COEFFICIENTS=${EVAP_YR_DIR_CNTRL}/evspsbl-pe-region-sum-coefficients_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
 ${EVAP_PE_REGIONS_COEFFICIENTS} : ${EVAP_PE_REGIONS_FILE_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< water_evapotranspiration_flux $@
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< ${EVAP_VAR} $@
 
 EVAP_PE_REGIONS_ANOMALY_CUMSUM=${EVAP_YR_DIR_HIST}/evspsbl-pe-region-sum-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
 ${EVAP_PE_REGIONS_ANOMALY_CUMSUM} : ${EVAP_PE_REGIONS_FILE_HIST} ${EVAP_PE_REGIONS_COEFFICIENTS} 
-	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< water_evapotranspiration_flux annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_data_check
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< ${EVAP_VAR} annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_data_check
 
 EVAP_PE_REGIONS_PLOT=/g/data/r87/dbi599/temp/evspsbl-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum_region-2.png
 ${EVAP_PE_REGIONS_PLOT} : ${EVAP_PE_REGIONS_COEFFICIENTS} ${EVAP_PE_REGIONS_FILE_CNTRL} ${EVAP_PE_REGIONS_FILE_HIST} ${EVAP_PE_REGIONS_ANOMALY_CUMSUM}
-	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py water_evapotranspiration_flux $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 2 ${BRANCH_TIME}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py ${EVAP_VAR} $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 2 ${BRANCH_TIME}
 
 ### area
 
