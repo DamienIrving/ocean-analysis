@@ -709,13 +709,13 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 #CHUNK_ANNUAL=--chunk
 
 # IPSL-CM6A-LR
-#
+
 #PROJECT=CMIP6
 #MIP=CMIP
 #MODEL=IPSL-CM6A-LR
 #INSTITUTION=IPSL
 #EXPERIMENT=historical
-# hist-aer historical hist-GHG
+## hist-aer historical hist-GHG
 #FX_EXP=historical
 #HIST_RUN=r1i1p1f1
 #CNTRL_RUN=r1i1p1f1
@@ -724,13 +724,13 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 #OFX_VERSION=v20180803
 #HIST_VERSION=v20180803
 #ATMOS_HIST_VERSION=v20180803
-# v20180803 (historical); v20180914 (hist-aer, hist-ghg)
+## v20180803 (historical); v20180914 (hist-aer, hist-ghg)
 #HIST_TIME=185001-201412
 #ATMOS_CNTRL_VERSION=v20200326
 #CNTRL_VERSION=v20190522
-#v20181123
+##v20181123
 #CNTRL_TIME=185001-384912
-#185001-304912 (full ocean); 185001-284912 (hfds missing file in middle); 384912 (atmos)
+##185001-304912 (full ocean); 185001-284912 (hfds missing file in middle); 384912 (atmos)
 #VOLCELLO_DIR=${MY_DATA_DIR}
 #AREACELLO_DIR=${NCI_DATA_DIR}
 #CHUNK_ANNUAL=--chunk
@@ -1081,11 +1081,12 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 #
 #PROJECT=CMIP5
 #MIP=CMIP
-#DAMIP CMIP
+##DAMIP CMIP
 #INSTITUTION=NOAA-GFDL
 #MODEL=GFDL-CM3
-#EXPERIMENT=historicalMisc
+#EXPERIMENT=historical
 ##historical historicalGHG historicalMisc
+## historicalMisc evspsbl data at r87/dbi599
 #FX_EXP=historical
 #HIST_RUN=r1i1p1
 #CNTRL_RUN=r1i1p1
@@ -1107,14 +1108,14 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 # GFDL-ESM2M #
 #
 #PROJECT=CMIP5
-#MIP=DAMIP
-##DAMIP CMIP
+#MIP=CMIP
+#DAMIP CMIP
 #INSTITUTION=NOAA-GFDL
 #MODEL=GFDL-ESM2M
-#EXPERIMENT=historicalMisc
+#EXPERIMENT=historical
 ##historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p5
+#HIST_RUN=r1i1p1
 ##r1i1p1 r1i1p5
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
@@ -1122,7 +1123,7 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 #OFX_VERSION=v20130514
 #FX_VERSION=v20120123
 #HIST_VERSION=v20130226
-#ATMOS_HIST_VERSION=v20130214
+#ATMOS_HIST_VERSION=v20111228
 ## v20111228 (historical) v20130214 (historicalGHG, Misc)
 #HIST_TIME=185001-200512
 #CNTRL_VERSION=v20130226
@@ -1143,28 +1144,29 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 # GISS-E2-H #
 #
 #PROJECT=CMIP5
-#MIP=DAMIP
+#MIP=CMIP
 ##DAMIP CMIP
 #INSTITUTION=NASA-GISS
 #MODEL=GISS-E2-H
-#EXPERIMENT=historicalMisc
+#EXPERIMENT=historical
 ##historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p107
+#HIST_RUN=r1i1p1
+##r1i1p1 r1i1p107
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
 #GRID=gn
-#OFX_VERSION=
+##OFX_VERSION=
 #FX_VERSION=v20160426
-#HIST_VERSION=
-#ATMOS_HIST_VERSION=v20160427
+##HIST_VERSION=
+#ATMOS_HIST_VERSION=v20160426
 ## v20160426 (historical) v20160426 (historicalGHG) v20160427 (historicalMisc)
-#HIST_TIME=185001-201212
-## 201212 (historicalGHG)
-#CNTRL_VERSION=
+#HIST_TIME=185001-200512
+## 201212 (historicalGHG) 200512 (otherwise)
+##CNTRL_VERSION=
 #ATMOS_CNTRL_VERSION=v20160511
 #CNTRL_TIME=241001-294912
-# (remove first few control files due to time gap)
+## (remove first few control files due to time gap)
 #AREACELLO_DIR=${CMIP5_DATA_DIR}
 #AREACELLA_DIR=${CMIP5_DATA_DIR}
 #VOLCELLO_DIR=${MY_DATA_DIR}
@@ -1174,29 +1176,29 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 # GISS-E2-R
 #
 #PROJECT=CMIP5
-#MIP=DAMIP
+#MIP=CMIP
 ##DAMIP CMIP
 #INSTITUTION=NASA-GISS
 #MODEL=GISS-E2-R
-#EXPERIMENT=historicalMisc
-#historical historicalGHG historicalMisc
+#EXPERIMENT=historical
+##historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p310
+#HIST_RUN=r1i1p1
 ## r1i1p1 r1i1p310
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
 #GRID=gn
 #OFX_VERSION=v20160511
 #FX_VERSION=v20160502
-#HIST_VERSION=v20160502
-## hist=v20160502, ghg=v20160429, aa=v20160503
-#ATMOS_HIST_VERSION=v20160503
-#HIST_TIME=185001-201212
-# 201212 (historicalMisc, GHG) 2200512 (historical)
+#HIST_VERSION=v20160429
+#ATMOS_HIST_VERSION=v20160502
+# hist=v20160502, ghg=v20160429, aa=v20160503
+#HIST_TIME=185001-200512
+## 201212 (historicalMisc, GHG) 200512 (historical)
 #CNTRL_VERSION=v20160930
 #ATMOS_CNTRL_VERSION=v20161004
 #CNTRL_TIME=398101-453012
-## gaps then 398101-453012
+### gaps then 398101-453012
 #AREACELLO_DIR=${CMIP5_DATA_DIR}
 #AREACELLA_FILE=${CMIP5_DATA_DIR}
 #VOLCELLO_FILE=${MY_DATA_DIR}
@@ -1206,11 +1208,11 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 # IPSL-CM5A-LR #
 #
 #PROJECT=CMIP5
-#MIP=DAMIP
-#DAMIP CMIP
+#MIP=CMIP
+##DAMIP CMIP
 #INSTITUTION=IPSL
 #MODEL=IPSL-CM5A-LR
-#EXPERIMENT=historicalGHG
+#EXPERIMENT=historical
 ##historical historicalGHG historicalMisc
 #FX_EXP=historical
 #HIST_RUN=r1i1p1
@@ -1218,14 +1220,14 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
 #GRID=gn
-#OFX_VERSION=
+##OFX_VERSION=
 #FX_VERSION=v20110406
-#HIST_VERSION=
-#ATMOS_HIST_VERSION=v20120526
+##HIST_VERSION=
+#ATMOS_HIST_VERSION=v20110406
 ## v20110406 (historical) v20120526 (historicalGHG) v20111119 (historicalMisc)
-#HIST_TIME=185001-201212
-## 201212 (historicalGHG)
-#CNTRL_VERSION=
+#HIST_TIME=185001-200512
+## 201212 (historicalGHG, historicalMisc)
+##CNTRL_VERSION=
 #ATMOS_CNTRL_VERSION=v20130506
 #CNTRL_TIME=180001-279912
 #AREACELLO_DIR=${CMIP5_DATA_DIR}
@@ -1236,11 +1238,11 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 # NorESM1-M #
 #
 #PROJECT=CMIP5
-#MIP=DAMIP
-#DAMIP CMIP
+#MIP=CMIP
+##DAMIP CMIP
 #INSTITUTION=NCC
 #MODEL=NorESM1-M
-#EXPERIMENT=historicalMisc
+#EXPERIMENT=historical
 ##historical historicalGHG historicalMisc
 #FX_EXP=historical
 #HIST_RUN=r1i1p1
@@ -1250,9 +1252,9 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 #OFX_VERSION=
 #FX_VERSION=v20110901
 #HIST_VERSION=
-#ATMOS_HIST_VERSION=v20110918
+#ATMOS_HIST_VERSION=v20110901
 # v20110901 (historical) v20110918 (historicalGHG) v20110918 (historicalMisc)
-#HIST_TIME=185001-201212
+#HIST_TIME=185001-200512
 # 2012 (historicalGHG, Misc)
 #CNTRL_VERSION=
 #ATMOS_CNTRL_VERSION=v20110901
