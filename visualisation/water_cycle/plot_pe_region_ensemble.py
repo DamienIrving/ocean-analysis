@@ -6,13 +6,14 @@ Description:  Plot output from calc_pe_zonal_sum_regional_totals.py or calc_pe_s
 
 # Import general Python modules
 
-import sys, os, pdb
+import sys, os, pdb, re
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import iris
 import iris.coord_categorisation
+import cmdline_provenance as cmdprov
 
 # Import my modules
 
@@ -139,7 +140,13 @@ def main(inargs):
     plot_ensemble_lines(df, inargs.var, model_list, experiment)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info={inargs.infiles[-1]: cube.attributes['history']})
+
+    log_file = re.sub('.png', '.met', inargs.outfile)
+    log_text = cmdprov.new_log(infile_history={inargs.infiles[-1]: cube.attributes['history']}, git_repo=repo_dir)
+    cmdprov.write_log(log_file, log_text)
+
+    csv_file = re.sub('.png', '.csv', inargs.outfile)
+    df.to_csv(csv_file)
 
 
 if __name__ == '__main__':
