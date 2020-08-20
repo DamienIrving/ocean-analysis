@@ -65,20 +65,28 @@ def adjust_lon_range(lons, radians=True, start=0.0):
     return lons
 
 
-def apply_land_ocean_mask(data_cube, mask_cube, include_only):
+def apply_land_ocean_mask(data_cube, mask_cube, include_only, threshold=0.1):
     """Apply a land or ocean mask from an sftlf (land surface fraction) file.
+
+    Args:
+      data_cube (iris.cube): cube to apply the mask to
+      mask_cube (iris.cube): sftlf_cube
+      include_only (str): keep 'land' or 'ocean' values
+      threshold (float): land percentage below which cell is considered ocean
 
     There is no land when cell value == 0
 
     """
 
+    assert mask_cube.data.max() == 100
+
     target_shape = data_cube.shape
     target_ndim = len(target_shape)
 
     if include_only == 'land':
-        mask_array = numpy.where(mask_cube.data > 0.1, False, True)
+        mask_array = numpy.where(mask_cube.data > threshold, False, True)
     elif include_only == 'ocean':
-        mask_array = numpy.where(mask_cube.data < 0.1, False, True)
+        mask_array = numpy.where(mask_cube.data < threshold, False, True)
 
     mask = broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
     assert mask.shape == target_shape 
