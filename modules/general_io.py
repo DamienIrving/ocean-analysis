@@ -397,7 +397,7 @@ def combine_cubes(cube_list, new_calendar=None, data_checks=False):
 def combine_files(files, var, new_calendar=None, checks=False):
     """Create an iris cube from multiple input files."""
 
-    assert type(files) in (list, tuple)
+    files = uconv.single2list(files)
 
     try:
         cube_list = iris.load(files, check_iris_var(var), callback=save_history)
