@@ -216,6 +216,10 @@ def main(inargs):
     else:
         assert ref_cube.ndim == 2
 
+    if inargs.sftlf_file:
+        sftlf_cube = iris.load_cube(inargs.sftlf_file, 'land_area_fraction')
+        ref_cube = uconv.apply_land_ocean_mask(ref_cube, sftlf_cube, 'ocean')
+        
     ref_is_basin = ref_cube.var_name == 'basin'
     basin_array = create_basin_array(ref_cube, ref_is_basin)
     basin_cube = construct_basin_cube(basin_array, ref_cube.attributes, ref_cube.dim_coords)    
@@ -241,6 +245,9 @@ author:
     parser.add_argument("ref_file", type=str, help="Reference file for grid information. Use a CMIP basin file if possible (helps for fine details and masking marginal seas)")
     parser.add_argument("ref_var", type=str, help="Variable standard_name")
     parser.add_argument("out_file", type=str, help="Output file name")
+
+    parser.add_argument("--sftlf_file", type=str, default=None,
+                        help="Name of sftlf file to use for land values (required for atmos files)")
 
     args = parser.parse_args()
     main(args)
