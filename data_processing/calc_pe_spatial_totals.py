@@ -35,34 +35,77 @@ except ImportError:
 
 # Define functions
 
-def create_region_coord():
+basin_names = ['atlantic', 'pacific', 'indian', 'arctic', 'marginal seas', 'land']
+pe_names = ['SH precip', 'SH evap', 'tropical precip', 'NH evap', 'NH precip']
+
+def create_basin_coord():
+    """Create a dimension for the basins."""
+
+    flag_values = "11.5 13.5 15 16 17 18"
+    flag_meanings = "atlantic pacific indian arctic marginal_seas land"
+    basin_coord = iris.coords.DimCoord(np.array([11.5, 13.5, 15, 16, 17, 18]),
+                                       standard_name='region',
+                                       long_name='Region Selection Index',
+                                       var_name='basin',
+                                       units=1,
+                                       attributes={'flag_values': flag_values,
+                                                   'flag_meanings': flag_meanings})
+
+    return basin_coord
+ 
+
+def create_pe_region_coord():
     """Create a dimension for the P-E regions"""
     
     flag_values = '1 2 3 4 5'
     flag_meanings = 'SH precip, SH evap, tropical precip, NH evap, NH precip'
-    region_coord = iris.coords.DimCoord(np.array([1, 2, 3, 4, 5]),
-                                        standard_name='region',
-                                        long_name='region',
-                                        var_name='region',
-                                        units=1,
-                                        attributes={'flag_values': flag_values,
-                                                    'flag_meanings': flag_meanings})
-    return region_coord
+    standard_name = 'precipitation_minus_evporation_region'
+    iris.std_names.STD_NAMES[standard_name] = {'canonical_units': 1}
+    pe_region_coord = iris.coords.DimCoord(np.array([1, 2, 3, 4, 5]),
+                                           standard_name=standard_name,
+                                           long_name='precipitation minus evaporation region',
+                                           var_name='pereg',
+                                           units=1,
+                                           attributes={'flag_values': flag_values,
+                                                       'flag_meanings': flag_meanings})
+    return pe_region_coord
 
 
-def get_regional_totals(var_data, pe_data, lats):
-    """Calculate the regional totals"""
+def get_regional_totals(var_data, pe_data, lats, basins):
+    """Calculate the regional totals
 
-    sh_precip = var_data[(pe_data >= 0) & (lats < -20)].sum()
-    sh_evap = var_data[(pe_data < 0) & (lats < 0)].sum()
-    tropical_precip = var_data[(pe_data >= 0) & (lats <= 20) & (lats >= -20)].sum()
-    nh_evap = var_data[(pe_data < 0) & (lats >= 0)].sum()
-    nh_precip = var_data[(pe_data >= 0) & (lats > 20)].sum()
+    Basin definitions:
+      north atlantic = 11
+      south atlantic = 12
+      north pacific = 13
+      south pacific = 14
+      indian = 15
+      arctic = 16
+      marginal seas = 17
+      land = 18
 
-    region_total = sh_precip + sh_evap + tropical_precip + nh_evap + nh_precip
-    assert np.allclose(var_data.sum(), region_total)
+    """
 
-    output = np.array([sh_precip, sh_evap, tropical_precip, nh_evap, nh_precip])
+    basin_selection = {'atlantic': (basins >=11) & (basins <= 12),
+                       'pacific': (basins >= 13) & (basins <= 14),
+                       'indian': basins == 15,
+                       'arctic': basins == 16,
+                       'marginal seas': basins == 17,
+                       'land': basins == 18}
+
+    pe_selection = {'SH precip': (pe_data >= 0) & (lats < -20),
+                    'SH evap': (pe_data < 0) & (lats < 0),
+                    'tropical precip': (pe_data >= 0) & (lats <= 20) & (lats >= -20),
+                    'NH evap': (pe_data < 0) & (lats >= 0),
+                    'NH precip': (pe_data >= 0) & (lats > 20)}
+    
+    output = np.zeros([5, 6])
+    for pe_num, pe_name in enumerate(pe_names):
+        for basin_num, basin_name in enumerate(basin_names): 
+            selection = pe_selection[pe_name] & basin_selection[basin_name]
+            output[pe_num, basin_num] = var_data[selection].sum()
+
+    assert np.allclose(var_data.sum(), output.sum())
 
     return output 
 
@@ -89,7 +132,8 @@ def read_data(infiles, var, annual=False):
 def main(inargs):
     """Run the program."""
 
-    pe_cube, pe_lats, pe_history = read_data(inargs.pe_files, 'precipitation minus evaporation flux', annual=inargs.annual)     
+    pe_cube, pe_lats, pe_history = read_data(inargs.pe_files, 'precipitation minus evaporation flux', annual=inargs.annual)   
+    basin_cube = iris.load_cube(inargs.basin_file, 'region')  
 
     if inargs.data_var == 'cell_area':   
         data_cube = iris.load_cube(inargs.data_files[0], 'cell_area')
@@ -102,17 +146,18 @@ def main(inargs):
         data_cube = pe_cube.copy()
         data_var = 'precipitation minus evaporation flux'
 
-    region_data = np.zeros([pe_cube.shape[0], 5])
+    region_data = np.zeros([pe_cube.shape[0], 5, 6])
     tstep = 0
     ntimes = pe_cube.shape[0]
     for tstep in range(ntimes):
         var_data = data_cube.data if inargs.data_var == 'cell_area' else data_cube[tstep, ::].data
-        region_data[tstep, :] = get_regional_totals(var_data, pe_cube[tstep, ::].data, pe_lats)
+        region_data[tstep, :] = get_regional_totals(var_data, pe_cube[tstep, ::].data, pe_lats, basin_cube.data)
         
     if inargs.cumsum:
         region_data = np.cumsum(region_data, axis=0)    
 
-    region_coord = create_region_coord()
+    pe_region_coord = create_pe_region_coord()
+    basin_coord = create_basin_coord()
     time_coord = pe_cube.coord('time')
 
     if inargs.data_var:
@@ -121,7 +166,7 @@ def main(inargs):
         iris.std_names.STD_NAMES['precipitation_minus_evaporation_flux'] = {'canonical_units': pe_cube.units}
         standard_name = 'precipitation_minus_evaporation_flux'
     atts = pe_cube.attributes if inargs.data_var == 'cell_area' else data_cube.attributes
-    dim_coords_list = [(time_coord, 0), (region_coord, 1)]
+    dim_coords_list = [(time_coord, 0), (pe_region_coord, 1), (basin_coord, 2)]
     out_cube = iris.cube.Cube(region_data,
                               standard_name=standard_name,
                               long_name=data_cube.long_name,
@@ -130,7 +175,8 @@ def main(inargs):
                               attributes=atts,
                               dim_coords_and_dims=dim_coords_list) 
 
-    metadata = {inargs.pe_files[0]: pe_history[0]}
+    metadata = {inargs.pe_files[0]: pe_history[0],
+                inargs.basin_file: basin_cube.attributes['history']}
     if inargs.data_files:
         metadata[inargs.data_files[0]] = data_history[0]
     out_cube.attributes['history'] = cmdprov.new_log(infile_history=metadata, git_repo=repo_dir)
@@ -154,6 +200,7 @@ author:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("pe_files", type=str, nargs='*', help="P-E files")
+    parser.add_argument("basin_file", type=str, help="Basin file")
     parser.add_argument("outfile", type=str, help="Output file")
 
     parser.add_argument("--data_files", type=str, nargs='*', default=[],

@@ -49,8 +49,8 @@ def construct_basin_cube(basin_array, global_atts, dim_coords):
                                 attributes=global_atts,
                                 dim_coords_and_dims=dim_coords_list) 
 
-    basin_cube.attributes['flag_values'] = "11 12 13 14 15 16 17"
-    basin_cube.attributes['flag_meanings'] = "north_atlantic south_atlantic north_pacific south_pacific indian arctic marginal_seas_and_land" 
+    basin_cube.attributes['flag_values'] = "11 12 13 14 15 16 17 18"
+    basin_cube.attributes['flag_meanings'] = "north_atlantic south_atlantic north_pacific south_pacific indian arctic marginal_seas land" 
 
     return basin_cube
 
@@ -82,7 +82,8 @@ def basins_from_cmip(cmip_basin_cube, lat_array, lon_array, pacific_lon_bounds, 
         south pacific = 14
         indian = 15
         arctic = 16
-        marginal sea = 17
+        marginal seas = 17
+        land = 18
 
     """
 
@@ -98,11 +99,11 @@ def basins_from_cmip(cmip_basin_cube, lat_array, lon_array, pacific_lon_bounds, 
     basin_array = numpy.where((basin_array == 3) & (lat_array < 0), 14, basin_array)
     basin_array = numpy.where(basin_array == 5, 15, basin_array)
     basin_array = numpy.where(basin_array == 4, 16, basin_array)
-    basin_array = numpy.where(basin_array == 0, 17, basin_array)
+    basin_array = numpy.where(basin_array == 0, 18, basin_array)
     basin_array = numpy.where((basin_array >= 6) & (basin_array <= 10), 17, basin_array)
 
     assert basin_array.min() == 11
-    assert basin_array.max() == 17
+    assert basin_array.max() == 18
 
     return basin_array
 
@@ -117,7 +118,8 @@ def basins_manually(cube, lat_array, lon_array, pacific_lon_bounds, indian_lon_b
       south pacific = 14
       indian = 15
       arctic = 16
-      not major ocean basin = 17 (i.e. land or marginal sea)
+      marginal seas = 17
+      land = 18
 
     """
 
@@ -154,10 +156,10 @@ def basins_manually(cube, lat_array, lon_array, pacific_lon_bounds, indian_lon_b
     basin_array = numpy.where(lat_array >= 67, 16, basin_array)  # arctic ocean
 
     assert cube.data.mask.shape, "reference data needs land mask"
-    basin_array = numpy.where(cube.data.mask == True, 17, basin_array)  # Land
+    basin_array = numpy.where(cube.data.mask == True, 18, basin_array)  # Land
     
     assert basin_array.min() == 11
-    assert basin_array.max() == 17
+    assert basin_array.max() == 18
 
     return basin_array
 
@@ -218,7 +220,8 @@ def main(inargs):
 
     if inargs.sftlf_file:
         sftlf_cube = iris.load_cube(inargs.sftlf_file, 'land_area_fraction')
-        ref_cube = uconv.apply_land_ocean_mask(ref_cube, sftlf_cube, 'ocean')
+        ref_cube = uconv.apply_land_ocean_mask(ref_cube, sftlf_cube, 'ocean',
+                                               threshold=inargs.land_threshold)
         
     ref_is_basin = ref_cube.var_name == 'basin'
     basin_array = create_basin_array(ref_cube, ref_is_basin)
@@ -248,6 +251,8 @@ author:
 
     parser.add_argument("--sftlf_file", type=str, default=None,
                         help="Name of sftlf file to use for land values (required for atmos files)")
+    parser.add_argument("--land_threshold", type=float, default=0.1,
+                        help="Percentage of land in grid cell below which it is considered an ocean cell")
 
     args = parser.parse_args()
     main(args)
