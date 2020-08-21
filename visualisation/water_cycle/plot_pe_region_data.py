@@ -59,72 +59,30 @@ def main(inargs):
     else:
         aa_cube = anomaly_data['AA-only'] = start_data['AA-only'] = None
     
-    fig = plt.figure(figsize=[16,12])
-    ax0 = plt.subplot2grid((3,6), (0,2), colspan=2)
-    ax1 = plt.subplot2grid(shape=(3,6), loc=(1,0), colspan=2)
-    ax2 = plt.subplot2grid((3,6), (1,2), colspan=2)
-    ax3 = plt.subplot2grid((3,6), (1,4), colspan=2)
-    ax4 = plt.subplot2grid((3,6), (2,1), colspan=2)
-    ax5 = plt.subplot2grid((3,6), (2,3), colspan=2)
-
-    xvals = [0, 1, 2, 3, 4]
-    ax0.bar(xvals, start_data['historical'], color='0.5')
-    ax0.set_ylabel('kg')
-    ax0.set_xticklabels(['', 'SH precip', 'SH evap', 'trop precip', 'NH evap', 'NH precip'])
-    ax0.set_title('Year One')
-
     hist_years = hist_cube.coord('year').points
     ghg_years = ghg_cube.coord('year').points
     if aa_cube:
         aa_years = aa_cube.coord('year').points
     
+    basins = ['Atlantic', 'Pacific', 'Indian', 'Arctic', 'Marginal Seas', 'Land', 'Ocean', 'Globe']
+    pe_regions = ['SH Precip', 'SH Evap', 'Tropical Precip', 'NH Evap', 'NH Precip', 'Globe']
+    fig, axes = plt.subplots(ncols=8, nrows=6, constrained_layout=False, figsize=[40, 30])
     #max_value = np.abs(ghg_anomaly_data).max() * 1.1
-    max_value = 3.5e17
-    
-    ax1.plot(ghg_years, anomaly_data['GHG-only'][:,0], color='red', label='GHG-only')
-    ax1.plot(hist_years, anomaly_data['historical'][:,0], color='black', label='historical')
-    if aa_cube:
-        ax1.plot(aa_years, anomaly_data['AA-only'][:,0], color='blue', label='AA-only')
-    ax1.set_title('SH precip')
-    ax1.set_ylabel('time-integrated anomaly (kg)')
-    ax1.set_ylim([-max_value, max_value])
-    ax1.grid(True, color='0.8', linestyle='--')
-    ax1.legend()
+    #max_value = 3.5e17
 
-    ax4.plot(ghg_years, anomaly_data['GHG-only'][:,1], color='red', label='GHG-only')
-    ax4.plot(hist_years, anomaly_data['historical'][:,1], color='black', label='historical')
-    if aa_cube:
-        ax4.plot(aa_years, anomaly_data['AA-only'][:,1], color='blue', label='AA-only')
-    ax4.set_title('SH evap')
-    ax4.set_ylabel('time-integrated anomaly (kg)')
-    ax4.set_ylim([-max_value, max_value])
-    ax4.grid(True, color='0.8', linestyle='--')
+    for row in range(6):
+        axes[row, 0].set_ylabel('time-integrated anomaly (kg)')
+        for col in range(8):
+            axes[row, col].plot(ghg_years, anomaly_data['GHG-only'][:, row, col], color='red', label='GHG-only')
+            axes[row, col].plot(hist_years, anomaly_data['historical'][:, row, col], color='black', label='historical')
+            if aa_cube:
+                axes[row, col].plot(aa_years, anomaly_data['AA-only'][:, row, col], color='blue', label='AA-only')
+            axes[row, col].set_title(f'{pe_regions[row]}, {basins[col]}')
+            axes[row, col].grid(True, color='0.8', linestyle='--')
+            #axes[row, col].set_ylim([-max_value, max_value])
 
-    ax2.plot(ghg_years, anomaly_data['GHG-only'][:,2], color='red', label='GHG-only')
-    ax2.plot(hist_years, anomaly_data['historical'][:,2], color='black', label='historical')
-    if aa_cube:
-        ax2.plot(aa_years, anomaly_data['AA-only'][:,2], color='blue', label='AA-only')
-    ax2.set_title('tropical precip')
-    ax2.set_ylim([-max_value, max_value])
-    ax2.grid(True, color='0.8', linestyle='--')
-
-    ax5.plot(ghg_years, anomaly_data['GHG-only'][:,3], color='red', label='GHG-only')
-    ax5.plot(hist_years, anomaly_data['historical'][:,3], color='black', label='historical')
-    if aa_cube:
-        ax5.plot(aa_years, anomaly_data['AA-only'][:,3], color='blue', label='AA-only')
-    ax5.set_title('NH evap')
-    ax5.set_ylim([-max_value, max_value])
-    ax5.grid(True, color='0.8', linestyle='--')
-
-    ax3.plot(ghg_years, anomaly_data['GHG-only'][:,4], color='red', label='GHG-only')
-    ax3.plot(hist_years, anomaly_data['historical'][:,4], color='black', label='historical')
-    if aa_cube:
-        ax3.plot(aa_years, anomaly_data['AA-only'][:,4], color='blue', label='AA-only')
-    ax3.set_title('NH precip')
-    ax3.set_ylim([-max_value, max_value])
-    ax3.grid(True, color='0.8', linestyle='--')
-
-    plt.suptitle(inargs.variable)
+    axes[0, 0].legend()
+    plt.suptitle(inargs.variable, y=0.9)
     plt.savefig(inargs.outfile, bbox_inches='tight')
     gio.write_metadata(inargs.outfile, file_info={inargs.hist_file: hist_cube.attributes['history']})
 

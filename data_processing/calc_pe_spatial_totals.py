@@ -41,9 +41,9 @@ pe_names = ['SH precip', 'SH evap', 'tropical precip', 'NH evap', 'NH precip']
 def create_basin_coord():
     """Create a dimension for the basins."""
 
-    flag_values = "11.5 13.5 15 16 17 18"
-    flag_meanings = "atlantic pacific indian arctic marginal_seas land"
-    basin_coord = iris.coords.DimCoord(np.array([11.5, 13.5, 15, 16, 17, 18]),
+    flag_values = "11.5 13.5 15 16 17 18 19 20"
+    flag_meanings = "atlantic pacific indian arctic marginal_seas land ocean globe"
+    basin_coord = iris.coords.DimCoord(np.array([11.5, 13.5, 15, 16, 17, 18, 19, 20]),
                                        standard_name='region',
                                        long_name='Region Selection Index',
                                        var_name='basin',
@@ -57,11 +57,11 @@ def create_basin_coord():
 def create_pe_region_coord():
     """Create a dimension for the P-E regions"""
     
-    flag_values = '1 2 3 4 5'
-    flag_meanings = 'SH precip, SH evap, tropical precip, NH evap, NH precip'
+    flag_values = '1 2 3 4 5 6'
+    flag_meanings = 'SH_precip SH_evap tropical_precip NH_evap NH_precip globe'
     standard_name = 'precipitation_minus_evporation_region'
     iris.std_names.STD_NAMES[standard_name] = {'canonical_units': 1}
-    pe_region_coord = iris.coords.DimCoord(np.array([1, 2, 3, 4, 5]),
+    pe_region_coord = iris.coords.DimCoord(np.array([1, 2, 3, 4, 5, 6]),
                                            standard_name=standard_name,
                                            long_name='precipitation minus evaporation region',
                                            var_name='pereg',
@@ -83,7 +83,7 @@ def get_regional_totals(var_data, pe_data, lats, basins):
       arctic = 16
       marginal seas = 17
       land = 18
-
+      
     """
 
     basin_selection = {'atlantic': (basins >=11) & (basins <= 12),
@@ -99,13 +99,19 @@ def get_regional_totals(var_data, pe_data, lats, basins):
                     'NH evap': (pe_data < 0) & (lats >= 0),
                     'NH precip': (pe_data >= 0) & (lats > 20)}
     
-    output = np.zeros([5, 6])
+    output = np.zeros([6, 8])
     for pe_num, pe_name in enumerate(pe_names):
         for basin_num, basin_name in enumerate(basin_names): 
             selection = pe_selection[pe_name] & basin_selection[basin_name]
             output[pe_num, basin_num] = var_data[selection].sum()
 
     assert np.allclose(var_data.sum(), output.sum())
+
+    for pe_num in range(5):
+        output[pe_num, 6] = output[pe_num, 0:5].sum()  # ocean
+        output[pe_num, 7] = output[pe_num, 0:6].sum()  # globe
+    for basin_num in range(8):
+        output[5, basin_num] = output[0:5, basin_num].sum()  # globe
 
     return output 
 
@@ -146,7 +152,7 @@ def main(inargs):
         data_cube = pe_cube.copy()
         data_var = 'precipitation minus evaporation flux'
 
-    region_data = np.zeros([pe_cube.shape[0], 5, 6])
+    region_data = np.zeros([pe_cube.shape[0], 6, 8])
     tstep = 0
     ntimes = pe_cube.shape[0]
     for tstep in range(ntimes):
