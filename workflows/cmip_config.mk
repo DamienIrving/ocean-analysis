@@ -53,14 +53,14 @@ INSTITUTION=CSIRO
 EXPERIMENT=hist-aer
 # historical hist-GHG hist-aer
 FX_EXP=historical
-HIST_RUN=r1i1p1f1
+HIST_RUN=r3i1p1f1
 CNTRL_RUN=r1i1p1f1
 FX_RUN=r1i1p1f1
 GRID=gn
 OFX_VERSION=v20191115
 FX_VERSION=v20191115
 ATMOS_HIST_VERSION=v20200615
-#v20191115 (historical), v20200615 (hist-aer)
+#v20191115 (historical r1i1p1), v20191128 (historical r2i1p1f1), v20191203 (historical r3i1p1f1), v20200615 (hist-aer, hist-GHG)
 HIST_VERSION=v20191115
 HIST_TIME=185001-202012
 #2014 (historical, 2020 (hist-aer, hist-GHG)

@@ -48,43 +48,44 @@ def main(inargs):
     """Run the program."""
   
     time_constraint = gio.get_time_constraint(inargs.time_bounds)
-    
-    anomaly_data = {}
-    start_data = {}
-    
-    hist_cube, anomaly_data['historical'], start_data['historical'] = get_data(inargs.hist_file, inargs.variable, time_constraint)
-    ghg_cube, anomaly_data['GHG-only'], start_data['GHG-only'] = get_data(inargs.ghg_file, inargs.variable, time_constraint)
-    if inargs.aa_file:
-        aa_cube, anomaly_data['AA-only'], start_data['AA-only'] = get_data(inargs.aa_file, inargs.variable, time_constraint)
-    else:
-        aa_cube = anomaly_data['AA-only'] = start_data['AA-only'] = None
-    
-    hist_years = hist_cube.coord('year').points
-    ghg_years = ghg_cube.coord('year').points
-    if aa_cube:
-        aa_years = aa_cube.coord('year').points
-    
     basins = ['Atlantic', 'Pacific', 'Indian', 'Arctic', 'Marginal Seas', 'Land', 'Ocean', 'Globe']
     pe_regions = ['SH Precip', 'SH Evap', 'Tropical Precip', 'NH Evap', 'NH Precip', 'Globe']
-    fig, axes = plt.subplots(ncols=8, nrows=6, constrained_layout=False, figsize=[40, 30])
-    #max_value = np.abs(ghg_anomaly_data).max() * 1.1
-    #max_value = 3.5e17
+    fig, axes = plt.subplots(ncols=8, nrows=6, constrained_layout=False, figsize=[40, 30]) 
+    linestyles = ['solid', 'dotted', 'dashed']
 
-    for row in range(6):
-        axes[row, 0].set_ylabel('time-integrated anomaly (kg)')
-        for col in range(8):
-            axes[row, col].plot(ghg_years, anomaly_data['GHG-only'][:, row, col], color='red', label='GHG-only')
-            axes[row, col].plot(hist_years, anomaly_data['historical'][:, row, col], color='black', label='historical')
-            if aa_cube:
-                axes[row, col].plot(aa_years, anomaly_data['AA-only'][:, row, col], color='blue', label='AA-only')
-            axes[row, col].set_title(f'{pe_regions[row]}, {basins[col]}')
-            axes[row, col].grid(True, color='0.8', linestyle='--')
-            #axes[row, col].set_ylim([-max_value, max_value])
+    for run_num, infiles in enumerate(inargs.infiles):
+        anomaly_data = {}
+        start_data = {}
+
+        hist_file, ghg_file, aa_file = infiles     
+        hist_cube, anomaly_data['historical'], start_data['historical'] = get_data(hist_file, inargs.variable, time_constraint)
+        ghg_cube, anomaly_data['GHG-only'], start_data['GHG-only'] = get_data(ghg_file, inargs.variable, time_constraint)
+        aa_cube, anomaly_data['AA-only'], start_data['AA-only'] = get_data(aa_file, inargs.variable, time_constraint)
+    
+        hist_years = hist_cube.coord('year').points
+        ghg_years = ghg_cube.coord('year').points
+        aa_years = aa_cube.coord('year').points
+
+        hist_label = 'historical' if run_num == 0 else None
+        ghg_label = 'GHG-only' if run_num == 0 else None
+        aa_label = 'AA-only' if run_num == 0 else None
+    
+        for row in range(6):
+            axes[row, 0].set_ylabel('time-integrated anomaly (kg)')
+            for col in range(8):
+                axes[row, col].plot(ghg_years, anomaly_data['GHG-only'][:, row, col], color='red',
+                                    linestyle=linestyles[run_num], label=ghg_label)
+                axes[row, col].plot(hist_years, anomaly_data['historical'][:, row, col], color='black',
+                                    linestyle=linestyles[run_num], label=hist_label)
+                axes[row, col].plot(aa_years, anomaly_data['AA-only'][:, row, col], color='blue',
+                                    linestyle=linestyles[run_num], label=aa_label)
+                axes[row, col].set_title(f'{pe_regions[row]}, {basins[col]}')
+                axes[row, col].grid(True, color='0.8', linestyle='--')
 
     axes[0, 0].legend()
     plt.suptitle(inargs.variable, y=0.9)
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info={inargs.hist_file: hist_cube.attributes['history']})
+    gio.write_metadata(inargs.outfile, file_info={hist_file: hist_cube.attributes['history']})
 
 
 if __name__ == '__main__':
@@ -95,7 +96,7 @@ author:
     Damien Irving, irving.damien@gmail.com
 
 example:
-    python plot_pe_region_data.py /g/data/r87/dbi599/CMIP6/CMIP/BCC/BCC-CSM2-MR/historical/r1i1p1f1/Ayr/pe/gn/v20181126/pe-region-sum-anomaly_Ayr_BCC-CSM2-MR_historical_r1i1p1f1_gn_185001-201412-cumsum.nc /g/data/r87/dbi599/CMIP6/DAMIP/BCC/BCC-CSM2-MR/hist-GHG/r1i1p1f1/Ayr/pe/gn/v20190426/pe-region-sum-anomaly_Ayr_BCC-CSM2-MR_hist-GHG_r1i1p1f1_gn_185001-201412-cumsum.nc /g/data/r87/dbi599/CMIP6/DAMIP/BCC/BCC-CSM2-MR/hist-aer/r1i1p1f1/Ayr/pe/gn/v20190507/pe-region-sum-anomaly_Ayr_BCC-CSM2-MR_hist-aer_r1i1p1f1_gn_185001-201412-cumsum.nc test.png
+    python plot_pe_region_data.py precipitation_minus_evaporation_flux test.png --infiles /g/data/r87/dbi599/CMIP6/CMIP/BCC/BCC-CSM2-MR/historical/r1i1p1f1/Ayr/pe/gn/v20181126/pe-region-sum-anomaly_Ayr_BCC-CSM2-MR_historical_r1i1p1f1_gn_185001-201412-cumsum.nc /g/data/r87/dbi599/CMIP6/DAMIP/BCC/BCC-CSM2-MR/hist-GHG/r1i1p1f1/Ayr/pe/gn/v20190426/pe-region-sum-anomaly_Ayr_BCC-CSM2-MR_hist-GHG_r1i1p1f1_gn_185001-201412-cumsum.nc /g/data/r87/dbi599/CMIP6/DAMIP/BCC/BCC-CSM2-MR/hist-aer/r1i1p1f1/Ayr/pe/gn/v20190507/pe-region-sum-anomaly_Ayr_BCC-CSM2-MR_hist-aer_r1i1p1f1_gn_185001-201412-cumsum.nc
 
 """
 
@@ -105,12 +106,11 @@ example:
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
                                     
-    parser.add_argument("hist_file", type=str, help="historical file")
-    parser.add_argument("ghg_file", type=str, help="GHG file")
-    parser.add_argument("aa_file", type=str, help="aa file")
     parser.add_argument("variable", type=str, help="variable")
     parser.add_argument("outfile", type=str, help="Output file") 
 
+    parser.add_argument("--infiles", type=str, nargs=3, action='append',
+                        help="input files for a given model run (histoical, hist-GHG, hist-aer; in that order)")
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2005-12-31'), help="Time period [default = entire]")
 
