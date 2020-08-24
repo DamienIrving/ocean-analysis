@@ -70,17 +70,18 @@ def main(inargs):
         ghg_label = 'GHG-only' if run_num == 0 else None
         aa_label = 'AA-only' if run_num == 0 else None
     
-        for row in range(6):
-            axes[row, 0].set_ylabel('time-integrated anomaly (kg)')
+        for plot_row in range(6):
+            data_row = 5 - plot_row
+            axes[plot_row, 0].set_ylabel('time-integrated anomaly (kg)')
             for col in range(8):
-                axes[row, col].plot(ghg_years, anomaly_data['GHG-only'][:, row, col], color='red',
+                axes[plot_row, col].plot(ghg_years, anomaly_data['GHG-only'][:, data_row, col], color='red',
                                     linestyle=linestyles[run_num], label=ghg_label)
-                axes[row, col].plot(hist_years, anomaly_data['historical'][:, row, col], color='black',
+                axes[plot_row, col].plot(hist_years, anomaly_data['historical'][:, data_row, col], color='black',
                                     linestyle=linestyles[run_num], label=hist_label)
-                axes[row, col].plot(aa_years, anomaly_data['AA-only'][:, row, col], color='blue',
+                axes[plot_row, col].plot(aa_years, anomaly_data['AA-only'][:, data_row, col], color='blue',
                                     linestyle=linestyles[run_num], label=aa_label)
-                axes[row, col].set_title(f'{pe_regions[row]}, {basins[col]}')
-                axes[row, col].grid(True, color='0.8', linestyle='--')
+                axes[plot_row, col].set_title(f'{pe_regions[data_row]}, {basins[col]}')
+                axes[plot_row, col].grid(True, color='0.8', linestyle='--')
 
     axes[0, 0].legend()
     plt.suptitle(inargs.variable, y=0.9)
