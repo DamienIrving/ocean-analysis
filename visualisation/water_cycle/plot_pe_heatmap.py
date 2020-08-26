@@ -32,7 +32,7 @@ except ImportError:
 
 # Define functions
 
-def get_data(infile, var, data_type, time_constraint):
+def get_data(infile, var, data_type, time_constraint, pct=False):
     """Get the data for a particular model"""
     
     cube, history = gio.combine_files(infile, var, new_calendar='365_day')
@@ -41,16 +41,20 @@ def get_data(infile, var, data_type, time_constraint):
     if data_type == 'cumulative_anomaly':
         anomaly_data = cube.data - cube.data[0, ::]
         data = anomaly_data[-1, ::]
-    else:
-        data = cube.data    
+    elif data_type == 'climatology':
+        cube = cube.collapsed('time', iris.analysis.MEAN)
+        cube.remove_coord('time')
+        dat = cube.data    
 
     basins = ['Atlantic', 'Pacific', 'Indian', 'Arctic', 'Marginal Seas', 'Land', 'Ocean', 'Globe']
     pe_regions = ['SH Precip', 'SH Evap', 'Tropical Precip', 'NH Evap', 'NH Precip', 'Globe']
     df = pd.DataFrame(data, columns=basins, index=pe_regions)
     df.loc['Globe', 'Globe'] = np.nan
     df = df.iloc[::-1]
-    total_evap = df.loc['NH Evap', 'Globe'] + df.loc['SH Evap', 'Globe']
-    df = (df / (-1 * total_evap))
+    if pct:
+        total_pos = df[df['Globe'] > 0]['Globe'].sum()
+        total_neg = abs(df[df['Globe'] < 0]['Globe'].sum())
+        df = df / max(total_pos, total_neg)
         
     return df, history
 
@@ -59,19 +63,28 @@ def main(inargs):
     """Run the program."""
 
     time_constraint = gio.get_time_constraint(inargs.time_bounds)
-    df, history = get_data(inargs.infile, inargs.var, inargs.data_type, time_constraint)     
+    df, history = get_data(inargs.infile, inargs.var, inargs.data_type,
+                           time_constraint, pct=inargs.pct)     
 
     basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Arctic', 'Land', 'Globe']
     if inargs.data_type == 'cumulative_anomaly':
         title = 'Time-integrated net mositure (P-E) import/export anomaly, 1850-2014'
-    else:
+    elif inargs.data_type == 'climatology':
         title = 'Annual mean net mositure (P-E) import/export'
+
+    if inargs.pct:
+        fmt = '.0%'
+        label = 'fraction of total import/export'
+    else:
+        fmt='.2g'
+        label = 'time-integrated anomaly (kg)'
+
     vmax = df[basins_to_plot].abs().max().max() * 1.05
 
     fig, ax = plt.subplots(figsize=(12, 6))
     sns.heatmap(df[basins_to_plot], annot=True, cmap='BrBG', linewidths=.5, ax=ax,
-                vmin=-vmax, vmax=vmax, fmt='.0%',
-                cbar_kws={'label': 'fraction of total import/export'})
+                vmin=-vmax, vmax=vmax, fmt=fmt,
+                cbar_kws={'label': label})
     plt.title(title)
   
     plt.savefig(inargs.outfile, bbox_inches='tight')
@@ -102,6 +115,8 @@ example:
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1850-01-01', '2014-12-31'), help="Time period [default = entire]")
+    parser.add_argument("--pct", action="store_true", default=False,
+                        help="Change output units to percentage of total net import/export")
 
     args = parser.parse_args()             
     main(args)

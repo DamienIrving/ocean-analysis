@@ -50,7 +50,7 @@ MIP=DAMIP
 # CMIP DAMIP
 MODEL=ACCESS-ESM1-5
 INSTITUTION=CSIRO
-EXPERIMENT=hist-aer
+EXPERIMENT=hist-GHG
 # historical hist-GHG hist-aer
 FX_EXP=historical
 HIST_RUN=r3i1p1f1
