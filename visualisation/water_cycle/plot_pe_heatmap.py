@@ -65,6 +65,9 @@ def main(inargs):
     time_constraint = gio.get_time_constraint(inargs.time_bounds)
     df, history = get_data(inargs.infile, inargs.var, inargs.data_type,
                            time_constraint, pct=inargs.pct)     
+    if inargs.scale_factor:
+        assert not inargs.pct
+        df = df / 10**inargs.scale_factor
 
     basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Arctic', 'Land', 'Globe']
     if inargs.data_type == 'cumulative_anomaly':
@@ -77,7 +80,10 @@ def main(inargs):
         label = 'fraction of total import/export'
     else:
         fmt='.2g'
-        label = 'time-integrated anomaly (kg)'
+        if inargs.scale_factor:
+            label = 'time-integrated anomaly ($10^{%s}$ kg)'  %(str(inargs.scale_factor))
+        else:
+            label = 'time-integrated anomaly (kg)'
 
     vmax = df[basins_to_plot].abs().max().max() * 1.05
 
@@ -117,6 +123,8 @@ example:
                         default=('1850-01-01', '2014-12-31'), help="Time period [default = entire]")
     parser.add_argument("--pct", action="store_true", default=False,
                         help="Change output units to percentage of total net import/export")
+    parser.add_argument("--scale_factor", type=int, default=None,
+                        help="Scale factor (e.g. scale factor of 17 will divide data by 10^17")
 
     args = parser.parse_args()             
     main(args)

@@ -185,11 +185,7 @@ ${PE_REGIONS_DRIFT_PLOT} : ${PE_REGIONS_COEFFICIENTS} ${PE_REGIONS_FILE_CNTRL} $
 
 PE_REGIONS_HEATMAP=/g/data/r87/dbi599/figures/water-cycle/pe-region-sum-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_gn_185001-201412-cumsum.png
 ${PE_REGIONS_HEATMAP} : ${PE_REGIONS_ANOMALY_CUMSUM}
-	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< precipitation_minus_evaporation_flux cumulative_anomaly $@
-
-PE_REGIONS_HEATMAP_PCT=/g/data/r87/dbi599/figures/water-cycle/pe-region-sum-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_gn_185001-201412-cumsum_pct.png
-${PE_REGIONS_HEATMAP_PCT} : ${PE_REGIONS_ANOMALY_CUMSUM}
-	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< precipitation_minus_evaporation_flux cumulative_anomaly $@ --pct
+	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< precipitation_minus_evaporation_flux cumulative_anomaly $@ --scale_factor 17
 
 PE_REGIONS_HEATMAP_CLIM=/g/data/r87/dbi599/figures/water-cycle/pe-region-sum-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_gn_185001-201412_pct.png
 ${PE_REGIONS_HEATMAP_CLIM} : ${PE_REGIONS_FILE_HIST_TSERIES}
@@ -268,7 +264,7 @@ ${SPATIAL_PLOT} : ${SPATIAL_COEFFICIENTS} ${PE_CUMSUM_CNTRL} ${PE_CUMSUM_HIST} $
 
 pe-zrs : ${ZRS_PLOT}
 pe-spatial : ${SPATIAL_PLOT}
-pe-regions : ${PE_REGIONS_HEATMAP} ${PE_REGIONS_HEATMAP_PCT}
+pe-regions : ${PE_REGIONS_HEATMAP}
 pe-regions-clim : ${PE_REGIONS_HEATMAP_CLIM}
 pr-regions : ${PR_PE_REGIONS_PLOT}
 evap-regions : ${EVAP_PE_REGIONS_PLOT}
