@@ -18,7 +18,6 @@ PR_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUT
 EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/evspsbl/${GRID}/${ATMOS_CNTRL_VERSION}/evspsbl*.nc))
 AREACELLA_FILE=${AREACELLA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/areacella/${GRID}/${FX_VERSION}/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
 SFTLF_FILE=${AREACELLA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/sftlf/${GRID}/${FX_VERSION}/sftlf_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
-
 EVAP_VAR=water_evapotranspiration_flux
 
 # File definitions, CMIP5 models
@@ -48,8 +47,8 @@ AREA_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piContr
 
 # basin file
 
-BASIN_DIR=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/historical/${HIST_RUN}/fx/basin/${GRID}/${HIST_VERSION}
-BASIN_FILE=${BASIN_DIR}/basin_fx_${MODEL}_historical_${HIST_RUN}_${GRID}.nc
+BASIN_DIR=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/historical/${FX_RUN}/fx/basin/${GRID}/${HIST_VERSION}
+BASIN_FILE=${BASIN_DIR}/basin_fx_${MODEL}_historical_${FX_RUN}_${GRID}.nc
 ${BASIN_FILE} : ${PR_FILE_HIST} ${SFTLF_FILE}
 	mkdir -p ${BASIN_DIR}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_basin.py $< precipitation_flux $@ --sftlf_file $(word 2,$^) --land_threshold 50
