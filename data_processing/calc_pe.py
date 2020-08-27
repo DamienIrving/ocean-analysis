@@ -39,16 +39,14 @@ def main(inargs):
     evap_cube, evap_history = gio.combine_files(inargs.evap_files, 'water_evapotranspiration_flux', checks=True)
 
     assert pr_cube.shape == evap_cube.shape
-    pe_cube = pr_cube - evap_cube
+    pe_cube = pr_cube.copy()
+    pe_cube.data = pr_cube.data - evap_cube.data
 
-    pe_cube.metadata = pr_cube.metadata
     iris.std_names.STD_NAMES['precipitation_minus_evaporation_flux'] = {'canonical_units': pe_cube.units}
     pe_cube.standard_name = 'precipitation_minus_evaporation_flux'
     pe_cube.long_name = 'precipitation minus evaporation flux'
     pe_cube.var_name = 'pe'
-    metadata_dict = {inargs.pr_files[0]: pr_history[0], 
-                     inargs.evap_files[0]: evap_history[0]}
-    pe_cube.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+    pe_cube.attributes['history'] = cmdprov.new_log(git_repo=repo_dir)
 
     iris.save(pe_cube, inargs.outfile)
 
