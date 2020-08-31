@@ -12,6 +12,7 @@ import pandas as pd
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
+import iris
 
 # Import my modules
 
@@ -36,7 +37,8 @@ def get_data(infile, var, data_type, time_constraint, pct=False):
     """Get the data for a particular model"""
     
     cube, history = gio.combine_files(infile, var, new_calendar='365_day')
-    cube = cube.extract(time_constraint)
+    if time_constraint:
+        cube = cube.extract(time_constraint)
 
     if data_type == 'cumulative_anomaly':
         anomaly_data = cube.data - cube.data[0, ::]
@@ -44,7 +46,7 @@ def get_data(infile, var, data_type, time_constraint, pct=False):
     elif data_type == 'climatology':
         cube = cube.collapsed('time', iris.analysis.MEAN)
         cube.remove_coord('time')
-        dat = cube.data    
+        data = cube.data    
 
     basins = ['Atlantic', 'Pacific', 'Indian', 'Arctic', 'Marginal Seas', 'Land', 'Ocean', 'Globe']
     pe_regions = ['SH Precip', 'SH Evap', 'Tropical Precip', 'NH Evap', 'NH Precip', 'Globe']
@@ -119,8 +121,8 @@ example:
     parser.add_argument("data_type", type=str, choices=('cumulative_anomaly', 'climatology'), help="type of data")
     parser.add_argument("outfile", type=str, help="output file") 
 
-    parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
-                        default=('1850-01-01', '2014-12-31'), help="Time period [default = entire]")
+    parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
+                        help="Time period [default = entire]")
     parser.add_argument("--pct", action="store_true", default=False,
                         help="Change output units to percentage of total net import/export")
     parser.add_argument("--scale_factor", type=int, default=None,
