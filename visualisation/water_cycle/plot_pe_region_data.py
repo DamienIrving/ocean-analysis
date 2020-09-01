@@ -82,6 +82,9 @@ def main(inargs):
                                     linestyle=linestyles[run_num], label=aa_label)
                 axes[plot_row, col].set_title(f'{pe_regions[data_row]}, {basins[col]}')
                 axes[plot_row, col].grid(True, color='0.8', linestyle='--')
+                if inargs.ylim:
+                    ylower, yupper = inargs.ylim
+                    axes[plot_row, col].set_ylim(ylower * 1e17, yupper * 1e17)
 
     axes[0, 0].legend()
     plt.suptitle(inargs.variable, y=0.9)
@@ -114,6 +117,8 @@ example:
                         help="input files for a given model run (histoical, hist-GHG, hist-aer; in that order)")
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2005-12-31'), help="Time period [default = entire]")
+    parser.add_argument("--ylim", type=float, nargs=2, default=None,
+                        help="common y limits for each plot (x 10^17)")
 
     args = parser.parse_args()             
     main(args)
