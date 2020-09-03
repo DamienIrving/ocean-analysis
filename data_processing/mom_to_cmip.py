@@ -38,8 +38,13 @@ except ImportError:
 def xr_to_cube(dset, ref_cube, inargs):
     """Create iris cube from xarray dataset"""
 
-    assert dset[inargs.mom_var].units[0] == 'W'
-    new_units = 'W m-2'
+    input_units = dset[inargs.mom_var].units
+    if input_units[0] == 'W':
+        new_units = 'W m-2'
+    elif 'kg' in input_units[0:3]:
+        new_units = 'kg m-2 s-1'
+    else:
+        raise AttributeError(f'input units not supported: {input_units}')
 
     mom_ndim = dset[inargs.mom_var].ndim
     assert mom_ndim == ref_cube.ndim, \
@@ -70,7 +75,8 @@ def xr_to_cube(dset, ref_cube, inargs):
                               aux_coords_and_dims=[(ref_cube.aux_coords[0], (mom_ndim - 2, mom_ndim - 1)),
                                                    (ref_cube.aux_coords[1], (mom_ndim - 2, mom_ndim - 1))])
     if 'standard_name' in dset[inargs.mom_var].attrs:
-        new_cube.standard_name = dset[inargs.mom_var].standard_name
+        if dset[inargs.mom_var].standard_name in iris.std_names.STD_NAMES:
+            new_cube.standard_name = dset[inargs.mom_var].standard_name
 
     return new_cube
 
