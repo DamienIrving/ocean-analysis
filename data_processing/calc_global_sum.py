@@ -46,7 +46,7 @@ def main(inargs):
         if area_cube:
             area_array = uconv.broadcast_array(area_cube.data, [ndim - 2, ndim - 1], cube.shape)
             assert 'm-2' in str(cube.units)
-            cube.units = str(cube.units).replace('m-2', '')
+            cube.units = str(cube.units).replace('m-2', '').replace('  ', ' ')
             cube.data = cube.data * area_array
 
         gs = cube.collapsed(coord_names[1:], iris.analysis.SUM)
