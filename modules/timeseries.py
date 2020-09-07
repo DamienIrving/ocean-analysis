@@ -138,14 +138,36 @@ def _chunked_year_aggregation(cube, agg_method, step=12):
     return annual_cube
 
 
-def convert_to_annual(cube, full_months=False, aggregation='mean', chunk=False):
+def _days_in_month_annual_mean(cube):
+    """Calculate the annual mean timeseries accounting for days in month."""
+
+    assert 'days' in str(cube.coord('time').units)
+    time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
+
+    df = pd.DataFrame(data={'days_in_month': time_span_days, 'year': cube.coord('year').points})
+    days_in_year = df.groupby('year').sum()
+    
+    df['weight'] = df.apply(lambda row: row['days_in_month'] / days_in_year['days_in_month'].loc[row['year']], axis=1)
+    np.testing.assert_allclose(df.groupby('year').sum()['weight'].min(), 1.0)
+    np.testing.assert_allclose(df.groupby('year').sum()['weight'].max(), 1.0)
+
+    weights_array = uconv.broadcast_array(df['weight'].values, 0, cube.shape)
+    cube.data = cube.data * weights_array
+    cube = cube.aggregated_by(['year'], iris.analysis.SUM)
+
+    return cube
+    
+
+def convert_to_annual(cube, full_months=False, aggregation='mean', chunk=False, days_in_month=False):
     """Convert data to annual timescale.
 
     Args:
       cube (iris.cube.Cube)
       full_months(bool): Only include years with data for all 12 months
       chunk (bool): Chunk along the time axis
-        (Set by default to a chunk step of 12 assuming monthly data.) 
+        (Set by default to a chunk step of 12 assuming monthly data.)
+      days_in_month (bool): Account for the fact that each month has a different
+         number of days.
 
     """
 
@@ -153,19 +175,22 @@ def convert_to_annual(cube, full_months=False, aggregation='mean', chunk=False):
     iris.coord_categorisation.add_month(cube, 'time')
 
     if not is_annual(cube):
-
-        if aggregation == 'mean':
-            aggregator = iris.analysis.MEAN
-        elif aggregation == 'sum':
-            aggregator = iris.analysis.SUM
-
-        if chunk:
-            cube = _chunked_year_aggregation(cube, aggregator, step=12)
+        if days_in_month:
+            assert aggregation == 'mean'
+            cube = _days_in_month_annual_mean(cube)
         else:
-            cube = cube.aggregated_by(['year'], aggregator)
+            if aggregation == 'mean':
+                aggregator = iris.analysis.MEAN
+            elif aggregation == 'sum':
+                aggregator = iris.analysis.SUM
+
+            if chunk:
+                cube = _chunked_year_aggregation(cube, aggregator, step=12)
+            else:
+                cube = cube.aggregated_by(['year'], aggregator)
   
-        if full_months:
-            cube = cube.extract(iris.Constraint(month='Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec'))
+            if full_months:
+                cube = cube.extract(iris.Constraint(month='Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec'))
 
     cube.remove_coord('year')
     cube.remove_coord('month')

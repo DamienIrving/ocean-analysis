@@ -173,7 +173,7 @@ def read_global_variable(model, variable, ensemble, project, manual_file_dict,
             cube = gio.salinity_unit_check(cube)
         elif variable == 'thetaoga':
             cube = gio.temperature_unit_check(cube, 'K')
-        cube = timeseries.convert_to_annual(cube)
+        cube = timeseries.convert_to_annual(cube, days_in_month=True)
         cube = time_check(cube)
         if time_constraint:
             cube = cube.extract(time_constraint)
@@ -231,10 +231,6 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
     for infile in file_list:
         cube, history = gio.combine_files(infile, names[variable], checks=True)
         coord_names = [coord.name() for coord in cube.dim_coords]
-
-        if 'time' in coord_names:
-            cube = timeseries.convert_to_annual(cube, chunk=chunk)
-            cube = time_check(cube)
             
         if ('time' in coord_names) and area_cube:
             area_array = uconv.broadcast_array(area_cube.data, [1, area_cube.ndim], cube.shape)
@@ -270,8 +266,14 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
                                   attributes=cube.attributes,
                                   dim_coords_and_dims=[(ref_time_coord, 0)])
             cube = time_check(cube)
+
         if ('s-1' in str(cube.units)) or ('W' in str(cube.units)):
             cube = timeseries.flux_to_total(cube)
+       
+        if 'time' in coord_names:
+            cube = timeseries.convert_to_annual(cube, aggregation='sum')
+            cube = time_check(cube)
+
         if time_constraint:
             cube = cube.extract(time_constraint)
         if end_index:
