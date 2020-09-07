@@ -271,7 +271,10 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
             cube = timeseries.flux_to_total(cube)
        
         if 'time' in coord_names:
-            cube = timeseries.convert_to_annual(cube, aggregation='sum')
+            if 'flux' in names[variable]:
+                cube = timeseries.convert_to_annual(cube, aggregation='sum')
+            else:
+                cube = timeseries.convert_to_annual(cube, aggregation='mean', days_in_month=True)
             cube = time_check(cube)
 
         if time_constraint:
