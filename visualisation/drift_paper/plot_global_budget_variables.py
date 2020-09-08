@@ -94,9 +94,9 @@ def get_latest(results):
     if not results.empty:
         latest = results.iloc[0]
         for index, row in results.iloc[1:].iterrows():
-            current_version = row.path.split('/')[0]
+            current_version = row.path.split('/')[-1]
             current_version = current_version[1:] if 'v' in current_version else current_version
-            latest_version = latest.path.split('/')[0]
+            latest_version = latest.path.split('/')[-1]
             latest_version = latest_version[1:] if 'v' in latest_version else latest_version
             if float(current_version) > float(latest_version):
                 latest = row
@@ -121,7 +121,7 @@ def clef_search(model, variable, ensemble, project, experiment='piControl'):
 
     constraints = {'variable': variable, 'model': model, 'table': table,
                    'experiment': experiment, 'ensemble': ensemble}
-
+    print(variable)
     results = clef.code.search(session, project=project, **constraints)
     results = get_latest(results)
     if not results.empty:
@@ -265,7 +265,7 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
                                   units=cube.units,
                                   attributes=cube.attributes,
                                   dim_coords_and_dims=[(ref_time_coord, 0)])
-            cube = time_check(cube)
+            #cube = time_check(cube)
 
         if ('s-1' in str(cube.units)) or ('W' in str(cube.units)):
             cube = timeseries.flux_to_total(cube)
@@ -275,7 +275,6 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
                 cube = timeseries.convert_to_annual(cube, aggregation='sum')
             else:
                 cube = timeseries.convert_to_annual(cube, aggregation='mean', days_in_month=True)
-            cube = time_check(cube)
 
         if time_constraint:
             cube = cube.extract(time_constraint)
@@ -283,6 +282,8 @@ def read_spatial_flux(model, variable, ensemble, project, area_cube,
             cube = cube[start_index: end_index]
         else:
             cube = cube[start_index:]
+
+        cube = time_check(cube)
     else:
         cube = None
         
@@ -724,7 +725,7 @@ def plot_sea_level(ax_top, ax_middle, masso_data, cube_dict, ylim=None):
         s_orig = numpy.ones(cube_dict['soga'].data.shape[0]) * cube_dict['soga'].data[0]
         m_orig = numpy.ones(cube_dict['soga'].data.shape[0]) * first_masso
         masso_from_soga = numpy.fromiter(map(delta_masso_from_soga, s_orig, cube_dict['soga'].data, m_orig), float)
-        calc_trend(masso_from_soga, 'global_mean_salinity', 'kg')
+        calc_trend(masso_from_soga, 'global mean salinity', 'kg')
         ax_top.plot(masso_from_soga, color='tab:green', label='ocean salinity ($S$)')
         soga_cubic_dedrifted = dedrift_data(masso_from_soga, fit='cubic')
         soga_cubic_dedrifted_smoothed = timeseries.runmean(soga_cubic_dedrifted, 10)
