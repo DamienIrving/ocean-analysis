@@ -143,7 +143,9 @@ def _days_in_month_annual_mean(cube):
 
     assert 'days' in str(cube.coord('time').units)
     time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
-
+    assert time_span_days.max() < 32
+    assert time_span_days.min() > 26
+  
     df = pd.DataFrame(data={'days_in_month': time_span_days, 'year': cube.coord('year').points})
     days_in_year = df.groupby('year').sum()
     
