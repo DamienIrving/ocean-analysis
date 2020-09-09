@@ -97,7 +97,7 @@ def plot_mass_conservation(df, cmip_line):
     x3 = x + 0.3
     xlist = [x0, x1, x2, x3]
     
-    fig, (ax1) = plt.subplots(1, 1, figsize=(18,8))
+    fig, (ax1) = plt.subplots(1, 1, figsize=(18,6))
     ax1.set_ylim(-0.2, 1.5)
     ax1.axhline(y=1.0, color='0.5', linewidth=0.5)
     if cmip_line:
