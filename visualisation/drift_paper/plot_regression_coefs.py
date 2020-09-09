@@ -37,18 +37,19 @@ mpl.rcParams['legend.fontsize'] = 'large'
 
 # Define functions 
 
-labels = {"netTOA vs hfds regression": "$Q_r$ vs. $Q_h$",
-          "hfds vs thermal OHC regression": "$Q_h$ vs. $H_T$",
+labels = {"netTOA vs hfdsgeou regression": "$Q_r$ vs. $Q_h$",
+          "hfdsgeou vs thermal OHC regression": "$Q_h$ vs. $H_T$",
           "netTOA vs thermal OHC regression": "$Q_r$ vs. $H_T$",
           "wfo vs masso regression": "$Q_m$ vs. $M$",
           "wfo vs soga regression": "$Q_m$ vs. $S$",
-          "masso vs soga regression": "$M$ vs. $S$"}
+          "masso vs soga regression": "$M$ vs. $S$",
+          "wfa vs massa regression": "$M_a$ vs. $Q_{ep}$"}
 
 
 def plot_energy_conservation(df, cmip_line):
     """Plot regression coefficients for thermal energy conservation"""
     
-    comparison_list = ['netTOA vs thermal OHC regression', 'netTOA vs hfds regression', 'hfds vs thermal OHC regression']
+    comparison_list = ['netTOA vs thermal OHC regression', 'netTOA vs hfdsgeou regression', 'hfdsgeou vs thermal OHC regression']
     df = df[comparison_list]
     df = df.dropna(axis=0, how='all')
     
@@ -84,61 +85,41 @@ def plot_energy_conservation(df, cmip_line):
 def plot_mass_conservation(df, cmip_line):
     """Plot the regression coefficient for each model"""
     
-    comparison_list = ['wfo vs masso regression', 'wfo vs soga regression', 'masso vs soga regression']
+    comparison_list = ['wfo vs masso regression', 'wfo vs soga regression',
+                       'masso vs soga regression', 'wfa vs massa regression']
     df = df[comparison_list]
     df = df.dropna(axis=0, how='all')
     
     x = np.arange(df.shape[0])
-    x0 = x - 0.2
-    x1 = x + 0.2
-    xlist = [x0, x, x1]
+    x0 = x - 0.3
+    x1 = x - 0.1
+    x2 = x + 0.1
+    x3 = x + 0.3
+    xlist = [x0, x1, x2, x3]
     
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(18,8), gridspec_kw={'height_ratios': [1, 5, 1]})
-    ax1.spines['bottom'].set_visible(False)
-    ax2.spines['bottom'].set_visible(False)
-    ax1.tick_params(axis='x', which='both', bottom=False)
-    ax2.tick_params(axis='x', which='both', bottom=False)
-    ax2.spines['top'].set_visible(False)
-    ax3.spines['top'].set_visible(False)
-    ax1.set_ylim(1.5, 3.0)
-    ax2.set_ylim(-0.1, 1.4)
-    ax3.set_ylim(-5.5, -1)
-
-    ax2.axhline(y=1.0, color='0.5', linewidth=0.5)
+    fig, (ax1) = plt.subplots(1, 1, figsize=(18,8))
+    ax1.set_ylim(-0.2, 1.5)
+    ax1.axhline(y=1.0, color='0.5', linewidth=0.5)
     if cmip_line:
         ax1.axvline(x=cmip_line, color='0.5', linewidth=2.0)
-        ax2.axvline(x=cmip_line, color='0.5', linewidth=2.0)
-        ax3.axvline(x=cmip_line, color='0.5', linewidth=2.0)
-    colors = ['cadetblue', 'seagreen', 'mediumpurple']
-    linestyles = ['--', '-.', ':']
+    colors = ['cadetblue', 'seagreen', 'mediumpurple', 'peachpuff']
+    linestyles = ['--', '-.', ':', '-']
     for pnum, var in enumerate(comparison_list):
         y = df[var].to_numpy()
         color = colors[pnum]
-        linestyle = linestyles[pnum]
-        markerline, stemlines, baseline = ax2.stem(xlist[pnum], y, color, basefmt=" ", bottom=1.0, label=labels[var])
-        plt.setp(stemlines, color=color, linestyle=linestyle)
-        plt.setp(markerline, color=color)
-        
+        linestyle = linestyles[pnum]        
         markerline, stemlines, baseline = ax1.stem(xlist[pnum], y, color, basefmt=" ", bottom=1.0, label=labels[var])
         plt.setp(stemlines, color=color, linestyle=linestyle)
         plt.setp(markerline, color=color)
         
-        markerline, stemlines, baseline = ax3.stem(xlist[pnum], y, color, basefmt=" ", bottom=1.0, label=labels[var])
-        plt.setp(stemlines, color=color, linestyle=linestyle)
-        plt.setp(markerline, color=color)
-
     ax1.axvline(x=x[0] - 0.5, color='0.5', linewidth=0.1)
-    ax2.axvline(x=x[0] - 0.5, color='0.5', linewidth=0.1)
-    ax3.axvline(x=x[0] - 0.5, color='0.5', linewidth=0.1)
     for val in x:
         ax1.axvline(x=val + 0.5, color='0.5', linewidth=0.1)
-        ax2.axvline(x=val + 0.5, color='0.5', linewidth=0.1)
-        ax3.axvline(x=val + 0.5, color='0.5', linewidth=0.1)
     #plt.grid(True, axis='x')
     ax1.legend()
     plt.xlim(x[0] - 0.5, x[-1] + 0.5)
     plt.xticks(x, df.index.to_list(), rotation=90)
-    ax2.set_ylabel('regression coefficient')
+    ax1.set_ylabel('regression coefficient')
     plt.subplots_adjust(hspace=0.1)
 
 
