@@ -348,8 +348,22 @@ def plot_broken_comparison(ax, df, title, xvar, yvar, plot_units,
         marker = markers[marker_num]
         x_for_plot = dotnum + 1 if 'massa' in xvar else x
         ax.scatter(x_for_plot, y, label=label, s=130, linewidth=1.2, marker=marker,
-                   facecolors=facecolors, edgecolors=edgecolors, zorder=2)
-
+                   facecolors=facecolors, edgecolors=edgecolors, zorder=2) 
+        if dotnum == 0:
+            xmin = x
+            xmax = x
+            ymin = y
+            ymax = y
+        else:
+            xmin = min(x, xmin)
+            xmax = max(x, xmax)
+            ymin = min(y, ymin)
+            ymax = max(y, ymax)
+    
+    print(title)
+    print(f'x-axis: {xmin} to {xmax}')
+    print(f'y-axis: {ymin} to {ymax}')
+    
     if broken:
         non_square = False
     else:
@@ -429,7 +443,7 @@ def main(inargs):
     handles, labels = get_legend_info(eei_ax, df[['netTOA (J yr-1)', 'thermal OHC (J yr-1)']])
 
     # Ocean energy conservation
-    xlims=[(-41.05, -40.82), (-0.55, 0.55)]
+    xlims=[(-41.05, -40.82), (-0.55, 0.71)]
     ylims=[(-0.55, 0.66)]
     wspace = hspace = 0.08
     ocean_energy_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, wspace=wspace,
@@ -441,7 +455,7 @@ def main(inargs):
                                          handles, labels)
 
     # Ocean mass conservation
-    xlims=[(-474, -472), (-7, 4), (492, 495)]
+    xlims=[(-7, 4), (472, 474), (492, 495)]
     ylims=[(-0.7, 0.25)]
     hspace = 0.1
     ocean_mass_ax = brokenaxes(xlims=xlims, ylims=ylims, hspace=hspace, subplot_spec=gs[1, 0], d=0.0)
