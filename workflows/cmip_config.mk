@@ -10,37 +10,39 @@ AUS_CMIP6_DATA_DIR=/g/data/fs38/publications
 CMIP6_DATA_DIR=/g/data/oi10/replicas
 CMIP6b_DATA_DIR=/g/data1b/oi10/replicas
 CMIP5_DATA_DIR=/g/data/al33/replicas
-TOS_VAR=tos
-TOS_LONG_NAME=sea_surface_temperature
-SF_VAR=hfds
+BIN_VAR=sos
+# tos thetao sos so
+BIN_LONG_NAME=sea_surface_salinity
+# sea_surface_temperature sea_water_potential_temperature sea_surface_salinity sea_water_salinity
+SF_VAR=wfo
 # wfo hfds
-SF_NAME=surface_downward_heat_flux_in_sea_water
+SF_NAME=water_flux_into_sea_water
 # surface_downward_heat_flux_in_sea_water water_flux_into_sea_water
 
 # CMIP6 #
 
 # ACCESS-CM2
 #
-#PROJECT=CMIP6
-#MIP=CMIP
-#INSTITUTION=CSIRO-ARCCSS
-#MODEL=ACCESS-CM2
-#EXPERIMENT=historical
-#FX_EXP=historical
-#HIST_RUN=r1i1p1f1
-#CNTRL_RUN=r1i1p1f1
-#FX_RUN=r1i1p1f1
-#GRID=gn
-#OFX_VERSION=v20191108
-#ATMOS_HIST_VERSION=v20191108
-#HIST_VERSION=v20191108
-#HIST_TIME=185001-201412
-#ATMOS_CNTRL_VERSION=v20191112
-#CNTRL_VERSION=v20191112
-#CNTRL_TIME=095001-144912
-#CMIP6_DATA_DIR=/g/data/fs38/publications
-#VOLCELLO_DIR=${AUS_CMIP6_DATA_DIR}
-#AREACELLO_DIR=${AUS_CMIP6_DATA_DIR}
+PROJECT=CMIP6
+MIP=CMIP
+INSTITUTION=CSIRO-ARCCSS
+MODEL=ACCESS-CM2
+EXPERIMENT=historical
+FX_EXP=historical
+HIST_RUN=r1i1p1f1
+CNTRL_RUN=r1i1p1f1
+FX_RUN=r1i1p1f1
+GRID=gn
+OFX_VERSION=v20191108
+ATMOS_HIST_VERSION=v20191108
+HIST_VERSION=v20191108
+HIST_TIME=185001-201412
+ATMOS_CNTRL_VERSION=v20191112
+CNTRL_VERSION=v20191112
+CNTRL_TIME=095001-144912
+CMIP6_DATA_DIR=/g/data/fs38/publications
+VOLCELLO_DIR=${AUS_CMIP6_DATA_DIR}
+AREACELLO_DIR=${AUS_CMIP6_DATA_DIR}
 
 
 # ACCESS-ESM1-5
@@ -60,10 +62,10 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 #OFX_VERSION=v20191115
 #FX_VERSION=v20191115
 #ATMOS_HIST_VERSION=v20200615
-##v20191115 (historical r1i1p1), v20191128 (historical r2i1p1f1), v20191203 (historical r3i1p1f1), v20200615 (hist-aer, hist-GHG)
+#v20191115 (historical r1i1p1), v20191128 (historical r2i1p1f1), v20191203 (historical r3i1p1f1), v20200615 (hist-aer, hist-GHG)
 #HIST_VERSION=v20191115
 #HIST_TIME=185001-202012
-##2014 (historical, 2020 (hist-aer, hist-GHG)
+#2014 (historical, 2020 (hist-aer, hist-GHG)
 #ATMOS_CNTRL_VERSION=v20191214
 #CNTRL_VERSION=v20191214
 #CNTRL_TIME=010101-100012
@@ -211,32 +213,32 @@ SF_NAME=surface_downward_heat_flux_in_sea_water
 
 # CESM2
 
-PROJECT=CMIP6
-MIP=DAMIP
+#PROJECT=CMIP6
+#MIP=DAMIP
 ## CMIP DAMIP
-INSTITUTION=NCAR
-MODEL=CESM2
-EXPERIMENT=hist-aer
+#INSTITUTION=NCAR
+#MODEL=CESM2
+#EXPERIMENT=hist-aer
 # hist-aer historical hist-GHG
-FX_EXP=historical
-HIST_RUN=r1i1p1f1
-CNTRL_RUN=r1i1p1f1
-FX_RUN=r1i1p1f1
-GRID=gn
+#FX_EXP=historical
+#HIST_RUN=r1i1p1f1
+#CNTRL_RUN=r1i1p1f1
+#FX_RUN=r1i1p1f1
+#GRID=gn
 # gr for ocean, gn for atmos
-FX_VERSION=v20190308
-OFX_VERSION=v20190308
-HIST_VERSION=v20190308
-ATMOS_HIST_VERSION=v20200206
+#FX_VERSION=v20190308
+#OFX_VERSION=v20190308
+#HIST_VERSION=v20190308
+#ATMOS_HIST_VERSION=v20200206
 # v20190308 (historical), v20190730 (hist-GHG), v20200206 (hist-aer)
-HIST_TIME=185001-201412
+#HIST_TIME=185001-201412
 ## 185001-201412 (historical, hist-aer) 185001-201506 (hist-GHG)
-ATMOS_CNTRL_VERSION=v20190320
-CNTRL_VERSION=v20190320
-CNTRL_TIME=000101-120012
-AREACELLA_DIR=${CMIP6_DATA_DIR}
-AREACELLO_DIR=${MY_DATA_DIR}
-VOLCELLO_DIR=${MY_DATA_DIR}
+#ATMOS_CNTRL_VERSION=v20190320
+#CNTRL_VERSION=v20190320
+#CNTRL_TIME=000101-120012
+#AREACELLA_DIR=${CMIP6_DATA_DIR}
+#AREACELLO_DIR=${MY_DATA_DIR}
+#VOLCELLO_DIR=${MY_DATA_DIR}
 #CHUNK_ANNUAL=--chunk
 
 
@@ -496,8 +498,7 @@ VOLCELLO_DIR=${MY_DATA_DIR}
 #FX_EXP=historical
 #BRANCH_YEAR=--branch_year 1930
 #BRANCH_TIME=--branch_time 29244
-#TOS_VAR=thetao
-#TOS_LONG_NAME=sea_water_potential_temperature
+# Note: BIN_VAR needs to be thetao or so
 
 
 # EC-Earth3-Veg-LR
@@ -655,8 +656,7 @@ VOLCELLO_DIR=${MY_DATA_DIR}
 #AREACELLO_DIR=${CMIP6_DATA_DIR}
 #BRANCH_YEAR=--branch_year 4150
 # for wfo (but not hfds)...
-#TOS_VAR=thetao
-#TOS_LONG_NAME=sea_water_potential_temperature
+# Note: BIN_VAR needs to be thetao or so
 
 
 # GISS-E2-1-G-CC
@@ -679,8 +679,7 @@ VOLCELLO_DIR=${MY_DATA_DIR}
 #CNTRL_TIME=185001-201412
 #VOLCELLO_DIR=${MY_DATA_DIR}
 #AREACELLO_DIR=${CMIP6_DATA_DIR}
-#TOS_VAR=thetao
-#TOS_LONG_NAME=sea_water_potential_temperature
+#Note: BIN_VAR needs to be thetao or so
 
 
 # GISS-E2-1-H
