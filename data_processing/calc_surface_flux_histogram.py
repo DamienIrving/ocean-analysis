@@ -42,29 +42,11 @@ except ImportError:
 
 # Define functions
 
-def add_globe(outdata, basin_values, basin_cube):
-    """Add a global basin.
-
-    Includes all basins (including Arctic) but not marginal seas.
-
-    """
-
-    global_data = outdata[:, :, 0:-1].sum(axis=-1)
-    global_data = global_data[..., numpy.newaxis]
-    outdata = numpy.ma.concatenate((outdata, global_data), axis=-1)
-
-    basin_values = numpy.append(basin_values, 18)
-    flag_values = basin_cube.attributes['flag_values'] + ' 18'
-    flag_meanings = basin_cube.attributes['flag_meanings'] + ' globe'
-
-    return outdata, basin_values, flag_values, flag_meanings
-
-
 def construct_cube(outdata, flux_cube, bin_cube, basin_cube, years, 
-                   bin_values, bin_edges, bin_units, basin_values, log):
+                   bin_values, bin_edges, bin_units, log):
     """Create the iris cube for output"""
     
-    outdata, basin_values, flag_values, flag_meanings = add_globe(outdata, basin_values, basin_cube)
+    outdata, basin_values, flag_values, flag_meanings = uconv.add_globe_basin(outdata, basin_cube)
 
     year_coord = iris.coords.DimCoord(years,
                                       standard_name=flux_cube.coord('year').standard_name,
@@ -121,28 +103,28 @@ def get_log(inargs, basin_cube_atts, area_cube_atts, flux_history, bin_history):
     return log
 
 
-def clipping_details(orig_data, clipped_data, bin_min, bin_max, bin_step):
+def clipping_details(orig_data, clipped_data, bin_edges):
     """Details of the clipping"""
 
-    npoints_under = numpy.sum(orig_data < bin_min)
-    npoints_min = numpy.sum(orig_data <= bin_min + bin_step) - numpy.sum(orig_data <= bin_min)
-    npoints_clip_min = numpy.sum(clipped_data <= bin_min + bin_step) - numpy.sum(clipped_data <= bin_min)
+    npoints_under = numpy.sum(orig_data < bin_edges[0])
+    npoints_min = numpy.sum(orig_data <= bin_edges[1]) - numpy.sum(orig_data <= bin_edges[0])
+    npoints_clip_min = numpy.sum(clipped_data <= bin_edges[1]) - numpy.sum(clipped_data <= bin_edges[0])
     assert npoints_clip_min == npoints_under + npoints_min
 
-    npoints_over = numpy.sum(orig_data > bin_max)
-    npoints_max = numpy.sum(orig_data <= bin_max) - numpy.sum(orig_data <= bin_max - bin_step)
-    npoints_clip_max = numpy.sum(clipped_data <= bin_max) - numpy.sum(clipped_data <= bin_max - bin_step)
+    npoints_over = numpy.sum(orig_data > bin_edges[-1])
+    npoints_max = numpy.sum(orig_data <= bin_edges[-1]) - numpy.sum(orig_data <= bin_edges[-2])
+    npoints_clip_max = numpy.sum(clipped_data <= bin_edges[-1]) - numpy.sum(clipped_data <= bin_edges[-2])
     assert npoints_clip_max == npoints_over + npoints_max
 
     logging.info(f"First bin had {npoints_min} values, clipping added {npoints_under}")
     logging.info(f"Last bin had {npoints_max} values, clipping added {npoints_over}")
 
 
-def bin_data(df, bin_edges, bin_step, basin_edges, ntimes, nchunks):
+def bin_data(df, bin_edges, basin_edges, ntimes, nchunks):
     """Bin the data"""
 
     bin_vals_clipped = numpy.clip(df['bin'].values, bin_edges[0], bin_edges[-1])
-    clipping_details(df['bin'].values, bin_vals_clipped, bin_edges[0], bin_edges[-1], bin_step)
+    clipping_details(df['bin'].values, bin_vals_clipped, bin_edges)
     
     flux_data = df['flux'].astype(numpy.float64).values
     bin_vals_split = numpy.array_split(bin_vals_clipped, nchunks)
@@ -198,16 +180,18 @@ def main(inargs):
         bin_cube.remove_coord(bin_coord_names[1])
     assert flux_per_area_cube.shape == bin_cube.shape
 
-    bin_min, bin_max = inargs.bin_bounds
-    bin_step = inargs.bin_size
-    bin_edges = numpy.arange(bin_min, bin_max + bin_step, bin_step)
-    bin_values = (bin_edges[1:] + bin_edges[:-1]) / 2
+    if 'salinity' in inargs.bin_var:
+        bin_values, bin_edges = uconv.salinity_bins()
+    else:
+        bin_min, bin_max = inargs.bin_bounds
+        bin_step = inargs.bin_size
+        bin_edges = numpy.arange(bin_min, bin_max + bin_step, bin_step)
+        bin_values = (bin_edges[1:] + bin_edges[:-1]) / 2
 
     area_cube = gio.get_ocean_weights(inargs.area_file)
 
     basin_cube = iris.load_cube(inargs.basin_file, 'region')
-    basin_edges = numpy.array([10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5])
-    basin_values = numpy.array([11, 12, 13, 14, 15, 16, 17])
+    basin_values, basin_edges = uconv.get_basin_details(basin_cube)
    
     log = get_log(inargs, basin_cube.attributes, area_cube.attributes, flux_history, bin_history)
 
@@ -228,10 +212,10 @@ def main(inargs):
         bin_year_cube = bin_cube.extract(year_constraint)
         df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube)
         ntimes = flux_year_cube.shape[0] 
-        outdata[year_index, :, :] = bin_data(df, bin_edges, bin_step, basin_edges, ntimes, inargs.nchunks)
+        outdata[year_index, :, :] = bin_data(df, bin_edges, basin_edges, ntimes, inargs.nchunks)
     outdata = numpy.ma.masked_invalid(outdata)
     outcube = construct_cube(outdata, flux_year_cube, bin_cube, basin_cube, years, 
-                             bin_values, bin_edges, bin_units, basin_values, log)
+                             bin_values, bin_edges, bin_units, log)
     iris.save(outcube, inargs.outfile)
 
 

@@ -35,6 +35,51 @@ import statsmodels.api as sm
 from statsmodels.tsa.stattools import acf
 
 
+def add_globe_basin(data, basin_cube):
+    """Add a global basin to a data array with a basin dimension.
+
+    Includes all basins (including Arctic) but not marginal seas or land.
+
+    """
+
+    flag_meanings = basin_cube.attributes['flag_meanings']
+    flag_values = basin_cube.attributes['flag_values']
+    basin_values = basin_values = numpy.array([int(num) for num in flag_values.split(' ')])
+    
+    assert data.shape[-1] == len(basin_values), 'Basin axis must be final axis'
+
+    if flag_meanings.split(' ')[-1] == 'land':
+        # new basin file format
+        assert flag_values == "11 12 13 14 15 16 17 18"
+        assert flag_meanings == "north_atlantic south_atlantic north_pacific south_pacific indian arctic marginal_seas land"
+        final_index = -2
+    else:
+        # old basin file format
+        assert flag_values == "11 12 13 14 15 16 17"
+        assert flag_meanings == "north_atlantic south_atlantic north_pacific south_pacific indian arctic marginal_seas"
+        final_index = -1
+
+    global_data = data[:, :, 0:final_index].sum(axis=-1)
+    global_data = global_data[..., numpy.newaxis]
+    data = numpy.ma.concatenate((data, global_data), axis=-1)
+
+    basin_values = numpy.append(basin_values, 19)
+    flag_values = flag_values + ' 19'
+    flag_meanings = flag_meanings + ' globe'
+
+    return data, basin_values, flag_values, flag_meanings
+
+
+def get_basin_details(basin_cube):
+    """Extract details from a basin cube created by calc_basin.py."""
+
+    basin_values = numpy.array([int(num) for num in basin_cube.attributes['flag_values'].split(' ')])
+    basin_edges = basin_values - 0.5
+    basin_edges = numpy.append(basin_edges, basin_values[-1] + 0.5)
+
+    return basin_values, basin_edges
+
+
 def adjust_lon_range(lons, radians=True, start=0.0):
     """Express longitude values in a 360 degree (or 2*pi radians) interval.
 
@@ -521,6 +566,23 @@ def match_dates(datetimes, datetime_axis):
             miss_datetimes.append(datetime_axis[i])    
 
     return match_datetimes, miss_datetimes
+
+
+def salinity_bins():
+    """Define commonly used salinity bins."""
+
+    smin = -0.2
+    smax = 80
+    s_edges = numpy.arange(30, 40.05, 0.1)
+    s_edges = numpy.insert(s_edges, 0, [-0.2, 10, 20])
+    s_edges = numpy.append(s_edges, 50)
+    s_edges = numpy.append(s_edges, 60)
+    s_edges = numpy.append(s_edges, 80)
+    s_values = (s_edges[1:] + s_edges[:-1]) / 2
+    s_values = list(s_values)
+    s_values[0] = 5
+
+    return s_values, s_edges
 
 
 def split_dt(dt):

@@ -45,8 +45,6 @@ def create_df(tcube, scube, wdata, wvar, bcube, sbounds=None):
 
     assert wvar in ['areacello', 'volcello']
     assert bcube.ndim == 2
-    assert bcube.data.min() == 11
-    assert bcube.data.max() == 17
     coord_names = [coord.name() for coord in tcube.dim_coords]
 
     tcube = gio.temperature_unit_check(tcube, 'C', abort=False)
@@ -121,8 +119,6 @@ def create_flux_df(flux_cube, bin_cube, basin_cube):
     """
 
     assert basin_cube.ndim == 2
-    assert basin_cube.data.min() == 11
-    assert basin_cube.data.max() == 17
 
     coord_names = [coord.name() for coord in flux_cube.dim_coords]
 

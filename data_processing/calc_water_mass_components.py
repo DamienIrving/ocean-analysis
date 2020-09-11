@@ -58,26 +58,13 @@ def get_bounds_list(edges):
     return numpy.array(bounds_list)
 
 
-def add_globe(data):
-    """Add a global basin.
-
-    Includes all basins (including Arctic) but not marginal seas.
-    """
-
-    global_data = data[:, :, 0:-1].sum(axis=-1)
-    global_data = global_data[..., numpy.newaxis]
-    data = numpy.ma.concatenate((data, global_data), axis=-1)
-
-    return data
-
-
 def construct_cube(outdata_dict,
                    wcube, bcube, scube, tcube, sunits, tunits, years,
-                   t_values, t_edges, s_values, s_edges, b_values, log):
+                   t_values, t_edges, s_values, s_edges, log):
     """Create the iris cube for output"""
 
     for key, data in outdata_dict.items():
-        outdata_dict[key] = add_globe(data)
+        outdata_dict[key], b_values, flag_values, flag_meanings = uconv.add_globe_basin(data, bcube)
     
     year_coord = iris.coords.DimCoord(years,
                                       standard_name=scube.coord('year').standard_name,
@@ -101,9 +88,6 @@ def construct_cube(outdata_dict,
                                           units=sunits,
                                           bounds=s_bounds)
 
-    b_values = numpy.append(b_values, 18)
-    flag_values = bcube.attributes['flag_values'] + ' 18'
-    flag_meanings = bcube.attributes['flag_meanings'] + ' globe'
     basin_coord = iris.coords.DimCoord(b_values,
                                        standard_name=bcube.standard_name,
                                        long_name=bcube.long_name,
@@ -264,25 +248,14 @@ def main(inargs):
 
     wcube = gio.get_ocean_weights(inargs.weights_file)  
     bcube = iris.load_cube(inargs.basin_file, 'region')
+    b_values, b_edges = uconv.get_basin_details(bcube)
 
     tmin, tmax = inargs.temperature_bounds
     tstep = inargs.bin_size
     t_edges = numpy.arange(tmin, tmax + tstep, tstep)
     t_values = (t_edges[1:] + t_edges[:-1]) / 2
 
-    smin = -0.2
-    smax = 80
-    s_edges = numpy.arange(30, 40.05, 0.1)
-    s_edges = numpy.insert(s_edges, 0, [-0.2, 10, 20])
-    s_edges = numpy.append(s_edges, 50)
-    s_edges = numpy.append(s_edges, 60)
-    s_edges = numpy.append(s_edges, 80)
-    s_values = (s_edges[1:] + s_edges[:-1]) / 2
-    s_values = list(s_values)
-    s_values[0] = 5
-
-    b_edges = numpy.array([10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5])
-    b_values = numpy.array([11, 12, 13, 14, 15, 16, 17])
+    s_values, s_edges = uconv.salinity_bins()
    
     tcube, thistory = gio.combine_files(inargs.temperature_files, 'sea_water_potential_temperature')
     scube, shistory = gio.combine_files(inargs.salinity_files, 'sea_water_salinity')
