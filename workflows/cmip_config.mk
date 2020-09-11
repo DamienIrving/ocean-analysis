@@ -1,6 +1,6 @@
 # System configuration
 
-PYTHON=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
+PYTHON=/g/data/r87/dbi599/miniconda3/envs/ocean3/bin/python
 DATA_SCRIPT_DIR=/home/599/dbi599/ocean-analysis/data_processing
 VIZ_SCRIPT_DIR=/home/599/dbi599/ocean-analysis/visualisation
 
