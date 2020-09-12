@@ -306,7 +306,7 @@ def main(inargs):
     outdata_dict['wt_sbin'] = numpy.ma.masked_invalid(wt_sbin_outdata)
     outcube_list = construct_cube(outdata_dict,
                                   wcube, bcube, scube, tcube, sunits, tunits, years, 
-                                  t_values, t_edges, s_values, s_edges, b_values, log)
+                                  t_values, t_edges, s_values, s_edges, log)
 
     equalise_attributes(outcube_list)
     iris.save(outcube_list, inargs.outfile)

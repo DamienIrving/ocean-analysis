@@ -366,7 +366,7 @@ def check_data(cube):
         global_volume = cube.data.sum()
         check_global_ocean_volume(global_volume)
     
-    if 'salinity' in cube.standard_name:
+    if cube.standard_name in ['sea_water_salinity', 'sea_surface_salinity']:
         cube = salinity_unit_check(cube)
     
     return cube
