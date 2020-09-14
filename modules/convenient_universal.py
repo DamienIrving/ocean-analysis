@@ -56,7 +56,7 @@ def add_globe_basin(data, basin_cube):
     else:
         # old basin file format
         assert flag_values == "11 12 13 14 15 16 17"
-        assert flag_meanings == "north_atlantic south_atlantic north_pacific south_pacific indian arctic marginal_seas"
+        assert flag_meanings == "north_atlantic south_atlantic north_pacific south_pacific indian arctic marginal_seas_and_land"
         final_index = -1
 
     global_data = data[:, :, 0:final_index].sum(axis=-1)
