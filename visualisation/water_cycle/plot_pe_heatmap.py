@@ -64,6 +64,14 @@ def get_data(infile, var, data_type, time_constraint, pct=False):
 def main(inargs):
     """Run the program."""
 
+    assert inargs.var in ['precipitation_minus_evaporation_flux', 'water_flux_into_sea_water']
+    if inargs.var == 'precipitation_minus_evaporation_flux':
+        var_abbrev = 'P-E'
+        basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Arctic', 'Land', 'Globe']
+    elif inargs.var == 'water_flux_into_sea_water':
+        var_abbrev = 'P-E+R'
+        basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Arctic', 'Globe']
+
     time_constraint = gio.get_time_constraint(inargs.time_bounds)
     df, history = get_data(inargs.infile, inargs.var, inargs.data_type,
                            time_constraint, pct=inargs.pct)     
@@ -71,11 +79,10 @@ def main(inargs):
         assert not inargs.pct
         df = df / 10**inargs.scale_factor
 
-    basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Arctic', 'Land', 'Globe']
     if inargs.data_type == 'cumulative_anomaly':
-        title = 'Time-integrated net mositure (P-E) import/export anomaly, 1850-2014'
+        title = f'Time-integrated net mositure ({var_abbrev}) import/export anomaly, 1850-2014'
     elif inargs.data_type == 'climatology':
-        title = 'Annual mean net mositure (P-E) import/export'
+        title = f'Annual mean net mositure ({var_abbrev}) import/export'
 
     if inargs.pct:
         fmt = '.0%'
