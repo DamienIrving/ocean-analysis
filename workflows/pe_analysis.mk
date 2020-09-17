@@ -14,9 +14,12 @@ include cmip_config.mk
  
 PR_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/pr/${GRID}/${ATMOS_HIST_VERSION}/pr*.nc))
 EVAP_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/evspsbl/${GRID}/${ATMOS_HIST_VERSION}/evspsbl*.nc))
+WFO_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Omon/wfo/${GRID}/${HIST_VERSION}/wfo*.nc))
 PR_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/pr/${GRID}/${ATMOS_CNTRL_VERSION}/pr*.nc))
 EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/evspsbl/${GRID}/${ATMOS_CNTRL_VERSION}/evspsbl*.nc))
+WFO_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Omon/wfo/${GRID}/${CNTRL_VERSION}/wfo*.nc))
 AREACELLA_FILE=${AREACELLA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/areacella/${GRID}/${FX_VERSION}/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+AREACELLO_FILE=${AREACELLO_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/areacello/${GRID}/${FX_VERSION}/areacello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
 SFTLF_FILE=${AREACELLA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/sftlf/${GRID}/${FX_VERSION}/sftlf_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
 EVAP_VAR=water_evapotranspiration_flux
 
@@ -30,11 +33,16 @@ EVAP_VAR=water_evapotranspiration_flux
 #EVAP_VAR=water_evaporation_flux
 
 PR_FILE_HIST := $(firstword ${PR_FILES_HIST})
+WFO_FILE_HIST := $(firstword ${WFO_FILES_HIST})
+
 
 # Directories
 
 PE_YR_DIR_HIST=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Ayr/pe/${GRID}/${ATMOS_HIST_VERSION}
 PE_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Ayr/pe/${GRID}/${ATMOS_CNTRL_VERSION}
+
+WFO_YR_DIR_HIST=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Oyr/wfo/${GRID}/${HIST_VERSION}
+WFO_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Oyr/wfo/${GRID}/${CNTRL_VERSION}
 
 PR_YR_DIR_HIST=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Ayr/pr/${GRID}/${ATMOS_HIST_VERSION}
 PR_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Ayr/pr/${GRID}/${ATMOS_CNTRL_VERSION}
@@ -47,11 +55,17 @@ AREA_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piContr
 
 # basin file
 
-BASIN_DIR=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/historical/${FX_RUN}/fx/basin/${GRID}/${HIST_VERSION}
-BASIN_FILE=${BASIN_DIR}/basin_fx_${MODEL}_historical_${FX_RUN}_${GRID}.nc
-${BASIN_FILE} : ${PR_FILE_HIST} ${SFTLF_FILE}
-	mkdir -p ${BASIN_DIR}
+FX_BASIN_DIR=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/historical/${FX_RUN}/fx/basin/${GRID}/${HIST_VERSION}
+FX_BASIN_FILE=${FX_BASIN_DIR}/basin_fx_${MODEL}_historical_${FX_RUN}_${GRID}.nc
+${FX_BASIN_FILE} : ${PR_FILE_HIST} ${SFTLF_FILE}
+	mkdir -p ${FX_BASIN_DIR}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_basin.py $< precipitation_flux $@ --sftlf_file $(word 2,$^) --land_threshold 50
+
+BASIN_DIR=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/historical/${FX_RUN}/Ofx/basin/${GRID}/${HIST_VERSION}
+BASIN_FILE=${BASIN_DIR}/basin_Ofx_${MODEL}_historical_${FX_RUN}_${GRID}.nc
+${BASIN_FILE} : ${WFO_FILE_HIST}
+	mkdir -p ${BASIN_DIR}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_basin.py $< water_flux_into_sea_water $@
 
 # P-E
 
@@ -112,57 +126,76 @@ ${ZRS_PLOT} : ${ZRS_COEFFICIENTS} ${PE_ZRS_FILE_CNTRL} ${PE_ZRS_FILE_HIST} ${PE_
 ## raw timeseries
 
 PE_REGIONS_FILE_CNTRL_TSERIES=${PE_YR_DIR_CNTRL}/pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}.nc
-${PE_REGIONS_FILE_CNTRL_TSERIES}: ${PE_FILE_CNTRL} ${BASIN_FILE}
+${PE_REGIONS_FILE_CNTRL_TSERIES}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${PE_YR_DIR_CNTRL}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --annual
+
+WFO_REGIONS_FILE_CNTRL_TSERIES=${WFO_YR_DIR_CNTRL}/wfo-region-sum_Oyr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}.nc
+${WFO_REGIONS_FILE_CNTRL_TSERIES}: ${BASIN_FILE}
+	mkdir -p ${WFO_YR_DIR_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py ${WFO_FILES_CNTRL} $< $@ --annual --area_file ${AREACELLO_FILE}
 
 ## regional cumsum
 
 ### P-E
 
 PE_REGIONS_FILE_HIST=${PE_YR_DIR_HIST}/pe-region-sum_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
-${PE_REGIONS_FILE_HIST}: ${PE_FILE_HIST} ${BASIN_FILE}
+${PE_REGIONS_FILE_HIST}: ${PE_FILE_HIST} ${FX_BASIN_FILE}
 	mkdir -p ${PE_YR_DIR_HIST}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --annual --cumsum
 
 PE_REGIONS_FILE_CNTRL=${PE_YR_DIR_CNTRL}/pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
-${PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${BASIN_FILE}
+${PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${PE_YR_DIR_CNTRL}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --annual --cumsum
+
+
+### wfo
+
+WFO_REGIONS_FILE_HIST=${WFO_YR_DIR_HIST}/wfo-region-sum_Oyr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
+${WFO_REGIONS_FILE_HIST}: ${BASIN_FILE}
+	mkdir -p ${WFO_YR_DIR_HIST}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py ${WFO_FILES_HIST} $< $@ --annual --cumsum --area_file ${AREACELLO_FILE}
+
+WFO_REGIONS_FILE_CNTRL=${WFO_YR_DIR_CNTRL}/wfo-region-sum_Oyr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
+${WFO_REGIONS_FILE_CNTRL}: ${BASIN_FILE}
+	mkdir -p ${WFO_YR_DIR_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py ${WFO_FILES_CNTRL} $< $@ --annual --cumsum --area_file ${AREACELLO_FILE}
+
 
 ### P
 
 PR_PE_REGIONS_FILE_HIST=${PR_YR_DIR_HIST}/pr-pe-region-sum_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
-${PR_PE_REGIONS_FILE_HIST}: ${PE_FILE_HIST} ${BASIN_FILE}
+${PR_PE_REGIONS_FILE_HIST}: ${PE_FILE_HIST} ${FX_BASIN_FILE}
 	mkdir -p ${PR_YR_DIR_HIST}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --data_files ${PR_FILES_HIST} --data_var precipitation_flux --annual --cumsum
 
 PR_PE_REGIONS_FILE_CNTRL=${PR_YR_DIR_CNTRL}/pr-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
-${PR_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${BASIN_FILE}
+${PR_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${PR_YR_DIR_CNTRL}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --data_files ${PR_FILES_CNTRL} --data_var precipitation_flux --annual --cumsum
 
 ### E
 
 EVAP_PE_REGIONS_FILE_HIST=${EVAP_YR_DIR_HIST}/evspsbl-pe-region-sum_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
-${EVAP_PE_REGIONS_FILE_HIST}: ${PE_FILE_HIST} ${BASIN_FILE}
+${EVAP_PE_REGIONS_FILE_HIST}: ${PE_FILE_HIST} ${FX_BASIN_FILE}
 	mkdir -p ${EVAP_YR_DIR_HIST}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --data_files ${EVAP_FILES_HIST} --data_var ${EVAP_VAR} --annual --cumsum
 
 EVAP_PE_REGIONS_FILE_CNTRL=${EVAP_YR_DIR_CNTRL}/evspsbl-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
-${EVAP_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${BASIN_FILE}
+${EVAP_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${EVAP_YR_DIR_CNTRL}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --data_files ${EVAP_FILES_CNTRL} --data_var ${EVAP_VAR} --annual --cumsum
 
 ### area
 
 AREA_PE_REGIONS_FILE_HIST=${AREA_YR_DIR_HIST}/areacella-pe-region-sum_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}.nc
-${AREA_PE_REGIONS_FILE_HIST}: ${PE_FILE_HIST} ${BASIN_FILE}
+${AREA_PE_REGIONS_FILE_HIST}: ${PE_FILE_HIST} ${FX_BASIN_FILE}
 	mkdir -p ${AREA_YR_DIR_HIST}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --data_files ${AREACELLA_FILE} --data_var cell_area --annual
 
 AREA_PE_REGIONS_FILE_CNTRL=${AREA_YR_DIR_CNTRL}/areacella-pe-region-sum_Ayr_${MODEL}_${EXPERIMENT}_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}.nc
-${AREA_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${BASIN_FILE}
+${AREA_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${AREA_YR_DIR_CNTRL}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --data_files ${AREACELLA_FILE} --data_var cell_area --annual
 
@@ -184,15 +217,38 @@ ${PE_REGIONS_DRIFT_PLOT} : ${PE_REGIONS_COEFFICIENTS} ${PE_REGIONS_FILE_CNTRL} $
 
 PE_REGIONS_HEATMAP=/g/data/r87/dbi599/figures/water-cycle/pe-region-sum-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_gn_185001-201412-cumsum.png
 ${PE_REGIONS_HEATMAP} : ${PE_REGIONS_ANOMALY_CUMSUM}
-	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< precipitation_minus_evaporation_flux cumulative_anomaly $@ --scale_factor 17 --time_constraint 1850-01-01 2014-12-31
+	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< precipitation_minus_evaporation_flux cumulative_anomaly $@ --scale_factor 17 --time_bounds 1850-01-01 2014-12-31
 
-PE_REGIONS_HEATMAP_CLIM=/g/data/r87/dbi599/figures/water-cycle/pe-region-sum-anomaly_Ayr_${MODEL}_piControl_${CNTRL_RUN}_gn_${CNTRL_TIME}-clim.png
+PE_REGIONS_HEATMAP_CLIM=/g/data/r87/dbi599/figures/water-cycle/pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_gn_${CNTRL_TIME}-clim.png
 ${PE_REGIONS_HEATMAP_CLIM} : ${PE_REGIONS_FILE_CNTRL_TSERIES}
 	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< precipitation_minus_evaporation_flux climatology $@ --scale_factor 16
 
-PE_REGIONS_HEATMAP_CLIM_PCT=/g/data/r87/dbi599/figures/water-cycle/pe-region-sum-anomaly_Ayr_${MODEL}_piControl_${CNTRL_RUN}_gn_${CNTRL_TIME}-clim_pct.png
+PE_REGIONS_HEATMAP_CLIM_PCT=/g/data/r87/dbi599/figures/water-cycle/pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_gn_${CNTRL_TIME}-clim_pct.png
 ${PE_REGIONS_HEATMAP_CLIM} : ${PE_REGIONS_FILE_CNTRL_TSERIES}
 	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< precipitation_minus_evaporation_flux climatology $@ --pct
+
+
+### wfo
+
+WFO_REGIONS_COEFFICIENTS=${WFO_YR_DIR_CNTRL}/wfo-region-sum-coefficients_Oyr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
+${WFO_REGIONS_COEFFICIENTS} : ${WFO_REGIONS_FILE_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< water_flux_into_sea_water $@
+
+WFO_REGIONS_ANOMALY_CUMSUM=${WFO_YR_DIR_HIST}/wfo-region-sum-anomaly_Oyr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
+${WFO_REGIONS_ANOMALY_CUMSUM} : ${WFO_REGIONS_FILE_HIST} ${WFO_REGIONS_COEFFICIENTS} 
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< water_flux_into_sea_water annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_data_check
+
+WFO_REGIONS_DRIFT_PLOT=/g/data/r87/dbi599/temp/wfo-region-sum_Oyr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum_shprecip-atlantic.png
+${WFO_REGIONS_DRIFT_PLOT} : ${WFO_REGIONS_COEFFICIENTS} ${WFO_REGIONS_FILE_CNTRL} ${WFO_REGIONS_FILE_HIST} ${WFO_REGIONS_ANOMALY_CUMSUM}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py water_flux_into_sea_water $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 0 0 ${BRANCH_TIME}
+
+WFO_REGIONS_HEATMAP=/g/data/r87/dbi599/figures/water-cycle/wfo-region-sum-anomaly_Oyr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_gn_185001-201412-cumsum.png
+${WFO_REGIONS_HEATMAP} : ${WFO_REGIONS_ANOMALY_CUMSUM}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< water_flux_into_sea_water cumulative_anomaly $@ --scale_factor 17 --time_bounds 1850-01-01 2014-12-31
+
+WFO_REGIONS_HEATMAP_CLIM=/g/data/r87/dbi599/figures/water-cycle/wfo-region-sum_Oyr_${MODEL}_piControl_${CNTRL_RUN}_gn_${CNTRL_TIME}-clim.png
+${WFO_REGIONS_HEATMAP_CLIM} : ${WFO_REGIONS_FILE_CNTRL_TSERIES}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< water_flux_into_sea_water climatology $@ --scale_factor 16
 
 
 ### P
@@ -269,6 +325,8 @@ pe-zrs : ${ZRS_PLOT}
 pe-spatial : ${SPATIAL_PLOT}
 pe-regions : ${PE_REGIONS_HEATMAP}
 pe-regions-clim : ${PE_REGIONS_HEATMAP_CLIM} ${PE_REGIONS_HEATMAP_CLIM_PCT}
+wfo-regions : ${WFO_REGIONS_HEATMAP}
+wfo-regions-clim : ${WFO_REGIONS_HEATMAP_CLIM}
 pr-regions : ${PR_PE_REGIONS_PLOT}
 evap-regions : ${EVAP_PE_REGIONS_PLOT}
 area-regions : ${AREA_PE_REGIONS_PLOT}
