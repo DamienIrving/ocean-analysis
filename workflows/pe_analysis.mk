@@ -15,9 +15,11 @@ include cmip_config.mk
 PR_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/pr/${GRID}/${ATMOS_HIST_VERSION}/pr*.nc))
 EVAP_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/evspsbl/${GRID}/${ATMOS_HIST_VERSION}/evspsbl*.nc))
 WFO_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Omon/wfo/${GRID}/${HIST_VERSION}/wfo*.nc))
+FLUX_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/${FLUX_VAR}/${GRID}/${ATMOS_HIST_VERSION}/${FLUX_VAR}*.nc))
 PR_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/pr/${GRID}/${ATMOS_CNTRL_VERSION}/pr*.nc))
 EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/evspsbl/${GRID}/${ATMOS_CNTRL_VERSION}/evspsbl*.nc))
 WFO_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Omon/wfo/${GRID}/${CNTRL_VERSION}/wfo*.nc))
+FLUX_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/${FLUX_VAR}/${GRID}/${ATMOS_CNTRL_VERSION}/${FLUX_VAR}*.nc))
 AREACELLA_FILE=${AREACELLA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/areacella/${GRID}/${FX_VERSION}/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
 AREACELLO_FILE=${AREACELLO_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/areacello/${GRID}/${FX_VERSION}/areacello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
 SFTLF_FILE=${AREACELLA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/sftlf/${GRID}/${FX_VERSION}/sftlf_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
@@ -49,6 +51,9 @@ PR_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl
 
 EVAP_YR_DIR_HIST=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Ayr/evspsbl/${GRID}/${ATMOS_HIST_VERSION}
 EVAP_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Ayr/evspsbl/${GRID}/${ATMOS_CNTRL_VERSION}
+
+FLUX_YR_DIR_HIST=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Ayr/${FLUX_VAR}/${GRID}/${ATMOS_HIST_VERSION}
+FLUX_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Ayr/${FLUX_VAR}/${GRID}/${ATMOS_CNTRL_VERSION}
 
 AREA_YR_DIR_HIST=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Ayr/areacella/${GRID}/${ATMOS_HIST_VERSION}
 AREA_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Ayr/areacella/${GRID}/${ATMOS_CNTRL_VERSION}
@@ -187,6 +192,18 @@ ${EVAP_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${EVAP_YR_DIR_CNTRL}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --data_files ${EVAP_FILES_CNTRL} --data_var ${EVAP_VAR} --annual --cumsum
 
+### Flux
+
+FLUX_PE_REGIONS_FILE_HIST=${FLUX_YR_DIR_HIST}/${FLUX_VAR}-pe-region-sum_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
+${FLUX_PE_REGIONS_FILE_HIST}: ${PE_FILE_HIST} ${FX_BASIN_FILE}
+	mkdir -p ${FLUX_YR_DIR_HIST}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --data_files ${FLUX_FILES_HIST} --data_var ${FLUX_NAME} --annual --cumsum
+
+FLUX_PE_REGIONS_FILE_CNTRL=${FLUX_YR_DIR_CNTRL}/${FLUX_VAR}-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
+${FLUX_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
+	mkdir -p ${FLUX_YR_DIR_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) $@ --data_files ${FLUX_FILES_CNTRL} --data_var ${FLUX_NAME} --annual --cumsum
+
 ### area
 
 AREA_PE_REGIONS_FILE_HIST=${AREA_YR_DIR_HIST}/areacella-pe-region-sum_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}.nc
@@ -279,6 +296,21 @@ EVAP_PE_REGIONS_PLOT=/g/data/r87/dbi599/temp/evspsbl-pe-region-sum_Ayr_${MODEL}_
 ${EVAP_PE_REGIONS_PLOT} : ${EVAP_PE_REGIONS_COEFFICIENTS} ${EVAP_PE_REGIONS_FILE_CNTRL} ${EVAP_PE_REGIONS_FILE_HIST} ${EVAP_PE_REGIONS_ANOMALY_CUMSUM}
 	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py ${EVAP_VAR} $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 0 0 ${BRANCH_TIME}
 
+### Flux
+
+FLUX_PE_REGIONS_COEFFICIENTS=${FLUX_YR_DIR_CNTRL}/${FLUX_VAR}-pe-region-sum-coefficients_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum.nc
+${FLUX_PE_REGIONS_COEFFICIENTS} : ${FLUX_PE_REGIONS_FILE_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< ${FLUX_VAR} $@
+
+FLUX_PE_REGIONS_ANOMALY_CUMSUM=${FLUX_YR_DIR_HIST}/${FLUX_VAR}-pe-region-sum-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_${GRID}_${HIST_TIME}-cumsum.nc
+${FLUX_PE_REGIONS_ANOMALY_CUMSUM} : ${FLUX_PE_REGIONS_FILE_HIST} ${FLUX_PE_REGIONS_COEFFICIENTS} 
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< ${FLUX_VAR} annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_data_check
+
+FLUX_PE_REGIONS_PLOT=/g/data/r87/dbi599/temp/${FLUX_VAR}-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}-cumsum_shprecip-atlantic.png
+${FLUX_PE_REGIONS_PLOT} : ${FLUX_PE_REGIONS_COEFFICIENTS} ${FLUX_PE_REGIONS_FILE_CNTRL} ${FLUX_PE_REGIONS_FILE_HIST} ${FLUX_PE_REGIONS_ANOMALY_CUMSUM}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py ${FLUX_NAME} $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 0 0 ${BRANCH_TIME}
+
+
 ### area
 
 AREA_PE_REGIONS_COEFFICIENTS=${AREA_YR_DIR_CNTRL}/areacella-pe-region-sum-coefficients_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID}_${CNTRL_TIME}.nc
@@ -329,6 +361,7 @@ wfo-regions : ${WFO_REGIONS_HEATMAP}
 wfo-regions-clim : ${WFO_REGIONS_HEATMAP_CLIM}
 pr-regions : ${PR_PE_REGIONS_PLOT}
 evap-regions : ${EVAP_PE_REGIONS_PLOT}
+flux-regions : ${FLUX_PE_REGIONS_PLOT}
 area-regions : ${AREA_PE_REGIONS_PLOT}
 all : ${ZRS_PLOT} ${SPATIAL_PLOT} ${PE_REGIONS_PLOT} ${PR_PE_REGIONS_PLOT} ${EVAP_PE_REGIONS_PLOT} ${AREA_PE_REGIONS_PLOT}
 
