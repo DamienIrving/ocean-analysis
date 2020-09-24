@@ -145,13 +145,15 @@ def main(inargs):
     pe_cube, pe_lats, pe_history = read_data(inargs.pe_files, var_name, area_cube, annual=inargs.annual)   
     basin_cube = iris.load_cube(inargs.basin_file, 'region')  
 
+    metadata = {inargs.pe_files[0]: pe_history[0],
+                inargs.basin_file: basin_cube.attributes['history']}
     if inargs.data_var == 'cell_area':   
         data_cube = iris.load_cube(inargs.data_files[0], 'cell_area')
-        data_history = [data_cube.attributes['history']]
         assert data_cube.shape == pe_cube.shape[1:]
     elif inargs.data_files:
         data_cube, data_lats, data_history = read_data(inargs.data_files, inargs.data_var, area_cube, annual=inargs.annual)
         assert data_cube.shape == pe_cube.shape
+        metadata[inargs.data_files[0]] = data_history[0]
     else:
         data_cube = pe_cube.copy()
         data_var = var_name
@@ -187,10 +189,6 @@ def main(inargs):
                               attributes=atts,
                               dim_coords_and_dims=dim_coords_list) 
 
-    metadata = {inargs.pe_files[0]: pe_history[0],
-                inargs.basin_file: basin_cube.attributes['history']}
-    if inargs.data_files:
-        metadata[inargs.data_files[0]] = data_history[0]
     out_cube.attributes['history'] = cmdprov.new_log(infile_history=metadata, git_repo=repo_dir)
     iris.save(out_cube, inargs.outfile)
 
