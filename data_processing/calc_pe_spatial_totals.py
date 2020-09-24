@@ -117,7 +117,7 @@ def read_data(infiles, var, area_cube, annual=False):
     cube, history = gio.combine_files(infiles, var)
 
     if annual:
-        cube = timeseries.convert_to_annual(cube)
+        cube = timeseries.convert_to_annual(cube, days_in_month=True)
 
     cube = uconv.flux_to_magnitude(cube)
     cube = spatial_weights.multiply_by_area(cube, area_cube=area_cube)
