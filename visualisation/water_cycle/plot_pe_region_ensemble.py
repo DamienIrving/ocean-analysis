@@ -36,7 +36,8 @@ except ImportError:
 
 names = {'precipitation_minus_evaporation_flux': 'P-E',
          'precipitation_flux': 'precipitation',
-         'water_evapotranspiration_flux': 'evaporation'}
+         'water_evapotranspiration_flux': 'evaporation',
+         'cell_area': 'area'}
 
 
 def get_data(infile, var, time_constraint):
@@ -45,8 +46,8 @@ def get_data(infile, var, time_constraint):
     cube, history = gio.combine_files([infile], var, new_calendar='365_day')
     cube = cube.extract(time_constraint)
     iris.coord_categorisation.add_year(cube, 'time')
-    anomaly_data = cube.data - cube.data[0, :]
-    start_data = cube.data[0, :]
+    start_data = cube.data[0, 0:-1, -1] 
+    anomaly_data = cube.data[:, 0:-1, -1] - start_data
     
     return cube, anomaly_data, start_data
 
@@ -172,7 +173,7 @@ example:
     parser.add_argument("infiles", type=str, nargs='*', help="files for a particular experiment")
     parser.add_argument("var", type=str, help="Variable name",
                         choices=('precipitation_minus_evaporation_flux', 'precipitation_flux',
-                                 'water_evapotranspiration_flux'))
+                                 'water_evapotranspiration_flux', 'cell_area'))
     parser.add_argument("outfile", type=str, help="Output file")
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
