@@ -12,28 +12,35 @@ include cmip_config.mk
 
 # File definitions, CMIP6 models
  
-PR_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/pr/${GRID}/${ATMOS_HIST_VERSION}/pr*.nc))
-EVAP_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/evspsbl/${GRID}/${ATMOS_HIST_VERSION}/evspsbl*.nc))
-WFO_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Omon/wfo/${GRID}/${HIST_VERSION}/wfo*.nc))
-FLUX_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/${FLUX_VAR}/${GRID}/${ATMOS_HIST_VERSION}/${FLUX_VAR}*.nc))
-PR_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/pr/${GRID}/${ATMOS_CNTRL_VERSION}/pr*.nc))
-EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/evspsbl/${GRID}/${ATMOS_CNTRL_VERSION}/evspsbl*.nc))
-WFO_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Omon/wfo/${GRID}/${CNTRL_VERSION}/wfo*.nc))
-FLUX_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/${FLUX_VAR}/${GRID}/${ATMOS_CNTRL_VERSION}/${FLUX_VAR}*.nc))
-AREACELLA_FILE=${AREACELLA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/areacella/${GRID}/${FX_VERSION}/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
-AREACELLO_FILE=${AREACELLO_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/areacello/${GRID}/${FX_VERSION}/areacello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
-SFTLF_FILE=${SFTLF_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/sftlf/${GRID}/${FX_VERSION}/sftlf_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
-EVAP_VAR=water_evapotranspiration_flux
+#PR_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/pr/${GRID}/${ATMOS_HIST_VERSION}/pr*.nc))
+#EVAP_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/evspsbl/${GRID}/${ATMOS_HIST_VERSION}/evspsbl*.nc))
+#WFO_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Omon/wfo/${GRID}/${HIST_VERSION}/wfo*.nc))
+#FLUX_FILES_HIST := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${HIST_RUN}/Amon/${FLUX_VAR}/${GRID}/${ATMOS_HIST_VERSION}/${FLUX_VAR}*.nc))
+#PR_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/pr/${GRID}/${ATMOS_CNTRL_VERSION}/pr*.nc))
+#EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/evspsbl/${GRID}/${ATMOS_CNTRL_VERSION}/evspsbl*.nc))
+#WFO_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Omon/wfo/${GRID}/${CNTRL_VERSION}/wfo*.nc))
+#FLUX_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Amon/${FLUX_VAR}/${GRID}/${ATMOS_CNTRL_VERSION}/${FLUX_VAR}*.nc))
+#AREACELLA_FILE=${AREACELLA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/areacella/${GRID}/${FX_VERSION}/areacella_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+#AREACELLO_FILE=${AREACELLO_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Ofx/areacello/${GRID}/${FX_VERSION}/areacello_Ofx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+#SFTLF_FILE=${SFTLF_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/sftlf/${GRID}/${FX_VERSION}/sftlf_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID}.nc
+#EVAP_VAR=water_evapotranspiration_flux
 # water_evapotranspiration_flux water_evaporation_flux
+#HEATMAP_START_YEAR=1850
+#HEATMAP_END_YEAR=2014
+
 
 # File definitions, CMIP5 models
 
-#PR_FILES_HIST := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/pr/pr*.nc))
-#EVAP_FILES_HIST := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/evspsbl/evspsbl*.nc))
-#PR_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/pr/pr*.nc))
-#EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/evspsbl/evspsbl*.nc))
+PR_FILES_HIST := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/pr/pr*.nc))
+EVAP_FILES_HIST := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/evspsbl/evspsbl*.nc))
+PR_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/pr/pr*.nc))
+EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/evspsbl/evspsbl*.nc))
+AREACELLA_FILE=${AREACELLA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${FX_VERSION}/areacella/areacella*.nc
+SFTLF_FILE=${AREACELLA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${FX_VERSION}/sftlf/sftlf*.nc
 
-#EVAP_VAR=water_evaporation_flux
+EVAP_VAR=water_evaporation_flux
+HEATMAP_START_YEAR=1861
+HEATMAP_END_YEAR=2005
 
 PR_FILE_HIST := $(firstword ${PR_FILES_HIST})
 WFO_FILE_HIST := $(firstword ${WFO_FILES_HIST})
@@ -60,7 +67,7 @@ AREA_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piContr
 
 # basin file
 
-FX_BASIN_DIR=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/historical/${FX_RUN}/fx/basin/${GRID}/${HIST_VERSION}
+FX_BASIN_DIR=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/historical/${FX_RUN}/fx/basin/${GRID}/${FX_VERSION}
 FX_BASIN_FILE=${FX_BASIN_DIR}/basin_fx_${MODEL}_historical_${FX_RUN}_${GRID}.nc
 ${FX_BASIN_FILE} : ${PR_FILE_HIST} ${SFTLF_FILE}
 	mkdir -p ${FX_BASIN_DIR}
@@ -200,9 +207,9 @@ PE_REGIONS_DRIFT_PLOT=/g/data/r87/dbi599/temp/pe-region-sum_Ayr_${MODEL}_piContr
 ${PE_REGIONS_DRIFT_PLOT} : ${PE_REGIONS_COEFFICIENTS} ${PE_REGIONS_FILE_CNTRL} ${PE_REGIONS_FILE_HIST} ${PE_REGIONS_ANOMALY_CUMSUM}
 	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py precipitation_minus_evaporation_flux $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 0 0 ${BRANCH_TIME}
 
-PE_REGIONS_HEATMAP=/g/data/r87/dbi599/figures/water-cycle/pe-region-sum-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_gn_185001-201412-cumsum.png
+PE_REGIONS_HEATMAP=/g/data/r87/dbi599/figures/water-cycle/pe-region-sum-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_gn_${HEATMAP_START_YEAR}01-${HEATMAP_END_YEAR}12-cumsum.png
 ${PE_REGIONS_HEATMAP} : ${PE_REGIONS_ANOMALY_CUMSUM}
-	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< precipitation_minus_evaporation_flux cumulative_anomaly $@ --scale_factor 17 --time_bounds 1850-01-01 2014-12-31
+	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< precipitation_minus_evaporation_flux cumulative_anomaly $@ --scale_factor 17 --time_bounds ${HEATMAP_START_YEAR}-01-01 ${HEATMAP_END_YEAR}-12-31
 
 PE_REGIONS_HEATMAP_CLIM=/g/data/r87/dbi599/figures/water-cycle/pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_gn_${CNTRL_TIME}-clim.png
 ${PE_REGIONS_HEATMAP_CLIM} : ${PE_REGIONS_FILE_CNTRL_TSERIES}
@@ -240,9 +247,9 @@ WFO_REGIONS_DRIFT_PLOT=/g/data/r87/dbi599/temp/wfo-region-sum_Oyr_${MODEL}_piCon
 ${WFO_REGIONS_DRIFT_PLOT} : ${WFO_REGIONS_COEFFICIENTS} ${WFO_REGIONS_FILE_CNTRL} ${WFO_REGIONS_FILE_HIST} ${WFO_REGIONS_ANOMALY_CUMSUM}
 	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py water_flux_into_sea_water $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 0 0 ${BRANCH_TIME}
 
-WFO_REGIONS_HEATMAP=/g/data/r87/dbi599/figures/water-cycle/wfo-region-sum-anomaly_Oyr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_gn_185001-201412-cumsum.png
+WFO_REGIONS_HEATMAP=/g/data/r87/dbi599/figures/water-cycle/wfo-region-sum-anomaly_Oyr_${MODEL}_${EXPERIMENT}_${HIST_RUN}_gn_${HEATMAP_START_YEAR}01-${HEATMAP_END_YEAR}12-cumsum.png
 ${WFO_REGIONS_HEATMAP} : ${WFO_REGIONS_ANOMALY_CUMSUM}
-	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< water_flux_into_sea_water cumulative_anomaly $@ --scale_factor 17 --time_bounds 1850-01-01 2014-12-31
+	${PYTHON} ${VIZ_SCRIPT_DIR}/water_cycle/plot_pe_heatmap.py $< water_flux_into_sea_water cumulative_anomaly $@ --scale_factor 17 --time_bounds ${HEATMAP_START_YEAR}-01-01 ${HEATMAP_END_YEAR}-12-31
 
 WFO_REGIONS_HEATMAP_CLIM=/g/data/r87/dbi599/figures/water-cycle/wfo-region-sum_Oyr_${MODEL}_piControl_${CNTRL_RUN}_gn_${CNTRL_TIME}-clim.png
 ${WFO_REGIONS_HEATMAP_CLIM} : ${WFO_REGIONS_FILE_CNTRL_TSERIES}
