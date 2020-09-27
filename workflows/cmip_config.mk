@@ -1193,11 +1193,11 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # GFDL-CM3
 #
 #PROJECT=CMIP5
-#MIP=CMIP
+#MIP=DAMIP
 ##DAMIP CMIP
 #INSTITUTION=NOAA-GFDL
 #MODEL=GFDL-CM3
-#EXPERIMENT=historical
+#EXPERIMENT=historicalMisc
 ##historical historicalGHG historicalMisc
 ## historicalMisc evspsbl data at r87/dbi599
 #FX_EXP=historical
@@ -1216,19 +1216,20 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 ##000101-080012; 000101-050012 (atmos)
 #AREACELLO_DIR=${CMIP5_DATA_DIR}
 #AREACELLA_DIR=${CMIP5_DATA_DIR}
+#SFTLF_DIR=${CMIP5_DATA_DIR}
 #VOLCELLO_DIR=${MY_DATA_DIR}
 
 # GFDL-ESM2M #
 #
 #PROJECT=CMIP5
-#MIP=CMIP
-#DAMIP CMIP
+#MIP=DAMIP
+##DAMIP CMIP
 #INSTITUTION=NOAA-GFDL
 #MODEL=GFDL-ESM2M
-#EXPERIMENT=historical
+#EXPERIMENT=historicalMisc
 ##historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p1
+#HIST_RUN=r1i1p5
 ##r1i1p1 r1i1p5
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
@@ -1236,7 +1237,7 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #OFX_VERSION=v20130514
 #FX_VERSION=v20120123
 #HIST_VERSION=v20130226
-#ATMOS_HIST_VERSION=v20111228
+#ATMOS_HIST_VERSION=v20130214
 ## v20111228 (historical) v20130214 (historicalGHG, Misc)
 #HIST_TIME=185001-200512
 #CNTRL_VERSION=v20130226
@@ -1244,8 +1245,10 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #CNTRL_TIME=000101-050012
 #AREACELLO_DIR=${CMIP5_DATA_DIR}
 #AREACELLA_DIR=${CMIP5_DATA_DIR}
+#SFTLF_DIR=${CMIP5_DATA_DIR}
 #VOLCELLO_FILE=${MY_DATA_DIR}
 
+# EVAP_FILES_HIST := $(sort $(wildcard /g/data/r87/dbi599/CMIP5/DAMIP/NOAA-GFDL/GFDL-ESM2M/historicalMisc/r1i1p5/Amon/evspsbl/gn/v20130214/evspsbl*.nc))
 #/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/historical/mon/ocean/Omon/r1i1p1/v20130226/so/
 #/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/historical/mon/ocean/Omon/r1i1p1/v20130226/wfo/
 #/g/data/al33/replicas/CMIP5/combined/NOAA-GFDL/GFDL-ESM2M/historicalGHG/mon/ocean/Omon/r1i1p1/v20130226/so/
@@ -1257,14 +1260,14 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # GISS-E2-H #
 #
 #PROJECT=CMIP5
-#MIP=CMIP
+#MIP=DAMIP
 ##DAMIP CMIP
 #INSTITUTION=NASA-GISS
 #MODEL=GISS-E2-H
-#EXPERIMENT=historical
+#EXPERIMENT=historicalMisc
 ##historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p1
+#HIST_RUN=r1i1p107
 ##r1i1p1 r1i1p107
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
@@ -1272,7 +1275,7 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 ##OFX_VERSION=
 #FX_VERSION=v20160426
 ##HIST_VERSION=
-#ATMOS_HIST_VERSION=v20160426
+#ATMOS_HIST_VERSION=v20160427
 ## v20160426 (historical) v20160426 (historicalGHG) v20160427 (historicalMisc)
 #HIST_TIME=185001-200512
 ## 201212 (historicalGHG) 200512 (otherwise)
@@ -1282,6 +1285,7 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 ## (remove first few control files due to time gap)
 #AREACELLO_DIR=${CMIP5_DATA_DIR}
 #AREACELLA_DIR=${CMIP5_DATA_DIR}
+#SFTLF_DIR=${CMIP5_DATA_DIR}
 #VOLCELLO_DIR=${MY_DATA_DIR}
 #BRANCH_TIME=--branch_time 0
 
@@ -1321,14 +1325,14 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # IPSL-CM5A-LR #
 #
 #PROJECT=CMIP5
-#MIP=CMIP
+#MIP=DAMIP
 ##DAMIP CMIP
 #INSTITUTION=IPSL
 #MODEL=IPSL-CM5A-LR
-#EXPERIMENT=historical
-##historical historicalGHG historicalMisc
+#EXPERIMENT=historicalMisc
+#historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p1
+#HIST_RUN=r1i1p3
 ##r1i1p1 r1i1p3
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
@@ -1336,27 +1340,30 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 ##OFX_VERSION=
 #FX_VERSION=v20110406
 ##HIST_VERSION=
-#ATMOS_HIST_VERSION=v20110406
+#ATMOS_HIST_VERSION=v20111119
 ## v20110406 (historical) v20120526 (historicalGHG) v20111119 (historicalMisc)
-#HIST_TIME=185001-200512
+#HIST_TIME=185001-201212
 ## 201212 (historicalGHG, historicalMisc)
 ##CNTRL_VERSION=
 #ATMOS_CNTRL_VERSION=v20130506
 #CNTRL_TIME=180001-279912
 #AREACELLO_DIR=${CMIP5_DATA_DIR}
-#AREACELLA_FILE=${CMIP5_DATA_DIR}
-#VOLCELLO_FILE=${MY_DATA_DIR}
+#AREACELLA_DIR=${CMIP5_DATA_DIR}
+#SFTLF_DIR=${CMIP5_DATA_DIR}
+#VOLCELLO_DIR=${MY_DATA_DIR}
+
+#EVAP_FILES_HIST := $(sort $(wildcard /g/data/r87/dbi599/CMIP5/DAMIP/IPSL/IPSL-CM5A-LR/historicalMisc/r1i1p3/Amon/evspsbl/gn/v20111119/evspsbl_Amon_IPSL-CM5A-LR_historicalMisc_r1i1p3_*.nc))
 
 
 # NorESM1-M #
 #
 #PROJECT=CMIP5
-#MIP=CMIP
+#MIP=DAMIP
 ##DAMIP CMIP
 #INSTITUTION=NCC
 #MODEL=NorESM1-M
-#EXPERIMENT=historical
-##historical historicalGHG historicalMisc
+#EXPERIMENT=historicalMisc
+#historical historicalGHG historicalMisc
 #FX_EXP=historical
 #HIST_RUN=r1i1p1
 #CNTRL_RUN=r1i1p1
@@ -1365,15 +1372,16 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #OFX_VERSION=
 #FX_VERSION=v20110901
 #HIST_VERSION=
-#ATMOS_HIST_VERSION=v20110901
-# v20110901 (historical) v20110918 (historicalGHG) v20110918 (historicalMisc)
-#HIST_TIME=185001-200512
-# 2012 (historicalGHG, Misc)
+#ATMOS_HIST_VERSION=v20110918
+## v20110901 (historical) v20110918 (historicalGHG) v20110918 (historicalMisc)
+#HIST_TIME=185001-201212
+## 2012 (historicalGHG, Misc)
 #CNTRL_VERSION=
 #ATMOS_CNTRL_VERSION=v20110901
 #CNTRL_TIME=070001-120012
 #AREACELLO_DIR=${CMIP5_DATA_DIR}
 #AREACELLA_DIR=${CMIP5_DATA_DIR}
+#SFTLF_DIR=${CMIP5_DATA_DIR}
 #VOLCELLO_DIR=${MY_DATA_DIR}
 
 #/g/data/al33/replicas/CMIP5/combined/NCC/NorESM1-M/historical/mon/ocean/Omon/r1i1p1/v20110901/so/
