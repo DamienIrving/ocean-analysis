@@ -88,7 +88,7 @@ def calc_trend(cube, running_mean=False, per_yr=False,
     time_axis = cube.coord('time')
     time_axis = convert_to_seconds(time_axis)
 
-    trend = np.ma.apply_along_axis(linear_trend, 0, cube.data, time_axis.points, outlier_treshold)
+    trend = np.ma.apply_along_axis(linear_trend, 0, cube.data, time_axis.points, outlier_threshold)
     if type(cube.data) == np.ma.core.MaskedArray:
         trend = np.ma.masked_values(trend, cube.data.fill_value)
 
