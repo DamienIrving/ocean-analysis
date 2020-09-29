@@ -111,7 +111,7 @@ def get_regional_totals(var_data, pe_data, lats, basins):
     return output 
 
 
-def read_data(infiles, var, area_cube, annual=False):
+def read_data(infiles, var, area_cube, annual=False, multiply_by_area=False):
     """Read the input data."""    
 
     cube, history = gio.combine_files(infiles, var)
@@ -120,7 +120,8 @@ def read_data(infiles, var, area_cube, annual=False):
         cube = timeseries.convert_to_annual(cube, days_in_month=True)
 
     cube = uconv.flux_to_magnitude(cube)
-    cube = spatial_weights.multiply_by_area(cube, area_cube=area_cube)
+    if multiply_by_area:
+        cube = spatial_weights.multiply_by_area(cube, area_cube=area_cube)
 
     coord_names = [coord.name() for coord in cube.coords(dim_coords=True)]
     assert cube.ndim == 3
@@ -142,7 +143,9 @@ def main(inargs):
     var_name = 'precipitation minus evaporation flux' if var == 'pe' else 'water_flux_into_sea_water'
 
     area_cube = gio.get_ocean_weights(inargs.area_file) if inargs.area_file else None
-    pe_cube, pe_lats, pe_history = read_data(inargs.pe_files, var_name, area_cube, annual=inargs.annual)   
+    multiply_by_area = True if (inargs.area or area_cube) else False 
+    pe_cube, pe_lats, pe_history = read_data(inargs.pe_files, var_name, area_cube,
+                                             annual=inargs.annual, multipy_by_area=multiply_by_area)   
     basin_cube = iris.load_cube(inargs.basin_file, 'region')  
 
     metadata = {inargs.pe_files[0]: pe_history[0],
@@ -151,7 +154,8 @@ def main(inargs):
         data_cube = iris.load_cube(inargs.data_files[0], 'cell_area')
         assert data_cube.shape == pe_cube.shape[1:]
     elif inargs.data_files:
-        data_cube, data_lats, data_history = read_data(inargs.data_files, inargs.data_var, area_cube, annual=inargs.annual)
+        data_cube, data_lats, data_history = read_data(inargs.data_files, inargs.data_var, area_cube,
+                                                       annual=inargs.annual, multipy_by_area=multiply_by_area)
         assert data_cube.shape == pe_cube.shape
         metadata[inargs.data_files[0]] = data_history[0]
     else:
@@ -202,6 +206,8 @@ if __name__ == '__main__':
     parser.add_argument("basin_file", type=str, help="Basin file")
     parser.add_argument("outfile", type=str, help="Output file")
 
+    parser.add_argument("--area", action="store_true", default=False,
+                        help="Multiply by area [default=False]")
     parser.add_argument("--area_file", type=str, default=None,
                         help="Area file (not needed for regular grid)")
     parser.add_argument("--data_files", type=str, nargs='*', default=[],
