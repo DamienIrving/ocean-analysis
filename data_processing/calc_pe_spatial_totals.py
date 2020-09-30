@@ -1,4 +1,4 @@
-"""Calculate precipitation minus evaporation (or wfo) regional totals"""
+"""Calculate precipitation minus evaporation (or wfo) regional aggregates"""
 
 # Import general Python modules
 
@@ -67,8 +67,8 @@ def create_pe_region_coord():
     return pe_region_coord
 
 
-def get_regional_totals(var_data, pe_data, lats, basins):
-    """Calculate the regional totals
+def get_regional_aggregates(agg_method, var_data, pe_data, lats, basins, area_data):
+    """Calculate the regional aggregates
 
     Basin definitions:
       north atlantic = 11
@@ -81,6 +81,8 @@ def get_regional_totals(var_data, pe_data, lats, basins):
       land = 18
       
     """
+
+    assert agg_method in ['sum', 'mean']
 
     basin_selection = {'atlantic': (basins >=11) & (basins <= 12),
                        'pacific': (basins >= 13) & (basins <= 14),
@@ -96,17 +98,34 @@ def get_regional_totals(var_data, pe_data, lats, basins):
                     'NH precip': (pe_data >= 0) & (lats > 20)}
     
     output = np.ma.zeros([6, 8])
+    area_totals = np.ma.zeros([5, 6])
     for pe_num, pe_name in enumerate(pe_names):
         for basin_num, basin_name in enumerate(basin_names):
             selection = pe_selection[pe_name] & basin_selection[basin_name]
-            output[pe_num, basin_num] = var_data[selection].sum()
-    assert np.allclose(var_data.sum(), output.sum())
+            if agg_method == 'sum':
+                output[pe_num, basin_num] = var_data[selection].sum()
+            else:
+                area_totals[pe_num, basin_num] = area_data[selection].sum()
+                output[pe_num, basin_num] = np.ma.average(var_data[selection],
+                                                          weights=area_data[selection])
+    if agg_method == 'sum':
+        assert np.allclose(var_data.sum(), output.sum())
+    else:
+        assert np.allclose(area_data.sum(), area_totals.sum())
 
     for pe_num in range(5):
-        output[pe_num, 6] = output[pe_num, 0:5].sum()  # ocean
-        output[pe_num, 7] = output[pe_num, 0:6].sum()  # globe
+        if agg_method == 'sum':
+            output[pe_num, 6] = output[pe_num, 0:5].sum()  # ocean
+            output[pe_num, 7] = output[pe_num, 0:6].sum()  # globe
+        else:
+            output[pe_num, 6] = np.ma.average(output[pe_num, 0:5], weights=area_totals[pe_num, 0:5])
+            output[pe_num, 7] = np.ma.average(output[pe_num, 0:6], weights=area_totals[pe_num, 0:6])
+
     for basin_num in range(8):
-        output[5, basin_num] = output[0:5, basin_num].sum()  # globe
+        if agg_method == 'sum':
+            output[5, basin_num] = output[0:5, basin_num].sum()  # globe
+        else:
+            output[5, basin_num] = np.ma.average(output[0:5, basin_num], weights=area_totals[0:5, basin_num])
 
     return output 
 
@@ -143,9 +162,8 @@ def main(inargs):
     var_name = 'precipitation minus evaporation flux' if var == 'pe' else 'water_flux_into_sea_water'
 
     area_cube = gio.get_ocean_weights(inargs.area_file) if inargs.area_file else None
-    multiply_by_area = True if (inargs.area or area_cube) else False 
     pe_cube, pe_lats, pe_history = read_data(inargs.pe_files, var_name, area_cube,
-                                             annual=inargs.annual, multiply_by_area=multiply_by_area)   
+                                             annual=inargs.annual, multiply_by_area=inargs.area)   
     basin_cube = iris.load_cube(inargs.basin_file, 'region')  
 
     metadata = {inargs.pe_files[0]: pe_history[0],
@@ -155,19 +173,29 @@ def main(inargs):
         assert data_cube.shape == pe_cube.shape[1:]
     elif inargs.data_files:
         data_cube, data_lats, data_history = read_data(inargs.data_files, inargs.data_var, area_cube,
-                                                       annual=inargs.annual, multiply_by_area=multiply_by_area)
+                                                       annual=inargs.annual, multiply_by_area=inargs.area)
         assert data_cube.shape == pe_cube.shape
         metadata[inargs.data_files[0]] = data_history[0]
     else:
         data_cube = pe_cube.copy()
         data_var = var_name
 
+    if area_cube:
+        assert data_cube.ndim in [2, 3]
+        if data_cube.ndim == 3:
+            area_data = uconv.broadcast_array(area_cube.data, [1, 2], data_cube.shape)
+        else:
+            area_data = area_cube.data
+    else:
+        area_data = spatial_weights.area_array(cube)
+
     region_data = np.zeros([pe_cube.shape[0], 6, 8])
     tstep = 0
     ntimes = pe_cube.shape[0]
     for tstep in range(ntimes):
         var_data = data_cube.data if inargs.data_var == 'cell_area' else data_cube[tstep, ::].data
-        region_data[tstep, :] = get_regional_totals(var_data, pe_cube[tstep, ::].data, pe_lats, basin_cube.data)
+        region_data[tstep, :] = get_regional_aggregates(inargs.agg, var_data, pe_cube[tstep, ::].data,
+                                                        pe_lats, basin_cube.data, area_data)
         
     if inargs.cumsum:
         region_data = np.cumsum(region_data, axis=0)    
@@ -204,6 +232,7 @@ if __name__ == '__main__':
 
     parser.add_argument("pe_files", type=str, nargs='*', help="P-E (or wfo) files")
     parser.add_argument("basin_file", type=str, help="Basin file")
+    parser.add_argument("agg", type=str, choices=('sum', 'mean'), help='aggregation method')
     parser.add_argument("outfile", type=str, help="Output file")
 
     parser.add_argument("--area", action="store_true", default=False,
