@@ -145,7 +145,7 @@ def main(inargs):
     area_cube = gio.get_ocean_weights(inargs.area_file) if inargs.area_file else None
     multiply_by_area = True if (inargs.area or area_cube) else False 
     pe_cube, pe_lats, pe_history = read_data(inargs.pe_files, var_name, area_cube,
-                                             annual=inargs.annual, multipy_by_area=multiply_by_area)   
+                                             annual=inargs.annual, multiply_by_area=multiply_by_area)   
     basin_cube = iris.load_cube(inargs.basin_file, 'region')  
 
     metadata = {inargs.pe_files[0]: pe_history[0],
@@ -155,7 +155,7 @@ def main(inargs):
         assert data_cube.shape == pe_cube.shape[1:]
     elif inargs.data_files:
         data_cube, data_lats, data_history = read_data(inargs.data_files, inargs.data_var, area_cube,
-                                                       annual=inargs.annual, multipy_by_area=multiply_by_area)
+                                                       annual=inargs.annual, multiply_by_area=multiply_by_area)
         assert data_cube.shape == pe_cube.shape
         metadata[inargs.data_files[0]] = data_history[0]
     else:
