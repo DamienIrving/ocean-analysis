@@ -96,18 +96,19 @@ def get_regional_aggregates(agg_method, var_data, pe_data, lats, basins, area_da
                     'tropical precip': (pe_data >= 0) & (lats <= 20) & (lats >= -20),
                     'NH evap': (pe_data < 0) & (lats >= 0),
                     'NH precip': (pe_data >= 0) & (lats > 20)}
-    
+
     output = np.ma.zeros([6, 8])
-    area_totals = np.ma.zeros([5, 6])
+    area_totals = np.ma.zeros([6, 8])
     for pe_num, pe_name in enumerate(pe_names):
         for basin_num, basin_name in enumerate(basin_names):
             selection = pe_selection[pe_name] & basin_selection[basin_name]
             if agg_method == 'sum':
                 output[pe_num, basin_num] = var_data[selection].sum()
-            else:
+            elif var_data[selection].size:
                 area_totals[pe_num, basin_num] = area_data[selection].sum()
                 output[pe_num, basin_num] = np.ma.average(var_data[selection],
                                                           weights=area_data[selection])
+  
     if agg_method == 'sum':
         assert np.allclose(var_data.sum(), output.sum())
     else:
@@ -118,6 +119,8 @@ def get_regional_aggregates(agg_method, var_data, pe_data, lats, basins, area_da
             output[pe_num, 6] = output[pe_num, 0:5].sum()  # ocean
             output[pe_num, 7] = output[pe_num, 0:6].sum()  # globe
         else:
+            area_totals[pe_num, 6] = area_totals[pe_num, 0:5].sum()  # ocean
+            area_totals[pe_num, 7] = area_totals[pe_num, 0:6].sum()  # globe
             output[pe_num, 6] = np.ma.average(output[pe_num, 0:5], weights=area_totals[pe_num, 0:5])
             output[pe_num, 7] = np.ma.average(output[pe_num, 0:6], weights=area_totals[pe_num, 0:6])
 
@@ -125,6 +128,7 @@ def get_regional_aggregates(agg_method, var_data, pe_data, lats, basins, area_da
         if agg_method == 'sum':
             output[5, basin_num] = output[0:5, basin_num].sum()  # globe
         else:
+            area_totals[5, basin_num] = area_totals[0:5, basin_num].sum()  # globe
             output[5, basin_num] = np.ma.average(output[0:5, basin_num], weights=area_totals[0:5, basin_num])
 
     return output 
@@ -181,13 +185,13 @@ def main(inargs):
         data_var = var_name
 
     if area_cube:
-        assert data_cube.ndim in [2, 3]
-        if data_cube.ndim == 3:
-            area_data = uconv.broadcast_array(area_cube.data, [1, 2], data_cube.shape)
-        else:
-            area_data = area_cube.data
+        area_data = area_cube.data
     else:
-        area_data = spatial_weights.area_array(cube)
+        if data_cube.ndim == 3:
+            area_data = spatial_weights.area_array(data_cube[0, ::])
+        else:
+            assert data_cube.ndim == 2
+            area_data = spatial_weights.area_array(data_cube)
 
     region_data = np.zeros([pe_cube.shape[0], 6, 8])
     tstep = 0
