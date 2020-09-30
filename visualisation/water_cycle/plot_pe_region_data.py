@@ -69,10 +69,11 @@ def main(inargs):
         hist_label = 'historical' if run_num == 0 else None
         ghg_label = 'GHG-only' if run_num == 0 else None
         aa_label = 'AA-only' if run_num == 0 else None
-    
+
+        units = str(hist_cube.units)
         for plot_row in range(6):
             data_row = 5 - plot_row
-            axes[plot_row, 0].set_ylabel('time-integrated anomaly (kg)')
+            axes[plot_row, 0].set_ylabel(f'time-integrated anomaly ({units})')
             for col in range(8):
                 axes[plot_row, col].plot(ghg_years, anomaly_data['GHG-only'][:, data_row, col], color='red',
                                     linestyle=linestyles[run_num], label=ghg_label)
