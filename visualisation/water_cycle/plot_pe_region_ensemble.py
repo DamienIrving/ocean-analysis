@@ -1,8 +1,4 @@
-"""
-Filename:     plot_pe_region_ensemble.py
-Author:       Damien Irving, irving.damien@gmail.com
-Description:  Plot output from calc_pe_zonal_sum_regional_totals.py or calc_pe_spatial_totals.py
-"""
+"""Plot ensemble data for the five P-E regions"""
 
 # Import general Python modules
 
@@ -40,10 +36,22 @@ names = {'precipitation_minus_evaporation_flux': 'P-E',
          'cell_area': 'area'}
 
 
+def get_scaling_data(infile, var, data_model, data_units):
+    """Get the scaling data for a particular model"""
+    
+    cube, history = gio.combine_files(infile, var, new_calendar='365_day')
+    scaling_model = cube.attributes['source_id'] if 'source_id' in cube.attributes else cube.attributes['model_id']
+    assert data_model == scaling_model
+    scale_data = cube.data[0, 0:-1, -1]
+    units = data_units * cube.units 
+    
+    return scale_data, units
+
+
 def get_data(infile, var, time_constraint):
     """Get the data for a particular model"""
     
-    cube, history = gio.combine_files([infile], var, new_calendar='365_day')
+    cube, history = gio.combine_files(infile, var, new_calendar='365_day')
     cube = cube.extract(time_constraint)
     iris.coord_categorisation.add_year(cube, 'time')
     start_data = cube.data[0, 0:-1, -1] 
@@ -52,7 +60,24 @@ def get_data(infile, var, time_constraint):
     return cube, anomaly_data, start_data
 
 
-def plot_ensemble_lines(df, var, model_list, experiment, units):
+def get_axis_label(data_var, calculated_var, scaling_var, units):
+    """Define axis label"""
+
+    short_name = names[data_var]
+    label = f'Time-integrated {short_name} anomaly '
+    if not 'cumulative' in calculated_var:
+        units = '% change'
+
+    if scaling_var:
+        scale_name = names[scaling_var]
+        label = label + f'times mean {scale_name} '
+
+    label = label + f'({units})'
+
+    return label
+
+
+def plot_ensemble_lines(df, var, model_list, experiment, units, scaling_var, ylim_list):
     """Plot regional changes for each model as a line graph"""
 
     xvals = np.array([1, 2, 3, 4, 5])
@@ -72,14 +97,15 @@ def plot_ensemble_lines(df, var, model_list, experiment, units):
             linestyle = '-' if model_num < 10 else '--'
             axes[plot_num].plot(xvals, yvals, label=model_name, marker='o', linestyle=linestyle)
         short_name = names[var]
-        ylabel = f'Accumulated {short_name} anomaly ({units})' if 'cumulative' in var_name else f'Change in {short_name} (%)'
+        ylabel = get_axis_label(var, var_name, scaling_var, units)
         axes[plot_num].set_ylabel(ylabel)
         axes[plot_num].set_xticks(xvals)
         axes[plot_num].set_xticklabels(['SH precip', 'SH evap', 'trop precip', 'NH evap', 'NH precip'])
         axes[plot_num].set_title(titles[var_name])
         axes[plot_num].axhline(0, color='0.8')
     
-    #axes[plot_num].set_ylim(lower_ylim, upper_ylim)
+    for plot_num, ymax in ylim_list:
+        axes[int(plot_num)].set_ylim(-1 * ymax, ymax)
      
     plt.suptitle(f'Time-integrated anomaly, 1861-2005, {experiment} experiment')
     handles, labels = axes[0].get_legend_handles_labels()
@@ -97,10 +123,16 @@ def main(inargs):
     start_data = {}
     data = []
     model_list = []
-    for infile in inargs.infiles:
+    for filenum, infile in enumerate(inargs.infiles):
         cube, anomaly_data, start = get_data(infile, inargs.var, time_constraint)
-        model = cube.attributes['source_id'] if 'source_id' in cube.attributes else cube.attributes['model_id']
+        units = cube.units
         cum_change = anomaly_data[-1, :]
+        model = cube.attributes['source_id'] if 'source_id' in cube.attributes else cube.attributes['model_id']
+        if inargs.scaling_files:
+            scale_file = inargs.scaling_files[filenum]
+            scale_factor, units = get_scaling_data(scale_file, inargs.scaling_var, model, units)
+            cum_change = cum_change * scale_factor
+            start = start * scale_factor  
         ntimes = anomaly_data.shape[0]
         pct_change = ((cum_change / ntimes) / start) * 100
         if inargs.var == 'precipitation_minus_evaporation_flux':
@@ -138,8 +170,8 @@ def main(inargs):
 
     model_list.sort()
     experiment = cube.attributes['experiment_id']
-    units = str(cube.units)
-    plot_ensemble_lines(df, inargs.var, model_list, experiment, units)
+    plot_ensemble_lines(df, inargs.var, model_list, experiment, str(units),
+                        inargs.scaling_var, inargs.ymax)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
 
@@ -151,34 +183,28 @@ def main(inargs):
     df.to_csv(csv_file)
 
 
-if __name__ == '__main__':
-
-    extra_info =""" 
-
-author:
-    Damien Irving, irving.damien@gmail.com
-
-example:
-    python plot_pe_region_ensemble.py
-    /g/data/r87/dbi599/CMIP*/CMIP/*/*/historical/*/Ayr/pe/*/*/pe-region-sum-anomaly_Ayr_*cumsum.nc
-    /g/data/r87/dbi599/figures/water-cycle/pe-region-sum-anomaly_Ayr_ensemble_historical_r1_gn_1861-2005-cumsum.png 
-
-"""
-
-    description = 'Plot ensemble data for the five P-E regions'
-    parser = argparse.ArgumentParser(description=description,
-                                     epilog=extra_info, 
+if __name__ == '__main__': 
+    parser = argparse.ArgumentParser(description=__doc__, 
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("infiles", type=str, nargs='*', help="files for a particular experiment")
+    parser.add_argument("infiles", type=str, nargs='*', help="Files for a particular experiment (one file per model)")
     parser.add_argument("var", type=str, help="Variable name",
                         choices=('precipitation_minus_evaporation_flux', 'precipitation_flux',
                                  'water_evapotranspiration_flux', 'cell_area'))
     parser.add_argument("outfile", type=str, help="Output file")
 
+    parser.add_argument("--scaling_files", type=str, nargs='*', default=None,
+                        help="File for scaling the input data (one file per model)")
+    parser.add_argument("--scaling_var", type=str, default=None,
+                        help="Variable for scaling the input data")
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2005-12-31'), help="Time period [default = entire]")
+    parser.add_argument("--ymax", type=float, nargs=2, action='append', metavar=('PLOTNUM', 'YMAX'), default=[],
+                        help='y axis limit (give plot number)')
 
-    args = parser.parse_args()             
+    args = parser.parse_args()
+    if args.scaling_files:
+        assert len(args.infiles) == len(args.scaling_files)
+
     main(args)
