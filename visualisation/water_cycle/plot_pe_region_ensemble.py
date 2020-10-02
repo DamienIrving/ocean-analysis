@@ -52,7 +52,7 @@ def get_data(infile, var, time_constraint):
     return cube, anomaly_data, start_data
 
 
-def plot_ensemble_lines(df, var, model_list, experiment):
+def plot_ensemble_lines(df, var, model_list, experiment, units):
     """Plot regional changes for each model as a line graph"""
 
     xvals = np.array([1, 2, 3, 4, 5])
@@ -72,7 +72,7 @@ def plot_ensemble_lines(df, var, model_list, experiment):
             linestyle = '-' if model_num < 10 else '--'
             axes[plot_num].plot(xvals, yvals, label=model_name, marker='o', linestyle=linestyle)
         short_name = names[var]
-        ylabel = f'Accumulated {short_name} anomaly (kg)' if 'cumulative' in var_name else f'Change in {short_name} (%)'
+        ylabel = f'Accumulated {short_name} anomaly ({units})' if 'cumulative' in var_name else f'Change in {short_name} (%)'
         axes[plot_num].set_ylabel(ylabel)
         axes[plot_num].set_xticks(xvals)
         axes[plot_num].set_xticklabels(['SH precip', 'SH evap', 'trop precip', 'NH evap', 'NH precip'])
@@ -138,7 +138,8 @@ def main(inargs):
 
     model_list.sort()
     experiment = cube.attributes['experiment_id']
-    plot_ensemble_lines(df, inargs.var, model_list, experiment)
+    units = str(cube.units)
+    plot_ensemble_lines(df, inargs.var, model_list, experiment, units)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
 
