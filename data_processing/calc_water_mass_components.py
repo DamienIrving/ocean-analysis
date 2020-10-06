@@ -201,8 +201,8 @@ def clipping_details(orig_data, clipped_data, bin_edges, var_name):
     bin_second_max = bin_edges[-2]
 
     npoints_under = numpy.sum(orig_data < bin_min)
-    npoints_min = numpy.sum(orig_data <= bin_second_min) - numpy.sum(orig_data <= bin_min)
-    npoints_clip_min = numpy.sum(clipped_data <= bin_second_min) - numpy.sum(clipped_data <= bin_min)
+    npoints_min = numpy.sum(orig_data <= bin_second_min) - npoints_under
+    npoints_clip_min = numpy.sum(clipped_data <= bin_second_min) - numpy.sum(clipped_data < bin_min)
     assert npoints_clip_min == npoints_under + npoints_min
 
     npoints_over = numpy.sum(orig_data > bin_max)
@@ -257,8 +257,8 @@ def main(inargs):
 
     s_values, s_edges = uconv.salinity_bins()
    
-    tcube, thistory = gio.combine_files(inargs.temperature_files, 'sea_water_potential_temperature')
-    scube, shistory = gio.combine_files(inargs.salinity_files, 'sea_water_salinity')
+    tcube, thistory = gio.combine_files(inargs.temperature_files, inargs.temperature_var, checks=True)
+    scube, shistory = gio.combine_files(inargs.salinity_files, 'sea_water_salinity', checks=True)
 
     assert tcube.shape == scube.shape
     coord_names = [coord.name() for coord in tcube.dim_coords]
@@ -340,6 +340,8 @@ author:
                         help='bounds for the temperature (Y) axis')
     parser.add_argument("--bin_size", type=float, default=1.0,
                         help='bin size (i.e. temperature step)')
+    parser.add_argument("--temperature_var", type=str, default='sea_water_potential_temperature',
+                        help='temperature variable')
 
     args = parser.parse_args()             
 
