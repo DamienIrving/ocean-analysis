@@ -254,4 +254,6 @@ if __name__ == '__main__':
                         help="Output the cumulative sum [default: False]")
 
     args = parser.parse_args()            
+    if args.data_var:
+        assert args.data_files, "Need to provide --data_files"
     main(args)
