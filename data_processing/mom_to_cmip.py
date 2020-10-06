@@ -43,6 +43,8 @@ def xr_to_cube(dset, ref_cube, inargs):
         new_units = 'W m-2'
     elif 'kg' in input_units[0:3]:
         new_units = 'kg m-2 s-1'
+    elif input_units == 'deg_C':
+        new_units = 'degC'
     else:
         raise AttributeError(f'input units not supported: {input_units}')
 
@@ -65,18 +67,28 @@ def xr_to_cube(dset, ref_cube, inargs):
         dim_coord_list.append((coord, index + 1))
 
     new_data = dset[inargs.mom_var].to_masked_array()
-        
+    if inargs.ref_names:
+        long_name = ref_cube.long_name
+        var_name = ref_cube.var_name
+        standard_name = ref_cube.standard_name
+    else:
+        long_name = dset[inargs.mom_var].long_name
+        var_name = dset[inargs.mom_var].name
+        if 'standard_name' in dset[inargs.mom_var].attrs:
+            standard_name = dset[inargs.mom_var].standard_name
+        else:
+            standard_name = None
+
     new_cube = iris.cube.Cube(new_data,
-                              long_name=dset[inargs.mom_var].long_name,
-                              var_name=dset[inargs.mom_var].name,
+                              long_name=long_name,
+                              var_name=var_name,
                               units=new_units,
                               attributes=ref_cube.attributes,
                               dim_coords_and_dims=dim_coord_list,
                               aux_coords_and_dims=[(ref_cube.aux_coords[0], (mom_ndim - 2, mom_ndim - 1)),
                                                    (ref_cube.aux_coords[1], (mom_ndim - 2, mom_ndim - 1))])
-    if 'standard_name' in dset[inargs.mom_var].attrs:
-        if dset[inargs.mom_var].standard_name in iris.std_names.STD_NAMES:
-            new_cube.standard_name = dset[inargs.mom_var].standard_name
+    if standard_name in iris.std_names.STD_NAMES:
+        new_cube.standard_name = standard_name
 
     return new_cube
 
@@ -124,6 +136,8 @@ author:
 
     parser.add_argument("--single", action="store_true", default=False,
                         help="Process each mom_file separately before merging")
+    parser.add_argument("--ref_names", action="store_true", default=False,
+                        help="Use the reference file names (var, long and standard) for output file")
 
     args = parser.parse_args()
     main(args)
