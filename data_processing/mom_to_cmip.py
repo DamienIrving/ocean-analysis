@@ -41,13 +41,13 @@ def check_coords(dset, ref_cube, mom_var):
     assert dset[mom_var].shape[1:] == ref_cube.shape[1:], \
         "MOM and reference data do not have same spatial coordinates"
 
-    in_coords = dset[mom_var].coords._names
-    in_lat = 'geolat_t' if 'geolat_t' in in_coords else 'yt_ocean'
-    in_lon = 'geolon_t' if 'geolon_t' in in_coords else 'xt_ocean'
+#    in_coords = dset[mom_var].coords._names
+#    in_lat = 'geolat_t' if 'geolat_t' in in_coords else 'yt_ocean'
+#    in_lon = 'geolon_t' if 'geolon_t' in in_coords else 'xt_ocean'
     
-    assert np.allclose(ref_cube.coord('latitude').points, dset[in_lat].values)
-    mom_lons = np.where(dset[in_lon].values < 0.0, dset[in_lon].values + 360, dset[in_lon].values)
-    assert np.allclose(ref_cube.coord('longitude').points, mom_lons)
+#    assert np.allclose(ref_cube.coord('latitude').points, dset[in_lat].values)
+#    mom_lons = np.where(dset[in_lon].values < 0.0, dset[in_lon].values + 360, dset[in_lon].values)
+#    assert np.allclose(ref_cube.coord('longitude').points, mom_lons)
 
 
 def xr_to_cube(dset, ref_cube, inargs):
@@ -62,7 +62,8 @@ def xr_to_cube(dset, ref_cube, inargs):
         new_units = 'degC'
     else:
         raise AttributeError(f'input units not supported: {input_units}')
-
+    
+    mom_ndim = dset[inargs.mom_var].ndim
     check_coords(dset, ref_cube, inargs.mom_var)
 
     time_coord = iris.coords.DimCoord(dset['time'].values,
