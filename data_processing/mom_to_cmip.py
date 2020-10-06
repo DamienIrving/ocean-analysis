@@ -60,6 +60,8 @@ def xr_to_cube(dset, ref_cube, inargs):
         new_units = 'kg m-2 s-1'
     elif input_units == 'deg_C':
         new_units = 'degC'
+    elif input_units == 'psu':
+        new_units = 'g/kg'
     else:
         raise AttributeError(f'input units not supported: {input_units}')
     
