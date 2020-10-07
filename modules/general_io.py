@@ -679,11 +679,11 @@ def salinity_unit_check(cube, valid_min=-1, valid_max=80, abort=True):
 
     """
 
-    if cube.units == '1' and cube.data.mean() < 1.0:
+    if cube.units == '1' and cube[0, ::].data.mean() < 1.0:
         cube.data = cube.data * 1000
 
-    data_max = cube.data.max()
-    data_min = cube.data.min()
+    data_max = cube[0, ::].data.max()
+    data_min = cube[0, ::].data.min()
     
     if abort:
         assert data_max < valid_max, 'Salinity max is %f' %(data_max)
