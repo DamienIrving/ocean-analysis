@@ -182,6 +182,8 @@ def broadcast_array(array, axis_index, shape):
     
     """
 
+    assert not array.shape == shape, "Array shape same as target shape"
+
     if type(axis_index) in [float, int]:
         start_axis_index = end_axis_index = axis_index
     else:
@@ -199,6 +201,8 @@ def broadcast_array(array, axis_index, shape):
         array = array[..., numpy.newaxis]
         array = numpy.repeat(array, shape[dim], axis=-1)
         dim = dim + 1
+
+    assert array.shape == shape, "Final broadcast array not target shape"
 
     return array
 
