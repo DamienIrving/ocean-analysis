@@ -214,7 +214,7 @@ def clipping_details(orig_data, clipped_data, bin_edges, var_name):
     logging.info(f"Last {var_name} bin had {npoints_max} values, clipping added {npoints_over}")
 
 
-def bin_data(df, x_var, x_edges, basin_edges, ntimes):
+def bin_data(df, x_var, x_edges, basin_edges):
     """Bin the data"""
 
     assert x_var in ['temperature', 'salinity']
@@ -231,15 +231,12 @@ def bin_data(df, x_var, x_edges, basin_edges, ntimes):
                                                         weights=df['weight'].values * df['temperature'].values,
                                                         bins=[x_edges, basin_edges])
 
-    w_out = w_dist / ntimes
-    binned_total_weight = w_out.sum()
-    orig_total_weight = df['weight'].values.sum() / ntimes
+    binned_total_weight = w_dist.sum()
+    orig_total_weight = df['weight'].values.sum()
     numpy.testing.assert_allclose(orig_total_weight, binned_total_weight, rtol=1e-03)
-    ws_out = ws_dist / ntimes
-    wt_out = wt_dist / ntimes
 
-    return w_out, ws_out, wt_out
-    
+    return w_dist, ws_dist, wt_dist
+   
 
 def main(inargs):
     """Run the program."""
@@ -290,12 +287,12 @@ def main(inargs):
         else:
             salinity_year_cube = scube.extract(year_constraint)
             temperature_year_cube = tcube.extract(year_constraint)
+                    
+        df, sunits, tunits = water_mass.create_df(temperature_year_cube, salinity_year_cube, wcube, bcube,
+                                                  sbounds=(s_edges[0], s_edges[-1]), multiply_weights_by_days_in_year_frac=True)
 
-        df, sunits, tunits = water_mass.create_df(temperature_year_cube, salinity_year_cube, wcube.data, wcube.var_name, bcube,
-                                                  sbounds=(s_edges[0], s_edges[-1]))
-        ntimes = salinity_year_cube.shape[0]
-        w_tbin_outdata[index, :, :], ws_tbin_outdata[index, :, :], wt_tbin_outdata[index, :, :] = bin_data(df, 'temperature', t_edges, b_edges, ntimes)
-        w_sbin_outdata[index, :, :], ws_sbin_outdata[index, :, :], wt_sbin_outdata[index, :, :] = bin_data(df, 'salinity', s_edges, b_edges, ntimes)
+        w_tbin_outdata[index, :, :], ws_tbin_outdata[index, :, :], wt_tbin_outdata[index, :, :] = bin_data(df, 'temperature', t_edges, b_edges)
+        w_sbin_outdata[index, :, :], ws_sbin_outdata[index, :, :], wt_sbin_outdata[index, :, :] = bin_data(df, 'salinity', s_edges, b_edges)
 
     outdata_dict = {}
     outdata_dict['w_tbin'] = numpy.ma.masked_invalid(w_tbin_outdata)

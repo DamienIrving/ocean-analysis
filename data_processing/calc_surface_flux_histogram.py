@@ -120,7 +120,7 @@ def clipping_details(orig_data, clipped_data, bin_edges):
     logging.info(f"Last bin had {npoints_max} values, clipping added {npoints_over}")
 
 
-def bin_data(df, bin_edges, basin_edges, ntimes, nchunks):
+def bin_data(df, bin_edges, basin_edges, nchunks):
     """Bin the data"""
 
     bin_vals_clipped = numpy.clip(df['bin'].values, bin_edges[0], bin_edges[-1])
@@ -137,9 +137,8 @@ def bin_data(df, bin_edges, basin_edges, ntimes, nchunks):
         numpy.testing.assert_allclose(hist_chunk.sum(), flux_vals.sum(), rtol=1.5e-02)
         hist = hist + hist_chunk
 
-    hist = hist / ntimes
     binned_total_flux = hist.sum()
-    orig_total_flux = flux_data.sum() / ntimes
+    orig_total_flux = flux_data.sum()
     numpy.testing.assert_allclose(orig_total_flux, binned_total_flux, rtol=1.5e-02)
 
     return hist
@@ -160,7 +159,7 @@ def multiply_flux_by_area(flux_per_unit_area_cube, area_cube, var):
 
 def main(inargs):
     """Run the program."""
-    
+
     logging.basicConfig(level=logging.DEBUG)
 
     mom_vars = {"temp_nonlocal_KPP": "cp*rho*dzt*nonlocal tendency from KPP",
@@ -210,9 +209,10 @@ def main(inargs):
         flux_per_area_year_cube = flux_per_area_cube.extract(year_constraint)
         flux_year_cube = multiply_flux_by_area(flux_per_area_year_cube, area_cube, flux_var)
         bin_year_cube = bin_cube.extract(year_constraint)
-        df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube)
+        df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube,
+                                                  multiply_flux_by_days_in_year_frac=True)
         ntimes = flux_year_cube.shape[0] 
-        outdata[year_index, :, :] = bin_data(df, bin_edges, basin_edges, ntimes, inargs.nchunks)
+        outdata[year_index, :, :] = bin_data(df, bin_edges, basin_edges, inargs.nchunks)
     outdata = numpy.ma.masked_invalid(outdata)
     outcube = construct_cube(outdata, flux_year_cube, bin_cube, basin_cube, years, 
                              bin_values, bin_edges, bin_units, log)

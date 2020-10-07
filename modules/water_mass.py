@@ -31,19 +31,64 @@ except ImportError:
 
 # Define functions
 
-def create_df(tcube, scube, wdata, wvar, bcube, sbounds=None):
-    """Create DataFrame for water mass analysis.
+def multiply_by_days_in_year_frac(cube, ref_cube=None):
+    """Multiply monthly data by corresponding days in year fraction.
 
-    Args:
-      tcube (iris.cube.Cube)            -- temperature cube
-      scube (iris.cube.Cube)            -- salinity cube
-      wcube (numpy.ma.core.MaskedArray) -- weights data
-      wvar (str)                        -- weights variable (areacello or volcello)
-      bcube (iris.cube.Cube)            -- basin cube
+    Useful when needing to account for the slightly different number
+      of days in each month.
+
+    Output is broadcast to same shape as ref cube
+     (assuming cube has no time axis and ref_cube does) 
 
     """
 
-    assert wvar in ['areacello', 'volcello']
+    assert 'days' in str(ref_cube.coord('time').units)
+    time_span_days = ref_cube.coord('time').bounds[:, 1] - ref_cube.coord('time').bounds[:, 0]
+    assert len(time_span_days) == 12
+    assert time_span_days.max() < 32
+    assert time_span_days.min() > 26
+    days_in_year = time_span_days.sum()
+    assert days_in_year in [365, 366]
+
+    if ref_cube:
+        assert ref_cube.ndim in [3, 4]
+        if ref_cube.ndim == 3:
+            assert cube.var_name == 'areacello'
+            data = uconv.broadcast_array(cube.data, [1, 2], ref_cube.shape)
+        else:
+            data = uconv.broadcast_array(cube.data, [1, 3], ref_cube.shape)
+    else:
+        data = cube.data
+
+    for month, time_span in enumerate(time_span_days):
+        data[month, ::] = data[month, ::] * (time_span / days_in_year)
+    numpy.testing.assert_allclose(data.sum(), cube.data.sum(), rtol=1e-03)
+
+    return data
+
+
+def create_df(tcube, scube, wcube, bcube, sbounds=None,
+              multiply_weights_by_days_in_year_frac=False):
+    """Create DataFrame for water mass analysis.
+
+    Args:
+      tcube (iris.cube.Cube)  -- temperature cube
+      scube (iris.cube.Cube)  -- salinity cube
+      wcube (iris.cube.Cube)  -- weights cube
+      bcube (iris.cube.Cube)  -- basin cube
+      sbounds (tuple)         -- salinity bounds
+      days_in_month_weights_adjustment (bool) -- multiply
+        weights data by (days in month / days in year) 
+
+    """
+
+    assert wcube.var_name in ['areacello', 'volcello']
+
+    if multiply_weights_by_days_in_year_frac:
+        wdata = multiply_by_days_in_year_frac(wcube, ref_cube=tcube)
+    else:
+        wdata = wcube.data
+
     assert bcube.ndim == 2
     coord_names = [coord.name() for coord in tcube.dim_coords]
 
@@ -64,17 +109,19 @@ def create_df(tcube, scube, wdata, wvar, bcube, sbounds=None):
 
     if tcube.ndim == 3:
         bdata = uconv.broadcast_array(bcube.data, [1, 2], tcube.shape)
-        if wvar == 'areacello':
-            assert coord_names[0] in ['time', 'month', 'year']
-            wdata = uconv.broadcast_array(wdata, [1, 2], tcube.shape)
-        else:
-            assert coord_names[0] not in ['time', 'month', 'year']
+        if not tcube.shape == wcube.data.shape:
+            if wcube.var_name == 'areacello':
+                assert coord_names[0] in ['time', 'month', 'year']
+                wdata = uconv.broadcast_array(wdata, [1, 2], tcube.shape)
+            else:
+                assert coord_names[0] not in ['time', 'month', 'year']
     elif tcube.ndim == 4:
         bdata = uconv.broadcast_array(bcube.data, [2, 3], tcube.shape)
-        if wvar == 'areacello':
-            wdata = uconv.broadcast_array(wdata, [2, 3], tcube.shape)
-        else:
-            wdata = uconv.broadcast_array(wdata, [1, 3], tcube.shape)    
+        if not tcube.shape == wdata.shape:
+            if wvar == 'areacello':
+                wdata = uconv.broadcast_array(wdata, [2, 3], tcube.shape)
+            else:
+                wdata = uconv.broadcast_array(wdata, [1, 3], tcube.shape)    
 
     common_mask = tcube.data.mask + scube.data.mask
     scube.data.mask = common_mask
@@ -108,13 +155,16 @@ def create_df(tcube, scube, wdata, wvar, bcube, sbounds=None):
     return df, scube.units, tcube.units
     
 
-def create_flux_df(flux_cube, bin_cube, basin_cube):
+def create_flux_df(flux_cube, bin_cube, basin_cube,
+                   multiply_flux_by_days_in_year_frac=False):
     """Create DataFrame for surface flux analysis.
 
     Args:
       flux_cube (iris.cube.Cube) -- flux cube
       bin_cube (iris.cube.Cube) -- data cube for defining bins
       basin_cube (iris.cube.Cube) -- basin cube
+      multiply_flux_by_days_in_year_frac (bool) -- multiply
+        flucx data by (days in month / days in year)
 
     """
 
@@ -147,7 +197,12 @@ def create_flux_df(flux_cube, bin_cube, basin_cube):
     flux_cube.data.mask = common_mask
     bin_cube.data.mask = common_mask
     
-    flux_data = flux_cube.data.compressed()
+    if multiply_flux_by_days_in_year_frac:
+        flux_data = multiply_by_days_in_year_frac(flux_cube)
+    else:
+        flux_data = flux_cube.data
+
+    flux_data = flux_data.compressed()
     bin_data = bin_cube.data.compressed()
     basin_data = basin_data.compressed()
     lat_data = lats.compressed()
