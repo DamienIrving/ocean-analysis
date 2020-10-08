@@ -98,6 +98,7 @@ def construct_cube(outdata_dict,
     
     tbin_dim_coords_list = [(year_coord, 0), (temperature_coord, 1), (basin_coord, 2)]
     sbin_dim_coords_list = [(year_coord, 0), (salinity_coord, 1), (basin_coord, 2)]
+    tsbin_dim_coords_list = [(year_coord, 0), (salinity_coord, 1), (temperature_coord, 2), (basin_coord, 3)]
     wcube.var_name = wcube.var_name if type(wcube) == iris.cube.Cube else wcube.name
 
     w_tbin_std_name = wcube.standard_name + '_binned_by_temperature'
@@ -162,14 +163,49 @@ def construct_cube(outdata_dict,
                                   attributes=tcube.attributes,
                                   dim_coords_and_dims=sbin_dim_coords_list)
 
+    w_tsbin_std_name = wcube.standard_name + '_binned_by_temperature_and_salinity'
+    iris.std_names.STD_NAMES[w_tsbin_std_name] = {'canonical_units': str(wcube.units)}
+    w_tsbin_cube = iris.cube.Cube(outdata_dict['w_tsbin'],
+                                  standard_name=w_tsbin_std_name,
+                                  long_name=wcube.long_name + ' binned by temperature and salinity',
+                                  var_name=wcube.var_name + '_tsbin',
+                                  units=wcube.units,
+                                  attributes=tcube.attributes,
+                                  dim_coords_and_dims=tsbin_dim_coords_list)
+
+    ws_tsbin_std_name = scube.standard_name + '_times_' + wcube.standard_name + '_binned_by_temperature_and_salinity'
+    iris.std_names.STD_NAMES[ws_tsbin_std_name] = {'canonical_units': ws_units}
+    ws_tsbin_cube = iris.cube.Cube(outdata_dict['ws_tsbin'],
+                                   standard_name=ws_tsbin_std_name,
+                                   long_name=scube.long_name.strip() + ' times ' + wcube.long_name + ' binned by temperature and salinity',
+                                   var_name=scube.var_name + '_' + wcube.var_name + '_tsbin',
+                                   units=ws_units,
+                                   attributes=scube.attributes,
+                                   dim_coords_and_dims=tsbin_dim_coords_list) 
+
+    wt_tsbin_std_name = tcube.standard_name + '_times_' + wcube.standard_name + '_binned_by_temperature_and_salinity'
+    iris.std_names.STD_NAMES[wt_tsbin_std_name] = {'canonical_units': wt_units}
+    wt_tsbin_cube = iris.cube.Cube(outdata_dict['wt_tsbin'],
+                                   standard_name=wt_tsbin_std_name,
+                                   long_name=tcube.long_name.strip() + ' times ' + wcube.long_name + ' binned by temperature and salinity',
+                                   var_name=tcube.var_name + '_' + wcube.var_name + '_tsbin',
+                                   units=wt_units,
+                                   attributes=tcube.attributes,
+                                   dim_coords_and_dims=tsbin_dim_coords_list)
+
     w_tbin_cube.attributes['history'] = log
     ws_tbin_cube.attributes['history'] = log
     wt_tbin_cube.attributes['history'] = log
     w_sbin_cube.attributes['history'] = log
     ws_sbin_cube.attributes['history'] = log
     wt_sbin_cube.attributes['history'] = log
+    w_tsbin_cube.attributes['history'] = log
+    ws_tsbin_cube.attributes['history'] = log
+    wt_tsbin_cube.attributes['history'] = log
 
-    outcube_list = iris.cube.CubeList([w_tbin_cube, ws_tbin_cube, wt_tbin_cube, w_sbin_cube, ws_sbin_cube, wt_sbin_cube])
+    outcube_list = iris.cube.CubeList([w_tbin_cube, ws_tbin_cube, wt_tbin_cube,
+                                       w_sbin_cube, ws_sbin_cube, wt_sbin_cube,
+                                       w_tsbin_cube, ws_tsbin_cube, wt_tsbin_cube,])
 
     return outcube_list
 
@@ -214,22 +250,27 @@ def clipping_details(orig_data, clipped_data, bin_edges, var_name):
     logging.info(f"Last {var_name} bin had {npoints_max} values, clipping added {npoints_over}")
 
 
-def bin_data(df, x_var, x_edges, basin_edges):
-    """Bin the data"""
+def bin_data(df, var_list, edge_list):
+    """Bin the data.
 
-    assert x_var in ['temperature', 'salinity']
+    Args:
+      df (pandas.DataFrame)  -- Data
+      var_list (list)        -- Variables for binning axes
+      edge_list (list)       -- Bin edges for each bin axis variable
 
-    var_values = numpy.clip(df[x_var].values, x_edges[0], x_edges[-1])
-    clipping_details(df[x_var].values, var_values, x_edges, x_var)
+    """
 
-    w_dist, xbin_edges, ybin_edges = numpy.histogram2d(var_values, df['basin'].values,
-                                                       weights=df['weight'].values, bins=[x_edges, basin_edges])
-    ws_dist, xbin_edges, ybin_edges = numpy.histogram2d(var_values, df['basin'].values,
-                                                        weights=df['weight'].values * df['salinity'].values,
-                                                        bins=[x_edges, basin_edges])
-    wt_dist, xbin_edges, ybin_edges = numpy.histogram2d(var_values, df['basin'].values,
-                                                        weights=df['weight'].values * df['temperature'].values,
-                                                        bins=[x_edges, basin_edges])
+    data_list = []
+    for var, edges in zip(var_list, edge_list):
+        assert var in ['temperature', 'salinity', 'basin']
+        values = numpy.clip(df[var].values, edges[0], edges[-1])
+        clipping_details(df[var].values, values, edges, var)
+        data_list.append(values)
+    data = numpy.array(data_list).T
+
+    w_dist, edges = numpy.histogramdd(data, weights=df['weight'].values, bins=edge_list)
+    ws_dist, edges = numpy.histogramdd(data, weights=df['weight'].values * df['salinity'].values, bins=edge_list)
+    wt_dist, edges = numpy.histogramdd(data, weights=df['weight'].values * df['temperature'].values, bins=edge_list)
 
     binned_total_weight = w_dist.sum()
     orig_total_weight = df['weight'].values.sum()
@@ -277,6 +318,9 @@ def main(inargs):
     w_sbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(b_values)])
     ws_sbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(b_values)])
     wt_sbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(b_values)])
+    w_tsbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(t_values), len(b_values)])
+    ws_tsbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(t_values), len(b_values)])
+    wt_tsbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(t_values), len(b_values)])
     for index, year in enumerate(years):
         print(year)
         year_constraint = iris.Constraint(year=year)
@@ -291,8 +335,10 @@ def main(inargs):
         df, sunits, tunits = water_mass.create_df(temperature_year_cube, salinity_year_cube, wcube, bcube,
                                                   sbounds=(s_edges[0], s_edges[-1]), multiply_weights_by_days_in_year_frac=True)
 
-        w_tbin_outdata[index, :, :], ws_tbin_outdata[index, :, :], wt_tbin_outdata[index, :, :] = bin_data(df, 'temperature', t_edges, b_edges)
-        w_sbin_outdata[index, :, :], ws_sbin_outdata[index, :, :], wt_sbin_outdata[index, :, :] = bin_data(df, 'salinity', s_edges, b_edges)
+        w_tbin_outdata[index, ::], ws_tbin_outdata[index, ::], wt_tbin_outdata[index, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges])
+        w_sbin_outdata[index, ::], ws_sbin_outdata[index, ::], wt_sbin_outdata[index, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges])
+        w_tsbin_outdata[index, ::], ws_tsbin_outdata[index, ::], wt_tsbin_outdata[index, ::] = bin_data(df, ['salinity', 'temperature', 'basin'],
+                                                                                                        [s_edges, t_edges, b_edges])
 
     outdata_dict = {}
     outdata_dict['w_tbin'] = numpy.ma.masked_invalid(w_tbin_outdata)
@@ -301,6 +347,9 @@ def main(inargs):
     outdata_dict['w_sbin'] = numpy.ma.masked_invalid(w_sbin_outdata)
     outdata_dict['ws_sbin'] = numpy.ma.masked_invalid(ws_sbin_outdata)
     outdata_dict['wt_sbin'] = numpy.ma.masked_invalid(wt_sbin_outdata)
+    outdata_dict['w_tsbin'] = numpy.ma.masked_invalid(w_tsbin_outdata)
+    outdata_dict['ws_tsbin'] = numpy.ma.masked_invalid(ws_tsbin_outdata)
+    outdata_dict['wt_tsbin'] = numpy.ma.masked_invalid(wt_tsbin_outdata)
     outcube_list = construct_cube(outdata_dict,
                                   wcube, bcube, scube, tcube, sunits, tunits, years, 
                                   t_values, t_edges, s_values, s_edges, log)

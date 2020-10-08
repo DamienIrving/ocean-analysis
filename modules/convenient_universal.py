@@ -47,6 +47,7 @@ def add_globe_basin(data, basin_cube):
     basin_values = basin_values = numpy.array([int(num) for num in flag_values.split(' ')])
     
     assert data.shape[-1] == len(basin_values), 'Basin axis must be final axis'
+    assert data.ndim in [3, 4], 'function only setup to handle data of 3 or 4 dimensions'
 
     if flag_meanings.split(' ')[-1] == 'land':
         # new basin file format
@@ -59,7 +60,10 @@ def add_globe_basin(data, basin_cube):
         assert flag_meanings == "north_atlantic south_atlantic north_pacific south_pacific indian arctic marginal_seas_and_land"
         final_index = -1
 
-    global_data = data[:, :, 0:final_index].sum(axis=-1)
+    if data.ndim == 3:
+        global_data = data[:, :, 0:final_index].sum(axis=-1)
+    elif data.ndim == 4:
+        global_data = data[:, :, :, 0:final_index].sum(axis=-1)
     global_data = global_data[..., numpy.newaxis]
     data = numpy.ma.concatenate((data, global_data), axis=-1)
 
