@@ -59,11 +59,11 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # ACCESS-ESM1-5
 #
 #PROJECT=CMIP6
-#MIP=DAMIP
+#MIP=CMIP
 ## CMIP DAMIP
 #MODEL=ACCESS-ESM1-5
 #INSTITUTION=CSIRO
-#EXPERIMENT=hist-aer
+#EXPERIMENT=historical
 ## historical hist-GHG hist-aer
 #FX_EXP=historical
 #HIST_RUN=r1i1p1f1
@@ -72,15 +72,16 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #GRID=gn
 #OFX_VERSION=v20191115
 #FX_VERSION=v20191115
-#ATMOS_HIST_VERSION=v20200615
+#ATMOS_HIST_VERSION=v20191115
 ##v20191115 (historical r1i1p1), v20191128 (historical r2i1p1f1), v20191203 (historical r3i1p1f1), v20200615 (hist-aer, hist-GHG)
 #HIST_VERSION=v20191115
-#HIST_TIME=185001-202012
+#HIST_TIME=185001-201412
 ##2014 (historical, 2020 (hist-aer, hist-GHG)
 #ATMOS_CNTRL_VERSION=v20191214
 #CNTRL_VERSION=v20191214
 #CNTRL_TIME=010101-100012
 #CMIP6_DATA_DIR=${AUS_CMIP6_DATA_DIR}
+#SFTLF_DIR=${CMIP6_DATA_DIR}
 #VOLCELLO_DIR=${CMIP6_DATA_DIR}
 #AREACELLO_DIR=${CMIP6_DATA_DIR}
 #AREACELLA_DIR=${CMIP6_DATA_DIR}
@@ -94,8 +95,8 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #INSTITUTION=BCC
 #MODEL=BCC-CSM2-MR
 #EXPERIMENT=historical
-#FX_EXP=historical
 ## hist-aer historical hist-GHG
+#FX_EXP=historical
 #HIST_RUN=r1i1p1f1
 #CNTRL_RUN=r1i1p1f1
 #FX_RUN=r1i1p1f1
@@ -113,7 +114,7 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #AREACELLO_DIR=${CMIP6_DATA_DIR}
 #AREACELLA_DIR=${MY_DATA_DIR}
 #VOLCELLO_DIR=${MY_DATA_DIR}
-##SFTLF_FILE=/g/data/oi10/replicas/CMIP6/GMMIP/BCC/BCC-CSM2-MR/hist-resIPO/r1i1p1f1/fx/sftlf/gn/v20190613/sftlf_fx_BCC-CSM2-MR_hist-resIPO_r1i1p1f1_gn.nc
+#SFTLF_FILE=/g/data/oi10/replicas/CMIP6/GMMIP/BCC/BCC-CSM2-MR/hist-resIPO/r1i1p1f1/fx/sftlf/gn/v20190613/sftlf_fx_BCC-CSM2-MR_hist-resIPO_r1i1p1f1_gn.nc
 
 
 # CAMS-CSM1-0
@@ -146,11 +147,11 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # CanESM5
 
 #PROJECT=CMIP6
-#MIP=DAMIP
+#MIP=CMIP
 ## CMIP DAMIP
 #INSTITUTION=CCCma
 #MODEL=CanESM5
-#EXPERIMENT=hist-aer
+#EXPERIMENT=historical
 ## hist-aer historical hist-GHG
 #FX_EXP=historical
 #HIST_RUN=r1i1p1f1
@@ -162,13 +163,14 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #OFX_VERSION=v20190429
 #HIST_VERSION=v20190429
 #ATMOS_HIST_VERSION=v20190429
-#HIST_TIME=185001-202012
+#HIST_TIME=185001-201412
 ## 185001-201412 185001-202012
 #ATMOS_CNTRL_VERSION=v20190429
 #CNTRL_VERSION=v20190429
 #CNTRL_TIME=520101-620012
 #AREACELLA_DIR=${CMIP6_DATA_DIR}
 #AREACELLO_DIR=${CMIP6_DATA_DIR}
+#SFTLF_DIR=${CMIP6_DATA_DIR}
 #VOLCELLO_DIR=${MY_DATA_DIR}
 
 
@@ -225,11 +227,11 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # CESM2
 
 #PROJECT=CMIP6
-#MIP=CMIP
+#MIP=DAMIP
 ## CMIP DAMIP
 #INSTITUTION=NCAR
 #MODEL=CESM2
-#EXPERIMENT=historical
+#EXPERIMENT=hist-GHG
 ## hist-aer historical hist-GHG
 #FX_EXP=historical
 #HIST_RUN=r1i1p1f1
@@ -240,9 +242,9 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #FX_VERSION=v20190308
 #OFX_VERSION=v20190308
 #HIST_VERSION=v20190308
-#ATMOS_HIST_VERSION=v20190308
+#ATMOS_HIST_VERSION=v20190730
 ## v20190308 (historical, evspsbl), v20190401 (historical, pr), v20190730 (hist-GHG), v20200206 (hist-aer)
-#HIST_TIME=185001-201412
+#HIST_TIME=185001-201506
 ## 185001-201412 (historical, hist-aer) 185001-201506 (hist-GHG)
 #ATMOS_CNTRL_VERSION=v20190320
 #CNTRL_VERSION=v20190320
@@ -250,6 +252,7 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #AREACELLA_DIR=${CMIP6_DATA_DIR}
 #AREACELLO_DIR=${MY_DATA_DIR}
 #VOLCELLO_DIR=${MY_DATA_DIR}
+#SFTLF_DIR=${CMIP6_DATA_DIR}
 #CHUNK_ANNUAL=--chunk
 
 
@@ -633,11 +636,11 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # GFDL-ESM4
 #
 #PROJECT=CMIP6
-#MIP=DAMIP
+#MIP=CMIP
 ## CMIP DAMIP
 #INSTITUTION=NOAA-GFDL
 #MODEL=GFDL-ESM4
-#EXPERIMENT=hist-aer
+#EXPERIMENT=historical
 ## historical hist-GHG hist-aer
 #FX_EXP=historical
 #HIST_RUN=r1i1p1f1
@@ -647,10 +650,10 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 ## gn gr1 (atmos)
 #FX_VERSION=v20190726
 #OFX_VERSION=v20190726
-#ATMOS_HIST_VERSION=v20180701
-## v20180701 (hist-GHG), v20190726 (hist)
+#ATMOS_HIST_VERSION=v20190726
+## v20180701 (hist-GHG, hist-aer), v20190726 (hist)
 #HIST_VERSION=v20190726
-#HIST_TIME=185001-202012
+#HIST_TIME=185001-201412
 ## 2014 (historical), 2020 (hist-GHG, hist-aer)
 #CNTRL_VERSION=v20180701
 #ATMOS_CNTRL_VERSION=v20180701
@@ -759,12 +762,13 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #CHUNK_ANNUAL=--chunk
 
 # IPSL-CM6A-LR
+## water_evaporation_flux (not evapotranspiration like other CMIP6 models)
 
 #PROJECT=CMIP6
-#MIP=DAMIP
+#MIP=CMIP
 #MODEL=IPSL-CM6A-LR
 #INSTITUTION=IPSL
-#EXPERIMENT=hist-aer
+#EXPERIMENT=historical
 ## hist-aer historical hist-GHG
 #FX_EXP=historical
 #HIST_RUN=r1i1p1f1
@@ -775,9 +779,9 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #FX_VERSION=v20180803
 #OFX_VERSION=v20180803
 #HIST_VERSION=v20180803
-#ATMOS_HIST_VERSION=v20180914
+#ATMOS_HIST_VERSION=v20180803
 ## v20180803 (historical); v20180914 (hist-aer, hist-ghg)
-#HIST_TIME=185001-202012
+#HIST_TIME=185001-201412
 ## 2014 (historical), 2020 (GHG aer)
 #ATMOS_CNTRL_VERSION=v20200326
 #CNTRL_VERSION=v20200326
@@ -837,11 +841,11 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # MIROC6
 #
 #PROJECT=CMIP6
-#MIP=DAMIP
+#MIP=CMIP
 ## CMIP DAMIP
 #MODEL=MIROC6
 #INSTITUTION=MIROC
-#EXPERIMENT=hist-aer
+#EXPERIMENT=historical
 ## historical hist-GHG hist-aer
 #FX_EXP=historical
 #HIST_RUN=r1i1p1f1
@@ -849,11 +853,11 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #FX_RUN=r1i1p1f1
 #GRID=gn
 #FX_VERSION=v20190311
-##OFX_VERSION=
-#ATMOS_HIST_VERSION=v20190705
+#OFX_VERSION=
+#ATMOS_HIST_VERSION=v20181212
 ## v20181212 (historical, pr), v20190311 (historical, evspsbl), v20190705 (DAMIP)
-#HIST_VERSION=
-#HIST_TIME=185001-202012
+##HIST_VERSION=
+#HIST_TIME=185001-201412
 ## 2014 (hist), 2020 (GHG, aer)
 #ATMOS_CNTRL_VERSION=v20181212
 ## v20181212 (pr), v20190311 (evspsbl)
@@ -1064,23 +1068,23 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # CanESM2 #
 #
 #PROJECT=CMIP5
-#MIP=CMIP
+#MIP=DAMIP
 ## CMIP DAMIP
 #INSTITUTION=CCCma
 #MODEL=CanESM2
-#EXPERIMENT=historical
+#EXPERIMENT=historicalMisc
 ## historical historicalMisc historicalGHG
 #FX_EXP=historical
-#HIST_RUN=r1i1p1
+#HIST_RUN=r1i1p4
 ## r1i1p1 r1i1p4
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
 #GRID=gn
-#OFX_VERSION=
+##OFX_VERSION=
 #FX_VERSION=v20120410
-#ATMOS_HIST_VERSION=v20120718
-#v20111027 (historicalGHG); v20120718 (historical); v20111028 (historicalMisc)
-#HIST_TIME=185001-200512
+#ATMOS_HIST_VERSION=v20111028
+##v20111027 (historicalGHG); v20120718 (historical); v20111028 (historicalMisc)
+#HIST_TIME=185001-201212
 ## 185001-201212 (GHG, Misc)  185001-200512 (historical)
 #ATMOS_CNTRL_VERSION=v20120623
 #CNTRL_TIME=201501-301012
@@ -1092,25 +1096,25 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # CCSM4 #
 #
 #PROJECT=CMIP5
-#MIP=CMIP
+#MIP=DAMIP
 ## CMIP DAMIP
 #INSTITUTION=NCAR
 #MODEL=CCSM4
-#EXPERIMENT=historical
+#EXPERIMENT=historicalMisc
 ##historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p1
+#HIST_RUN=r1i1p10
 ##r1i1p1 r1i1p10
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
 #GRID=gn
-#OFX_VERSION=
+##OFX_VERSION=
 #FX_VERSION=v20130312
-#HIST_VERSION=
-#ATMOS_HIST_VERSION=v20160829
-## v20160829 (historical) v20120604 (historicalGHG) v20120604 (historicalMisc)
+##HIST_VERSION=
+#ATMOS_HIST_VERSION=v20120604
+## v20160829 (historical) v20120604 (historicalGHG, historicalMisc)
 #HIST_TIME=185001-200512
-#CNTRL_VERSION=
+##CNTRL_VERSION=
 #ATMOS_CNTRL_VERSION=v20160829
 #CNTRL_TIME=025001-130012
 #AREACELLO_DIR=${CMIP5_DATA_DIR}
@@ -1121,24 +1125,16 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 
 
 # CSIRO-Mk3-6-0
-#
-# unique wfo DRS: 
-# PR_FILES_HIST := $(sort $(wildcard /g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/pr/pr*.nc))
-# EVAP_FILES_HIST := $(sort $(wildcard /g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/evspsbl/evspsbl*.nc))
-# PR_FILES_CNTRL := $(sort $(wildcard /g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/piControl/mon/atmos/Amon/r1i1p1/files/pr_20110518/pr*.nc))
-# EVAP_FILES_CNTRL := $(sort $(wildcard /g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/piControl/mon/atmos/Amon/r1i1p1/files/evspsbl_20110518/evspsbl*.nc))  
-#AREACELLA_FILE=/g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${FX_VERSION}/areacella/areacella*.nc
-#SFTLF_FILE=/g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${FX_VERSION}/sftlf/sftlf*.nc              
-#
+
 #PROJECT=CMIP5
-#MIP=DAMIP
-##DAMIP CMIP
+#MIP=CMIP
+#DAMIP CMIP
 #MODEL=CSIRO-Mk3-6-0
 #INSTITUTION=CSIRO-QCCCE
-#EXPERIMENT=historicalMisc
+#EXPERIMENT=historical
 ##historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p4
+#HIST_RUN=r1i1p1
 ##r1i1p1 r1i1p4
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
@@ -1147,7 +1143,7 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #FX_VERSION=v20110518
 #HIST_VERSION=v20110518
 #ATMOS_HIST_VERSION=v20110518
-#HIST_TIME=185001-201212
+#HIST_TIME=185001-200512
 ## 201212 (historicalGHG, Misc); 200512 (historical)
 #CNTRL_VERSION=v20110518
 #ATMOS_CNTRL_VERSION=v20110518
@@ -1156,29 +1152,36 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #AREACELLA_DIR=${CMIP5_DATA_DIR}
 #VOLCELLO_DIR=${CMIP5_DATA_DIR}
 
+#PR_FILES_HIST := $(sort $(wildcard /g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/pr/pr*.nc))
+#EVAP_FILES_HIST := $(sort $(wildcard /g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/${EXPERIMENT}/mon/atmos/Amon/${HIST_RUN}/${ATMOS_HIST_VERSION}/evspsbl/evspsbl*.nc))
+#PR_FILES_CNTRL := $(sort $(wildcard /g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/piControl/mon/atmos/Amon/r1i1p1/files/pr_20110518/pr*.nc))
+#EVAP_FILES_CNTRL := $(sort $(wildcard /g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/piControl/mon/atmos/Amon/r1i1p1/files/evspsbl_20110518/evspsbl*.nc))  
+#AREACELLA_FILE=/g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${FX_VERSION}/areacella/areacella*.nc
+#SFTLF_FILE=/g/data/rr3/publications/CMIP5/output1/CSIRO-QCCCE/CSIRO-Mk3-6-0/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${FX_VERSION}/sftlf/sftlf*.nc
+
 
 # FGOALS-g2 #
 #
 #PROJECT=CMIP5
-#MIP=CMIP
+#MIP=DAMIP
 ## CMIP DAMIP
 #INSTITUTION=LASG-CESS
 #MODEL=FGOALS-g2
-#EXPERIMENT=historical
+#EXPERIMENT=historicalMisc
 ##historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p1
+#HIST_RUN=r2i1p1
 ##r1i1p1 r2i1p1
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
 #GRID=gn
 ##OFX_VERSION=
 #FX_VERSION=v1
-#HIST_VERSION=
-#ATMOS_HIST_VERSION=v1
+##HIST_VERSION=
+#ATMOS_HIST_VERSION=v20161204
 ##v20161204 v1 (historicalGHG); v1 (historical); v20161204 v1 (historicalMisc)
-#HIST_TIME=185001-201412
-## 2005 or 200912 (historicalMisc); 2005 or 2009 (historicalGHG) 201412 (historical)
+#HIST_TIME=185001-200512
+## 2009 or 2005 (historicalMisc, historicalGHG) 201412 (historical)
 ##CNTRL_VERSION=
 #ATMOS_CNTRL_VERSION=v20161204
 ## v20161204 v1
@@ -1193,11 +1196,11 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # GFDL-CM3
 #
 #PROJECT=CMIP5
-#MIP=DAMIP
+#MIP=CMIP
 ##DAMIP CMIP
 #INSTITUTION=NOAA-GFDL
 #MODEL=GFDL-CM3
-#EXPERIMENT=historicalMisc
+#EXPERIMENT=historical
 ##historical historicalGHG historicalMisc
 ## historicalMisc evspsbl data at r87/dbi599
 #FX_EXP=historical
@@ -1218,18 +1221,19 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #AREACELLA_DIR=${CMIP5_DATA_DIR}
 #SFTLF_DIR=${CMIP5_DATA_DIR}
 #VOLCELLO_DIR=${MY_DATA_DIR}
+# EVAP_FILES_HIST := $(sort $(wildcard /g/data/r87/dbi599/CMIP5/DAMIP/NOAA-GFDL/GFDL-CM3/historicalMisc/r1i1p1/Amon/evspsbl/gn/v20120227/evspsbl*.nc))
 
 # GFDL-ESM2M #
 #
 #PROJECT=CMIP5
-#MIP=DAMIP
+#MIP=CMIP
 ##DAMIP CMIP
 #INSTITUTION=NOAA-GFDL
 #MODEL=GFDL-ESM2M
-#EXPERIMENT=historicalMisc
+#EXPERIMENT=historical
 ##historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p5
+#HIST_RUN=r1i1p1
 ##r1i1p1 r1i1p5
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
@@ -1237,7 +1241,7 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 #OFX_VERSION=v20130514
 #FX_VERSION=v20120123
 #HIST_VERSION=v20130226
-#ATMOS_HIST_VERSION=v20130214
+#ATMOS_HIST_VERSION=v20111228
 ## v20111228 (historical) v20130214 (historicalGHG, Misc)
 #HIST_TIME=185001-200512
 #CNTRL_VERSION=v20130226
@@ -1260,14 +1264,14 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # GISS-E2-H #
 #
 #PROJECT=CMIP5
-#MIP=DAMIP
+#MIP=CMIP
 ##DAMIP CMIP
 #INSTITUTION=NASA-GISS
 #MODEL=GISS-E2-H
-#EXPERIMENT=historicalMisc
+#EXPERIMENT=historical
 ##historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p107
+#HIST_RUN=r1i1p1
 ##r1i1p1 r1i1p107
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
@@ -1275,7 +1279,7 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 ##OFX_VERSION=
 #FX_VERSION=v20160426
 ##HIST_VERSION=
-#ATMOS_HIST_VERSION=v20160427
+#ATMOS_HIST_VERSION=v20160426
 ## v20160426 (historical) v20160426 (historicalGHG) v20160427 (historicalMisc)
 #HIST_TIME=185001-200512
 ## 201212 (historicalGHG) 200512 (otherwise)
@@ -1325,14 +1329,14 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # IPSL-CM5A-LR #
 #
 #PROJECT=CMIP5
-#MIP=DAMIP
+#MIP=CMIP
 ##DAMIP CMIP
 #INSTITUTION=IPSL
 #MODEL=IPSL-CM5A-LR
-#EXPERIMENT=historicalMisc
-#historical historicalGHG historicalMisc
+#EXPERIMENT=historical
+##historical historicalGHG historicalMisc
 #FX_EXP=historical
-#HIST_RUN=r1i1p3
+#HIST_RUN=r1i1p1
 ##r1i1p1 r1i1p3
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
@@ -1340,10 +1344,10 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 ##OFX_VERSION=
 #FX_VERSION=v20110406
 ##HIST_VERSION=
-#ATMOS_HIST_VERSION=v20111119
+#ATMOS_HIST_VERSION=v20110406
 ## v20110406 (historical) v20120526 (historicalGHG) v20111119 (historicalMisc)
-#HIST_TIME=185001-201212
-## 201212 (historicalGHG, historicalMisc)
+#HIST_TIME=185001-200512
+## 201212 (historicalGHG, historicalMisc), 2005 (historical)
 ##CNTRL_VERSION=
 #ATMOS_CNTRL_VERSION=v20130506
 #CNTRL_TIME=180001-279912
@@ -1358,25 +1362,25 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 # NorESM1-M #
 #
 #PROJECT=CMIP5
-#MIP=DAMIP
+#MIP=CMIP
 ##DAMIP CMIP
 #INSTITUTION=NCC
 #MODEL=NorESM1-M
-#EXPERIMENT=historicalMisc
-#historical historicalGHG historicalMisc
+#EXPERIMENT=historical
+##historical historicalGHG historicalMisc
 #FX_EXP=historical
 #HIST_RUN=r1i1p1
 #CNTRL_RUN=r1i1p1
 #FX_RUN=r0i0p0
 #GRID=gn
-#OFX_VERSION=
+##OFX_VERSION=
 #FX_VERSION=v20110901
-#HIST_VERSION=
-#ATMOS_HIST_VERSION=v20110918
-## v20110901 (historical) v20110918 (historicalGHG) v20110918 (historicalMisc)
-#HIST_TIME=185001-201212
-## 2012 (historicalGHG, Misc)
-#CNTRL_VERSION=
+##HIST_VERSION=
+#ATMOS_HIST_VERSION=v20110901
+## v20110901 (historical) v20110918 (historicalGHG, historicalMisc)
+#HIST_TIME=185001-200512
+## 2012 (historicalGHG, Misc), 2005 (historical)
+##CNTRL_VERSION=
 #ATMOS_CNTRL_VERSION=v20110901
 #CNTRL_TIME=070001-120012
 #AREACELLO_DIR=${CMIP5_DATA_DIR}
