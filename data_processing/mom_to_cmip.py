@@ -68,12 +68,15 @@ def xr_to_cube(dset, ref_cube, inargs):
     mom_ndim = dset[inargs.mom_var].ndim
     check_coords(dset, ref_cube, inargs.mom_var)
 
-    time_coord = iris.coords.DimCoord(dset['time'].values,
-                                      standard_name='time',
-                                      long_name='time',
-                                      var_name='time',
-                                      units=cf_units.Unit(dset['time'].units,
-                                                          calendar=dset['time'].calendar.lower()))
+    if inargs.ref_time:
+        time_coord = ref_cube.coord('time')
+    else:
+        time_coord = iris.coords.DimCoord(dset['time'].values,
+                                          standard_name='time',
+                                          long_name='time',
+                                          var_name='time',
+                                          units=cf_units.Unit(dset['time'].units,
+                                                              calendar=dset['time'].calendar.lower()))
     dim_coord_list = [(time_coord, 0)]
     for index, coord in enumerate(ref_cube.dim_coords[1:]):
         dim_coord_list.append((coord, index + 1))
@@ -150,6 +153,8 @@ author:
                         help="Process each mom_file separately before merging")
     parser.add_argument("--ref_names", action="store_true", default=False,
                         help="Use the reference file names (var, long and standard) for output file")
+    parser.add_argument("--ref_time", action="store_true", default=False,
+                        help="Use the reference file time axis for output file")
 
     args = parser.parse_args()
     main(args)
