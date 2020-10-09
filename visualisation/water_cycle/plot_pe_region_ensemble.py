@@ -77,16 +77,17 @@ def get_axis_label(data_var, calculated_var, scaling_var, units):
     return label
 
 
-def plot_ensemble_lines(df, var, model_list, experiment, units, scaling_var, ylim_list):
+def plot_ensemble_lines(df, var, model_list, experiment, units, scaling_var, ylim_list,
+                        evap_sign_switch=False):
     """Plot regional changes for each model as a line graph"""
 
     xvals = np.array([1, 2, 3, 4, 5])
     fig, axes = plt.subplots(2, 2, figsize=[18, 12])
     axes = axes.flatten()    
 
-    var_list = ['cumulative_change_sign_fix', 'percentage_change',
+    var_list = ['cumulative_change', 'percentage_change',
                 'cumulative_change_anomaly', 'percentage_change_anomaly']
-    titles = {'cumulative_change_sign_fix': 'Raw values',
+    titles = {'cumulative_change': 'Raw values',
               'percentage_change': 'Raw values (percentage change)',
               'cumulative_change_anomaly': 'Spatial anomaly (i.e. global mean subtracted)',
               'percentage_change_anomaly': 'Spatial anomaly (local % change minus global % change)'} 
@@ -94,6 +95,8 @@ def plot_ensemble_lines(df, var, model_list, experiment, units, scaling_var, yli
     for plot_num, var_name in enumerate(var_list):
         for model_num, model_name in enumerate(model_list):
             yvals = df[(df['model'] == model_name)][var_name].values[1:]
+            if evap_sign_switch:
+                yvals = yvals * np.array([1, -1, 1, -1, 1])
             linestyle = '-' if model_num < 10 else '--'
             axes[plot_num].plot(xvals, yvals, label=model_name, marker='o', linestyle=linestyle)
         short_name = names[var]
@@ -134,20 +137,17 @@ def main(inargs):
             cum_change = cum_change * scale_factor
             start = start * scale_factor  
         ntimes = anomaly_data.shape[0]
-        pct_change = ((cum_change / ntimes) / start) * 100
-        if inargs.var == 'precipitation_minus_evaporation_flux':
-            mean_cum_change = cum_change[0::2].mean()
-            total_cum_change = cum_change[0::2].sum()
-            total_start = start[0::2].sum()
-            cum_change_anomaly = (cum_change * np.array([1, -1, 1, -1, 1])) - mean_cum_change
-        else:
-            mean_cum_change = cum_change.mean()
-            total_cum_change = cum_change.sum()
-            total_start = start.sum()
-            cum_change_anomaly = cum_change - mean_cum_change
-
+        pct_change = ((cum_change / ntimes) / np.absolute(start)) * 100
+        mean_cum_change = cum_change[0::2].mean()
+        total_cum_change = cum_change[0::2].sum()
+        total_start = start[0::2].sum()
         total_pct_change = ((total_cum_change / ntimes) / total_start) * 100
-        pct_change_anomaly = pct_change - total_pct_change
+        if inargs.var == 'precipitation_minus_evaporation_flux':
+            cum_change_anomaly = cum_change - (mean_cum_change * np.array([1, -1, 1, -1, 1]))
+            pct_change_anomaly = pct_change - (total_pct_change * np.array([1, -1, 1, -1, 1]))
+        else:
+            cum_change_anomaly = cum_change - mean_cum_change
+            pct_change_anomaly = pct_change - total_pct_change
 
         model_list.append(model)
         data.append([model, 'globe precip', total_start,
@@ -161,17 +161,10 @@ def main(inargs):
                                        'cumulative_change', 'cumulative_change_anomaly',
                                        'percentage_change', 'percentage_change_anomaly'])
 
-    if inargs.var == 'precipitation_minus_evaporation_flux':
-        df['cumulative_change_sign_fix'] = df['cumulative_change'].where((df['region'] == 'SH precip') | \
-                                          (df['region'] == 'tropical precip') | (df['region'] == 'NH precip') | \
-                                          (df['region'] == 'globe precip'), df['cumulative_change'] * -1)
-    else:
-        df['cumulative_change_sign_fix'] = df['cumulative_change']
-
     model_list.sort()
     experiment = cube.attributes['experiment_id']
     plot_ensemble_lines(df, inargs.var, model_list, experiment, str(units),
-                        inargs.scaling_var, inargs.ymax)
+                        inargs.scaling_var, inargs.ymax, evap_sign_switch=inargs.evap_sign_switch)
 
     plt.savefig(inargs.outfile, bbox_inches='tight')
 
@@ -202,6 +195,8 @@ if __name__ == '__main__':
                         default=('1861-01-01', '2005-12-31'), help="Time period [default = entire]")
     parser.add_argument("--ymax", type=float, nargs=2, action='append', metavar=('PLOTNUM', 'YMAX'), default=[],
                         help='y axis limit (give plot number)')
+    parser.add_argument("--evap_sign_switch", action="store_true", default=False,
+                        help="Multiply the evap region values by -1")
 
     args = parser.parse_args()
     if args.scaling_files:
