@@ -82,15 +82,13 @@ def plot_ensemble_lines(df, var, model_list, experiment, units, scaling_var, yli
     """Plot regional changes for each model as a line graph"""
 
     xvals = np.array([1, 2, 3, 4, 5])
-    fig, axes = plt.subplots(2, 2, figsize=[18, 12])
+    fig, axes = plt.subplots(1, 3, figsize=[30, 7])
     axes = axes.flatten()    
 
-    var_list = ['cumulative_change', 'percentage_change',
-                'cumulative_change_anomaly', 'percentage_change_anomaly']
+    var_list = ['cumulative_change', 'percentage_change', 'percentage_change_anomaly']
     titles = {'cumulative_change': 'Raw values',
-              'percentage_change': 'Raw values (percentage change)',
-              'cumulative_change_anomaly': 'Spatial anomaly (i.e. global mean subtracted)',
-              'percentage_change_anomaly': 'Spatial anomaly (local % change minus global % change)'} 
+              'percentage_change': 'Percentage change',
+              'percentage_change_anomaly': 'Local % change minus global % change'} 
 
     for plot_num, var_name in enumerate(var_list):
         for model_num, model_name in enumerate(model_list):
@@ -138,28 +136,26 @@ def main(inargs):
             start = start * scale_factor  
         ntimes = anomaly_data.shape[0]
         pct_change = ((cum_change / ntimes) / np.absolute(start)) * 100
-        mean_cum_change = cum_change[0::2].mean()
-        total_cum_change = cum_change[0::2].sum()
-        total_start = start[0::2].sum()
-        total_pct_change = ((total_cum_change / ntimes) / total_start) * 100
         if inargs.var == 'precipitation_minus_evaporation_flux':
-            cum_change_anomaly = cum_change - (mean_cum_change * np.array([1, -1, 1, -1, 1]))
+            total_cum_change = np.sum(cum_change * np.array([1, -1, 1, -1, 1]))
+            total_start = np.sum(start * np.array([1, -1, 1, -1, 1]))
+            total_pct_change = ((total_cum_change / ntimes) / total_start) * 100
             pct_change_anomaly = pct_change - (total_pct_change * np.array([1, -1, 1, -1, 1]))
         else:
-            cum_change_anomaly = cum_change - mean_cum_change
+            total_cum_change = cum_change.sum()
+            total_start = start.sum()
+            total_pct_change = ((total_cum_change / ntimes) / total_start) * 100
             pct_change_anomaly = pct_change - total_pct_change
 
         model_list.append(model)
         data.append([model, 'globe precip', total_start,
-                     total_cum_change, None, total_pct_change, None])
+                     total_cum_change, total_pct_change, None])
         for region in range(5):
             data.append([model, region_names[region], start[region],
-                         cum_change[region], cum_change_anomaly[region],
-                         pct_change[region], pct_change_anomaly[region]])
+                         cum_change[region], pct_change[region], pct_change_anomaly[region]])
     
     df = pd.DataFrame(data, columns = ['model', 'region', 'start',
-                                       'cumulative_change', 'cumulative_change_anomaly',
-                                       'percentage_change', 'percentage_change_anomaly'])
+                                       'cumulative_change', 'percentage_change', 'percentage_change_anomaly'])
 
     model_list.sort()
     experiment = cube.attributes['experiment_id']
