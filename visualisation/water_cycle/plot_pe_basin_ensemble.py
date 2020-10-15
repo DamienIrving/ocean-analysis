@@ -160,8 +160,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2005-12-31'), help="Time period [default = entire]")
-    parser.add_argument("--ymax", type=float, default=[],
-                        help='y axis limit')
+    parser.add_argument("--ymax", type=float, nargs=2, action='append', metavar=('PLOTNUM', 'YMAX'), default=[],
+                        help='y axis limit (give plot number)')
 
     args = parser.parse_args()
     main(args)
