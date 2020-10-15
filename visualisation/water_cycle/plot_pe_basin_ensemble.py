@@ -55,17 +55,13 @@ def get_data(infile, var, time_constraint):
     return cube, anomaly_data, start_data
 
 
-def get_axis_label(data_var, calculated_var, scaling_var, units):
+def get_axis_label(data_var, calculated_var, units):
     """Define axis label"""
 
     short_name = names[data_var]
     label = f'Time-integrated {short_name} anomaly '
     if not 'cumulative' in calculated_var:
         units = '% change'
-
-    if scaling_var:
-        scale_name = names[scaling_var]
-        label = label + f'times mean {scale_name} '
 
     label = label + f'({units})'
 
@@ -76,21 +72,22 @@ def plot_ensemble_lines(df, var, model_list, experiment, units, ylim_list):
     """Plot regional changes for each model as a line graph"""
 
     xvals = np.array([1, 2, 3, 4])
-    fig, axes = plt.subplots(1, 3, figsize=[30, 7])
+    fig, axes = plt.subplots(2, 2, figsize=[20, 14])
     axes = axes.flatten()    
 
-    var_list = ['cumulative_change', 'percentage_change', 'percentage_change_anomaly']
-    titles = {'cumulative_change': 'Raw values',
+    var_list = ['start', 'cumulative_change', 'percentage_change', 'percentage_change_anomaly']
+    titles = {'start': 'starting value',
+              'cumulative_change': 'Raw values',
               'percentage_change': 'Percentage change',
               'percentage_change_anomaly': 'Local % change minus global % change'} 
 
     for plot_num, var_name in enumerate(var_list):
         for model_num, model_name in enumerate(model_list):
-            yvals = df[(df['model'] == model_name)][var_name].values[1:]
+            yvals = df[(df['model'] == model_name)][var_name].values
             linestyle = '-' if model_num < 10 else '--'
             axes[plot_num].plot(xvals, yvals, label=model_name, marker='o', linestyle=linestyle)
         short_name = names[var]
-        ylabel = get_axis_label(var, var_name, scaling_var, units)
+        ylabel = get_axis_label(var, var_name, units)
         axes[plot_num].set_ylabel(ylabel)
         axes[plot_num].set_xticks(xvals)
         axes[plot_num].set_xticklabels(['atlantic', 'indian', 'pacific', 'land'])
@@ -163,7 +160,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
                         default=('1861-01-01', '2005-12-31'), help="Time period [default = entire]")
-    parser.add_argument("--ymax", type=float, default=None,
+    parser.add_argument("--ymax", type=float, default=[],
                         help='y axis limit')
 
     args = parser.parse_args()
