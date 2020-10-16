@@ -34,11 +34,16 @@ def main(args):
     
     if args.operation == 'division':
         outcube = cube1 / cube2
+        assert str(cube2.units) == 'm2'
+        cube1_units = str(cube1.units)
+        new_units = f'{cube1_units} m-2'
+    elif args.operation == 'addition':
+        outcube = cube1 + cube2
+        new_units = None
 
     outcube.attributes = cube1.attributes
-    cube1_units = str(cube1.units)
-    assert str(cube2.units) == 'm2'
-    outcube.units = f'{cube1_units} m-2'
+    if new_units:
+        outcube.units = new_units
     outcube.var_name = cube1.var_name
     outcube.long_name = cube1.long_name
     if cube1.standard_name:
@@ -63,7 +68,7 @@ if __name__ == '__main__':
     parser.add_argument("var1", type=str, help="Input variable 1")
     parser.add_argument("infile2", type=str, help="Input file 2")
     parser.add_argument("var2", type=str, help="Input variable 2")
-    parser.add_argument("operation", type=str, choices=('division'), help="Operation")
+    parser.add_argument("operation", type=str, choices=('division', 'addition'), help="Operation")
     parser.add_argument("outfile", type=str, help="Output file")
     args = parser.parse_args()
     main(args)
