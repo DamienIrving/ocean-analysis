@@ -62,7 +62,7 @@ def get_data(infiles, var, data_type, time_constraint, agg_method, pct=False):
     basins = ['Atlantic', 'Pacific', 'Indian', 'Arctic', 'Marginal Seas', 'Land', 'Ocean', 'Globe']
     pe_regions = ['SH Precip', 'SH Evap', 'Tropical Precip', 'NH Evap', 'NH Precip', 'Globe']
     df = pd.DataFrame(ens_cube.data, columns=basins, index=pe_regions)
-    df.loc['Globe', 'Globe'] = np.nan
+    #df.loc['Globe', 'Globe'] = np.nan
     df = df.iloc[::-1]
     if pct:
         total_pos = df[df['Globe'] > 0]['Globe'].sum()
@@ -80,7 +80,7 @@ def main(inargs):
     cmap = 'BrBG'
     basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Arctic', 'Land', 'Ocean', 'Globe']
     if inargs.var == 'precipitation_minus_evaporation_flux':
-        var_abbrev = 'precipitation minus evaporation'   
+        var_abbrev = 'P-E'   
     elif inargs.var == 'water_evapotranspiration_flux':
         var_abbrev = 'evaporation'
         cmap = 'BrBG_r'
@@ -98,13 +98,18 @@ def main(inargs):
         df = df / 10**inargs.scale_factor
 
     if inargs.data_type == 'cumulative_anomaly':
-        title = f'Time-integrated {var_abbrev} anomaly'
+        title = f'time-integrated {var_abbrev} anomaly'
+        if len(inargs.infiles) > 1:
+            title = f'ensemble {inargs.ensemble_stat} {title}'
         if inargs.time_bounds:
             start_year = inargs.time_bounds[0].split('-')[0]
             end_year = inargs.time_bounds[1].split('-')[0]
-            title = title + f', {start_year}-{end_year}'
+            title = f'{title}, {start_year}-{end_year}'
+        if inargs.experiment:
+            title = f'{title}, {inargs.experiment} experiment'
+        
     elif inargs.data_type == 'climatology':
-        title = f'Annual mean {var_abbrev}'
+        title = f'annual mean {var_abbrev}'
 
     if inargs.pct:
         fmt = '.0%'
@@ -160,6 +165,8 @@ example:
                         help="Colorbar maximum value")
     parser.add_argument("--ensemble_stat", type=str, choices=('median', 'mean'), default='mean',
                         help="Ensemble statistic if multiple input files")
+    parser.add_argument("--experiment", type=str, default=None,
+                        help="experiment label for plot title")
 
     args = parser.parse_args()             
     main(args)
