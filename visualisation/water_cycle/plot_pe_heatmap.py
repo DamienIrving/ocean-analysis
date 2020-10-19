@@ -76,14 +76,16 @@ def main(inargs):
     """Run the program."""
 
     assert inargs.var in ['precipitation_minus_evaporation_flux', 'water_flux_into_sea_water',
-                          'water_evapotranspiration_flux']
+                          'water_evapotranspiration_flux', 'precipitation_flux']
     cmap = 'BrBG'
     basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Arctic', 'Land', 'Ocean', 'Globe']
     if inargs.var == 'precipitation_minus_evaporation_flux':
-        var_abbrev = 'net mositure import/export (i.e. P-E)'   
+        var_abbrev = 'precipitation minus evaporation'   
     elif inargs.var == 'water_evapotranspiration_flux':
         var_abbrev = 'evaporation'
         cmap = 'BrBG_r'
+    elif inargs.var == 'precipitation_flux':
+        var_abbrev = 'precipitation'
     elif inargs.var == 'water_flux_into_sea_water':
         var_abbrev = 'net mositure import/export (i.e. P-E+R)'
         basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Arctic', 'Globe']
