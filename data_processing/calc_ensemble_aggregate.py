@@ -65,13 +65,28 @@ def unify_coordinates(cube_list):
     return cube_list
 
 
-def calc_ensagg(cube_list):
+def unify_variable(cube_list):
+    """Unify variable attributes across ensemble"""
+
+    for cube in cube_list[1:]:
+        cube.var_name = cube_list[0].var_name
+        cube.long_name = cube_list[0].long_name
+        cube.standard_name = cube_list[0].standard_name
+        cube.units = cube_list[0].units
+
+    return cube_list
+
+
+def calc_ensagg(cube_list, operator='mean'):
     """Calculate the ensemble mean"""
 
-    cube_list = unify_coordinates(cube_list)
+    operator_dict = {'mean': iris.analysis.MEAN, 
+                     'median': iris.analysis.MEDIAN}
     equalise_attributes(cube_list)
+    cube_list = unify_coordinates(cube_list)
+    cube_list = unify_variable(cube_list)
     ensemble_cube = cube_list.merge_cube()
-    ensemble_mean = ensemble_cube.collapsed('ensemble_member', iris.analysis.MEAN, mdtol=0)
+    ensemble_mean = ensemble_cube.collapsed('ensemble_member', operator_dict[operator], mdtol=0)
     ensemble_mean.remove_coord('ensemble_member')
 
     return ensemble_mean
