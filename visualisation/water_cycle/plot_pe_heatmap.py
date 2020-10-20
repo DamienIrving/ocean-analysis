@@ -42,6 +42,7 @@ def get_data(infiles, var, data_type, time_constraint, agg_method, pct=False):
     cube_list = iris.cube.CubeList([])
     for ensnum, infile in enumerate(infiles):
         cube, history = gio.combine_files(infile, var, new_calendar='365_day')
+        assert cube.units == 'kg', f'{infile} units not kg'
         if time_constraint:
             cube = cube.extract(time_constraint)
         if data_type == 'cumulative_anomaly':
@@ -65,9 +66,12 @@ def get_data(infiles, var, data_type, time_constraint, agg_method, pct=False):
     #df.loc['Globe', 'Globe'] = np.nan
     df = df.iloc[::-1]
     if pct:
-        total_pos = df[df['Globe'] > 0]['Globe'].sum()
-        total_neg = abs(df[df['Globe'] < 0]['Globe'].sum())
-        df = df / max(total_pos, total_neg)
+        if var in ['precipitation_minus_evaporation_flux', 'water_flux_into_sea_water']:
+            total_pos= df['Globe']['NH Precip'] + df['Globe']['Tropical Precip'] + df['Globe']['SH Precip']
+            total_neg = abs(df['Globe']['NH Evap'] + df['Globe']['SH Evap'])
+            df = df / max(total_pos, total_neg)
+        else:
+            df = df / df['Globe']['Globe']
         
     return df, history
 
@@ -98,28 +102,31 @@ def main(inargs):
         df = df / 10**inargs.scale_factor
 
     if inargs.data_type == 'cumulative_anomaly':
+        label = 'time integrated anomaly'
         title = f'time-integrated {var_abbrev} anomaly'
-        if len(inargs.infiles) > 1:
-            title = f'ensemble {inargs.ensemble_stat} {title}'
         if inargs.time_bounds:
             start_year = inargs.time_bounds[0].split('-')[0]
             end_year = inargs.time_bounds[1].split('-')[0]
             title = f'{title}, {start_year}-{end_year}'
-        if inargs.experiment:
-            title = f'{title}, {inargs.experiment} experiment'
-        
     elif inargs.data_type == 'climatology':
-        title = f'annual mean {var_abbrev}'
+        label = 'annual total'
+        title = f'annual {var_abbrev}'
+
+    if len(inargs.infiles) > 1:
+        title = f'ensemble {inargs.ensemble_stat} {title}'
+
+    if inargs.experiment:
+        title = f'{title}, {inargs.experiment} experiment'
 
     if inargs.pct:
         fmt = '.0%'
-        label = 'fraction of total import/export'
+        label = 'fraction of total'
     else:
         fmt='.2g'
         if inargs.scale_factor:
-            label = 'time-integrated anomaly ($10^{%s}$ kg)'  %(str(inargs.scale_factor))
+            label = label + ' ($10^{%s}$ kg)'  %(str(inargs.scale_factor))
         else:
-            label = 'time-integrated anomaly (kg)'
+            label = label + ' (kg)'
 
     vmax = inargs.vmax if inargs.vmax else df[basins_to_plot].abs().max().max() * 1.05
 
