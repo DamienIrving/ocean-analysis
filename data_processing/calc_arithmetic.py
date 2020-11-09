@@ -29,33 +29,42 @@ except ImportError:
 def main(args):
     """Run the program."""
 
-    cube1 = iris.load_cube(args.infile1, gio.check_iris_var(args.var1))
-    cube2 = iris.load_cube(args.infile2, gio.check_iris_var(args.var2))
-    
+    metadata_dict = {}
+    cubes = []
+    for filename, var in args.infile:
+        cube = iris.load_cube(filename, gio.check_iris_var(var))
+        cubes.append(cube)
+        metadata_dict[filename] = cube.attributes['history']
+
+    if args.ref_file:
+        ref_cube = iris.load_cube(args.ref_file[0], gio.check_iris_var(args.ref_file[1]))
+    else:
+        ref_cube = cubes[0]
+   
     if args.operation == 'division':
-        outcube = cube1 / cube2
-        assert str(cube2.units) == 'm2'
-        cube1_units = str(cube1.units)
+        assert len(cubes) == 2
+        outcube = cubes[0] / cubes[1]
+        assert str(cubes[1].units) == 'm2'
+        cube1_units = str(cubes[0].units)
         new_units = f'{cube1_units} m-2'
     elif args.operation == 'addition':
-        outcube = cube1 + cube2
+        outcube = cubes[0]
+        for cube in cubes[1:]:
+            outcube = outcube + cube
         new_units = None
 
-    outcube.attributes = cube1.attributes
+    outcube.attributes = ref_cube.attributes
     if new_units:
         outcube.units = new_units
-    outcube.var_name = cube1.var_name
-    outcube.long_name = cube1.long_name
-    if cube1.standard_name:
-        outcube.standard_name = cube1.standard_name
+    outcube.var_name = ref_cube.var_name
+    outcube.long_name = ref_cube.long_name
+    if ref_cube.standard_name:
+        outcube.standard_name = ref_cube.standard_name
     else:
-        standard_name = cube1.long_name.replace(' ', '_')
+        standard_name = ref_cube.long_name.replace(' ', '_')
         iris.std_names.STD_NAMES[standard_name] = {'canonical_units': outcube.units}
         outcube.standard_name = standard_name
 
-    metadata_dict = {}
-    metadata_dict[args.infile1] = cube1.attributes['history']
-    metadata_dict[args.infile2] = cube2.attributes['history']
     outcube.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     iris.save(outcube, args.outfile)
         
@@ -64,11 +73,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__, 
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("infile1", type=str, help="Input file 1")
-    parser.add_argument("var1", type=str, help="Input variable 1")
-    parser.add_argument("infile2", type=str, help="Input file 2")
-    parser.add_argument("var2", type=str, help="Input variable 2")
+
     parser.add_argument("operation", type=str, choices=('division', 'addition'), help="Operation")
     parser.add_argument("outfile", type=str, help="Output file")
+
+    parser.add_argument("--infile", type=str, action='append', nargs=2, default=[],
+                        help="Input file and variable name")
+    parser.add_argument("--ref_file", type=str, nargs=2, default=None,
+                        help="Reference file and variable name")
+
     args = parser.parse_args()
     main(args)
