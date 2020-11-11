@@ -62,11 +62,7 @@ def main(inargs):
         print(infile)
  
     outcube = gio.combine_cubes(output_cubelist)
-    metadata_dict = {}
-    metadata_dict[infile] = cube.attributes['history']
-    if inargs.area_file:
-        metadata_dict[inargs.area_file] = area_cube.attributes['history'] 
-    outcube.attributes['history'] = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+    outcube.attributes['history'] = cmdprov.new_log(git_repo=repo_dir)
     iris.save(outcube, inargs.outfile)
         
 
