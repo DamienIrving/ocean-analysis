@@ -138,8 +138,16 @@ def _chunked_year_aggregation(cube, agg_method, step=12):
     return annual_cube
 
 
-def _days_in_month_annual_mean(cube):
-    """Calculate the annual mean timeseries accounting for days in month."""
+def get_days_in_year(cube):
+    """Generate an array of days in each year.
+
+    Returns a pandas data series.
+
+    """
+
+    aux_coord_names = [coord.name() for coord in cube.aux_coords]
+    if not 'year' in aux_coord_names:
+        iris.coord_categorisation.add_year(cube, 'time')
 
     assert 'days' in str(cube.coord('time').units)
     time_span_days = cube.coord('time').bounds[:, 1] - cube.coord('time').bounds[:, 0]
@@ -148,8 +156,16 @@ def _days_in_month_annual_mean(cube):
   
     df = pd.DataFrame(data={'days_in_month': time_span_days, 'year': cube.coord('year').points})
     days_in_year = df.groupby('year').sum()
+
+    return days_in_year['days_in_month']
+
+
+def _days_in_month_annual_mean(cube):
+    """Calculate the annual mean timeseries accounting for days in month."""
+
+    days_in_year = get_days_in_year(cube)
     
-    df['weight'] = df.apply(lambda row: row['days_in_month'] / days_in_year['days_in_month'].loc[row['year']], axis=1)
+    df['weight'] = df.apply(lambda row: row['days_in_month'] / days_in_year.loc[row['year']], axis=1)
     np.testing.assert_allclose(df.groupby('year').sum()['weight'].min(), 1.0)
     np.testing.assert_allclose(df.groupby('year').sum()['weight'].max(), 1.0)
 
@@ -173,7 +189,9 @@ def convert_to_annual(cube, full_months=False, aggregation='mean', chunk=False, 
 
     """
 
-    iris.coord_categorisation.add_year(cube, 'time')
+    aux_coord_names = [coord.name() for coord in cube.aux_coords]
+    if not 'year' in aux_coord_names:
+        iris.coord_categorisation.add_year(cube, 'time')
     iris.coord_categorisation.add_month(cube, 'time')
 
     if not is_annual(cube):

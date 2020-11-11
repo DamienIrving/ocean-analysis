@@ -6,6 +6,8 @@ import sys, os, pdb, re
 import argparse
 import iris
 import cmdline_provenance as cmdprov
+import pandas as pd
+import iris.coord_categorisation
 
 # Import my modules
 
@@ -21,6 +23,7 @@ sys.path.append(modules_dir)
 try:
     import general_io as gio
     import convenient_universal as uconv
+    import spatial_weights
     import timeseries
 except ImportError:
     raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
@@ -31,6 +34,8 @@ except ImportError:
 def main(inargs):
     """Run the program."""
 
+    assert inargs.var == 'precipitation_flux'
+
     if inargs.area_file:
         area_cube = gio.get_ocean_weights(inargs.area_file)
     else:
@@ -38,22 +43,22 @@ def main(inargs):
 
     output_cubelist = iris.cube.CubeList([])
     for infile in inargs.infiles:
-        cube = iris.load_cube(infile, inargs.invar)
+        cube = iris.load_cube(infile, inargs.var) # kg m-2 s-1 (monthly, gridded)
         coord_names = [coord.name() for coord in cube.dim_coords]
-        aux_coord_names = [coord.name() for coord in cube.aux_coords]
-        ndim = cube.ndim
+        aux_coord_names = [coord.name() for coord in cube.aux_coords] 
+        days_in_year = timeseries.get_days_in_year(cube)
 
-        if area_cube:
-            area_array = uconv.broadcast_array(area_cube.data, [ndim - 2, ndim - 1], cube.shape)
-            assert 'm-2' in str(cube.units)
-            cube.units = str(cube.units).replace('m-2', '').replace('  ', ' ')
-            cube.data = cube.data * area_array
+        cube = spatial_weights.multiply_by_area(cube, area_cube=area_cube) # kg s-1 (monthly, gridded)
+        cube = cube.collapsed(coord_names[1:], iris.analysis.SUM) # kg s-1 (monthly, globe)
+        cube = timeseries.flux_to_total(cube) # kg (monthly, globe)
+        cube = timeseries.convert_to_annual(cube, aggregation='sum') # kg (annual, globe)        
+        cube.data = cube.data / 5.1e14 # kg m-2 = mm (annual, globe)        
+        cube.data = cube.data / days_in_year.values # mm/day (annual, globe)
 
-        gs = cube.collapsed(coord_names[1:], iris.analysis.SUM)
+        cube.units = 'mm/day'
         for coord in coord_names[1:] + aux_coord_names:
-            gs.remove_coord(coord)
-
-        output_cubelist.append(gs)
+            cube.remove_coord(coord)
+        output_cubelist.append(cube)
         print(infile)
  
     outcube = gio.combine_cubes(output_cubelist)
@@ -71,10 +76,11 @@ if __name__ == '__main__':
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
                                      
     parser.add_argument("infiles", type=str, nargs='*', help="Input files")
-    parser.add_argument("invar", type=str, help="Input variable")
+    parser.add_argument("var", type=str, help="Input variable")
     parser.add_argument("outfile", type=str, help="Output file")
 
-    parser.add_argument("--area_file", type=str, help="Area file (for multiplying data by m2)")
+    parser.add_argument("--area_file", type=str, default=None,
+                        help="Area file (required for curvilinear grids)")
 
     args = parser.parse_args()
     main(args)
