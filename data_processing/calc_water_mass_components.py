@@ -47,17 +47,6 @@ except ImportError:
 
 # Define functions
 
-def get_bounds_list(edges):
-    """Create a bounds list from edge list"""
-
-    bounds_list = []
-    for i in range(len(edges) - 1):
-        interval = [edges[i], edges[i+1]]
-        bounds_list.append(interval)
-
-    return numpy.array(bounds_list)
-
-
 def construct_cube(outdata_dict,
                    wcube, bcube, scube, tcube, sunits, tunits, years,
                    t_values, t_edges, s_values, s_edges, log):
@@ -72,7 +61,7 @@ def construct_cube(outdata_dict,
                                       var_name=scube.coord('year').var_name,
                                       units=scube.coord('year').units)
 
-    t_bounds = get_bounds_list(t_edges)
+    t_bounds = uconv.get_bounds_list(t_edges)
     temperature_coord = iris.coords.DimCoord(t_values,
                                              standard_name=tcube.standard_name,
                                              long_name=tcube.long_name.strip(),
@@ -80,7 +69,7 @@ def construct_cube(outdata_dict,
                                              units=tunits,
                                              bounds=t_bounds)
 
-    s_bounds = get_bounds_list(s_edges)
+    s_bounds = uconv.get_bounds_list(s_edges)
     salinity_coord = iris.coords.DimCoord(s_values,
                                           standard_name=scube.standard_name,
                                           long_name=scube.long_name.strip(),
@@ -331,7 +320,7 @@ def main(inargs):
         else:
             salinity_year_cube = scube.extract(year_constraint)
             temperature_year_cube = tcube.extract(year_constraint)
-                    
+          
         df, sunits, tunits = water_mass.create_df(temperature_year_cube, salinity_year_cube, wcube, bcube,
                                                   sbounds=(s_edges[0], s_edges[-1]), multiply_weights_by_days_in_year_frac=True)
 

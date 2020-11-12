@@ -42,11 +42,13 @@ except ImportError:
 
 # Define functions
 
-def construct_cube(outdata, flux_cube, bin_cube, basin_cube, years, 
-                   bin_values, bin_edges, bin_units, log):
+def construct_cube(outdata_dict, flux_cube, t_cube, s_cube, basin_cube, years, 
+                   t_values, t_edges, t_units, 
+                   s_values, s_edges, s_units, log):
     """Create the iris cube for output"""
     
-    outdata, basin_values, flag_values, flag_meanings = uconv.add_globe_basin(outdata, basin_cube)
+    for key, data in outdata_dict.items():
+        outdata_dict[key], basin_values, flag_values, flag_meanings = uconv.add_globe_basin(data, basin_cube)
 
     year_coord = iris.coords.DimCoord(years,
                                       standard_name=flux_cube.coord('year').standard_name,
@@ -54,13 +56,21 @@ def construct_cube(outdata, flux_cube, bin_cube, basin_cube, years,
                                       var_name=flux_cube.coord('year').var_name,
                                       units=flux_cube.coord('year').units)
 
-    bin_bounds = uconv.get_bounds_list(bin_edges)
-    bin_coord = iris.coords.DimCoord(bin_values,
-                                     standard_name=bin_cube.standard_name,
-                                     long_name=bin_cube.long_name,
-                                     var_name=bin_cube.var_name,
-                                     units=bin_units,
-                                     bounds=bin_bounds)
+    t_bounds = uconv.get_bounds_list(t_edges)
+    t_coord = iris.coords.DimCoord(t_values,
+                                   standard_name=t_cube.standard_name,
+                                   long_name=t_cube.long_name,
+                                   var_name=t_cube.var_name,
+                                   units=t_units,
+                                   bounds=t_bounds)
+
+    s_bounds = uconv.get_bounds_list(s_edges)
+    s_coord = iris.coords.DimCoord(s_values,
+                                   standard_name=s_cube.standard_name,
+                                   long_name=s_cube.long_name,
+                                   var_name=s_cube.var_name,
+                                   units=s_units,
+                                   bounds=s_bounds)
 
     basin_coord = iris.coords.DimCoord(basin_values,
                                        standard_name=basin_cube.standard_name,
@@ -70,22 +80,50 @@ def construct_cube(outdata, flux_cube, bin_cube, basin_cube, years,
                                        attributes={'flag_values': flag_values,
                                                    'flag_meanings': flag_meanings})
     
-    dim_coords_list = [(year_coord, 0), (bin_coord, 1), (basin_coord, 2)]
+    tbin_dim_coords_list = [(year_coord, 0), (t_coord, 1), (basin_coord, 2)]
+    sbin_dim_coords_list = [(year_coord, 0), (s_coord, 1), (basin_coord, 2)]
+    tsbin_dim_coords_list = [(year_coord, 0), (s_coord, 1), (t_coord, 2), (basin_coord, 3)]
 
-    output_cube = iris.cube.Cube(outdata,
-                                 standard_name=flux_cube.standard_name,
-                                 long_name=flux_cube.long_name,
-                                 var_name=flux_cube.var_name,
-                                 units=flux_cube.units,
-                                 attributes=flux_cube.attributes,
-                                 dim_coords_and_dims=dim_coords_list)
+    tbin_std_name = flux_cube.standard_name + '_binned_by_temperature'
+    iris.std_names.STD_NAMES[tbin_std_name] = {'canonical_units': str(flux_cube.units)}
+    tbin_cube = iris.cube.Cube(outdata_dict['tbin'],
+                               standard_name=tbin_std_name,
+                               long_name=flux_cube.long_name + ' binned by temperature',
+                               var_name=flux_cube.var_name + '_tbin',
+                               units=flux_cube.units,
+                               attributes=flux_cube.attributes,
+                               dim_coords_and_dims=tbin_dim_coords_list)
 
-    output_cube.attributes['history'] = log
+    sbin_std_name = flux_cube.standard_name + '_binned_by_salinity'
+    iris.std_names.STD_NAMES[sbin_std_name] = {'canonical_units': str(flux_cube.units)}
+    sbin_cube = iris.cube.Cube(outdata_dict['sbin'],
+                               standard_name=sbin_std_name,
+                               long_name=flux_cube.long_name + ' binned by salinity',
+                               var_name=flux_cube.var_name + '_sbin',
+                               units=flux_cube.units,
+                               attributes=flux_cube.attributes,
+                               dim_coords_and_dims=sbin_dim_coords_list)
 
-    return output_cube
+    tsbin_std_name = flux_cube.standard_name + '_binned_by_temperature_and_salinity'
+    iris.std_names.STD_NAMES[tsbin_std_name] = {'canonical_units': str(flux_cube.units)}
+    tsbin_cube = iris.cube.Cube(outdata_dict['tsbin'],
+                                standard_name=tsbin_std_name,
+                                long_name=flux_cube.long_name + ' binned by temperature and salinity',
+                                var_name=flux_cube.var_name + '_tsbin',
+                                units=flux_cube.units,
+                                attributes=flux_cube.attributes,
+                                dim_coords_and_dims=tsbin_dim_coords_list)
+
+    tbin_cube.attributes['history'] = log
+    sbin_cube.attributes['history'] = log
+    tsbin_cube.attributes['history'] = log
+
+    outcube_list = iris.cube.CubeList([tbin_cube, sbin_cube, tsbin_cube])
+
+    return outcube_list
 
 
-def get_log(inargs, basin_cube_atts, area_cube_atts, flux_history, bin_history):
+def get_log(inargs, basin_cube_atts, area_cube_atts, flux_history, t_history, s_history):
     """Get the log entry for the output file history attribute."""
 
     metadata_dict = {}
@@ -95,8 +133,10 @@ def get_log(inargs, basin_cube_atts, area_cube_atts, flux_history, bin_history):
         metadata_dict[inargs.area_file] = area_cube_atts['history']
     if flux_history:    
         metadata_dict[inargs.flux_files[0]] = flux_history[0]
-    if bin_history:    
-        metadata_dict[inargs.bin_files[0]] = bin_history[0]
+    if t_history:    
+        metadata_dict[inargs.temperature_files[0]] = t_history[0]
+    if s_history:    
+        metadata_dict[inargs.salinity_files[0]] = s_history[0]
 
     log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
 
@@ -120,22 +160,27 @@ def clipping_details(orig_data, clipped_data, bin_edges):
     logging.info(f"Last bin had {npoints_max} values, clipping added {npoints_over}")
 
 
-def bin_data(df, bin_edges, basin_edges, nchunks):
-    """Bin the data"""
+def bin_data(df, var_list, edge_list):
+    """Bin the data
 
-    bin_vals_clipped = numpy.clip(df['bin'].values, bin_edges[0], bin_edges[-1])
-    clipping_details(df['bin'].values, bin_vals_clipped, bin_edges)
+    Args:
+      df (pandas.DataFrame) -- Data
+      var_list (list)       -- Variables for binning axes
+      edge_list (list)      -- Bin edges for each bin axis variable
+
+    """
+
+    bin_data_list = []
+    for var, edges in zip(var_list, edge_list):
+        assert var in ['temperature', 'salinity', 'basin']
+        values = numpy.clip(df[var].values, edges[0], edges[-1])
+        clipping_details(df[var].values, values, edges, var)
+        bin_data_list.append(values)
+    bin_data = numpy.array(bin_data_list).T
     
     flux_data = df['flux'].astype(numpy.float64).values
-    bin_vals_split = numpy.array_split(bin_vals_clipped, nchunks)
-    basin_vals_split = numpy.array_split(df['basin'].values, nchunks)
-    flux_vals_split = numpy.array_split(flux_data, nchunks)
 
-    hist = numpy.zeros([len(bin_edges) - 1, len(basin_edges) - 1])
-    for bin_vals, basin_vals, flux_vals in zip(bin_vals_split, basin_vals_split, flux_vals_split):
-        hist_chunk, xbin_edges, ybin_edges = numpy.histogram2d(bin_vals, basin_vals, weights=flux_vals, bins=[bin_edges, basin_edges])
-        numpy.testing.assert_allclose(hist_chunk.sum(), flux_vals.sum(), rtol=1.5e-02)
-        hist = hist + hist_chunk
+    hist, edges = numpy.histogramdd(bin_data, weights=flux_data, bins=edge_list)
 
     binned_total_flux = hist.sum()
     orig_total_flux = flux_data.sum()
@@ -157,6 +202,19 @@ def multiply_flux_by_area(flux_per_unit_area_cube, area_cube, var):
     return flux_cube
 
 
+def get_bin_data(files, var, flux_cube):
+    """Get binning variable data."""
+
+    cube, history = gio.combine_files(files, var, checks=True)
+    if (flux_cube.ndim == 3) and (cube.ndim == 4):
+        cube_coord_names = [coord.name() for coord in cube.dim_coords]
+        cube = cube[:, 0, ::]
+        cube.remove_coord(cube_coord_names[1])
+    assert flux_cube.shape == cube.shape
+
+    return cube, history
+
+
 def main(inargs):
     """Run the program."""
 
@@ -172,51 +230,62 @@ def main(inargs):
 
     flux_var = mom_vars[inargs.flux_var] if inargs.flux_var in mom_vars else inargs.flux_var
     flux_per_area_cube, flux_history = gio.combine_files(inargs.flux_files, flux_var, checks=True)
-    bin_cube, bin_history = gio.combine_files(inargs.bin_files, inargs.bin_var, checks=True)
-    if (flux_per_area_cube.ndim == 3) and (bin_cube.ndim == 4):
-        bin_coord_names = [coord.name() for coord in bin_cube.dim_coords]
-        bin_cube = bin_cube[:, 0, ::]
-        bin_cube.remove_coord(bin_coord_names[1])
-    assert flux_per_area_cube.shape == bin_cube.shape
 
-    if 'salinity' in inargs.bin_var:
-        bin_values, bin_edges = uconv.salinity_bins()
-    else:
-        bin_min, bin_max = inargs.bin_bounds
-        bin_step = inargs.bin_size
-        bin_edges = numpy.arange(bin_min, bin_max + bin_step, bin_step)
-        bin_values = (bin_edges[1:] + bin_edges[:-1]) / 2
+    t_cube, t_history = get_bin_data(inargs.temperature_files, inargs.temperature_var, flux_per_area_cube)
+    s_cube, s_history = get_bin_data(inargs.salinity_files, inargs.salinity_var, flux_per_area_cube)
+
+    s_values, s_edges = uconv.salinity_bins()
+    
+    t_min, t_max = inargs.temperature_bounds
+    t_step = inargs.bin_size
+    t_edges = numpy.arange(t_min, t_max + t_step, t_step)
+    t_values = (t_edges[1:] + t_edges[:-1]) / 2
 
     area_cube = gio.get_ocean_weights(inargs.area_file)
 
     basin_cube = iris.load_cube(inargs.basin_file, 'region')
     basin_values, basin_edges = uconv.get_basin_details(basin_cube)
    
-    log = get_log(inargs, basin_cube.attributes, area_cube.attributes, flux_history, bin_history)
+    log = get_log(inargs, basin_cube.attributes, area_cube.attributes, flux_history, t_history, s_history)
 
     iris.coord_categorisation.add_year(flux_per_area_cube, 'time')
-    iris.coord_categorisation.add_year(bin_cube, 'time')
+    iris.coord_categorisation.add_year(t_cube, 'time')
+    iris.coord_categorisation.add_year(s_cube, 'time')
     flux_years = set(flux_per_area_cube.coord('year').points)
-    bin_years = set(bin_cube.coord('year').points)
-    assert flux_years == bin_years
+    t_years = set(t_cube.coord('year').points)
+    s_years = set(s_cube.coord('year').points)
+    assert flux_years == s_years
+    assert flux_years == t_years
     years = numpy.array(list(flux_years))
     years.sort()
   
-    outdata = numpy.ma.zeros([len(years), len(bin_values), len(basin_values)])
+    tbin_outdata = numpy.ma.zeros([len(years), len(t_values), len(basin_values)])
+    sbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(basin_values)])
+    tsbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(t_values), len(basin_values)])
     for year_index, year in enumerate(years):
         print(year)         
         year_constraint = iris.Constraint(year=year)
         flux_per_area_year_cube = flux_per_area_cube.extract(year_constraint)
         flux_year_cube = multiply_flux_by_area(flux_per_area_year_cube, area_cube, flux_var)
-        bin_year_cube = bin_cube.extract(year_constraint)
-        df, bin_units = water_mass.create_flux_df(flux_year_cube, bin_year_cube, basin_cube,
-                                                  multiply_flux_by_days_in_year_frac=True)
+        t_year_cube = t_cube.extract(year_constraint)
+        s_year_cube = s_cube.extract(year_constraint)
+        df, t_units, sunits = water_mass.create_flux_df(flux_year_cube, t_year_cube, s_year_cube, basin_cube,
+                                                        sbounds=(s_edges[0], s_edges[-1]),
+                                                        multiply_flux_by_days_in_year_frac=True)
         ntimes = flux_year_cube.shape[0] 
-        outdata[year_index, :, :] = bin_data(df, bin_edges, basin_edges, inargs.nchunks)
-    outdata = numpy.ma.masked_invalid(outdata)
-    outcube = construct_cube(outdata, flux_year_cube, bin_cube, basin_cube, years, 
-                             bin_values, bin_edges, bin_units, log)
-    iris.save(outcube, inargs.outfile)
+        tbin_outdata[year_index, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, basin_edges])
+        sbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, basin_edges])
+        tsbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, basin_edges])
+
+    outdata_dict = {}
+    outdata_dict['tbin'] = numpy.ma.masked_invalid(tbin_outdata)
+    outdata_dict['sbin'] = numpy.ma.masked_invalid(sbin_outdata)
+    outdata_dict['tsbin'] = numpy.ma.masked_invalid(tsbin_outdata)
+
+    outcube_list = construct_cube(outdata_dict, flux_year_cube, t_cube, s_cube, basin_cube, years, 
+                                  t_values, t_edges, t_units, s_values, s_edges, t_units, log)
+    equalise_attributes(outcube_list)
+    iris.save(outcube_list, inargs.outfile)
 
 
 if __name__ == '__main__':
@@ -240,14 +309,13 @@ author:
     parser.add_argument("basin_file", type=str, help="Basin file (from calc_basin.py)")
     parser.add_argument("outfile", type=str, help="Output file")
 
-    parser.add_argument("--bin_files", type=str, nargs='*', help="Data files for the binning") 
-    parser.add_argument("--bin_var", type=str, help="bin variable")
+    parser.add_argument("--temperature_files", type=str, nargs='*', help="Temperature files for the binning") 
+    parser.add_argument("--temperature_var", type=str, help="temperature variable")
+    parser.add_argument("--salinity_files", type=str, nargs='*', help="Salinity files for the binning") 
+    parser.add_argument("--salinity_var", type=str, help="salinity variable")
      
-    parser.add_argument("--bin_bounds", type=float, nargs=2, default=(-4, 40), help='bin bounds')
-    parser.add_argument("--bin_size", type=float, default=1.0, help='bin size')
-
-    parser.add_argument("--nchunks", type=int, default=1,
-                        help="Break binning into chunks")
+    parser.add_argument("--temperature_bounds", type=float, nargs=2, default=(-6, 50), help='temperature bin bounds')
+    parser.add_argument("--bin_size", type=float, default=1.0, help='temperature bin size')
 
     args = parser.parse_args()             
     main(args)

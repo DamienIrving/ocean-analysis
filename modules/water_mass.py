@@ -155,14 +155,16 @@ def create_df(tcube, scube, wcube, bcube, sbounds=None,
     return df, scube.units, tcube.units
     
 
-def create_flux_df(flux_cube, bin_cube, basin_cube,
+def create_flux_df(flux_cube, t_cube, s_cube, basin_cube, sbounds=None,
                    multiply_flux_by_days_in_year_frac=False):
     """Create DataFrame for surface flux analysis.
 
     Args:
       flux_cube (iris.cube.Cube) -- flux cube
-      bin_cube (iris.cube.Cube) -- data cube for defining bins
+      t_cube (iris.cube.Cube) -- temperature cube for defining bins
+      s_cube (iris.cube.Cube) -- salinity cube for defining bins
       basin_cube (iris.cube.Cube) -- basin cube
+      sbounds (tuple) -- salinity bounds
       multiply_flux_by_days_in_year_frac (bool) -- multiply
         flucx data by (days in month / days in year)
 
@@ -172,8 +174,12 @@ def create_flux_df(flux_cube, bin_cube, basin_cube,
 
     coord_names = [coord.name() for coord in flux_cube.dim_coords]
 
-    if 'temperature' in bin_cube.long_name:
-        bin_cube = gio.temperature_unit_check(bin_cube, 'C')
+    t_cube = gio.temperature_unit_check(t_cube, 'C')
+    if sbounds:
+        smin, smax = sbounds
+        s_cube = gio.salinity_unit_check(s_cube, valid_min=smin, valid_max=smax, abort=False)
+    else:
+        s_cube = gio.salinity_unit_check(s_cube, abort=False)
 
     if flux_cube.coord('latitude').points.ndim == 1:
         lat_pos = coord_names.index('latitude')
@@ -185,17 +191,19 @@ def create_flux_df(flux_cube, bin_cube, basin_cube,
 
     basin_data = uconv.broadcast_array(basin_cube.data, [flux_cube.ndim - 2, flux_cube.ndim -1], flux_cube.shape)
 
-    if not flux_cube.data.mask.sum() == bin_cube.data.mask.sum():
+    assert t_cube.data.mask.sum() == s_cube.data.mask.sum(), "Salinity and temperature masks are different"
+    if not flux_cube.data.mask.sum() == t_cube.data.mask.sum():
         npoints = flux_cube.data.size
-        diff = flux_cube.data.mask.sum() - bin_cube.data.mask.sum()
+        diff = flux_cube.data.mask.sum() - t_cube.data.mask.sum()
         print(f"Applying common mask... difference of {diff} data points (flux minus bin mask) for {npoints} total data points")
-    common_mask = flux_cube.data.mask + bin_cube.data.mask
+    common_mask = flux_cube.data.mask + t_cube.data.mask
             
     lats = numpy.ma.masked_array(lats, common_mask)
     lons = numpy.ma.masked_array(lons, common_mask)
     basin_data.mask = common_mask
     flux_cube.data.mask = common_mask
-    bin_cube.data.mask = common_mask
+    t_cube.data.mask = common_mask
+    s_cube.data.mask = common_mask
     
     if multiply_flux_by_days_in_year_frac:
         flux_data = multiply_by_days_in_year_frac(flux_cube)
@@ -203,21 +211,24 @@ def create_flux_df(flux_cube, bin_cube, basin_cube,
         flux_data = flux_cube.data
 
     flux_data = flux_data.compressed()
-    bin_data = bin_cube.data.compressed()
+    t_data = t_cube.data.compressed()
+    s_data = s_cube.data.compressed()
     basin_data = basin_data.compressed()
     lat_data = lats.compressed()
     lon_data = lons.compressed()
 
-    assert flux_data.shape == bin_data.shape
+    assert flux_data.shape == t_data.shape
+    assert flux_data.shape == s_data.shape
     assert flux_data.shape == basin_data.shape
     assert flux_data.shape == lat_data.shape
     assert flux_data.shape == lon_data.shape
 
     df = pandas.DataFrame(index=range(flux_data.shape[0]))
     df['flux'] = flux_data
-    df['bin'] = bin_data
+    df['temperature'] = t_data
+    df['salinity'] = s_data
     df['basin'] = basin_data
     df['latitude'] = lat_data
     df['longitude'] = lon_data
 
-    return df, bin_cube.units
+    return df, t_cube.units, s_cube.units
