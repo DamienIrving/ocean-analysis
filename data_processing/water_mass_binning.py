@@ -120,7 +120,7 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube, years,
         iris.std_names.STD_NAMES[sbin_std_name] = {'canonical_units': str(w_cube.units)}
         sbin_cube = iris.cube.Cube(outdata_dict[wvar + '_sbin'],
                                    standard_name=sbin_std_name,
-                                   long_name=lon_base_name + ' binned by salinity',
+                                   long_name=long_base_name + ' binned by salinity',
                                    var_name=var_base_name + '_sbin',
                                    units=w_cube.units,
                                    attributes=t_cube.attributes,
@@ -128,12 +128,12 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube, years,
         sbin_cube.attributes['history'] = log
         outcube_list.append(sbin_cube)
 
-        tsbin_std_name = w_cube.standard_name + '_binned_by_temperature_and_salinity'
+        tsbin_std_name = std_base_name + '_binned_by_temperature_and_salinity'
         iris.std_names.STD_NAMES[tsbin_std_name] = {'canonical_units': str(w_cube.units)}
-        tsbin_cube = iris.cube.Cube(outdata_dict['tsbin'],
+        tsbin_cube = iris.cube.Cube(outdata_dict[wvar + '_tsbin'],
                                     standard_name=tsbin_std_name,
-                                    long_name=w_cube.long_name + ' binned by temperature and salinity',
-                                    var_name=w_cube.var_name + '_tsbin',
+                                    long_name=long_base_name + ' binned by temperature and salinity',
+                                    var_name=var_base_name + '_tsbin',
                                     units=w_cube.units,
                                     attributes=t_cube.attributes,
                                     dim_coords_and_dims=tsbin_dim_coords_list)
@@ -209,7 +209,7 @@ def get_weights_data(file_list, var, area_file):
         assert area_file, "Area file needed for flux weights"
         w_cube, history = gio.combine_files(file_list, var, checks=True)
 
-    return w_cube
+    return w_cube, history
 
 
 def get_log(inargs, w_history, t_history, s_history, b_cube, a_cube):
@@ -233,12 +233,30 @@ def get_log(inargs, w_history, t_history, s_history, b_cube, a_cube):
     return log
 
 
+def get_bin_data(files, var, w_cube):
+    """Get binning variable data."""
+
+    cube, history = gio.combine_files(files, var, checks=True)
+
+    w_coord_names = [coord.name() for coord in w_cube.dim_coords]
+    if 'time' in w_coord_names:
+        if (w_cube.ndim == 3) and (cube.ndim == 4):
+            cube_coord_names = [coord.name() for coord in cube.dim_coords]
+            cube = cube[:, 0, ::]
+            cube.remove_coord(cube_coord_names[1])
+            assert w_cube.shape == cube.shape
+    else:
+        assert w_cube.shape == cube.shape[1:]
+
+    return cube, history
+
+
 def main(inargs):
     """Run the program."""
 
     logging.basicConfig(level=logging.DEBUG)
 
-    spatial_data = ('vol' in inargs.weights_var) or ('area' in weights_var)
+    spatial_data = ('vol' in inargs.weights_var) or ('area' in inargs.weights_var)
     flux_data = not spatial_data
 
     w_cube, w_history = get_weights_data(inargs.weights_files, inargs.weights_var, inargs.area_file)
@@ -255,11 +273,11 @@ def main(inargs):
     log = get_log(inargs, w_history, t_history, s_history, b_cube, a_cube)
 
     t_min, t_max = inargs.temperature_bounds
-    t_step = inargs.bin_size
+    t_step = inargs.tbin_size
     t_edges = numpy.arange(t_min, t_max + t_step, t_step)
     t_values = (t_edges[1:] + t_edges[:-1]) / 2
     s_values, s_edges = uconv.salinity_bins() 
-    b_values, b_edges = uconv.get_basin_details(bcube)
+    b_values, b_edges = uconv.get_basin_details(b_cube)
 
     iris.coord_categorisation.add_year(t_cube, 'time')
     iris.coord_categorisation.add_year(s_cube, 'time')
@@ -286,17 +304,11 @@ def main(inargs):
     for year_index, year in enumerate(years):
         print(year)         
         year_constraint = iris.Constraint(year=year)
-        if 'area' in w_cube.var_name:
-            assert s_cube.ndim == 4
-            assert w_cube.ndim == 3
-            s_year_cube = s_cube[:, 0, ::].extract(year_constraint)
-            t_year_cube = t_cube[:, 0, ::].extract(year_constraint)
-        else:
-            s_year_cube = s_cube.extract(year_constraint)
-            t_year_cube = t_cube.extract(year_constraint)
+        s_year_cube = s_cube.extract(year_constraint)
+        t_year_cube = t_cube.extract(year_constraint)
         if flux_data:
             w_year_cube = w_cube.extract(year_constraint)
-            w_year_cube = spatial_weights.multiply_by_area(w_cube, area_cube=a_cube)
+            w_year_cube = spatial_weights.multiply_by_area(w_year_cube, area_cube=a_cube)
         else:
             w_year_cube = w_cube
         df, s_units, t_units = water_mass.create_df(w_year_cube, t_year_cube, s_year_cube, b_cube,
@@ -325,7 +337,7 @@ def main(inargs):
         outdata_dict['wt_sbin'] = numpy.ma.masked_invalid(wt_sbin_outdata)
         outdata_dict['ws_tsbin'] = numpy.ma.masked_invalid(ws_tsbin_outdata)
         outdata_dict['wt_tsbin'] = numpy.ma.masked_invalid(wt_tsbin_outdata)
-    outcube_list = construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube, years,
+    outcube_list = construct_cube(outdata_dict, w_year_cube, t_cube, s_cube, b_cube, years,
                                   t_values, t_edges, t_units, s_values, s_edges, s_units,
                                   log, mul_ts=spatial_data)
 

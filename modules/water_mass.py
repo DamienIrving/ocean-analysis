@@ -47,7 +47,6 @@ def multiply_by_days_in_year_frac(data, time_coord):
     days_in_year = time_span_days.sum()
     assert days_in_year in [365, 366]
 
-    original_sum = cube.data.sum()
     for month, time_span in enumerate(time_span_days):
         data[month, ::] = data[month, ::] * (time_span / days_in_year)
 
@@ -74,7 +73,7 @@ def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
     w_ndim = w_cube.ndim
     if not w_ndim == t_ndim:
         diff = t_ndim - w_ndim
-        assert t_cube.shape[diff:] == w_ndim.shape
+        assert t_cube.shape[diff:] == w_cube.shape
         w_data = uconv.broadcast_array(w_cube.data, [t_ndim - w_ndim, t_ndim - 1], t_cube.shape)
     else:
         w_data = w_cube.data
@@ -82,7 +81,7 @@ def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
     b_ndim = b_cube.ndim
     if not b_ndim == t_ndim:
         diff = t_ndim - b_ndim
-        assert t_cube.shape[diff:] == b_ndim.shape
+        assert t_cube.shape[diff:] == b_cube.shape
         b_data = uconv.broadcast_array(b_cube.data, [t_ndim - b_ndim, t_ndim - 1], t_cube.shape)
     else:
         b_data = b_cube.data
@@ -90,7 +89,7 @@ def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
     if multiply_weights_by_days_in_year_frac:
         w_data = multiply_by_days_in_year_frac(w_data, t_cube.coord('time'))
 
-    t_cube = gio.temperature_unit_check(tcube, 'C', abort=False)
+    t_cube = gio.temperature_unit_check(t_cube, 'C', abort=False)
     if s_bounds:
         s_min, s_max = s_bounds
         s_cube = gio.salinity_unit_check(s_cube, valid_min=s_min, valid_max=s_max, abort=False)
@@ -133,7 +132,7 @@ def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
     assert s_data.shape == lat_data.shape
     assert s_data.shape == lon_data.shape
 
-    df = pandas.DataFrame(index=range(tdata.shape[0]))
+    df = pandas.DataFrame(index=range(t_data.shape[0]))
     df['temperature'] = t_data
     df['salinity'] = s_data
     df['weight'] = w_data
