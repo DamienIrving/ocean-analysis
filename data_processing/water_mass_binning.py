@@ -96,16 +96,21 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube, years,
         long_base_name = w_cube.long_name
         var_base_name = w_cube.var_name
         if wvar == 'wt':
-            std_base_name = t_cube.standard_name + '_times_' + std_base_name
+            if std_base_name:
+                std_base_name = t_cube.standard_name + '_times_' + std_base_name
             long_base_name = t_cube.long_name.strip() + ' times ' + long_base_name
             var_base_name = t_cube.var_name + '_' + var_base_name
         if wvar == 'ws':
-            std_base_name = s_cube.standard_name + '_times_' + std_base_name  
+            if std_base_name:
+                std_base_name = s_cube.standard_name + '_times_' + std_base_name  
             long_base_name = s_cube.long_name.strip() + ' times ' + long_base_name
             var_base_name = s_cube.var_name + '_' + var_base_name
 
-        tbin_std_name = std_base_name + '_binned_by_temperature'
-        iris.std_names.STD_NAMES[tbin_std_name] = {'canonical_units': str(w_cube.units)}
+        if std_base_name:
+            tbin_std_name = std_base_name + '_binned_by_temperature'
+            iris.std_names.STD_NAMES[tbin_std_name] = {'canonical_units': str(w_cube.units)}
+        else:
+            tbin_std_name = None
         tbin_cube = iris.cube.Cube(outdata_dict[wvar + '_tbin'],
                                    standard_name=tbin_std_name,
                                    long_name=long_base_name + ' binned by temperature',
@@ -116,8 +121,11 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube, years,
         tbin_cube.attributes['history'] = log
         outcube_list.append(tbin_cube)
 
-        sbin_std_name = std_base_name + '_binned_by_salinity'
-        iris.std_names.STD_NAMES[sbin_std_name] = {'canonical_units': str(w_cube.units)}
+        if std_base_name:
+            sbin_std_name = std_base_name + '_binned_by_salinity'
+            iris.std_names.STD_NAMES[sbin_std_name] = {'canonical_units': str(w_cube.units)}
+        else:
+            sbin_std_name = None
         sbin_cube = iris.cube.Cube(outdata_dict[wvar + '_sbin'],
                                    standard_name=sbin_std_name,
                                    long_name=long_base_name + ' binned by salinity',
@@ -128,8 +136,11 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube, years,
         sbin_cube.attributes['history'] = log
         outcube_list.append(sbin_cube)
 
-        tsbin_std_name = std_base_name + '_binned_by_temperature_and_salinity'
-        iris.std_names.STD_NAMES[tsbin_std_name] = {'canonical_units': str(w_cube.units)}
+        if std_base_name:
+            tsbin_std_name = std_base_name + '_binned_by_temperature_and_salinity'
+            iris.std_names.STD_NAMES[tsbin_std_name] = {'canonical_units': str(w_cube.units)}
+        else:
+            tsbin_std_name = None
         tsbin_cube = iris.cube.Cube(outdata_dict[wvar + '_tsbin'],
                                     standard_name=tsbin_std_name,
                                     long_name=long_base_name + ' binned by temperature and salinity',
