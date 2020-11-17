@@ -10,6 +10,8 @@ Functions:
 import pdb, os, sys
 import numpy
 import pandas
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 # Import my modules
 
@@ -105,13 +107,14 @@ def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
     lats = uconv.broadcast_array(t_cube.coord('latitude').points, lat_pos, t_cube.shape)
     lons = uconv.broadcast_array(t_cube.coord('longitude').points, lon_pos, t_cube.shape)
    
-    #common_mask = t_cube.data.mask + s_cube.data.mask
-    assert t_cube.data.mask.sum() == s_cube.data.mask.sum(), "Salinity and temperature masks are different"
-    if not w_data.mask.sum() == t_cube.data.mask.sum():
-        npoints = w_data.size
-        diff = w_data.mask.sum() - t_cube.data.mask.sum()
-        print(f"Applying common mask... difference of {diff} data points (weights minus bin mask) for {npoints} total data points")
-    common_mask = w_data.mask + t_cube.data.mask
+    t_masked_points = t_cube.data.mask.sum()
+    s_masked_points = s_cube.data.mask.sum()
+    w_masked_points = w_cube.data.mask.sum()
+    if not t_masked_points == s_masked_points: 
+        logging.info(f"salinity ({s_masked_points} points) and temperature ({t_masked_points}) masks are different")
+    if not w_masked_points == s_masked_points:
+         logging.info(f"salinity ({s_masked_points} points) and weights data ({w_masked_points}) masks are different")
+    common_mask = w_data.mask + t_cube.data.mask + s_cube.data.mask
     t_cube.data.mask = common_mask
     s_cube.data.mask = common_mask
     lats = numpy.ma.masked_array(lats, common_mask)
