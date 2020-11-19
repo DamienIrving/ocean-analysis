@@ -109,7 +109,7 @@ def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
    
     t_masked_points = t_cube.data.mask.sum()
     s_masked_points = s_cube.data.mask.sum()
-    w_masked_points = w_cube.data.mask.sum()
+    w_masked_points = w_data.mask.sum()
     if not t_masked_points == s_masked_points: 
         logging.info(f"salinity ({s_masked_points} points) and temperature ({t_masked_points}) masks are different")
     if not w_masked_points == s_masked_points:
