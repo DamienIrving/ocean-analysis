@@ -10,14 +10,19 @@ AUS_CMIP6_DATA_DIR=/g/data/fs38/publications
 CMIP6_DATA_DIR=/g/data/oi10/replicas
 CMIP6b_DATA_DIR=/g/data1b/oi10/replicas
 CMIP5_DATA_DIR=/g/data/al33/replicas
-BIN_VAR=sos
-# tos thetao sos so
-BIN_LONG_NAME=sea_surface_salinity
-# sea_surface_temperature sea_water_potential_temperature sea_surface_salinity sea_water_salinity
+SBIN_VAR=sos
+# sos so
+TBIN_VAR=tos
+# tos thetao
+SBIN_STD_NAME=sea_surface_salinity
+# sea_surface_salinity sea_water_salinity
+TBIN_STD_NAME=sea_surface_temperature
+#sea_surface_temperature sea_water_potential_temperature
 SF_VAR=wfo
 # wfo hfds
-SF_NAME=water_flux_into_sea_water
+SF_STD_NAME=water_flux_into_sea_water
 # surface_downward_heat_flux_in_sea_water water_flux_into_sea_water
+SF_LONG_NAME=Water_Flux_into_Sea_Water
 FLUX_VAR=hfss
 # rsds rsus rlds rlus hfss
 FLUX_NAME=surface_upward_sensible_heat_flux
@@ -58,33 +63,35 @@ FLUX_NAME=surface_upward_sensible_heat_flux
 
 # ACCESS-ESM1-5
 #
-#PROJECT=CMIP6
-#MIP=CMIP
+PROJECT=CMIP6
+MIP=DAMIP
 ## CMIP DAMIP
-#MODEL=ACCESS-ESM1-5
-#INSTITUTION=CSIRO
-#EXPERIMENT=historical
+MODEL=ACCESS-ESM1-5
+INSTITUTION=CSIRO
+EXPERIMENT=hist-GHG
 ## historical hist-GHG hist-aer
-#FX_EXP=historical
-#HIST_RUN=r1i1p1f1
-#CNTRL_RUN=r1i1p1f1
-#FX_RUN=r1i1p1f1
-#GRID=gn
-#OFX_VERSION=v20191115
-#FX_VERSION=v20191115
-#ATMOS_HIST_VERSION=v20191115
-##v20191115 (historical r1i1p1), v20191128 (historical r2i1p1f1), v20191203 (historical r3i1p1f1), v20200615 (hist-aer, hist-GHG)
-#HIST_VERSION=v20191115
-#HIST_TIME=185001-201412
-##2014 (historical, 2020 (hist-aer, hist-GHG)
-#ATMOS_CNTRL_VERSION=v20191214
-#CNTRL_VERSION=v20191214
-#CNTRL_TIME=010101-100012
-#CMIP6_DATA_DIR=${AUS_CMIP6_DATA_DIR}
-#SFTLF_DIR=${CMIP6_DATA_DIR}
-#VOLCELLO_DIR=${CMIP6_DATA_DIR}
-#AREACELLO_DIR=${CMIP6_DATA_DIR}
-#AREACELLA_DIR=${CMIP6_DATA_DIR}
+FX_EXP=historical
+EXP_RUN=r1i1p1f1
+HIST_RUN=r1i1p1f1
+CNTRL_RUN=r1i1p1f1
+FX_RUN=r1i1p1f1
+GRID=gn
+OFX_VERSION=v20191115
+FX_VERSION=v20191115
+ATMOS_EXP_VERSION=v20200615
+#v20191115 (historical r1i1p1), v20191128 (historical r2i1p1f1), v20191203 (historical r3i1p1f1), v20200615 (hist-aer, hist-GHG)
+EXP_VERSION=v20200615
+HIST_VERSION=v20191115
+EXP_TIME=185001-202012
+#2014 (historical, 2020 (hist-aer, hist-GHG)
+ATMOS_CNTRL_VERSION=v20191214
+CNTRL_VERSION=v20191214
+CNTRL_TIME=010101-100012
+CMIP6_DATA_DIR=${AUS_CMIP6_DATA_DIR}
+SFTLF_DIR=${CMIP6_DATA_DIR}
+VOLCELLO_DIR=${CMIP6_DATA_DIR}
+AREACELLO_DIR=${CMIP6_DATA_DIR}
+AREACELLA_DIR=${CMIP6_DATA_DIR}
 
 
 # BCC-CSM2-MR
