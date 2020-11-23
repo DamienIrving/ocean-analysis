@@ -232,9 +232,12 @@ def multiply_by_area(cube, area_cube=None):
     """Multiply by cell area."""
 
     if area_cube:
-        assert cube.ndim in [2, 3]
-        if cube.ndim == 3:
-            area_data = uconv.broadcast_array(area_cube.data, [1, 2], cube.shape)
+        cube_ndim = cube.ndim
+        area_ndim = area_cube.ndim
+        if not cube_ndim == area_ndim:
+            diff = cube_ndim - area_ndim
+            assert cube.shape[diff:] == area_cube.shape
+            area_data = uconv.broadcast_array(area_cube.data, [cube_ndim - area_ndim, cube_ndim - 1], cube.shape)
         else:
             area_data = area_cube.data
     else:
