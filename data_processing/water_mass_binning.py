@@ -375,7 +375,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--temperature_bounds", type=float, nargs=2, default=(-6, 50),
                         help='bounds for the temperature (Y) axis')
-    parser.add_argument("--tbin_size", type=float, default=1.0, help='temperature bin size')
+    bin_default = 1/3.
+    parser.add_argument("--tbin_size", type=float, default=bin_default, help='temperature bin size')
 
     args = parser.parse_args()             
     main(args)
