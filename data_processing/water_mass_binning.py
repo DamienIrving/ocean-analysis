@@ -312,11 +312,22 @@ def main(inargs):
         wt_sbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(b_values)])
         ws_tsbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(t_values), len(b_values)])
         wt_tsbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(t_values), len(b_values)])
+
+    if inargs.bin_clim:
+        iris.coord_categorisation.add_month(s_cube, 'time')
+        s_year_cube = s_cube.aggregated_by(['month'], iris.analysis.MEAN)
+        s_year_cube.remove_coord('month')
+        s_year_cube.replace_coord(s_cube[0:12, ::].coord('time'))
+        iris.coord_categorisation.add_month(t_cube, 'time')
+        t_year_cube = t_cube.aggregated_by(['month'], iris.analysis.MEAN)
+        t_year_cube.remove_coord('month')
+        t_year_cube.replace_coord(t_cube[0:12, ::].coord('time'))
     for year_index, year in enumerate(years):
         print(year)         
         year_constraint = iris.Constraint(year=year)
-        s_year_cube = s_cube.extract(year_constraint)
-        t_year_cube = t_cube.extract(year_constraint)
+        if not inargs.bin_clim:
+            s_year_cube = s_cube.extract(year_constraint)
+            t_year_cube = t_cube.extract(year_constraint)
         if flux_data:
             w_year_cube = w_cube.extract(year_constraint)
             w_year_cube = spatial_weights.multiply_by_area(w_year_cube, area_cube=a_cube)
@@ -377,6 +388,9 @@ if __name__ == '__main__':
                         help='bounds for the temperature (Y) axis')
     bin_default = 1/3.
     parser.add_argument("--tbin_size", type=float, default=bin_default, help='temperature bin size')
+
+    parser.add_argument("--bin_clim", action="store_true", default=False,
+                        help="Use the bin file climatology for binning")
 
     args = parser.parse_args()             
     main(args)
