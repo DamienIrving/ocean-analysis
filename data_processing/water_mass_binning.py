@@ -13,6 +13,7 @@ import iris
 import iris.coord_categorisation
 from iris.experimental.equalise_cubes import equalise_attributes
 import cmdline_provenance as cmdprov
+from statsmodels.stats.weightstats import DescrStatsW
 
 
 # Import my modules
@@ -49,7 +50,7 @@ mom_vars = {"temp_nonlocal_KPP": "cp*rho*dzt*nonlocal tendency from KPP",
 
 def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube, years,
                    t_values, t_edges, t_units, s_values, s_edges, s_units,
-                   log, mul_ts=False):
+                   log, mul_ts=False, percentile_bins=False):
     """Create the iris cube for output"""
     
     for key, data in outdata_dict.items():
@@ -61,21 +62,43 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube, years,
                                       var_name=t_cube.coord('year').var_name,
                                       units=t_cube.coord('year').units)
 
-    t_bounds = uconv.get_bounds_list(t_edges)
-    t_coord = iris.coords.DimCoord(t_values,
-                                   standard_name=t_cube.standard_name,
-                                   long_name=t_cube.long_name,
-                                   var_name=t_cube.var_name,
-                                   units=t_units,
-                                   bounds=t_bounds)
+    if percentile_bins:
+        values = numpy.arange(0.5, 100)
+        bounds = uconv.get_bounds_list(numpy.arange(0, 101))
+        
+        t_coord_std_name = t_cube.standard_name + '_percentile'
+        iris.std_names.STD_NAMES[t_coord_std_name] = {'canonical_units': '%'}
+        t_coord = iris.coords.DimCoord(values,
+                                       standard_name=t_coord_std_name,
+                                       long_name=t_cube.long_name + ' percentile',
+                                       var_name=t_cube.var_name,
+                                       units='%',
+                                       bounds=bounds)
 
-    s_bounds = uconv.get_bounds_list(s_edges)
-    s_coord = iris.coords.DimCoord(s_values,
-                                   standard_name=s_cube.standard_name,
-                                   long_name=s_cube.long_name,
-                                   var_name=s_cube.var_name,
-                                   units=s_units,
-                                   bounds=s_bounds)
+        s_coord_std_name = s_cube.standard_name + '_percentile'
+        iris.std_names.STD_NAMES[s_coord_std_name] = {'canonical_units': '%'}
+        s_coord = iris.coords.DimCoord(values,
+                                       standard_name=s_coord_std_name,
+                                       long_name=s_cube.long_name + ' percentile',
+                                       var_name=s_cube.var_name,
+                                       units='%',
+                                       bounds=bounds)
+    else:
+        t_bounds = uconv.get_bounds_list(t_edges)
+        t_coord = iris.coords.DimCoord(t_values,
+                                       standard_name=t_cube.standard_name,
+                                       long_name=t_cube.long_name,
+                                       var_name=t_cube.var_name,
+                                       units=t_units,
+                                       bounds=t_bounds)
+
+        s_bounds = uconv.get_bounds_list(s_edges)
+        s_coord = iris.coords.DimCoord(s_values,
+                                       standard_name=s_cube.standard_name,
+                                       long_name=s_cube.long_name,
+                                       var_name=s_cube.var_name,
+                                       units=s_units,
+                                       bounds=s_bounds)
 
     b_coord = iris.coords.DimCoord(b_values,
                                    standard_name=b_cube.standard_name,
@@ -262,6 +285,14 @@ def get_bin_data(files, var, w_cube):
     return cube, history
 
 
+def weighted_percentiles(data, weights):
+    """Return the weighted percentiles."""
+    
+    wq = DescrStatsW(data=data, weights=weights)
+    
+    return wq.quantile(probs=np.arange(0, 1.01, 0.01), return_pandas=False)
+    
+
 def main(inargs):
     """Run the program."""
 
@@ -283,12 +314,18 @@ def main(inargs):
 
     log = get_log(inargs, w_history, t_history, s_history, b_cube, a_cube)
 
-    t_min, t_max = inargs.temperature_bounds
-    t_step = inargs.tbin_size
-    t_edges = numpy.arange(t_min, t_max + t_step, t_step)
-    t_values = (t_edges[1:] + t_edges[:-1]) / 2
-    s_values, s_edges = uconv.salinity_bins() 
-    b_values, b_edges = uconv.get_basin_details(b_cube)
+    if inargs.bin_percentile:
+        nt_values = 100
+        ns_values = 100
+    else:
+        t_min, t_max = inargs.temperature_bounds
+        t_step = inargs.tbin_size
+        t_edges = numpy.arange(t_min, t_max + t_step, t_step)
+        t_values = (t_edges[1:] + t_edges[:-1]) / 2
+        s_values, s_edges = uconv.salinity_bins() 
+        b_values, b_edges = uconv.get_basin_details(b_cube)
+        nt_values = len(t_values)
+        ns_values = len(s_values)
 
     iris.coord_categorisation.add_year(t_cube, 'time')
     iris.coord_categorisation.add_year(s_cube, 'time')
@@ -302,16 +339,16 @@ def main(inargs):
     years = numpy.array(list(t_years))
     years.sort()
     
-    w_tbin_outdata = numpy.ma.zeros([len(years), len(t_values), len(b_values)])
-    w_sbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(b_values)])
-    w_tsbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(t_values), len(b_values)])
+    w_tbin_outdata = numpy.ma.zeros([len(years), nt_values, len(b_values)])
+    w_sbin_outdata = numpy.ma.zeros([len(years), ns_values, len(b_values)])
+    w_tsbin_outdata = numpy.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
     if spatial_data:
-        ws_tbin_outdata = numpy.ma.zeros([len(years), len(t_values), len(b_values)])
-        wt_tbin_outdata = numpy.ma.zeros([len(years), len(t_values), len(b_values)])
-        ws_sbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(b_values)])
-        wt_sbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(b_values)])
-        ws_tsbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(t_values), len(b_values)])
-        wt_tsbin_outdata = numpy.ma.zeros([len(years), len(s_values), len(t_values), len(b_values)])
+        ws_tbin_outdata = numpy.ma.zeros([len(years), nt_values, len(b_values)])
+        wt_tbin_outdata = numpy.ma.zeros([len(years), nt_values, len(b_values)])
+        ws_sbin_outdata = numpy.ma.zeros([len(years), ns_values, len(b_values)])
+        wt_sbin_outdata = numpy.ma.zeros([len(years), ns_values, len(b_values)])
+        ws_tsbin_outdata = numpy.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
+        wt_tsbin_outdata = numpy.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
 
     if inargs.bin_clim:
         iris.coord_categorisation.add_month(s_cube, 'time')
@@ -336,6 +373,9 @@ def main(inargs):
         df, s_units, t_units = water_mass.create_df(w_year_cube, t_year_cube, s_year_cube, b_cube,
                                                     s_bounds=(s_edges[0], s_edges[-1]),
                                                     multiply_weights_by_days_in_year_frac=True)
+        if inargs.bin_percentile:
+            t_edges = weighted_percentiles(df['temperature'].values, df['weight'].values)
+            s_edges = weighted_percentiles(df['salinity'].values, df['weight'].values)
         if flux_data:
             w_tbin_outdata[year_index, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges])
             w_sbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges])
@@ -361,7 +401,7 @@ def main(inargs):
         outdata_dict['wt_tsbin'] = numpy.ma.masked_invalid(wt_tsbin_outdata)
     outcube_list = construct_cube(outdata_dict, w_year_cube, t_cube, s_cube, b_cube, years,
                                   t_values, t_edges, t_units, s_values, s_edges, s_units,
-                                  log, mul_ts=spatial_data)
+                                  log, mul_ts=spatial_data, percentile_bins=inargs.bin_percentile)
 
     equalise_attributes(outcube_list)
     iris.save(outcube_list, inargs.outfile)
@@ -391,6 +431,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--bin_clim", action="store_true", default=False,
                         help="Use the bin file climatology for binning")
+    parser.add_argument("--bin_percentile", action="store_true", default=False,
+                        help="Use percentiles for binning")
 
     args = parser.parse_args()             
     main(args)
