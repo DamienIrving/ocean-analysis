@@ -27,7 +27,7 @@ The [recommended acknowledgement](https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsO
 * Project oi10 on NCI
 * Search and request data using the Climate Finder, [CleF](https://clef.readthedocs.io/en/latest/index.html)
   * At the moment `$ clef --request` sends to Paola Petrelli instead of NCI.
-  * Instead, use the [data download online form](https://opus.nci.org.au/display/CMIP/Data+Download+Request) or send the output files from `$clef --request` (which are produced if you say no instead of yes at the end of the process) to help@nci.org.au
+  * Instead, use the [data download online form](https://opus.nci.org.au/display/CMIP/Data+Download+Request) or send the output files from `$clef --request` (which are produced if you say no instead of yes at the end of the process) to help@nci.org.au or attach the files to a new issue at the [NCI Help Portal](https://track.nci.org.au/servicedesk/customer/portals).
 
 ## Downloading data directly
 
