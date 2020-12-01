@@ -8,7 +8,7 @@ import pdb
 import argparse
 import logging
 
-import numpy
+import numpy as np
 import iris
 import iris.coord_categorisation
 from iris.experimental.equalise_cubes import equalise_attributes
@@ -63,8 +63,8 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube, years,
                                       units=t_cube.coord('year').units)
 
     if percentile_bins:
-        values = numpy.arange(0.5, 100)
-        bounds = uconv.get_bounds_list(numpy.arange(0, 101))
+        values = np.arange(0.5, 100)
+        bounds = uconv.get_bounds_list(np.arange(0, 101))
         
         t_coord_std_name = t_cube.standard_name + '_percentile'
         iris.std_names.STD_NAMES[t_coord_std_name] = {'canonical_units': '%'}
@@ -185,14 +185,14 @@ def clipping_details(orig_data, clipped_data, bin_edges, var_name):
     bin_max = bin_edges[-1]
     bin_second_max = bin_edges[-2]
 
-    npoints_under = numpy.sum(orig_data < bin_min)
-    npoints_min = numpy.sum(orig_data <= bin_second_min) - npoints_under
-    npoints_clip_min = numpy.sum(clipped_data <= bin_second_min) - numpy.sum(clipped_data < bin_min)
+    npoints_under = np.sum(orig_data < bin_min)
+    npoints_min = np.sum(orig_data <= bin_second_min) - npoints_under
+    npoints_clip_min = np.sum(clipped_data <= bin_second_min) - np.sum(clipped_data < bin_min)
     assert npoints_clip_min == npoints_under + npoints_min
 
-    npoints_over = numpy.sum(orig_data > bin_max)
-    npoints_max = numpy.sum(orig_data <= bin_max) - numpy.sum(orig_data <= bin_second_max)
-    npoints_clip_max = numpy.sum(clipped_data <= bin_max) - numpy.sum(clipped_data <= bin_second_max)
+    npoints_over = np.sum(orig_data > bin_max)
+    npoints_max = np.sum(orig_data <= bin_max) - np.sum(orig_data <= bin_second_max)
+    npoints_clip_max = np.sum(clipped_data <= bin_max) - np.sum(clipped_data <= bin_second_max)
     assert npoints_clip_max == npoints_over + npoints_max
 
     logging.info(f"First {var_name} bin had {npoints_min} values, clipping added {npoints_under}")
@@ -213,19 +213,19 @@ def bin_data(df, var_list, edge_list, mul_ts=False):
     data_list = []
     for var, edges in zip(var_list, edge_list):
         assert var in ['temperature', 'salinity', 'basin']
-        values = numpy.clip(df[var].values, edges[0], edges[-1])
+        values = np.clip(df[var].values, edges[0], edges[-1])
         clipping_details(df[var].values, values, edges, var)
         data_list.append(values)
-    data = numpy.array(data_list).T
+    data = np.array(data_list).T
 
-    w_data = df['weight'].astype(numpy.float64).values
-    w_dist, edges = numpy.histogramdd(data, weights=w_data, bins=edge_list)
+    w_data = df['weight'].astype(np.float64).values
+    w_dist, edges = np.histogramdd(data, weights=w_data, bins=edge_list)
     binned_total_weight = w_dist.sum()
     orig_total_weight = w_data.sum()
-    numpy.testing.assert_allclose(orig_total_weight, binned_total_weight, rtol=1e-03)
+    np.testing.assert_allclose(orig_total_weight, binned_total_weight, rtol=1e-03)
     if mul_ts:
-        ws_dist, edges = numpy.histogramdd(data, weights=w_data * df['salinity'].values, bins=edge_list)
-        wt_dist, edges = numpy.histogramdd(data, weights=w_data * df['temperature'].values, bins=edge_list)
+        ws_dist, edges = np.histogramdd(data, weights=w_data * df['salinity'].values, bins=edge_list)
+        wt_dist, edges = np.histogramdd(data, weights=w_data * df['temperature'].values, bins=edge_list)
         return w_dist, ws_dist, wt_dist
     else:
         return w_dist
@@ -314,18 +314,22 @@ def main(inargs):
 
     log = get_log(inargs, w_history, t_history, s_history, b_cube, a_cube)
 
+    b_values, b_edges = uconv.get_basin_details(b_cube)
     if inargs.bin_percentile:
         nt_values = 100
         ns_values = 100
+        s_bounds = (-0.2, 80)
+        pct_cube = a_cube
     else:
         t_min, t_max = inargs.temperature_bounds
         t_step = inargs.tbin_size
-        t_edges = numpy.arange(t_min, t_max + t_step, t_step)
-        t_values = (t_edges[1:] + t_edges[:-1]) / 2
-        s_values, s_edges = uconv.salinity_bins() 
-        b_values, b_edges = uconv.get_basin_details(b_cube)
+        t_edges = np.arange(t_min, t_max + t_step, t_step)
+        t_values = (t_edges[1:] + t_edges[:-1]) / 2 
+        s_values, s_edges = uconv.salinity_bins()
+        s_bounds=(s_edges[0], s_edges[-1])
         nt_values = len(t_values)
         ns_values = len(s_values)
+        pct_cube = None
 
     iris.coord_categorisation.add_year(t_cube, 'time')
     iris.coord_categorisation.add_year(s_cube, 'time')
@@ -336,19 +340,19 @@ def main(inargs):
         iris.coord_categorisation.add_year(w_cube, 'time')
         w_years = set(w_cube.coord('year').points)
         assert w_years == t_years
-    years = numpy.array(list(t_years))
+    years = np.array(list(t_years))
     years.sort()
     
-    w_tbin_outdata = numpy.ma.zeros([len(years), nt_values, len(b_values)])
-    w_sbin_outdata = numpy.ma.zeros([len(years), ns_values, len(b_values)])
-    w_tsbin_outdata = numpy.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
+    w_tbin_outdata = np.ma.zeros([len(years), nt_values, len(b_values)])
+    w_sbin_outdata = np.ma.zeros([len(years), ns_values, len(b_values)])
+    w_tsbin_outdata = np.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
     if spatial_data:
-        ws_tbin_outdata = numpy.ma.zeros([len(years), nt_values, len(b_values)])
-        wt_tbin_outdata = numpy.ma.zeros([len(years), nt_values, len(b_values)])
-        ws_sbin_outdata = numpy.ma.zeros([len(years), ns_values, len(b_values)])
-        wt_sbin_outdata = numpy.ma.zeros([len(years), ns_values, len(b_values)])
-        ws_tsbin_outdata = numpy.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
-        wt_tsbin_outdata = numpy.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
+        ws_tbin_outdata = np.ma.zeros([len(years), nt_values, len(b_values)])
+        wt_tbin_outdata = np.ma.zeros([len(years), nt_values, len(b_values)])
+        ws_sbin_outdata = np.ma.zeros([len(years), ns_values, len(b_values)])
+        wt_sbin_outdata = np.ma.zeros([len(years), ns_values, len(b_values)])
+        ws_tsbin_outdata = np.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
+        wt_tsbin_outdata = np.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
 
     if inargs.bin_clim:
         iris.coord_categorisation.add_month(s_cube, 'time')
@@ -371,11 +375,12 @@ def main(inargs):
         else:
             w_year_cube = w_cube
         df, s_units, t_units = water_mass.create_df(w_year_cube, t_year_cube, s_year_cube, b_cube,
-                                                    s_bounds=(s_edges[0], s_edges[-1]),
+                                                    s_bounds=s_bounds, pct_cube=pct_cube,
                                                     multiply_weights_by_days_in_year_frac=True)
         if inargs.bin_percentile:
-            t_edges = weighted_percentiles(df['temperature'].values, df['weight'].values)
-            s_edges = weighted_percentiles(df['salinity'].values, df['weight'].values)
+            weight_var = 'percentile_weights' if pct_cube else 'weight'
+            t_edges = weighted_percentiles(df['temperature'].values, df[weight_var].values)
+            s_edges = weighted_percentiles(df['salinity'].values, df[weight_var].values)
         if flux_data:
             w_tbin_outdata[year_index, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges])
             w_sbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges])
@@ -389,16 +394,19 @@ def main(inargs):
             w_tsbin_outdata[year_index, ::], ws_tsbin_outdata[year_index, ::], wt_tsbin_outdata[year_index, ::] = tsbin_list
 
     outdata_dict = {}
-    outdata_dict['w_tbin'] = numpy.ma.masked_invalid(w_tbin_outdata)
-    outdata_dict['w_sbin'] = numpy.ma.masked_invalid(w_sbin_outdata)
-    outdata_dict['w_tsbin'] = numpy.ma.masked_invalid(w_tsbin_outdata)
+    outdata_dict['w_tbin'] = np.ma.masked_invalid(w_tbin_outdata)
+    outdata_dict['w_sbin'] = np.ma.masked_invalid(w_sbin_outdata)
+    outdata_dict['w_tsbin'] = np.ma.masked_invalid(w_tsbin_outdata)
     if spatial_data:
-        outdata_dict['ws_tbin'] = numpy.ma.masked_invalid(ws_tbin_outdata)
-        outdata_dict['wt_tbin'] = numpy.ma.masked_invalid(wt_tbin_outdata)
-        outdata_dict['ws_sbin'] = numpy.ma.masked_invalid(ws_sbin_outdata)
-        outdata_dict['wt_sbin'] = numpy.ma.masked_invalid(wt_sbin_outdata)
-        outdata_dict['ws_tsbin'] = numpy.ma.masked_invalid(ws_tsbin_outdata)
-        outdata_dict['wt_tsbin'] = numpy.ma.masked_invalid(wt_tsbin_outdata)
+        outdata_dict['ws_tbin'] = np.ma.masked_invalid(ws_tbin_outdata)
+        outdata_dict['wt_tbin'] = np.ma.masked_invalid(wt_tbin_outdata)
+        outdata_dict['ws_sbin'] = np.ma.masked_invalid(ws_sbin_outdata)
+        outdata_dict['wt_sbin'] = np.ma.masked_invalid(wt_sbin_outdata)
+        outdata_dict['ws_tsbin'] = np.ma.masked_invalid(ws_tsbin_outdata)
+        outdata_dict['wt_tsbin'] = np.ma.masked_invalid(wt_tsbin_outdata)
+    if inargs.bin_percentile:
+        t_values = s_values = np.arange(0.5, 100)
+        t_edges = s_edges = np.arange(0, 101)
     outcube_list = construct_cube(outdata_dict, w_year_cube, t_cube, s_cube, b_cube, years,
                                   t_values, t_edges, t_units, s_values, s_edges, s_units,
                                   log, mul_ts=spatial_data, percentile_bins=inargs.bin_percentile)

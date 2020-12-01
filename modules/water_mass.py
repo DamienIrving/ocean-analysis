@@ -55,7 +55,24 @@ def multiply_by_days_in_year_frac(data, time_coord):
     return data
 
 
-def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
+def broadcast_data(cube, target_shape):
+    """Broadcast a static cube (e.g. basin, area, volume)."""
+
+    target_ndim = len(target_shape)
+    if not cube.ndim == target_ndim:
+        diff = target_ndim - cube.ndim
+        assert target_shape[diff:] == cube.shape
+        data = uconv.broadcast_array(cube.data, [diff, target_ndim - 1], target_shape)
+    else:
+        data = cube.data
+
+    assert target_shape == data.shape
+
+    return data
+
+
+def create_df(w_cube, t_cube, s_cube, b_cube,
+              s_bounds=None, pct_cube=None,
               multiply_weights_by_days_in_year_frac=False):
     """Create DataFrame for water mass analysis.
 
@@ -64,6 +81,8 @@ def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
       t_cube (iris.cube.Cube)  -- temperature cube
       s_cube (iris.cube.Cube)  -- salinity cube
       b_cube (iris.cube.Cube)  -- basin cube
+      pct_cube (iris.cube.Cube)  -- percentile weights cube
+                                    (i.e. area or volume)
       s_bounds (tuple)         -- salinity bounds
       days_in_month_weights_adjustment (bool) -- multiply
         weights data by (days in month / days in year) 
@@ -71,22 +90,10 @@ def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
     """
 
     t_ndim = t_cube.ndim
-    
-    w_ndim = w_cube.ndim
-    if not w_ndim == t_ndim:
-        diff = t_ndim - w_ndim
-        assert t_cube.shape[diff:] == w_cube.shape
-        w_data = uconv.broadcast_array(w_cube.data, [t_ndim - w_ndim, t_ndim - 1], t_cube.shape)
-    else:
-        w_data = w_cube.data
-
-    b_ndim = b_cube.ndim
-    if not b_ndim == t_ndim:
-        diff = t_ndim - b_ndim
-        assert t_cube.shape[diff:] == b_cube.shape
-        b_data = uconv.broadcast_array(b_cube.data, [t_ndim - b_ndim, t_ndim - 1], t_cube.shape)
-    else:
-        b_data = b_cube.data
+    w_data = broadcast_data(w_cube, t_cube.shape)
+    b_data = broadcast_data(b_cube, t_cube.shape)
+    if pct_cube:
+        pct_data = broadcast_data(pct_cube, t_cube.shape)
 
     if multiply_weights_by_days_in_year_frac:
         w_data = multiply_by_days_in_year_frac(w_data, t_cube.coord('time'))
@@ -115,6 +122,12 @@ def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
     if not w_masked_points == s_masked_points:
          logging.info(f"salinity ({s_masked_points} points) and weights data ({w_masked_points}) masks are different")
     common_mask = w_data.mask + t_cube.data.mask + s_cube.data.mask
+    if pct_cube:
+        pct_masked_points = pct_data.mask.sum()
+        if not pct_masked_points == s_masked_points: 
+            logging.info(f"salinity ({s_masked_points} points) and percentile weight ({pct_masked_points}) masks are different")
+        common_mask = common_mask + pct_data.mask
+        pct_data.mask = common_mask
     t_cube.data.mask = common_mask
     s_cube.data.mask = common_mask
     lats = numpy.ma.masked_array(lats, common_mask)
@@ -128,12 +141,16 @@ def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
     b_data = b_data.compressed()
     lat_data = lats.compressed()
     lon_data = lons.compressed()
+    if pct_cube:
+        pct_data = pct_data.compressed()
 
     assert s_data.shape == t_data.shape
     assert s_data.shape == w_data.shape
     assert s_data.shape == b_data.shape
     assert s_data.shape == lat_data.shape
     assert s_data.shape == lon_data.shape
+    if pct_cube:
+        assert s_data.shape == pct_data.shape
 
     df = pandas.DataFrame(index=range(t_data.shape[0]))
     df['temperature'] = t_data
@@ -142,6 +159,8 @@ def create_df(w_cube, t_cube, s_cube, b_cube, s_bounds=None,
     df['basin'] = b_data
     df['latitude'] = lat_data
     df['longitude'] = lon_data
+    if pct_cube:
+        df['percentile_weights'] = pct_data
 
     return df, s_cube.units, t_cube.units
     
