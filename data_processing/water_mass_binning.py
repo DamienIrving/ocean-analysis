@@ -289,9 +289,18 @@ def weighted_percentiles(data, weights):
     """Return the weighted percentiles."""
     
     wq = DescrStatsW(data=data, weights=weights)
-    
-    return wq.quantile(probs=np.arange(0, 1.01, 0.01), return_pandas=False)
-    
+    percentiles = wq.quantile(probs=np.arange(0, 1.01, 0.01), return_pandas=False)
+
+    # manual method does not give a clean results...
+    #ix = np.argsort(data)
+    #data = data[ix] # sort data
+    #weights = weights[ix] # sort weights
+    #cdf = (np.cumsum(weights) - 0.5 * weights) / np.sum(weights) # 'like' a CDF function
+    #perc = np.arange(0, 1.01, 0.01)
+    #test2 = np.interp(perc, cdf, data)
+
+    return percentiles
+
 
 def main(inargs):
     """Run the program."""
