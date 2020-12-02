@@ -296,15 +296,26 @@ def get_bin_data(files, var, w_cube):
     """Get binning variable data."""
 
     cube, history = gio.combine_files(files, var, checks=True)
-
     w_coord_names = [coord.name() for coord in w_cube.dim_coords]
-    if 'time' in w_coord_names:
-        if (w_cube.ndim == 3) and (cube.ndim == 4):
-            cube_coord_names = [coord.name() for coord in cube.dim_coords]
-            cube = cube[:, 0, ::]
-            cube.remove_coord(cube_coord_names[1])
-            assert w_cube.shape == cube.shape
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    assert w_coord_names[-2:] == coord_names[-2:]
+    if (w_cube.ndim == 3) and (cube.ndim == 4) and (w_coord_names[0] == coord_names[0]):
+        #e.g. w_cube is surface flux (time, i, j),
+        #cube is full depth temperature (time, depth, i, j)
+        cube = cube[:, 0, ::]
+        cube.remove_coord(coord_names[1])
+        assert w_cube.shape == cube.shape 
+    elif (w_cube.ndim == 2) and (cube.ndim == 4):
+        #e.g. w_cube is area (i, j),
+        #cube is full depth temperature (time, depth, i, j)
+        cube = cube[:, 0, ::]
+        cube.remove_coord(coord_names[1])
+        assert w_cube.shape == cube.shape[1:]
     else:
+        #e.g. w_cube is area (i, j),
+        #cube is surface temperature (time, i, j)
+        #e.g. w_cube is volume (depth, i, j),
+        #cube is temperature (time, depth, i, j)
         assert w_cube.shape == cube.shape[1:]
 
     return cube, history
