@@ -316,7 +316,7 @@ def weighted_percentiles(data, weights, percentiles):
     Args:
       data (np.ndarray) : Bin variable (e.g. temperature, salinity)
       weights (np.ndarray): Weights (e.g. cell volume, area)
-      percentiles (np.ndarray): Array of requested percentiles (e.g. 0-100 by 1)
+      percentiles (np.ndarray): Array of requested percentiles (e.g. 0-1 by 0.01)
 
     """
     
