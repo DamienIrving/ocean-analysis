@@ -138,7 +138,7 @@ def _chunked_year_aggregation(cube, agg_method, step=12):
     return annual_cube
 
 
-def get_days_in_year(cube):
+def get_days_in_year(cube, return_df=False):
     """Generate an array of days in each year.
 
     Returns a pandas data series.
@@ -157,13 +157,16 @@ def get_days_in_year(cube):
     df = pd.DataFrame(data={'days_in_month': time_span_days, 'year': cube.coord('year').points})
     days_in_year = df.groupby('year').sum()
 
-    return days_in_year['days_in_month']
+    if return_df:
+        return df, days_in_year['days_in_month']
+    else:
+        return days_in_year['days_in_month']
 
 
 def _days_in_month_annual_mean(cube):
     """Calculate the annual mean timeseries accounting for days in month."""
 
-    days_in_year = get_days_in_year(cube)
+    df, days_in_year = get_days_in_year(cube, return_df=True)
     
     df['weight'] = df.apply(lambda row: row['days_in_month'] / days_in_year.loc[row['year']], axis=1)
     np.testing.assert_allclose(df.groupby('year').sum()['weight'].min(), 1.0)
