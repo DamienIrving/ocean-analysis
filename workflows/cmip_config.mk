@@ -1,89 +1,127 @@
 # System configuration
 
+# OPTIONS
+
+MODEL=ACCESS-CM2
+# ACCESS-CM2
+EXPERIMENT=hist-aer
+# historical hist-GHG hist-aer
+GRID=gn
+# gn gr
+
+SF_VAR=hfds
+# wfo hfds
+SBIN_VAR=so
+# sos so
+TBIN_VAR=tos
+# tos thetao
+FLUX_VAR=hfss
+# rsds rsus rlds rlus hfss
+
+# DIRECTORIES
+
 PYTHON=/g/data/r87/dbi599/miniconda3/envs/ocean3/bin/python
 DATA_SCRIPT_DIR=/home/599/dbi599/ocean-analysis/data_processing
 VIZ_SCRIPT_DIR=/home/599/dbi599/ocean-analysis/visualisation
-
-#defaults
 MY_DATA_DIR=/g/data/r87/dbi599
 AUS_CMIP6_DATA_DIR=/g/data/fs38/publications
 CMIP6_DATA_DIR=/g/data/oi10/replicas
 CMIP6b_DATA_DIR=/g/data1b/oi10/replicas
 CMIP5_DATA_DIR=/g/data/al33/replicas
-SBIN_VAR=sos
-# sos so
-TBIN_VAR=tos
-# tos thetao
-SBIN_STD_NAME=sea_surface_salinity
-# sea_surface_salinity sea_water_salinity
-TBIN_STD_NAME=sea_surface_temperature
-#sea_surface_temperature sea_water_potential_temperature
-SF_VAR=wfo
-# wfo hfds
-SF_STD_NAME=water_flux_into_sea_water
-# surface_downward_heat_flux_in_sea_water water_flux_into_sea_water
-SF_LONG_NAME=Water_Flux_into_Sea_Water
-FLUX_VAR=hfss
-# rsds rsus rlds rlus hfss
-FLUX_NAME=surface_upward_sensible_heat_flux
-# surface_downwelling_shortwave_flux_in_air
-# surface_upwelling_shortwave_flux_in_air
-# surface_downwelling_longwave_flux_in_air
-# surface_upwelling_longwave_flux_in_air
-# surface_upward_sensible_heat_flux
+
+# VARIABLES
+
+LONG_NAME_hfds=Downward_Heat_Flux_at_Sea_Water_Surface
+LONG_NAME_wfo=Water_Flux_into_Sea_Water
+STD_NAME_hfds=surface_downward_heat_flux_in_sea_water
+STD_NAME_hfss=surface_upward_sensible_heat_flux
+STD_NAME_rlds=surface_downwelling_longwave_flux_in_air
+STD_NAME_rlus=surface_upwelling_longwave_flux_in_air
+STD_NAME_rsds=surface_downwelling_shortwave_flux_in_air
+STD_NAME_rsus=surface_upwelling_shortwave_flux_in_air
+STD_NAME_so=sea_water_salinity
+STD_NAME_sos=sea_surface_salinity
+STD_NAME_thetao=sea_water_potential_temperature
+STD_NAME_tos=sea_surface_temperature
+STD_NAME_wfo=water_flux_into_sea_water
+
+SBIN_STD_NAME=${STD_NAME_${SBIN_VAR}}
+TBIN_STD_NAME=${STD_NAME_${TBIN_VAR}}
+SF_STD_NAME=${STD_NAME_${SF_VAR}}
+FLUX_NAME=${STD_NAME_${FLUX_VAR}}
+SF_LONG_NAME=${LONG_NAME_${SF_VAR}}
+
+# DRS DETAILS
+
+ACCESS-CM2_PROJECT=CMIP6
+ACCESS-CM2_INSTITUTION=CSIRO-ARCCSS
+ACCESS-CM2_FX_EXP=historical
+ACCESS-CM2_EXP_RUN=r1i1p1f1
+ACCESS-CM2_CNTRL_RUN=r1i1p1f1
+ACCESS-CM2_FX_RUN=r1i1p1f1
+ACCESS-CM2_HIST_RUN=r1i1p1f1
+ACCESS-CM2_OFX_VERSION=v20191108
+ACCESS-CM2_HIST_VERSION=v20191108
+ACCESS-CM2_ATMOS_EXP_VERSION=v20191108
+ACCESS-CM2_EXP_VERSION=v20191108
+ACCESS-CM2_EXP_TIME=185001-201412
+ACCESS-CM2_ATMOS_CNTRL_VERSION=v20191112
+ACCESS-CM2_CNTRL_VERSION=v20191112
+ACCESS-CM2_CNTRL_TIME=095001-144912
+ACCESS-CM2_CMIP6_DATA_DIR=${AUS_CMIP6_DATA_DIR}
+ACCESS-CM2_VOLCELLO_DIR=${AUS_CMIP6_DATA_DIR}
+ACCESS-CM2_AREACELLO_DIR=${AUS_CMIP6_DATA_DIR}
 
 
+
+MIP_historical=CMIP
+MIP_hist-GHG=DAMIP
+MIP_hist-aer=DAMIP
+
+MIP=${MIP_${DAMIP}}
+PROJECT=${${MODEL}_PROJECT}
+INSTITUTION=${${MODEL}_INSTITUTION}
+FX_EXP=${${MODEL}_FX_EXP}
+
+ifdef ${${MODEL}_EXP_VERSION}
+	EXP_VERSION=${${MODEL}_EXP_VERSION}
+else
+	EXP_VERSION=${${MODEL}_EXP_VERSION_${EXPERIMENT}_${EXP_RUN}}
+endif
+
+ifdef ${${MODEL}_EXP_TIME}
+	EXP_TIME=${${MODEL}_EXP_TIME}
+else
+	EXP_TIME=${${MODEL}_EXP_TIME_${EXPERIMENT}}
+endif
 
 
 # CMIP6 #
 
 # ACCESS-CM2
-#
-#PROJECT=CMIP6
-#MIP=CMIP
-#INSTITUTION=CSIRO-ARCCSS
-#MODEL=ACCESS-CM2
-#EXPERIMENT=historical
-#FX_EXP=historical
-#HIST_RUN=r1i1p1f1
-#CNTRL_RUN=r1i1p1f1
-#FX_RUN=r1i1p1f1
-#GRID=gn
-#OFX_VERSION=v20191108
-#ATMOS_HIST_VERSION=v20191108
-#HIST_VERSION=v20191108
-#HIST_TIME=185001-201412
-#ATMOS_CNTRL_VERSION=v20191112
-#CNTRL_VERSION=v20191112
-#CNTRL_TIME=095001-144912
-#CMIP6_DATA_DIR=/g/data/fs38/publications
-#VOLCELLO_DIR=${AUS_CMIP6_DATA_DIR}
-#AREACELLO_DIR=${AUS_CMIP6_DATA_DIR}
+# - Projects: CMIP
+# - Grids: gn
+
 
 
 # ACCESS-ESM1-5
 #
-PROJECT=CMIP6
-MIP=DAMIP
-## CMIP DAMIP
-MODEL=ACCESS-ESM1-5
-INSTITUTION=CSIRO
-EXPERIMENT=hist-GHG
-## historical hist-GHG hist-aer
-FX_EXP=historical
-EXP_RUN=r1i1p1f1
-HIST_RUN=r1i1p1f1
-CNTRL_RUN=r1i1p1f1
-FX_RUN=r1i1p1f1
-GRID=gn
-OFX_VERSION=v20191115
-FX_VERSION=v20191115
-ATMOS_EXP_VERSION=v20200615
-#v20191115 (historical r1i1p1), v20191128 (historical r2i1p1f1), v20191203 (historical r3i1p1f1), v20200615 (hist-aer, hist-GHG)
-EXP_VERSION=v20200615
-HIST_VERSION=v20191115
-EXP_TIME=185001-202012
-#2014 (historical, 2020 (hist-aer, hist-GHG)
+# - Projects: CMIP, DAMIP
+# - Grids: gn
+#
+#PROJECT=CMIP6
+#MODEL=ACCESS-ESM1-5
+#INSTITUTION=CSIRO
+#FX_EXP=historical
+#EXP_RUN=r1i1p1f1
+#HIST_RUN=r1i1p1f1
+#CNTRL_RUN=r1i1p1f1
+#FX_RUN=r1i1p1f1
+#GRID=gn
+#OFX_VERSION=v20191115
+#FX_VERSION=v20191115
+#HIST_VERSION=v20191115
+#ATMOS_EXP_VERSION=v20191115
 ATMOS_CNTRL_VERSION=v20191214
 CNTRL_VERSION=v20191214
 CNTRL_TIME=010101-100012
@@ -92,6 +130,16 @@ SFTLF_DIR=${CMIP6_DATA_DIR}
 VOLCELLO_DIR=${CMIP6_DATA_DIR}
 AREACELLO_DIR=${CMIP6_DATA_DIR}
 AREACELLA_DIR=${CMIP6_DATA_DIR}
+
+EXP_VERSION_historical_r1i1p1f1=v20191115
+EXP_VERSION_historical_r2i1p1f1=v20191128
+EXP_VERSION_historical_r3i1p1f1=v20191203
+EXP_VERSION_hist-aer_r1i1p1f1=v20200615
+EXP_VERSION_hist-GHG_r1i1p1f1=v20200615
+
+EXP_TIME_hist-aer=185001-202012
+EXP_TIME_hist-GHG=185001-202012
+EXP_TIME_historical=185001-201412
 
 
 # BCC-CSM2-MR
