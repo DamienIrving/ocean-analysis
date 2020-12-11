@@ -1,17 +1,15 @@
-# System configuration
+# CMIP configuration
 
-# OPTIONS
-
-MODEL=ACCESS-CM2
-# ACCESS-CM2
-EXPERIMENT=historical
-# historical hist-GHG hist-aer
-SF_VAR=hfds
-# wfo hfds
-FLUX_VAR=hfss
-# rsds rsus rlds rlus hfss
-
-# MAYBE OPTIONS?
+## Variables always required at the command line:
+## - MODEL (choices: see below)
+## - EXPERIMENT (choices: historical, hist-GHG, hist-aer)
+##
+## Variables required for certain targets:
+## - SF_VAR (choices: wfo, hfds)
+## - FLUX_VAR (choices: rsds rsus rlds rlus hfss)
+##
+##  MODELS: ACCESS-CM2, ACCESS-ESM1-5
+##
 
 GRID=gn
 # gn gr
@@ -108,7 +106,6 @@ ACCESS-ESM1-5_AREACELLO_DIR=${CMIP6_DATA_DIR}
 ACCESS-ESM1-5_AREACELLA_DIR=${CMIP6_DATA_DIR}
 ACCESS-ESM1-5_SFTLF_DIR=${CMIP6_DATA_DIR}
 
-
 # TOKEN PASTING
 EMPTY=${HELLO}
 
@@ -145,6 +142,10 @@ AREACELLO_DIR=${${MODEL}_AREACELLO_DIR}
 AREACELLA_DIR=${${MODEL}_AREACELLA_DIR}
 SFTLF_DIR=${${MODEL}_SFTLF_DIR}
 
+help :
+	@grep '^##' ./cmip_config.mk
+
+
 # CMIP6 #
 
 # ACCESS-CM2
@@ -156,6 +157,7 @@ SFTLF_DIR=${${MODEL}_SFTLF_DIR}
 # - Projects: CMIP, DAMIP
 # - Grids: gn
 #
+
 
 
 
