@@ -298,7 +298,7 @@ def get_bin_data(files, var, w_cube):
     cube, history = gio.combine_files(files, var, checks=True)
     w_coord_names = [coord.name() for coord in w_cube.dim_coords]
     coord_names = [coord.name() for coord in cube.dim_coords]
-    assert w_coord_names[-2:] == coord_names[-2:]
+    assert w_cube.shape[-2:] == cube.shape[-2:]
     if not w_cube.shape == cube.shape:
         if (w_cube.ndim == 3) and (cube.ndim == 4) and (w_coord_names[0] == coord_names[0]):
             #e.g. w_cube is surface flux (time, i, j),
