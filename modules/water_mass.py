@@ -47,7 +47,8 @@ def multiply_by_days_in_year_frac(data, time_coord):
     assert time_span_days.max() < 32
     assert time_span_days.min() > 26
     days_in_year = time_span_days.sum()
-    assert days_in_year in [365, 366]
+    assert days_in_year > 359
+    assert days_in_year < 367
 
     for month, time_span in enumerate(time_span_days):
         data[month, ::] = data[month, ::] * (time_span / days_in_year)
