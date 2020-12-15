@@ -21,9 +21,15 @@ def main(inargs):
         branch_year = inargs.branch_year
     else:
         branch_year = rdya.get_branch_year(exp_cube)
-    branch_index = list(cntrl_cube.coord('year').points).index(branch_year)
-    print(f'Branch index: {branch_index}')
- 
+
+    cntrl_years = list(cntrl_cube.coord('year').points)
+    try:
+        branch_index = cntrl_years.index(branch_year)
+        print(f'Branch index: {branch_index}')
+    except ValueError as error_message:
+        print(error_message)
+        print(cntrl_years)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__,
