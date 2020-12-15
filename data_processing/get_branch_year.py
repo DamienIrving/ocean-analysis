@@ -17,7 +17,10 @@ def main(inargs):
     exp_cube = iris.load(inargs.experiment_file)[0]
     cntrl_cube = iris.load(inargs.control_file)[0]
 
-    branch_year = rdya.get_branch_year(exp_cube)
+    if inargs.branch_year:
+        branch_year = inargs.branch_year
+    else:
+        branch_year = rdya.get_branch_year(exp_cube)
     branch_index = list(cntrl_cube.coord('year').points).index(branch_year)
     print(f'Branch index: {branch_index}')
  
@@ -29,5 +32,6 @@ if __name__ == '__main__':
 
     parser.add_argument("experiment_file", type=str)
     parser.add_argument("control_file", type=str)
+    parser.add_argument("--branch_year", type=int, default=None, help="override metadata")
     args = parser.parse_args()             
     main(args)
