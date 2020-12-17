@@ -434,7 +434,7 @@ def main(inargs):
         else:
             w_year_cube = w_cube
         df, s_units, t_units = water_mass.create_df(w_year_cube, t_year_cube, s_year_cube, b_cube,
-                                                    s_bounds=s_bounds, pct_cube=pct_cube,
+                                                    pct_cube=pct_cube,
                                                     multiply_weights_by_days_in_year_frac=True)
         if inargs.bin_percentile:
             weight_var = 'percentile_weights' if pct_cube else 'weight'

@@ -72,19 +72,17 @@ def broadcast_data(cube, target_shape):
     return data
 
 
-def create_df(w_cube, t_cube, s_cube, b_cube,
-              s_bounds=None, pct_cube=None,
+def create_df(w_cube, t_cube, s_cube, b_cube, pct_cube=None,
               multiply_weights_by_days_in_year_frac=False):
     """Create DataFrame for water mass analysis.
 
     Args:
-      w_cube (iris.cube.Cube)  -- weights cube
-      t_cube (iris.cube.Cube)  -- temperature cube
-      s_cube (iris.cube.Cube)  -- salinity cube
-      b_cube (iris.cube.Cube)  -- basin cube
+      w_cube (iris.cube.Cube)    -- weights cube
+      t_cube (iris.cube.Cube)    -- temperature cube
+      s_cube (iris.cube.Cube)    -- salinity cube
+      b_cube (iris.cube.Cube)    -- basin cube
       pct_cube (iris.cube.Cube)  -- percentile weights cube
                                     (i.e. area or volume)
-      s_bounds (tuple)         -- salinity bounds
       days_in_month_weights_adjustment (bool) -- multiply
         weights data by (days in month / days in year) 
 
@@ -100,11 +98,7 @@ def create_df(w_cube, t_cube, s_cube, b_cube,
         w_data = multiply_by_days_in_year_frac(w_data, t_cube.coord('time'))
 
     t_cube = gio.temperature_unit_check(t_cube, 'C', abort=False)
-    if s_bounds:
-        s_min, s_max = s_bounds
-        s_cube = gio.salinity_unit_check(s_cube, valid_min=s_min, valid_max=s_max, abort=False)
-    else:
-        s_cube = gio.salinity_unit_check(s_cube, abort=False)
+    s_cube = gio.salinity_unit_check(s_cube, abort=False)
 
     coord_names = [coord.name() for coord in t_cube.dim_coords]
     if t_cube.coord('latitude').points.ndim == 1:
