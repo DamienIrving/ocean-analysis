@@ -108,6 +108,12 @@ ${SURFACE_WATER_MASS_FILE_EXP} : ${AREACELLO_FILE} ${BASIN_FILE_SURFACE}
 	mkdir -p ${SURFACE_WATER_MASS_DIR_EXP}
 	${PYTHON} ${DATA_SCRIPT_DIR}/water_mass_binning.py $< cell_area $(word 2,$^) $@ --temperature_files ${SURFACE_TBIN_FILES_EXP} --temperature_var ${SURFACE_TBIN_STD_NAME} --salinity_files ${SURFACE_SBIN_FILES_EXP} --salinity_var ${SURFACE_SBIN_STD_NAME}
 
+SURFACE_WATER_MASS_DIR_CNTRL=${SHARED_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Omon/surface-water-mass/${GRID_SURFACE}/${CNTRL_VERSION}
+SURFACE_WATER_MASS_FILE_CNTRL=${SURFACE_WATER_MASS_DIR_CNTRL}/surface-water-mass_Omon_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}.nc
+${SURFACE_WATER_MASS_FILE_CNTRL} : ${AREACELLO_FILE} ${BASIN_FILE_SURFACE}
+	mkdir -p ${SURFACE_WATER_MASS_DIR_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/water_mass_binning.py $< cell_area $(word 2,$^) $@ --temperature_files ${SURFACE_TBIN_FILES_CNTRL} --temperature_var ${SURFACE_TBIN_STD_NAME} --salinity_files ${SURFACE_SBIN_FILES_CNTRL} --salinity_var ${SURFACE_SBIN_STD_NAME}
+
 # WATER MASS (FULL DEPTH)
 
 WATER_MASS_DIR_EXP=${SHARED_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Omon/water-mass/${GRID_OCEAN}/${EXP_VERSION}
@@ -230,6 +236,7 @@ sf-raw-cntrl : ${SF_BINNED_FILE_CNTRL}
 sf-anomaly : ${SF_ANOMALY_TBINNED_CUMSUM_PLOT} ${SF_ANOMALY_SBINNED_CUMSUM_FILE} ${SF_ANOMALY_TSBINNED_CUMSUM_FILE}
 
 surface-water-mass-exp : ${SURFACE_WATER_MASS_FILE_EXP}
+surface-water-mass-cntrl : ${SURFACE_WATER_MASS_FILE_CNTRL}
 
 water-mass-exp : ${WATER_MASS_FILE_EXP}
 water-mass-cntrl : ${WATER_MASS_FILE_CNTRL}
