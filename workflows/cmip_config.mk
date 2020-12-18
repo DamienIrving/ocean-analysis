@@ -11,6 +11,7 @@
 ##  MODELS: ACCESS-CM2, ACCESS-ESM1-5, CNRM-CM6-1
 ##
 
+
 # DIRECTORIES
 
 PYTHON=/g/data/r87/dbi599/miniconda3/envs/ocean3/bin/python
@@ -42,6 +43,7 @@ STD_NAME_wfo=water_flux_into_sea_water
 # PROJECTS
 
 MIP_historical=CMIP
+MIP_piControl=CMIP
 MIP_hist-GHG=DAMIP
 MIP_hist-aer=DAMIP
 
@@ -720,6 +722,7 @@ NorESM2-LM_FX_EXP=historical
 NorESM2-LM_EXP_RUN=r1i1p1f1
 NorESM2-LM_CNTRL_RUN=r1i1p1f1
 NorESM2-LM_FX_RUN=r1i1p1f1
+NorESM2-LM_BASIN_RUN=r1i1p1f1
 NorESM2-LM_EXP_VERSION=v20190815
 NorESM2-LM_CNTRL_VERSION=v20190920
 NorESM2-LM_OFX_VERSION=v20190815
@@ -863,6 +866,26 @@ SURFACE_TBIN_STD_NAME=${STD_NAME_${SURFACE_TBIN_VAR}}
 SF_STD_NAME=${STD_NAME_${SF_VAR}}
 FLUX_NAME=${STD_NAME_${FLUX_VAR}}
 SF_LONG_NAME=${LONG_NAME_${SF_VAR}}
+
+# Check that key variables are defined
+
+check_defined = \
+    $(strip $(foreach 1,$1, \
+        $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+    $(if $(value $1),, \
+      $(error Undefined $1$(if $2, ($2))))
+
+$(call check_defined, MODEL)
+$(call check_defined, EXPERIMENT)
+
+# Check that key variables aren't empty
+
+ifeq (${MIP}, ${EMPTY})
+$(error MIP is empty)
+endif
+
+# Help information
 
 help :
 	@grep '^##' ./cmip_config.mk
