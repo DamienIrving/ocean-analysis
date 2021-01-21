@@ -63,7 +63,7 @@ def main(inargs):
             cube.var_name = ref_cube.var_name + '_' + bin_var
             cube.long_name = ref_cube.long_name + ' binned by ' + bin_name
         else:
-            assert new_var in long_names.keys()
+            assert inargs.new_var in long_names.keys()
             cube.var_name = inargs.new_var + '_' + bin_var
             cube.long_name = long_names[inargs.new_var] + ' binned by ' + bin_name
             assert cube.units == 'W'
@@ -97,7 +97,7 @@ author:
     parser.add_argument("new_file", type=str, help="New output file")
     
     parser.add_argument("--invars", type=str, nargs='*', help="Input variables")
-    parser.add_argument("--ref_file", type=str, help="reference cube for new file attributes")
+    parser.add_argument("--ref_file", type=str, default=None, help="reference cube for new file attributes")
 
     args = parser.parse_args()            
     main(args)
