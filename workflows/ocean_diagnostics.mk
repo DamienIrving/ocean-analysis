@@ -224,16 +224,94 @@ ${SBC_BINNED_CNTRL_FILE} : ${BASIN_FILE} ${AREACELLO_FILE}
 # Secondary variables
 
 VMIX_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/vmix/gn/${VERSION_HIST}
-VMIX_BINNED_HIST_FILE=${VMIX_BINNED_HIST_DIR}/vmix-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.n
+VMIX_BINNED_HIST_FILE=${VMIX_BINNED_HIST_DIR}/vmix-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
 ${VMIX_BINNED_HIST_FILE} : ${CBT_BINNED_HIST_FILE} ${KPP_BINNED_HIST_FILE}
 	mkdir -p ${VMIX_BINNED_HIST_DIR}
 	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) vmix $@ --invars "vert diffusion of heat due to diff_cbt" "cp*rho*dzt*nonlocal tendency from KPP" 
 
 VMIX_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/vmix/gn/${VERSION_CNTRL}
-VMIX_BINNED_CNTRL_FILE=${VMIX_BINNED_CNTRL_DIR}/vmix-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.n
+VMIX_BINNED_CNTRL_FILE=${VMIX_BINNED_CNTRL_DIR}/vmix-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
 ${VMIX_BINNED_CNTRL_FILE} : ${CBT_BINNED_CNTRL_FILE} ${KPP_BINNED_CNTRL_FILE}
 	mkdir -p ${VMIX_BINNED_CNTRL_DIR}
 	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) vmix $@ --invars "vert diffusion of heat due to diff_cbt" "cp*rho*dzt*nonlocal tendency from KPP" 
+
+
+SMIX_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/smix/gn/${VERSION_HIST}
+SMIX_BINNED_HIST_FILE=${SMIX_BINNED_HIST_DIR}/smix-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
+${SMIX_BINNED_HIST_FILE} : ${MIXDOWNSLOPE_BINNED_HIST_FILE} ${SIGMA_BINNED_HIST_FILE}
+	mkdir -p ${SMIX_BINNED_HIST_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) smix $@ --invars "cp*mixdownslope*rho*dzt*temp" "thk wghtd sigma-diffusion heating" 
+
+SMIX_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/smix/gn/${VERSION_CNTRL}
+SMIX_BINNED_CNTRL_FILE=${SMIX_BINNED_CNTRL_DIR}/smix-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
+${SMIX_BINNED_CNTRL_FILE} : ${MIXDOWNSLOPE_BINNED_CNTRL_FILE} ${SIGMA_BINNED_CNTRL_FILE}
+	mkdir -p ${SMIX_BINNED_CNTRL_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) smix $@ --invars "cp*mixdownslope*rho*dzt*temp" "thk wghtd sigma-diffusion heating" 
+
+
+SFCV_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/sfcv/gn/${VERSION_HIST}
+SFCV_BINNED_HIST_FILE=${SFCV_BINNED_HIST_DIR}/sfcv-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
+${SFCV_BINNED_HIST_FILE} : ${RIVER_BINNED_HIST_FILE} ${SFCHP_BINNED_HIST_FILE}
+	mkdir -p ${SFCV_BINNED_HIST_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) sfcv $@ --invars "cp*rivermix*rho_dzt*temp" "heat flux (relative to 0C) from pme transfer of water across ocean surface" 
+
+SFCV_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/sfcv/gn/${VERSION_CNTRL}
+SFCV_BINNED_CNTRL_FILE=${SFCV_BINNED_CNTRL_DIR}/sfcv-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
+${SFCV_BINNED_CNTRL_FILE} : ${RIVER_BINNED_CNTRL_FILE} ${SFCHP_BINNED_CNTRL_FILE}
+	mkdir -p ${SFCV_BINNED_CNTRL_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) sfcv $@ --invars "cp*rivermix*rho_dzt*temp" "heat flux (relative to 0C) from pme transfer of water across ocean surface"
+	
+
+SFCH_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/sfch/gn/${VERSION_HIST}
+SFCH_BINNED_HIST_FILE=${SFCH_BINNED_HIST_DIR}/sfch-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
+${SFCH_BINNED_HIST_FILE} : ${SBC_BINNED_HIST_FILE} ${SWHEAT_BINNED_HIST_FILE}�${FRAZIL_BINNED_HIST_FILE} ${ETA_BINNED_HIST_FILE}
+	mkdir -p ${SFCH_BINNED_HIST_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) $(word 4,$^) sfch $@ --invars vert_diffusion_of_heat_due_to_surface_flux downwelling_shortwave_flux_in_sea_water ocn_frazil_heat_flux_over_time_step surface_smoother_for_temp
+	
+SFCH_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/sfch/gn/${VERSION_CNTRL}
+SFCH_BINNED_CNTRL_FILE=${SFCH_BINNED_CNTRL_DIR}/sfch-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
+${SFCH_BINNED_CNTRL_FILE} : ${SBC_BINNED_CNTRL_FILE} ${SWHEAT_BINNED_CNTRL_FILE}�${FRAZIL_BINNED_CNTRL_FILE} ${ETA_BINNED_CNTRL_FILE}
+	mkdir -p ${SFCH_BINNED_CNTRL_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) $(word 4,$^) sfch $@ --invars vert_diffusion_of_heat_due_to_surface_flux downwelling_shortwave_flux_in_sea_water ocn_frazil_heat_flux_over_time_step surface_smoother_for_temp
+
+
+SFC_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/sfc/gn/${VERSION_HIST}
+SFC_BINNED_HIST_FILE=${SFC_BINNED_HIST_DIR}/sfc-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
+${SFC_BINNED_HIST_FILE} : ${SFCH_BINNED_HIST_FILE} ${SFCV_BINNED_HIST_FILE}
+	mkdir -p ${SFC_BINNED_HIST_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) sfc $@ --invars surface_heat_fluxes surface_heat_fluxes_from_surface_volume_fluxes
+
+SFC_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/sfc/gn/${VERSION_CNTRL}
+SFC_BINNED_CNTRL_FILE=${SFC_BINNED_CNTRL_DIR}/sfc-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
+${SFC_BINNED_CNTRL_FILE} : ${SFCH_BINNED_CNTRL_FILE} ${SFCV_BINNED_CNTRL_FILE}
+	mkdir -p ${SFC_BINNED_CNTRL_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) sfc $@ --invars surface_heat_fluxes surface_heat_fluxes_from_surface_volume_fluxes
+
+
+RMIX_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/rmix/gn/${VERSION_HIST}
+RMIX_BINNED_HIST_FILE=${RMIX_BINNED_HIST_DIR}/rmix-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
+${RMIX_BINNED_HIST_FILE} : ${K33_BINNED_HIST_FILE} ${NEUTRAL_BINNED_HIST_FILE}
+	mkdir -p ${SFCH_BINNED_HIST_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) rmix $@ --invars "thk wghtd K33-diffusion heating" "rho*dzt*cp*explicit neutral diffusion tendency (heating)"
+
+RMIX_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/rmix/gn/${VERSION_CNTRL}
+RMIX_BINNED_CNTRL_FILE=${RMIX_BINNED_CNTRL_DIR}/rmix-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
+${RMIX_BINNED_CNTRL_FILE} : ${K33_BINNED_CNTRL_FILE} ${NEUTRAL_BINNED_CNTRL_FILE}
+	mkdir -p ${SFCH_BINNED_CNTRL_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) rmix $@ --invars "thk wghtd K33-diffusion heating" "rho*dzt*cp*explicit neutral diffusion tendency (heating)"
+
+
+MIX_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/mix/gn/${VERSION_HIST}
+MIX_BINNED_HIST_FILE=${MIX_BINNED_HIST_DIR}/mix-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
+${MIX_BINNED_HIST_FILE} : ${VMIX_BINNED_HIST_FILE} ${SMIX_BINNED_HIST_FILE} ${RMIX_BINNED_HIST_FILE}
+	mkdir -p ${MIX_BINNED_HIST_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) mix $@ --invars vertical_mixing miscellaneous_mixing neutral_diffusion
+
+MIX_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/mix/gn/${VERSION_CNTRL}
+MIX_BINNED_CNTRL_FILE=${MIX_BINNED_CNTRL_DIR}/mix-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
+${MIX_BINNED_CNTRL_FILE} : ${VMIX_BINNED_CNTRL_FILE} ${SMIX_BINNED_CNTRL_FILE} ${RMIX_BINNED_CNTRL_FILE}
+	mkdir -p ${MIX_BINNED_CNTRL_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) mix $@ --invars vertical_mixing miscellaneous_mixing neutral_diffusion
 
 
 # Documentation
@@ -280,8 +358,26 @@ temp-vdiffuse-sbc : ${SBC_BINNED_HIST_FILE} ${SBC_BINNED_CNTRL_FILE}
 ## vmix : vertical mixing
 vmix : ${VMIX_BINNED_HIST_FILE} ${VMIX_BINNED_CNTRL_FILE}
 
+## smix : miscellaneous mixing
+smix : ${SMIX_BINNED_HIST_FILE} ${SMIX_BINNED_CNTRL_FILE}
+
+## sfcv : surface heat fluxes from surface volume fluxes
+sfcv : ${SFCV_BINNED_HIST_FILE} ${SFCV_BINNED_CNTRL_FILE}
+
+## sfch : surface heat fluxes
+sfch : ${SFCH_BINNED_HIST_FILE} ${SFCH_BINNED_CNTRL_FILE}
+
+## sfc : total surface forcing
+sfc : ${SFC_BINNED_HIST_FILE} ${SFC_BINNED_CNTRL_FILE}
+
+## rmix : neutral diffusion
+rmix : ${RMIX_BINNED_HIST_FILE} ${RMIX_BINNED_CNTRL_FILE}
+
+## mix : total explicit mixing
+mix : ${MIX_BINNED_HIST_FILE} ${MIX_BINNED_CNTRL_FILE}
+
 ## all : bin all variables
-all : frazil-3d mixdownslope-temp neutral-diffusion-temp sfc-hflux-pme sw-heat temp-eta-smooth temp-nonlocal-KPP temp-rivermix temp-sigma-diff temp-tendency temp-vdiffuse-diff-cbt temp-vdiffuse-k33 temp-vdiffuse-sbc vmix
+all : frazil-3d mixdownslope-temp neutral-diffusion-temp sfc-hflux-pme sw-heat temp-eta-smooth temp-nonlocal-KPP temp-rivermix temp-sigma-diff temp-tendency temp-vdiffuse-diff-cbt temp-vdiffuse-k33 temp-vdiffuse-sbc vmix smix sfcv sfch rmix mix
 
 ## help : show this message.
 help :
