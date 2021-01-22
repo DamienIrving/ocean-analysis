@@ -22,9 +22,9 @@ SOS_FILES_CNTRL := $(sort $(wildcard ${INDIR}/piControl/${RUN}/Omon/sos/gn/${VER
 FRAZIL_FILES_HIST := $(sort $(wildcard ${MYDIR}/historical/${RUN}/Omon/frazil-3d/gn/${VERSION_HIST}/frazil-3d_Omon_ACCESS-CM2_historical_${RUN}_gn_*.nc))
 MIXDOWNSLOPE_FILES_HIST := $(sort $(wildcard ${MYDIR}/historical/${RUN}/Omon/mixdownslope-temp/gn/${VERSION_HIST}/mixdownslope-temp_Omon_ACCESS-CM2_historical_${RUN}_gn_*.nc))
 NEUTRAL_FILES_HIST := $(sort $(wildcard ${MYDIR}/historical/${RUN}/Omon/neutral-diffusion-temp/gn/${VERSION_HIST}/neutral-diffusion-temp_Omon_ACCESS-CM2_historical_${RUN}_gn_*.nc))
-SFCHP_FILE_HIST=${INDIR}/historical/${RUN}/Omon/sfc-hflux-pme/gn/${VERSION_HIST}/sfc-hflux-pme_Omon_ACCESS-CM2_historical_${RUN}_gn_185001-201412.nc
+SFCHP_FILE_HIST=${MYDIR}/historical/${RUN}/Omon/sfc-hflux-pme/gn/${VERSION_HIST}/sfc-hflux-pme_Omon_ACCESS-CM2_historical_${RUN}_gn_185001-201412.nc
 SWHEAT_FILES_HIST := $(sort $(wildcard ${MYDIR}/historical/${RUN}/Omon/sw-heat/gn/${VERSION_HIST}/sw-heat_Omon_ACCESS-CM2_historical_${RUN}_gn_*.nc))
-ETA_FILE_HIST=${INDIR}/historical/${RUN}/Omon/temp-eta-smooth/gn/${VERSION_HIST}/temp-eta-smooth_Omon_ACCESS-CM2_historical_${RUN}_gn_185001-201412.nc
+ETA_FILE_HIST=${MYDIR}/historical/${RUN}/Omon/temp-eta-smooth/gn/${VERSION_HIST}/temp-eta-smooth_Omon_ACCESS-CM2_historical_${RUN}_gn_185001-201412.nc
 KPP_FILES_HIST := $(sort $(wildcard ${MYDIR}/historical/${RUN}/Omon/temp-nonlocal-KPP/gn/${VERSION_HIST}/temp-nonlocal-KPP_Omon_ACCESS-CM2_historical_${RUN}_gn_*.nc))
 RIVER_FILES_HIST := $(sort $(wildcard ${MYDIR}/historical/${RUN}/Omon/temp-rivermix/gn/${VERSION_HIST}/temp-rivermix_Omon_ACCESS-CM2_historical_${RUN}_gn_*.nc))
 SIGMA_FILES_HIST := $(sort $(wildcard ${MYDIR}/historical/${RUN}/Omon/temp-sigma-diff/gn/${VERSION_HIST}/temp-sigma-diff_Omon_ACCESS-CM2_historical_${RUN}_gn_*.nc))
@@ -48,7 +48,7 @@ K33_FILES_CNTRL := $(sort $(wildcard ${MYDIR}/piControl/${RUN}/Omon/temp-vdiffus
 SBC_FILES_CNTRL := $(sort $(wildcard ${MYDIR}/piControl/${RUN}/Omon/temp-vdiffuse-sbc/gn/${VERSION_CNTRL}/temp-vdiffuse-sbc_Omon_ACCESS-CM2_piControl_${RUN}_gn_*.nc))
 
 AREACELLO_FILE=${INDIR}/historical/r1i1p1f1/Ofx/areacello/gn/v20191108/areacello_Ofx_ACCESS-CM2_historical_r1i1p1f1_gn.nc
-BASIN_FILE=/g/data/r87/dbi599/CMIP6/CMIP/CSIRO-ARCCSS/ACCESS-CM2/historical/r1i1p1f1/Ofx/basin/gn/v20191118/basin_Ofx_ACCESS-CM2_historical_r1i1p1f1_gn.nc
+BASIN_FILE=${MYDIR}/historical/r1i1p1f1/Ofx/basin/gn/v20191118/basin_Ofx_ACCESS-CM2_historical_r1i1p1f1_gn.nc
 
 # Primary variables
 
