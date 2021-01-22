@@ -52,6 +52,9 @@ BASIN_FILE=/g/data/r87/dbi599/CMIP6/CMIP/CSIRO-ARCCSS/ACCESS-CM2/historical/r1i1
 
 # Primary variables
 
+WFO_BINNED_HIST_FILE=${OUTDIR}/historical/${RUN}/Omon/wfo/gn/${VERSION_HIST}/wfo-tos-sos-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
+WFO_BINNED_CNTRL_FILE=${OUTDIR}/piControl/${RUN}/Omon/wfo/gn/${VERSION_CNTRL}/wfo-tos-sos-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
+
 FRAZIL_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/frazil-3d/gn/${VERSION_HIST}
 FRAZIL_BINNED_HIST_FILE=${FRAZIL_BINNED_HIST_DIR}/frazil-3d-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
 ${FRAZIL_BINNED_HIST_FILE} : ${BASIN_FILE} ${AREACELLO_FILE}
@@ -264,13 +267,13 @@ ${SFCV_BINNED_CNTRL_FILE} : ${RIVER_BINNED_CNTRL_FILE} ${SFCHP_BINNED_CNTRL_FILE
 
 SFCH_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/sfch/gn/${VERSION_HIST}
 SFCH_BINNED_HIST_FILE=${SFCH_BINNED_HIST_DIR}/sfch-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
-${SFCH_BINNED_HIST_FILE} : ${SBC_BINNED_HIST_FILE} ${SWHEAT_BINNED_HIST_FILE}�${FRAZIL_BINNED_HIST_FILE} ${ETA_BINNED_HIST_FILE}
+${SFCH_BINNED_HIST_FILE} : ${SBC_BINNED_HIST_FILE} ${SWHEAT_BINNED_HIST_FILE} ${FRAZIL_BINNED_HIST_FILE} ${ETA_BINNED_HIST_FILE}
 	mkdir -p ${SFCH_BINNED_HIST_DIR}
 	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) $(word 4,$^) sfch $@ --invars vert_diffusion_of_heat_due_to_surface_flux downwelling_shortwave_flux_in_sea_water ocn_frazil_heat_flux_over_time_step surface_smoother_for_temp
 	
 SFCH_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/sfch/gn/${VERSION_CNTRL}
 SFCH_BINNED_CNTRL_FILE=${SFCH_BINNED_CNTRL_DIR}/sfch-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
-${SFCH_BINNED_CNTRL_FILE} : ${SBC_BINNED_CNTRL_FILE} ${SWHEAT_BINNED_CNTRL_FILE}�${FRAZIL_BINNED_CNTRL_FILE} ${ETA_BINNED_CNTRL_FILE}
+${SFCH_BINNED_CNTRL_FILE} : ${SBC_BINNED_CNTRL_FILE} ${SWHEAT_BINNED_CNTRL_FILE} ${FRAZIL_BINNED_CNTRL_FILE} ${ETA_BINNED_CNTRL_FILE}
 	mkdir -p ${SFCH_BINNED_CNTRL_DIR}
 	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) $(word 4,$^) sfch $@ --invars vert_diffusion_of_heat_due_to_surface_flux downwelling_shortwave_flux_in_sea_water ocn_frazil_heat_flux_over_time_step surface_smoother_for_temp
 
@@ -312,6 +315,19 @@ MIX_BINNED_CNTRL_FILE=${MIX_BINNED_CNTRL_DIR}/mix-thetao-so-binned_Omon_ACCESS-C
 ${MIX_BINNED_CNTRL_FILE} : ${VMIX_BINNED_CNTRL_FILE} ${SMIX_BINNED_CNTRL_FILE} ${RMIX_BINNED_CNTRL_FILE}
 	mkdir -p ${MIX_BINNED_CNTRL_DIR}
 	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) mix $@ --invars vertical_mixing miscellaneous_mixing neutral_diffusion
+
+
+SFCI_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/sfci/gn/${VERSION_HIST}
+SFCI_BINNED_HIST_FILE=${SFCI_BINNED_HIST_DIR}/sfci-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
+${SFCI_BINNED_HIST_FILE} : ${SFC_BINNED_HIST_FILE} ${WFO_BINNED_HIST_FILE}
+	mkdir -p ${SFCI_BINNED_HIST_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_sfci.py $< $(word 2,$^) $@
+
+SFCI_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/sfci/gn/${VERSION_CNTRL}
+SFCI_BINNED_CNTRL_FILE=${SFCI_BINNED_CNTRL_DIR}/sfci-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
+${SFCI_BINNED_CNTRL_FILE} : ${SFC_BINNED_CNTRL_FILE} ${WFO_BINNED_CNTRL_FILE}
+	mkdir -p ${SFCI_BINNED_CNTRL_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_sfci.py $< $(word 2,$^) $@
 
 
 # Documentation
@@ -370,6 +386,9 @@ sfch : ${SFCH_BINNED_HIST_FILE} ${SFCH_BINNED_CNTRL_FILE}
 ## sfc : total surface forcing
 sfc : ${SFC_BINNED_HIST_FILE} ${SFC_BINNED_CNTRL_FILE}
 
+## sfci : total interal surface forcing
+sfci : ${SFCI_BINNED_HIST_FILE} ${SFCI_BINNED_CNTRL_FILE}
+
 ## rmix : neutral diffusion
 rmix : ${RMIX_BINNED_HIST_FILE} ${RMIX_BINNED_CNTRL_FILE}
 
@@ -377,7 +396,7 @@ rmix : ${RMIX_BINNED_HIST_FILE} ${RMIX_BINNED_CNTRL_FILE}
 mix : ${MIX_BINNED_HIST_FILE} ${MIX_BINNED_CNTRL_FILE}
 
 ## all : bin all variables
-all : frazil-3d mixdownslope-temp neutral-diffusion-temp sfc-hflux-pme sw-heat temp-eta-smooth temp-nonlocal-KPP temp-rivermix temp-sigma-diff temp-tendency temp-vdiffuse-diff-cbt temp-vdiffuse-k33 temp-vdiffuse-sbc vmix smix sfcv sfch rmix mix
+all : frazil-3d mixdownslope-temp neutral-diffusion-temp sfc-hflux-pme sw-heat temp-eta-smooth temp-nonlocal-KPP temp-rivermix temp-sigma-diff temp-tendency temp-vdiffuse-diff-cbt temp-vdiffuse-k33 temp-vdiffuse-sbc vmix smix sfcv sfch sfc sfci rmix mix
 
 ## help : show this message.
 help :
