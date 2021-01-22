@@ -1,36 +1,22 @@
-"""
-Filename:     calc_binned_flux_sum.py
-Author:       Damien Irving, irving.damien@gmail.com
-Description:  Calculate the sum of multiple surface fluxes binned by temperature
+"""Calculate sum surface fluxes binned by temperature and/or salinity."""
 
-"""
-
-# Import general Python modules
-
-import sys, os, pdb
+import sys
+script_dir = sys.path[0]
+import os
+import pdb
 import argparse
+
 import iris
 import cmdline_provenance as cmdprov
 
-# Import my modules
-
-cwd = os.getcwd()
-repo_dir = '/'
-for directory in cwd.split('/')[1:]:
-    repo_dir = os.path.join(repo_dir, directory)
-    if directory == 'ocean-analysis':
-        break
-
-modules_dir = os.path.join(repo_dir, 'modules')
-sys.path.append(modules_dir)
-
+repo_dir = '/'.join(script_dir.split('/')[:-1])
+module_dir = repo_dir + '/modules'
+sys.path.append(module_dir)
 try:
     import general_io as gio
 except ImportError:
-    raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
+    raise ImportError('Script and modules in wrong directories')
 
-
-# Define functions
 
 long_names = {'sfch': 'surface heat fluxes',
               'sfcv': 'surface heat fluxes from surface volume fluxes',
@@ -41,6 +27,7 @@ long_names = {'sfch': 'surface heat fluxes',
               'sfc': 'total surface forcing',
               'mix': 'total explicit mixing',
              }
+
 
 def main(inargs):
     """Run the program."""
@@ -77,18 +64,7 @@ def main(inargs):
 
 
 if __name__ == '__main__':
-
-    extra_info =""" 
-example:
-    
-author:
-    Damien Irving, irving.damien@gmail.com
-    
-"""
-
-    description='Calculate the sum of multiple surface fluxes binned by temperature'
-    parser = argparse.ArgumentParser(description=description,
-                                     epilog=extra_info, 
+    parser = argparse.ArgumentParser(description=__doc__, 
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
