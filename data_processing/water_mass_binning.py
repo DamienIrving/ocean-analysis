@@ -249,7 +249,7 @@ def bin_data(df, var_list, edge_list, mul_ts=False):
     orig_total_weight = w_data.sum()
     logging.info(f"Global total before binning: {orig_total_weight}")
     logging.info(f"Global total after binning: {binned_total_weight}")
-    np.testing.assert_allclose(orig_total_weight, binned_total_weight, rtol=0.01)
+    np.testing.assert_allclose(orig_total_weight, binned_total_weight, rtol=0.05)
     if mul_ts:
         ws_dist, edges = np.histogramdd(data, weights=w_data * df['salinity'].values, bins=edge_list)
         wt_dist, edges = np.histogramdd(data, weights=w_data * df['temperature'].values, bins=edge_list)

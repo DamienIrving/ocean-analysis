@@ -26,11 +26,13 @@ def main(inargs):
     sfc_tbin_cube = iris.load_cube(inargs.sfc_file, 'total surface forcing binned by temperature')
     wfo_tbin_cube = iris.load_cube(inargs.wfo_file, 'Water Flux into Sea Water binned by temperature')
     cp = 3992.10322329649   #J kg-1 degC-1
-    lower_thetao_bounds = sfc_tbin_cube.coord('sea_water_potential_temperature').bounds[:, 0]
-    coord_names = [coord.name() for coord in sfc_tbin_cube.dim_coords]
-    pdb.set_trace()
-    theta = uconv.broadcast_array(lower_thetao_bounds, 1, sfc_tbin_cube.shape)
+    lower_tos_bounds = sfc_tbin_cube.coord('sea_surface_temperature').bounds[:, 0]
+    coord_names_tbin = [coord.name() for coord in sfc_tbin_cube.dim_coords]
+    theta = uconv.broadcast_array(lower_tos_bounds,
+                                  coord_names_tbin.index('sea_surface_temperature'),
+                                  sfc_tbin_cube.shape)
     sfci_tbin_cube = sfc_tbin_cube.copy()
+    pdb.set_trace()
     sfci_tbin_cube.data = sfc_tbin_cube.data - (cp * theta * wfo_tbin_cube.data)  # SFCI = SFC - Cp*THETA*SVF
     sfci_tbin_cube.var_name = 'sfci_tbin'
     sfci_tbin_cube.long_name = 'total internal surface forcing binned by temperature'
@@ -41,7 +43,10 @@ def main(inargs):
 
     sfc_tsbin_cube = iris.load_cube(inargs.sfc_file, 'total surface forcing binned by temperature and salinity')
     wfo_tsbin_cube = iris.load_cube(inargs.wfo_file, 'Water Flux into Sea Water binned by temperature and salinity')
-    theta = uconv.broadcast_array(lower_thetao_bounds, 2, sfc_tsbin_cube.shape)
+    coord_names_tsbin = [coord.name() for coord in sfc_tsbin_cube.dim_coords]
+    theta = uconv.broadcast_array(lower_tos_bounds,
+                                  coord_names_tsbin.index('sea_surface_temperature'),
+                                  sfc_tsbin_cube.shape)
     sfci_tsbin_cube = sfc_tsbin_cube.copy()
     sfci_tsbin_cube.data = sfc_tsbin_cube.data - (cp * theta * wfo_tsbin_cube.data)  # SFCI = SFC - Cp*THETA*SVF
     sfci_tsbin_cube.var_name = 'sfci_tsbin'

@@ -48,7 +48,7 @@ K33_FILES_CNTRL := $(sort $(wildcard ${MYDIR}/piControl/${RUN}/Omon/temp-vdiffus
 SBC_FILES_CNTRL := $(sort $(wildcard ${MYDIR}/piControl/${RUN}/Omon/temp-vdiffuse-sbc/gn/${VERSION_CNTRL}/temp-vdiffuse-sbc_Omon_ACCESS-CM2_piControl_${RUN}_gn_*.nc))
 
 AREACELLO_FILE=${INDIR}/historical/r1i1p1f1/Ofx/areacello/gn/v20191108/areacello_Ofx_ACCESS-CM2_historical_r1i1p1f1_gn.nc
-BASIN_FILE=${MYDIR}/historical/r1i1p1f1/Ofx/basin/gn/v20191118/basin_Ofx_ACCESS-CM2_historical_r1i1p1f1_gn.nc
+BASIN_FILE=${MYDIR}/historical/r1i1p1f1/Ofx/basin/gn/v20191108/basin_Ofx_ACCESS-CM2_historical_r1i1p1f1_gn.nc
 
 # Primary variables
 
@@ -269,26 +269,26 @@ SFCH_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/sfch/gn/${VERSION_HIST}
 SFCH_BINNED_HIST_FILE=${SFCH_BINNED_HIST_DIR}/sfch-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
 ${SFCH_BINNED_HIST_FILE} : ${SBC_BINNED_HIST_FILE} ${SWHEAT_BINNED_HIST_FILE} ${FRAZIL_BINNED_HIST_FILE} ${ETA_BINNED_HIST_FILE}
 	mkdir -p ${SFCH_BINNED_HIST_DIR}
-	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) $(word 4,$^) sfch $@ --invars vert_diffusion_of_heat_due_to_surface_flux downwelling_shortwave_flux_in_sea_water ocn_frazil_heat_flux_over_time_step surface_smoother_for_temp
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) $(word 4,$^) sfch $@ --invars "vert diffusion of heat due to surface flux" "penetrative shortwave heating" "ocn frazil heat flux over time step" "surface smoother for temp"
 	
 SFCH_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/sfch/gn/${VERSION_CNTRL}
 SFCH_BINNED_CNTRL_FILE=${SFCH_BINNED_CNTRL_DIR}/sfch-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
 ${SFCH_BINNED_CNTRL_FILE} : ${SBC_BINNED_CNTRL_FILE} ${SWHEAT_BINNED_CNTRL_FILE} ${FRAZIL_BINNED_CNTRL_FILE} ${ETA_BINNED_CNTRL_FILE}
 	mkdir -p ${SFCH_BINNED_CNTRL_DIR}
-	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) $(word 4,$^) sfch $@ --invars vert_diffusion_of_heat_due_to_surface_flux downwelling_shortwave_flux_in_sea_water ocn_frazil_heat_flux_over_time_step surface_smoother_for_temp
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) $(word 4,$^) sfch $@ --invars "vert diffusion of heat due to surface flux" "penetrative shortwave heating" "ocn frazil heat flux over time step" "surface smoother for temp"
 
 
 SFC_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/sfc/gn/${VERSION_HIST}
 SFC_BINNED_HIST_FILE=${SFC_BINNED_HIST_DIR}/sfc-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
 ${SFC_BINNED_HIST_FILE} : ${SFCH_BINNED_HIST_FILE} ${SFCV_BINNED_HIST_FILE}
 	mkdir -p ${SFC_BINNED_HIST_DIR}
-	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) sfc $@ --invars surface_heat_fluxes surface_heat_fluxes_from_surface_volume_fluxes
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) sfc $@ --invars "surface heat fluxes" "surface heat fluxes from surface volume fluxes"
 
 SFC_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/sfc/gn/${VERSION_CNTRL}
 SFC_BINNED_CNTRL_FILE=${SFC_BINNED_CNTRL_DIR}/sfc-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
 ${SFC_BINNED_CNTRL_FILE} : ${SFCH_BINNED_CNTRL_FILE} ${SFCV_BINNED_CNTRL_FILE}
 	mkdir -p ${SFC_BINNED_CNTRL_DIR}
-	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) sfc $@ --invars surface_heat_fluxes surface_heat_fluxes_from_surface_volume_fluxes
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) sfc $@ --invars "surface heat fluxes" "surface heat fluxes from surface volume fluxes"
 
 
 RMIX_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/rmix/gn/${VERSION_HIST}
