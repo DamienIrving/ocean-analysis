@@ -202,13 +202,13 @@ K33_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/temp-vdiffuse-k33/gn/${VERS
 K33_BINNED_HIST_FILE=${K33_BINNED_HIST_DIR}/temp-vdiffuse-k33-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
 ${K33_BINNED_HIST_FILE} : ${BASIN_FILE} ${AREACELLO_FILE}
 	mkdir -p ${K33_BINNED_HIST_DIR}
-	${PYTHON} ${SCRIPT_DIR}/water_mass_binning.py ${K33_FILES_HIST} "thk wghtd K33-diffusion heating" $< $@ --temperature_files ${THETAO_FILES_HIST} --temperature_var sea_water_potential_temperature --salinity_files ${SO_FILES_HIST} --salinity_var sea_water_salinity --area_file $(word 2,$^)
+	${PYTHON} ${SCRIPT_DIR}/water_mass_binning.py ${K33_FILES_HIST} "vert diffusion of heat due to K33 from neutral diffusion" $< $@ --temperature_files ${THETAO_FILES_HIST} --temperature_var sea_water_potential_temperature --salinity_files ${SO_FILES_HIST} --salinity_var sea_water_salinity --area_file $(word 2,$^)
 	
 K33_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/temp-vdiffuse-k33/gn/${VERSION_CNTRL}
 K33_BINNED_CNTRL_FILE=${K33_BINNED_CNTRL_DIR}/temp-vdiffuse-k33-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
 ${K33_BINNED_CNTRL_FILE} : ${BASIN_FILE} ${AREACELLO_FILE}
 	mkdir -p ${K33_BINNED_CNTRL_DIR}
-	${PYTHON} ${SCRIPT_DIR}/water_mass_binning.py ${K33_FILES_CNTRL} "thk wghtd K33-diffusion heating" $< $@ --temperature_files ${THETAO_FILES_CNTRL} --temperature_var sea_water_potential_temperature --salinity_files ${SO_FILES_CNTRL} --salinity_var sea_water_salinity --area_file $(word 2,$^)
+	${PYTHON} ${SCRIPT_DIR}/water_mass_binning.py ${K33_FILES_CNTRL} "vert diffusion of heat due to K33 from neutral diffusion" $< $@ --temperature_files ${THETAO_FILES_CNTRL} --temperature_var sea_water_potential_temperature --salinity_files ${SO_FILES_CNTRL} --salinity_var sea_water_salinity --area_file $(word 2,$^)
 
 
 SBC_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/temp-vdiffuse-sbc/gn/${VERSION_HIST}
