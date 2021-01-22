@@ -36,7 +36,7 @@ except ImportError:
 
 # Define functions
 
-def get_branch_year(data_cube, control_time_units):
+def get_branch_year(data_cube, control_time_units=None):
     """Get the year of the branching in control run."""
 
     if not control_time_units:

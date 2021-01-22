@@ -1,14 +1,14 @@
 
-model=NorESM1-M
-experiments=(piControl)
-rips=(r1i1p1)
-vars=(rndt)
+model=CanESM2
+experiments=(historicalMisc)
+rips=(r1i1p4)
+vars=(thetao)
 # hfds ohc rndt
 
 inferred=false
 # true false
 
-agg='sum'
+agg='mean'
 # mean sum
 
 
@@ -18,7 +18,7 @@ fx_experiment=historical
 python=/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python
 script_dir=/home/599/dbi599/ocean-analysis/data_processing
 
-ua6_dir=/g/data/ua6/DRSv2/CMIP5/${model}
+ua6_dir=/g/data/ua6/DRSv3/CMIP5/${model}
 r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}
 
 for var in "${vars[@]}"; do
@@ -27,9 +27,6 @@ for rip in "${rips[@]}"; do
 
 #cumsum=' '
 #tdetails='all'
-#metric=' '
-#'--metric diff global-fraction'
-
 joules=' '
 if [[ "${var}" == "ohc" ]] ; then
     infiles=${r87_dir}/${experiment}/yr/ocean/${rip}/ohc/latest/ohc_Oyr_${model}_${experiment}_${rip}_??????-??????.nc
@@ -40,7 +37,6 @@ if [[ "${var}" == "ohc" ]] ; then
     outrealm='ocean'
     smooth=' '
     tdetails='all'
-    metric=' '
     cumsum=' '
 elif [ "${var}" == "hfds" ] && [ "${inferred}" == true ] ; then
     infiles=${r87_dir}/${experiment}/mon/ocean/${rip}/hfds/latest/hfds-inferred_Omon_${model}_${experiment}_${rip}_*.nc
@@ -52,11 +48,10 @@ elif [ "${var}" == "hfds" ] && [ "${inferred}" == true ] ; then
     outrealm='ocean'
     smooth='--annual'
     tdetails='cumsum-all'
-    metric=' '
     cumsum='--cumsum'
     joules='--joules'
 elif [[ "${var}" == 'hfds' ]] ; then
-    infiles=${r87_dir}/${experiment}/mon/ocean/${rip}/hfds/latest/hfds_Omon_${model}_${experiment}_${rip}_*.nc
+    infiles=${ua6_dir}/${experiment}/mon/ocean/${rip}/hfds/latest/hfds_Omon_${model}_${experiment}_${rip}_*.nc
     longvar=surface_downward_heat_flux_in_sea_water
     weights="--weights_file ${ua6_dir}/${fx_experiment}/fx/ocean/${fx_rip}/areacello/latest/areacello_fx_${model}_${fx_experiment}_${fx_rip}.nc"
     #weights='--weights_file calculate '
@@ -65,7 +60,6 @@ elif [[ "${var}" == 'hfds' ]] ; then
     outrealm='ocean'
     smooth='--annual'
     tdetails='cumsum-all'
-    metric=' '
     cumsum='--cumsum'
     joules='--joules'
 elif [[ "${var}" == "rndt" ]] ; then
@@ -78,17 +72,17 @@ elif [[ "${var}" == "rndt" ]] ; then
     outrealm='atmos'
     smooth='--annual'
     tdetails='cumsum-all'
-    metric=' '
     cumsum='--cumsum'
     joules='--joules'
 elif [[ "${var}" == "thetao" ]] ; then
     infiles=${ua6_dir}/${experiment}/mon/ocean/${rip}/thetao/latest/thetao_Omon_${model}_${experiment}_${rip}_*.nc
     longvar='sea_water_potential_temperature'
-    weights="--weights_file ${ua6_dir}/${fx_experiment}/fx/ocean/${fx_rip}/volcello/latest/volcello_fx_${model}_${fx_experiment}_${fx_rip}.nc"
+    weights="--weights_file ${r87_dir}/${fx_experiment}/fx/ocean/${fx_rip}/volcello/latest/volcello-inferred_fx_${model}_${fx_experiment}_${fx_rip}.nc"
     outvar=thetao
     outtscale='Oyr'
     outrealm='ocean'
     smooth='--annual'
+    tdetails='all'
 fi
 
 outdir=${r87_dir}/${experiment}/yr/${outrealm}/${rip}/${var}/latest

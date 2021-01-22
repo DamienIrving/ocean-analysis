@@ -56,9 +56,9 @@ TEMPERATURE_MEAN_DEDRIFTED_FILE=${TEMPERATURE_MEAN_DIR_HIST}/thetao-basin-mean-d
 ${TEMPERATURE_MEAN_DEDRIFTED_FILE} : ${TEMPERATURE_MEAN_FILE_HIST} ${DRIFT_COEFFICIENT_FILE}
 	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< sea_water_potential_temperature annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_time_check
 
-TEMPERATURE_MEAN_PLOT_FILE=/g/data/r87/dbi599/temp/temperature-basin-mean-dedrifted_Oyr_${MODEL}_piControl_${HIST_RUN}_${GRID}_${CNTRL_TIME}_depth-index-20.png
+TEMPERATURE_MEAN_PLOT_FILE=/g/data/r87/dbi599/temp/temperature-basin-mean-dedrifted_Oyr_${MODEL}_piControl_${HIST_RUN}_${GRID}_${CNTRL_TIME}_depth-index-15.png
 ${TEMPERATURE_MEAN_PLOT_FILE} : ${DRIFT_COEFFICIENT_FILE} ${TEMPERATURE_MEAN_FILE_CNTRL} ${TEMPERATURE_MEAN_FILE_HIST} ${TEMPERATURE_MEAN_DEDRIFTED_FILE}
-	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py sea_water_potential_temperature $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 20 -1 ${BRANCH_TIME}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py sea_water_potential_temperature $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 15 -1 ${BRANCH_TIME}
 
 
 

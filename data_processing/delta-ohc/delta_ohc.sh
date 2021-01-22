@@ -1,7 +1,7 @@
 
-model=CCSM4
+model=GISS-E2-R
 experiment=historicalMisc
-rip=r1i1p10
+rip=r1i1p107
 variable=thetao
 var_long=sea_water_potential_temperature
 
@@ -28,7 +28,7 @@ coefficient_command="${python} ${script_dir}/calc_drift_coefficients.py ${ua6_di
 data_dir=${r87_dir}/${experiment}/mon/ocean/${rip}/${variable}/latest
 dedrift_dir=${r87_dir}/${experiment}/yr/ocean/${rip}/${variable}/latest/dedrifted
 
-dedrift_command="${python} ${script_dir}/remove_drift.py ${data_dir}/${variable}_Omon_${model}_${experiment}_${rip}_*.nc ${var_long} annual ${coef_file} ${dedrift_dir}/ --annual --branch_time 342005"
+dedrift_command="${python} ${script_dir}/remove_drift.py ${data_dir}/${variable}_Omon_${model}_${experiment}_${rip}_*.nc ${var_long} annual ${coef_file} ${dedrift_dir}/ --annual --branch_time 0"
 # --branch_time 342005 (CCSM4) 29200 (CSIRO-Mk3-6-0) 175382.5 (FGOALS-g2) 0 (GISS-E2-R, E2-H) --no_parent_check --no_time_check
 
 echo ${dedrift_command}

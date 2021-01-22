@@ -1,8 +1,8 @@
 # run calc_interhemispheric_metric.sh first
 
-model=GFDL-ESM2M
+model=GFDL-CM3
 experiments=(historicalGHG 1pctCO2 historicalMisc rcp85)
-aa_rip='r1i1p5'
+aa_rip='r1i1p1'
 regions=('sh' 'nh')
 
 python="/g/data/r87/dbi599/miniconda3/envs/ocean/bin/python -W ignore"
@@ -25,8 +25,8 @@ for region in "${regions[@]}"; do
 
 drift_command="${python} ${script_dir}/calc_drift_coefficients.py ${r87_dir}/piControl/yr/ocean/r1i1p1/thetao/latest/thetao-mean-hemispheric-metrics_Oyr_${model}_piControl_r1i1p1_all.nc Sea_Water_Potential_Temperature_${region}_mean ${r87_dir}/piControl/yr/ocean/r1i1p1/thetao/latest/thetao-${region}-mean-coefficients_Oyr_${model}_piControl_r1i1p1_all.nc"
 
-#echo ${drift_command}
-#${drift_command}
+echo ${drift_command}
+${drift_command}
 
 done
 
@@ -84,8 +84,5 @@ echo ${plot_command}
 ${plot_command}
 
 echo ${plot_file}
-
-
-
 
 

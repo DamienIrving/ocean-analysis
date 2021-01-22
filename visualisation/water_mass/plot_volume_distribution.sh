@@ -1,7 +1,7 @@
 
-model=CanESM2
+model=CSIRO-Mk3-6-0
 aa_p=p4
-basins=(globe)
+basins=(indian south-pacific north-pacific south-atlantic north-atlantic)
 # globe indian south-pacific north-pacific south-atlantic north-atlantic
 var=so
 #thetao so
@@ -14,7 +14,7 @@ fig_dir=/g/data/r87/dbi599/figures/water_mass
 ua6_dir=/g/data/ua6/DRSv3/CMIP5/${model}
 r87_dir=/g/data/r87/dbi599/DRSv2/CMIP5/${model}
 
-volfile=${r87_dir}/historical/fx/ocean/r0i0p0/volcello/latest/volcello-inferred_fx_${model}_historical_r0i0p0.nc
+volfile=${ua6_dir}/historical/fx/ocean/r0i0p0/volcello/latest/volcello_fx_${model}_historical_r0i0p0.nc
 # ${r87_dir}/historical/fx/ocean/r0i0p0/volcello/latest/volcello-inferred_fx_${model}_historical_r0i0p0.nc
 # ${ua6_dir}/historical/fx/ocean/r0i0p0/volcello/latest/volcello_fx_${model}_historical_r0i0p0.nc
 

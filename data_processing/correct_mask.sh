@@ -20,6 +20,6 @@ for infile in "${infiles[@]}"; do
     command="${python} ${script_dir}/correct_mask.py ${infile} sea_water_potential_temperature ${outfile} --mask_value 1.0"
 
     echo ${command}
-    #${command}
+    ${command}
 
 done

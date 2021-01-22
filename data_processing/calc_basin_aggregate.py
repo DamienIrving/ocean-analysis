@@ -71,8 +71,7 @@ def main(inargs):
         assert cube.ndim in [3, 4]
         coord_names = [coord.name() for coord in cube.dim_coords]
         if inargs.annual:
-            cube = timeseries.convert_to_annual(cube, chunk=inargs.chunk)
-    
+            cube = timeseries.convert_to_annual(cube, chunk=inargs.chunk)   
         assert basin_cube.shape == cube.shape[-2:]
         basin_array = uconv.broadcast_array(basin_cube.data, [cube.ndim - 2, cube.ndim - 1], cube.shape)
         if inargs.weights:

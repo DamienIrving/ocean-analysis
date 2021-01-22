@@ -1,7 +1,7 @@
 
-model=CanESM2
+model=CCSM4
 
-experiments=(historical)
+experiments=(historical piControl)
 rips=(r1i1p1)
 
 fx_rip=r0i0p0

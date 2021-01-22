@@ -30,7 +30,7 @@ for tfile in "${tfiles[@]}"; do
     command="${python} ${script_dir}/calc_water_mass_components.py ${vfile} ${bfile} ${outfile} --salinity_files ${sfile} --temperature_files ${tfile}"
 
     echo ${command}
-    #${command}
+    ${command}
     #echo ${outfile}
 
 done
