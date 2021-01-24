@@ -294,14 +294,14 @@ ${SFC_BINNED_CNTRL_FILE} : ${SFCH_BINNED_CNTRL_FILE} ${SFCV_BINNED_CNTRL_FILE}
 RMIX_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/rmix/gn/${VERSION_HIST}
 RMIX_BINNED_HIST_FILE=${RMIX_BINNED_HIST_DIR}/rmix-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
 ${RMIX_BINNED_HIST_FILE} : ${K33_BINNED_HIST_FILE} ${NEUTRAL_BINNED_HIST_FILE}
-	mkdir -p ${SFCH_BINNED_HIST_DIR}
-	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) rmix $@ --invars "thk wghtd K33-diffusion heating" "rho*dzt*cp*explicit neutral diffusion tendency (heating)"
+	mkdir -p ${RMIX_BINNED_HIST_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) rmix $@ --invars "vert diffusion of heat due to K33 from neutral diffusion" "rho*dzt*cp*explicit neutral diffusion tendency (heating)"
 
 RMIX_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/rmix/gn/${VERSION_CNTRL}
 RMIX_BINNED_CNTRL_FILE=${RMIX_BINNED_CNTRL_DIR}/rmix-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
 ${RMIX_BINNED_CNTRL_FILE} : ${K33_BINNED_CNTRL_FILE} ${NEUTRAL_BINNED_CNTRL_FILE}
-	mkdir -p ${SFCH_BINNED_CNTRL_DIR}
-	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) rmix $@ --invars "thk wghtd K33-diffusion heating" "rho*dzt*cp*explicit neutral diffusion tendency (heating)"
+	mkdir -p ${RMIX_BINNED_CNTRL_DIR}
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) rmix $@ --invars "vert diffusion of heat due to K33 from neutral diffusion" "rho*dzt*cp*explicit neutral diffusion tendency (heating)"
 
 
 MIX_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/mix/gn/${VERSION_HIST}
