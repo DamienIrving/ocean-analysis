@@ -308,13 +308,13 @@ MIX_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/mix/gn/${VERSION_HIST}
 MIX_BINNED_HIST_FILE=${MIX_BINNED_HIST_DIR}/mix-thetao-so-binned_Omon_ACCESS-CM2_historical_r1i1p1f1_gn_${TIME_HIST}.nc
 ${MIX_BINNED_HIST_FILE} : ${VMIX_BINNED_HIST_FILE} ${SMIX_BINNED_HIST_FILE} ${RMIX_BINNED_HIST_FILE}
 	mkdir -p ${MIX_BINNED_HIST_DIR}
-	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) mix $@ --invars vertical_mixing miscellaneous_mixing neutral_diffusion
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) mix $@ --invars "vertical mixing" "miscellaneous mixing" "neutral diffusion"
 
 MIX_BINNED_CNTRL_DIR=${OUTDIR}/piControl/${RUN}/Omon/mix/gn/${VERSION_CNTRL}
 MIX_BINNED_CNTRL_FILE=${MIX_BINNED_CNTRL_DIR}/mix-thetao-so-binned_Omon_ACCESS-CM2_piControl_r1i1p1f1_gn_${TIME_CNTRL}.nc
 ${MIX_BINNED_CNTRL_FILE} : ${VMIX_BINNED_CNTRL_FILE} ${SMIX_BINNED_CNTRL_FILE} ${RMIX_BINNED_CNTRL_FILE}
 	mkdir -p ${MIX_BINNED_CNTRL_DIR}
-	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) mix $@ --invars vertical_mixing miscellaneous_mixing neutral_diffusion
+	${PYTHON} ${SCRIPT_DIR}/calc_binned_flux_sum.py $< $(word 2,$^) $(word 3,$^) mix $@ --invars "vertical mixing" "miscellaneous mixing" "neutral diffusion"
 
 
 SFCI_BINNED_HIST_DIR=${OUTDIR}/historical/${RUN}/Omon/sfci/gn/${VERSION_HIST}
