@@ -3,6 +3,7 @@
 ## Citation
 
 Get the dataset DOI from the [lookup tables](https://redmine.dkrz.de/projects/cmip6-lta-and-data-citation/wiki/CMIP6_Data_References).
+There is also a "citation" link when you search for data files on the ESGF node websites.
 
 The [recommended acknowledgement](https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsOfUse6-1.html) when using CMIP6 data:
 
@@ -12,7 +13,7 @@ The [recommended acknowledgement](https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsO
 
 * [A Guide to CMIP6 Participation](https://pcmdi.llnl.gov/CMIP6/Guide/index.html)
 * Model documentation, errata submission etc at [ES-DOC](https://es-doc.org/cmip6/)
-  * At the [ES-DOC Search](https://search.es-doc.org/) page you can find detailed documentation about each of the models, including the values for static variables like `cpocean` and `rhozero`
+  * At the [ES-DOC Search](https://search.es-doc.org/) page you can find detailed documentation about each of the models, including the values for static variables like `cpocean` and `rhozero`. There might be some model information at the [ES-DOC-INSTITUTIONAL GitHub repo](https://github.com/ES-DOC-INSTITUTIONAL) that isn't up at ES-DOC?
   * [Errata service](https://errata.es-doc.org/static/index.html)
 * [CMIP6 preprocessing](https://github.com/jbusecke/cmip6_preprocessing) python package
 * [FAFMIP website](http://www.fafmip.org/)
@@ -22,16 +23,21 @@ The [recommended acknowledgement](https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsO
   * There is a [website](http://cmip-esmvaltool.dkrz.de/) to view ESMValTool results
   * The source code is on [GitHub](https://github.com/ESMValGroup/ESMValTool) (you can contribute indices/metrics)
 
-## Data access at NCI
+## Data search and access at NCI
   
-* Project oi10 on NCI
-* Search and request data using the Climate Finder, [CleF](https://clef.readthedocs.io/en/latest/index.html)
+The general [NCI data catalogue](https://geonetwork.nci.org.au/) only has high level information on CMIP6 data.
+Instead, it's best to use the [CleF](https://clef.readthedocs.io/en/latest/index.html) command line tool
+or the [NCI ESGF node webpage](https://esgf.nci.org.au/projects/esgf-nci/) to search data.
+* Project `fs38` for published Australian data, `oi10` for replica data for other models.
+* At the ESGF node you can get the Thredds URL to access data directly via URL (in general, just replace `/g/data/fs38/publications` with `https://esgf.nci.org.au/thredds/dodsC/master`). This is a great option if you want a small subset of the data (e.g. small spatial region) because downloading a whole file just to get a small region is inefficient, but not so great for a large region/globe if bandwidth is slow. 
+* For CleF:
   * At the moment `$ clef --request` sends to Paola Petrelli instead of NCI.
   * Instead, use the [data download online form](https://opus.nci.org.au/display/CMIP/Data+Download+Request) or send the output files from `$clef --request` (which are produced if you say no instead of yes at the end of the process) to help@nci.org.au or attach the files to a new issue at the [NCI Help Portal](https://track.nci.org.au/servicedesk/customer/portals).
 
 ## Downloading data directly
 
-The wget scripts need to be run with a `-H` option. That makes it ask for your ESGF login credentials.
+The wget scripts from any of the ESGF nodes need to be run with a `-H` option.
+That makes it ask for your ESGF login credentials.
 ```
 $ bash wget.sh -H
 ```
@@ -49,8 +55,6 @@ published with the The Journal of Advances in Modeling Earth Systems, which docu
 * [Energy Exascale Earth System Model](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)2169-8996.ENERGY1) (E3SM-1-0)
 * [Max Planck Institute for Meteorology Earth System Model](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.MPIESM1) (MPI-ESM)
 * [Geophysical Fluid Dynamics Laboratory](https://agupubs.onlinelibrary.wiley.com/doi/toc/10.1002/(ISSN)1942-2466.CMIPMOD1) (GFDL-CM4, GFDL-ESM4)
-
-There might be some model information at [this repo](https://github.com/ES-DOC-INSTITUTIONAL) that isn't up at ES-DOC?
 
 | Model | Information | Ocean model | Ocean model characteristics | Issues |
 | ---   | ---         | ---         | ---                         | ---    |
