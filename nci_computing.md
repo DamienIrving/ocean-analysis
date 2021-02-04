@@ -3,6 +3,7 @@
 * CLEX CMS wiki: http://climate-cms.wikis.unsw.edu.au/Home 
 * NCI CMIP community page: https://opus.nci.org.au/display/CMIP/CMIP+Community+Home
 * NCI Data Training Page: https://nci-data-training.readthedocs.io/en/latest/index.html
+* NCI data catalogue (only high level info on CMIP, there are better alternatives): https://geonetwork.nci.org.au/
 
 ### Help
 
