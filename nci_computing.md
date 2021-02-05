@@ -88,4 +88,4 @@ For large memory, single core jobs it's better to submit to the `hugemem` instea
 ### Pangeo
 
 User guide: https://opus.nci.org.au/display/Help/5.+Pangeo+on+Gadi  
-Notebooks: https://github.com/NCI-data-analysis-platform
+Notebooks: https://github.com/NCI-data-analysis-platform or https://nbviewer.jupyter.org/github/NCI-data-analysis-platform/   
