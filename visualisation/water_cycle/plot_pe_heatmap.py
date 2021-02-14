@@ -1,40 +1,28 @@
-"""
-Filename:     plot_pe_heatmap.py
-Author:       Damien Irving, irving.damien@gmail.com
-Description:  Plot heatmap using output from calc_pe_spatial_totals.py
-"""
+"""Plot heatmap using output from calc_pe_spatial_totals.py"""
 
-# Import general Python modules
-
-import sys, os, pdb
+import sys
+script_dir = sys.path[0]
+import os
+import pdb
 import argparse
+
 import pandas as pd
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 import iris
 
-# Import my modules
-
-cwd = os.getcwd()
-repo_dir = '/'
-for directory in cwd.split('/')[1:]:
-    repo_dir = os.path.join(repo_dir, directory)
-    if directory == 'ocean-analysis':
-        break
-
-modules_dir = os.path.join(repo_dir, 'modules')
-sys.path.append(modules_dir)
-script_dir = os.path.join(repo_dir, 'data_processing')
+repo_dir = '/'.join(script_dir.split('/')[:-2])
+module_dir = repo_dir + '/modules'
+script_dir = repo_dir + '/data_processing'
+sys.path.append(module_dir)
 sys.path.append(script_dir)
 try:
     import general_io as gio
     import calc_ensemble_aggregate as ensagg
 except ImportError:
-    raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
+    raise ImportError('Script and modules in wrong directories')
 
-
-# Define functions
 
 def get_data(infiles, var, data_type, time_constraint, agg_method, pct=False):
     """Get the data for a particular model"""
@@ -141,19 +129,7 @@ def main(inargs):
 
 
 if __name__ == '__main__':
-
-    extra_info =""" 
-
-author:
-    Damien Irving, irving.damien@gmail.com
-
-example:
-
-"""
-
-    description = 'Plot heatmap using output from calc_pe_spatial_totals.py'
-    parser = argparse.ArgumentParser(description=description,
-                                     epilog=extra_info, 
+    parser = argparse.ArgumentParser(description=__doc__,
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
