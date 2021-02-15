@@ -49,7 +49,7 @@ def get_data(infiles, var, data_type, time_constraint, agg_method, pct=False):
         ens_cube = cube_list[0]
 
     basins = ['Atlantic', 'Pacific', 'Indian', 'Arctic', 'Marginal Seas', 'Land', 'Ocean', 'Globe']
-    pe_regions = ['SH Precip', 'SH Evap', 'Tropical Precip', 'NH Evap', 'NH Precip', 'Globe']
+    pe_regions = ['SH-P', 'SH-E', 'T-P', 'NH-E', 'NH-P', 'Globe']
     df = pd.DataFrame(ens_cube.data, columns=basins, index=pe_regions)
     #df.loc['Globe', 'Globe'] = np.nan
     df = df.iloc[::-1]
@@ -64,13 +64,77 @@ def get_data(infiles, var, data_type, time_constraint, agg_method, pct=False):
     return df, history
 
 
+def get_labels(data_type, time_bounds, var_abbrev, ensemble_stat,
+               experiment, scale_factor, nfiles, pct):
+    """Get title and colorbar label for plot."""
+
+    if data_type == 'cumulative_anomaly':
+        label = 'time integrated anomaly'
+        title = f'time-integrated {var_abbrev} anomaly'
+        if time_bounds:
+            start_year = time_bounds[0].split('-')[0]
+            end_year = time_bounds[1].split('-')[0]
+            title = f'{title}, {start_year}-{end_year}'
+    elif data_type == 'climatology':
+        label = 'annual total'
+        title = f'annual {var_abbrev}'
+
+    if nfiles > 1:
+        title = f'ensemble {ensemble_stat} {title}'
+
+    if experiment:
+        title = f'{title}, {experiment} experiment'
+
+    if pct:
+        fmt = '.0%'
+        label = 'fraction of total'
+    else:
+        fmt='.2g'
+        if scale_factor:
+            label = label + ' ($10^{%s}$ kg)'  %(str(scale_factor))
+        else:
+            label = label + ' (kg)'
+    
+    return title, label, fmt
+
+
+def plot_data(ax, file_list, inargs, experiment, var_abbrev,
+              time_constraint, scale_factor, basins_to_plot, cmap):
+    """Create one panel of the subplot."""
+
+    data_type = 'climatology' if experiment == 'piControl' else 'cumulative_anomaly'
+    pct = False
+
+    df, history = get_data(file_list, inargs.var, data_type,
+                           time_constraint, inargs.ensemble_stat, pct=pct)     
+    if not pct:
+        df = df / 10**scale_factor
+
+    nfiles = len(file_list)
+    title, label, fmt = get_labels(data_type, inargs.time_bounds, var_abbrev, inargs.ensemble_stat,
+                                   experiment, scale_factor, nfiles, pct)
+    vmax = inargs.vmax if inargs.vmax else df[basins_to_plot].abs().max().max() * 1.05
+
+    sns.heatmap(df[basins_to_plot],
+                annot=True,
+                cmap=cmap,
+                linewidths=.5,
+                ax=ax,
+                vmin=-vmax,
+                vmax=vmax,
+                fmt=fmt,
+                cbar_kws={'label': label}
+                )
+    ax.set_title(title)
+  
+
 def main(inargs):
     """Run the program."""
 
     assert inargs.var in ['precipitation_minus_evaporation_flux', 'water_flux_into_sea_water',
                           'water_evapotranspiration_flux', 'precipitation_flux']
     cmap = 'BrBG'
-    basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Arctic', 'Land', 'Ocean', 'Globe']
+    basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Land', 'Ocean', 'Globe']
     if inargs.var == 'precipitation_minus_evaporation_flux':
         var_abbrev = 'P-E'   
     elif inargs.var == 'water_evapotranspiration_flux':
@@ -83,73 +147,49 @@ def main(inargs):
         basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Arctic', 'Globe']
 
     time_constraint = gio.get_time_constraint(inargs.time_bounds)
-    df, history = get_data(inargs.infiles, inargs.var, inargs.data_type,
-                           time_constraint, inargs.ensemble_stat, pct=inargs.pct)     
-    if inargs.scale_factor:
-        assert not inargs.pct
-        df = df / 10**inargs.scale_factor
 
-    if inargs.data_type == 'cumulative_anomaly':
-        label = 'time integrated anomaly'
-        title = f'time-integrated {var_abbrev} anomaly'
-        if inargs.time_bounds:
-            start_year = inargs.time_bounds[0].split('-')[0]
-            end_year = inargs.time_bounds[1].split('-')[0]
-            title = f'{title}, {start_year}-{end_year}'
-    elif inargs.data_type == 'climatology':
-        label = 'annual total'
-        title = f'annual {var_abbrev}'
-
-    if len(inargs.infiles) > 1:
-        title = f'ensemble {inargs.ensemble_stat} {title}'
-
-    if inargs.experiment:
-        title = f'{title}, {inargs.experiment} experiment'
-
-    if inargs.pct:
-        fmt = '.0%'
-        label = 'fraction of total'
-    else:
-        fmt='.2g'
-        if inargs.scale_factor:
-            label = label + ' ($10^{%s}$ kg)'  %(str(inargs.scale_factor))
-        else:
-            label = label + ' (kg)'
-
-    vmax = inargs.vmax if inargs.vmax else df[basins_to_plot].abs().max().max() * 1.05
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-    sns.heatmap(df[basins_to_plot], annot=True, cmap=cmap, linewidths=.5, ax=ax,
-                vmin=-vmax, vmax=vmax, fmt=fmt,
-                cbar_kws={'label': label})
-    plt.title(title)
-  
+    input_files = [inargs.control_files,
+                   inargs.ghg_files,
+                   inargs.aa_files,
+                   inargs.hist_files]
+    experiments = ['piControl', 'GHG-only', 'AA-only', 'historical']
+    fig, axes = plt.subplots(2, 2, figsize=(24, 12))
+    axes = axes.flatten()
+    for plotnum, exp_files in enumerate(input_files):
+        if exp_files:
+            plot_data(axes[plotnum], exp_files, inargs, var_abbrev,
+                      experiments[plotnum], time_constraint,
+                      inargs.scale_factor[plotnum], basins_to_plot, cmap)
+    
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    gio.write_metadata(inargs.outfile, file_info={inargs.infiles[-1]: history})
+    #gio.write_metadata(inargs.outfile, file_info={inargs.infiles[-1]: history})
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__,
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-
-    parser.add_argument("infiles", type=str, nargs='*', help="input files")                                    
+                                    
     parser.add_argument("var", type=str, help="variable")
-    parser.add_argument("data_type", type=str, choices=('cumulative_anomaly', 'climatology'), help="type of data")
     parser.add_argument("outfile", type=str, help="output file") 
+
+    parser.add_argument("--control_files", type=str, nargs='*', default=None,
+                        help="piControl files for climatology")
+    parser.add_argument("--ghg_files", type=str, nargs='*', default=None,
+                        help="hist-GHG files")
+    parser.add_argument("--aa_files", type=str, nargs='*', default=None,
+                        help="hist-aer files")
+    parser.add_argument("--hist_files", type=str, nargs='*', default=None,
+                        help="historical files")
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
                         help="Time period [default = entire]")
-    parser.add_argument("--pct", action="store_true", default=False,
-                        help="Change output units to percentage of total net import/export")
-    parser.add_argument("--scale_factor", type=int, default=None,
-                        help="Scale factor (e.g. scale factor of 17 will divide data by 10^17")
+    parser.add_argument("--scale_factor", type=int, nargs=4, default=(16, 17, 17, 17),
+                        help="Scale factor for each experiment (e.g. scale factor of 17 will divide data by 10^17")
     parser.add_argument("--vmax", type=float, default=None,
                         help="Colorbar maximum value")
     parser.add_argument("--ensemble_stat", type=str, choices=('median', 'mean'), default='mean',
                         help="Ensemble statistic if multiple input files")
-    parser.add_argument("--experiment", type=str, default=None,
-                        help="experiment label for plot title")
 
     args = parser.parse_args()             
     main(args)
