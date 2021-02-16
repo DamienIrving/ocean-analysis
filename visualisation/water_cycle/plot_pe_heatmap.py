@@ -115,16 +115,17 @@ def plot_data(ax, file_list, inargs, experiment, var_abbrev,
                                    experiment, scale_factor, nfiles, pct)
     vmax = inargs.vmax if inargs.vmax else df[basins_to_plot].abs().max().max() * 1.05
 
-    sns.heatmap(df[basins_to_plot],
-                annot=True,
-                cmap=cmap,
-                linewidths=.5,
-                ax=ax,
-                vmin=-vmax,
-                vmax=vmax,
-                fmt=fmt,
-                cbar_kws={'label': label}
-                )
+    g = sns.heatmap(df[basins_to_plot],
+                    annot=True,
+                    cmap=cmap,
+                    linewidths=.5,
+                    ax=ax,
+                    vmin=-vmax,
+                    vmax=vmax,
+                    fmt=fmt,
+                    cbar_kws={'label': label}
+                   )
+    g.set_yticklabels(g.get_yticklabels(), rotation=0)
     ax.set_title(title)
   
 
@@ -147,18 +148,20 @@ def main(inargs):
         basins_to_plot = ['Atlantic', 'Indian', 'Pacific', 'Arctic', 'Globe']
 
     time_constraint = gio.get_time_constraint(inargs.time_bounds)
-
     input_files = [inargs.control_files,
                    inargs.ghg_files,
                    inargs.aa_files,
                    inargs.hist_files]
     experiments = ['piControl', 'GHG-only', 'AA-only', 'historical']
+    
     fig, axes = plt.subplots(2, 2, figsize=(24, 12))
     axes = axes.flatten()
     for plotnum, exp_files in enumerate(input_files):
         if exp_files:
-            plot_data(axes[plotnum], exp_files, inargs, var_abbrev,
-                      experiments[plotnum], time_constraint,
+            experiment = experiments[plotnum]
+            time_selector = None if experiment == 'piControl' else time_constraint
+            plot_data(axes[plotnum], exp_files, inargs,
+                      experiment, var_abbrev, time_selector,
                       inargs.scale_factor[plotnum], basins_to_plot, cmap)
     
     plt.savefig(inargs.outfile, bbox_inches='tight')

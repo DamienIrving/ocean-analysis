@@ -137,11 +137,11 @@ def apply_land_ocean_mask(data_cube, mask_cube, include_only, threshold=0.1):
     elif include_only == 'ocean':
         mask_array = numpy.where(mask_cube.data < threshold, False, True)
 
-    mask = broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
-    assert mask.shape == target_shape 
+    if not mask_array.shape == target_shape:
+        mask_array = broadcast_array(mask_array, [target_ndim - 2, target_ndim - 1], target_shape)
 
     data_cube.data = numpy.ma.asarray(data_cube.data)
-    data_cube.data.mask = mask
+    data_cube.data.mask = mask_array
 
     return data_cube
 
