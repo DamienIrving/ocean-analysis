@@ -5,12 +5,14 @@ script_dir = sys.path[0]
 import os
 import pdb
 import argparse
+import re
 
 import pandas as pd
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 import iris
+import cmdline_provenance as cmdprov
 
 repo_dir = '/'.join(script_dir.split('/')[:-2])
 module_dir = repo_dir + '/modules'
@@ -133,6 +135,8 @@ def plot_data(ax, file_list, inargs, experiment, var_abbrev,
                    )
     g.set_yticklabels(g.get_yticklabels(), rotation=0)
     ax.set_title(title)
+
+    return history
   
 
 def main(inargs):
@@ -160,18 +164,22 @@ def main(inargs):
                    inargs.hist_files]
     experiments = ['piControl', 'GHG-only', 'AA-only', 'historical']
     
+    metadata_dict = {}
     fig, axes = plt.subplots(2, 2, figsize=(24, 12))
     axes = axes.flatten()
     for plotnum, exp_files in enumerate(input_files):
         if exp_files:
             experiment = experiments[plotnum]
             time_selector = None if experiment == 'piControl' else time_constraint
-            plot_data(axes[plotnum], exp_files, inargs,
-                      experiment, var_abbrev, time_selector,
-                      inargs.scale_factor[plotnum], basins_to_plot, cmap)
-    
+            file_history = plot_data(axes[plotnum], exp_files, inargs,
+                                     experiment, var_abbrev, time_selector,
+                                     inargs.scale_factor[plotnum], basins_to_plot, cmap)
+            metadata_dict[exp_files[0]] = file_history[0]   
+
     plt.savefig(inargs.outfile, bbox_inches='tight')
-    #gio.write_metadata(inargs.outfile, file_info={inargs.infiles[-1]: history})
+    log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+    log_file = re.sub('.png', '.met', inargs.outfile)
+    cmdprov.write_log(log_file, log_text)
 
 
 if __name__ == '__main__':
