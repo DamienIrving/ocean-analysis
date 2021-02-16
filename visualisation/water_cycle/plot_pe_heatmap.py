@@ -95,6 +95,12 @@ def get_labels(data_type, time_bounds, var_abbrev, ensemble_stat,
         else:
             label = label + ' (kg)'
     
+    letter_dict = {'piControl': '(a)',
+                   'GHG-only': '(b)',
+                   'AA-only': '(c)',
+                   'historical': '(d)'}
+    title = letter_dict[experiment] + ' ' + title
+
     return title, label, fmt
 
 
