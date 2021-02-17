@@ -58,7 +58,7 @@ def get_data(infiles, var, time_constraint, operation):
 
 def plot_data(ax, total_files, flux_bar_files, flux_dashed_files,
               area_bar, area_dashed_integral,
-              variable, time_constraint, ylabel):
+              variable, time_constraint, ylabel, ymax):
     """Plot data for a given variable and experiment."""
 
     total, history = get_data(total_files, variable, time_constraint, 'anomaly')
@@ -90,7 +90,9 @@ def plot_data(ax, total_files, flux_bar_files, flux_dashed_files,
               'precipitation_minus_evaporation_flux': 'P-E'}
 
     df = pd.DataFrame(data, columns = ['component', 'P-E region', ylabel])
-    g = sns.barplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component")    
+    g = sns.barplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component")  
+    if ymax:
+        ax.set(ylim=(-ymax * 1e17, ymax * 1e17))  
     ax.set_title(titles[variable])
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
@@ -116,12 +118,12 @@ def main(args):
     area_bar, area_bar_history = get_data(args.area_bar_files, 'cell_area', None, 'mean')
     area_dashed_integral, area_dashed_integral_history = get_data(args.area_dashed_files, 'cell_area', time_constraint, 'anomaly')
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     for plotnum, file_list in enumerate(flux_files): 
         total_files, flux_bar_files, flux_dashed_files = file_list
         plot_data(axes[plotnum], total_files, flux_bar_files, flux_dashed_files,
                   area_bar, area_dashed_integral,
-                  variables[plotnum], time_constraint, ylabel)
+                  variables[plotnum], time_constraint, ylabel, args.ymax)
 
     plt.suptitle(args.experiment)
     plt.savefig(args.outfile, bbox_inches='tight')
@@ -169,6 +171,8 @@ if __name__ == '__main__':
 
     parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
                         help="Time period [default = entire]")
+    parser.add_argument("--ymax", type=float, default=None,
+                        help="y axis maximum value (* 10^17)")
 
     args = parser.parse_args()             
     main(args)
