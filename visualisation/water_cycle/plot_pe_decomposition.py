@@ -56,21 +56,14 @@ def get_data(infiles, var, time_constraint, operation):
     return ens_cube.data[0:5], history
 
 
-def main(args):
-    """Run the program."""
+def plot_data(ax, total_files, flux_bar_files, flux_dashed_files,
+              area_bar, area_dashed_integral,
+              variable, time_constraint, ylabel):
+    """Plot data for a given variable and experiment."""
 
-    titles = {'precipitation_minus_evaporation_flux': 'P-E',
-              'water_evapotranspiration_flux': 'evaporation',
-              'precipitation_flux': 'precipitation'}
-
-    time_constraint = gio.get_time_constraint(args.time_bounds)    
-    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-    
-    total, total_history = get_data(args.total_files, args.var, time_constraint, 'anomaly')
-    flux_bar, flux_history = get_data(args.flux_bar_files, args.var, None, 'mean')
-    flux_dashed_integral, flux_dashed_integral_history = get_data(args.flux_dashed_files, args.var, time_constraint, 'anomaly')
-    area_bar, area_bar_history = get_data(args.area_bar_files, 'cell_area', None, 'mean')
-    area_dashed_integral, area_dashed_integral_history = get_data(args.area_dashed_files, 'cell_area', time_constraint, 'anomaly')
+    total, history = get_data(total_files, variable, time_constraint, 'anomaly')
+    flux_bar,history = get_data(flux_bar_files, variable, None, 'mean')
+    flux_dashed_integral, history = get_data(flux_dashed_files, variable, time_constraint, 'anomaly')
 
     area_component = flux_bar * area_dashed_integral
     intensity_component = area_bar * flux_dashed_integral
@@ -92,44 +85,83 @@ def main(args):
             ['intensity', 'NH-P', intensity_component[4]],
            ]
 
-    start_year = args.time_bounds[0][0:4]
-    end_year = args.time_bounds[1][0:4]
-    ylabel = f"time integrated anomaly, {start_year}-{end_year} (kg)"
+    titles = {'precipitation_flux': 'precipitation',
+              'water_evapotranspiration_flux': 'evaporation',
+              'precipitation_minus_evaporation_flux': 'P-E'}
+
     df = pd.DataFrame(data, columns = ['component', 'P-E region', ylabel])
-    g = sns.catplot(data=df, ax=ax, kind="bar", x="P-E region", y=ylabel, hue="component")    
-    g.fig.suptitle(f"{titles[args.var]}, {args.experiment}")
+    g = sns.barplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component")    
+    ax.set_title(titles[variable])
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
 
+
+def main(args):
+    """Run the program."""
+
+    variables = ['precipitation_flux',
+                 'water_evapotranspiration_flux',
+                 'precipitation_minus_evaporation_flux']
+                 
+    flux_files = [(args.pr_total_files, args.pr_bar_files, args.pr_dashed_files),
+                  (args.evap_total_files, args.evap_bar_files, args.evap_dashed_files),
+                  (args.pe_total_files, args.pe_bar_files, args.pe_dashed_files)]
+
+    start_year = args.time_bounds[0][0:4]
+    end_year = args.time_bounds[1][0:4]
+    ylabel = f"time integrated anomaly, {start_year}-{end_year} (kg)"
+
+    time_constraint = gio.get_time_constraint(args.time_bounds)        
+
+    area_bar, area_bar_history = get_data(args.area_bar_files, 'cell_area', None, 'mean')
+    area_dashed_integral, area_dashed_integral_history = get_data(args.area_dashed_files, 'cell_area', time_constraint, 'anomaly')
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    for plotnum, file_list in enumerate(flux_files): 
+        total_files, flux_bar_files, flux_dashed_files = file_list
+        plot_data(axes[plotnum], total_files, flux_bar_files, flux_dashed_files,
+                  area_bar, area_dashed_integral,
+                  variables[plotnum], time_constraint, ylabel)
+
+    plt.suptitle(args.experiment)
     plt.savefig(args.outfile, bbox_inches='tight')
 
-    metadata_dict = {args.total_files[0]: total_history[0],
-                     args.flux_bar_files[0]: flux_history[0],
-                     args.flux_dashed_files[0]: flux_dashed_integral_history[0],
-                     args.area_bar_files[0]: area_bar_history[0],
-                     args.area_dashed_files[0]: area_dashed_integral_history[0]
-                    }
+    metadata_dict = {args.area_bar_files[0]: area_bar_history[0],
+                     args.area_dashed_files[0]: area_dashed_integral_history[0]}
     log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     log_file = re.sub('.png', '.met', args.outfile)
     cmdprov.write_log(log_file, log_text)
     
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__,
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
                                     
-    parser.add_argument("var", type=str, help="variable")
     parser.add_argument("experiment", type=str, help="experiment")
     parser.add_argument("outfile", type=str, help="output file") 
 
-    parser.add_argument("--total_files", type=str, nargs='*', default=None,
-                        help="Total cumulative anomaly (kg) files (e.g. pe-region-sum-anomaly*cumsum.nc)")
-    parser.add_argument("--flux_bar_files", type=str, nargs='*', default=None,
-                        help="Mean flux (kg m-2) files (e.g. pe-region-mean*.nc)")
-    parser.add_argument("--flux_dashed_files", type=str, nargs='*', default=None,
-                        help="Mean flux (kg m-2) cumulative anomaly files (e.g. pe-region-mean-anomaly*cumsum.nc)")
+    parser.add_argument("--pr_total_files", type=str, nargs='*', default=None,
+                        help="Total cumulative precipitation anomaly (kg) files (e.g. pr-pe-region-sum-anomaly*cumsum.nc)")
+    parser.add_argument("--pr_bar_files", type=str, nargs='*', default=None,
+                        help="Mean precipitation (kg m-2) files (e.g. pr-pe-region-mean*.nc)")
+    parser.add_argument("--pr_dashed_files", type=str, nargs='*', default=None,
+                        help="Mean precipitation (kg m-2) cumulative anomaly files (e.g. pr-pe-region-mean-anomaly*cumsum.nc)")
+
+    parser.add_argument("--evap_total_files", type=str, nargs='*', default=None,
+                        help="Total cumulative evaporation anomaly (kg) files (e.g. evspsbl-pe-region-sum-anomaly*cumsum.nc)")
+    parser.add_argument("--evap_bar_files", type=str, nargs='*', default=None,
+                        help="Mean evaporation (kg m-2) files (e.g. evspsbl-pe-region-mean*.nc)")
+    parser.add_argument("--evap_dashed_files", type=str, nargs='*', default=None,
+                        help="Mean evaporation (kg m-2) cumulative anomaly files (e.g. evspsbl-pe-region-mean-anomaly*cumsum.nc)")
+
+    parser.add_argument("--pe_total_files", type=str, nargs='*', default=None,
+                        help="Total cumulative P-E anomaly (kg) files (e.g. pe-region-sum-anomaly*cumsum.nc)")
+    parser.add_argument("--pe_bar_files", type=str, nargs='*', default=None,
+                        help="Mean P-E (kg m-2) files (e.g. pe-region-mean*.nc)")
+    parser.add_argument("--pe_dashed_files", type=str, nargs='*', default=None,
+                        help="Mean P-E (kg m-2) cumulative anomaly files (e.g. pe-region-mean-anomaly*cumsum.nc)")
+
     parser.add_argument("--area_bar_files", type=str, nargs='*', default=None,
                         help="Area (m2) files")
     parser.add_argument("--area_dashed_files", type=str, nargs='*', default=None,
