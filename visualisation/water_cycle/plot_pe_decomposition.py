@@ -4,6 +4,7 @@ import sys
 script_dir = sys.path[0]
 import os
 import pdb
+import re
 import argparse
 
 import pandas as pd
@@ -11,6 +12,7 @@ import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 import iris
+import cmdline_provenance as cmdprov
 
 repo_dir = '/'.join(script_dir.split('/')[:-2])
 module_dir = repo_dir + '/modules'
@@ -51,7 +53,7 @@ def get_data(infiles, var, time_constraint, operation):
     else:
         ens_cube = cube_list[0]
         
-    return ens_cube.data[0:5]
+    return ens_cube.data[0:5], history
 
 
 def main(args):
@@ -64,11 +66,11 @@ def main(args):
     time_constraint = gio.get_time_constraint(args.time_bounds)    
     fig, ax = plt.subplots(1, 1, figsize=(12, 6))
     
-    total = get_data(args.total_files, args.var, time_constraint, 'anomaly')
-    flux_bar = get_data(args.flux_bar_files, args.var, None, 'mean')
-    flux_dashed_integral = get_data(args.flux_dashed_files, args.var, time_constraint, 'anomaly')
-    area_bar = get_data(args.area_bar_files, 'cell_area', None, 'mean')
-    area_dashed_integral = get_data(args.area_dashed_files, 'cell_area', time_constraint, 'anomaly')
+    total, total_history = get_data(args.total_files, args.var, time_constraint, 'anomaly')
+    flux_bar, flux_history = get_data(args.flux_bar_files, args.var, None, 'mean')
+    flux_dashed_integral, flux_dashed_integral_history = get_data(args.flux_dashed_files, args.var, time_constraint, 'anomaly')
+    area_bar, area_bar_history = get_data(args.area_bar_files, 'cell_area', None, 'mean')
+    area_dashed_integral, area_dashed_integral_history = get_data(args.area_dashed_files, 'cell_area', time_constraint, 'anomaly')
 
     area_component = flux_bar * area_dashed_integral
     intensity_component = area_bar * flux_dashed_integral
@@ -98,8 +100,19 @@ def main(args):
     g.fig.suptitle(f"{titles[args.var]}, {args.experiment}")
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
+
     plt.savefig(args.outfile, bbox_inches='tight')
-    #gio.write_metadata(args.outfile, file_info={args.infiles[-1]: history})
+
+    metadata_dict = {args.total_files[0]: total_history[0],
+                     args.flux_bar_files[0]: flux_history[0],
+                     args.flux_dashed_files[0]: flux_dashed_integral_history[0],
+                     args.area_bar_files[0]: area_bar_history[0],
+                     args.area_dashed_files[0]: area_dashed_integral_history[0]
+                    }
+    log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+    log_file = re.sub('.png', '.met', args.outfile)
+    cmdprov.write_log(log_file, log_text)
+    
 
 
 if __name__ == '__main__':
@@ -112,11 +125,11 @@ if __name__ == '__main__':
     parser.add_argument("outfile", type=str, help="output file") 
 
     parser.add_argument("--total_files", type=str, nargs='*', default=None,
-                        help="Total cumulative anomaly (kg) files")
+                        help="Total cumulative anomaly (kg) files (e.g. pe-region-sum-anomaly*cumsum.nc)")
     parser.add_argument("--flux_bar_files", type=str, nargs='*', default=None,
-                        help="Mean flux (kg m-2) files (e.g. ")
+                        help="Mean flux (kg m-2) files (e.g. pe-region-mean*.nc)")
     parser.add_argument("--flux_dashed_files", type=str, nargs='*', default=None,
-                        help="Mean flux (kg m-2) cumulative anomaly files")
+                        help="Mean flux (kg m-2) cumulative anomaly files (e.g. pe-region-mean-anomaly*cumsum.nc)")
     parser.add_argument("--area_bar_files", type=str, nargs='*', default=None,
                         help="Area (m2) files")
     parser.add_argument("--area_dashed_files", type=str, nargs='*', default=None,
