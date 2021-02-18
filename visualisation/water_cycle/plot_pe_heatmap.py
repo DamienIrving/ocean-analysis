@@ -169,6 +169,7 @@ def main(inargs):
     axes = axes.flatten()
     for plotnum, exp_files in enumerate(input_files):
         if exp_files:
+            print(f"Number of models = {len(exp_files)}")
             experiment = experiments[plotnum]
             time_selector = None if experiment == 'piControl' else time_constraint
             file_history = plot_data(axes[plotnum], exp_files, inargs,

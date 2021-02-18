@@ -108,6 +108,11 @@ def main(args):
     flux_files = [(args.pr_total_files, args.pr_bar_files, args.pr_dashed_files),
                   (args.evap_total_files, args.evap_bar_files, args.evap_dashed_files),
                   (args.pe_total_files, args.pe_bar_files, args.pe_dashed_files)]
+    nfiles = len(args.pr_total_files)
+    for group in flux_files:
+        for subgroup in group:
+            assert len(subgroup) == nfiles, f"Missing files in {subgroup}"
+    print(f"Number of models = {nfiles}")
 
     start_year = args.time_bounds[0][0:4]
     end_year = args.time_bounds[1][0:4]
