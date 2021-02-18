@@ -16,8 +16,8 @@ HEATMAP_END_YEAR=2005
 # File definitions
  
 ifeq (${PROJECT}, CMIP6)          
-PR_FILES_EXP := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Amon/pr/${GRID_SURFACE}/${ATMOS_EXP_VERSION}/pr*.nc))
-PR_FILES_FX := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Amon/pr/${GRID_SURFACE}/${FX_VERSION}/pr*.nc))
+PR_FILES_EXP := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Amon/pr/${GRID_SURFACE}/${ATMOS_EXP_VERSION_PR}/pr*.nc))
+PR_FILES_FX := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/Amon/pr/${GRID_SURFACE}/${REF_PR_VERSION}/pr*.nc))
 EVAP_FILES_EXP := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Amon/evspsbl/${GRID_SURFACE}/${ATMOS_EXP_VERSION}/evspsbl*.nc))
 WFO_FILES_EXP := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Omon/wfo/${GRID_SURFACE}/${EXP_VERSION}/wfo*.nc))
 FLUX_FILES_EXP := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Amon/${FLUX_VAR}/${GRID_SURFACE}/${ATMOS_EXP_VERSION}/${FLUX_VAR}*.nc))
@@ -36,7 +36,7 @@ endif
 #EVAP_VAR=water_evapotranspiration_flux
 # water_evapotranspiration_flux water_evaporation_flux
 else
-PR_FILES_EXP := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${EXP_RUN}/${ATMOS_EXP_VERSION}/pr/pr*.nc))
+PR_FILES_EXP := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${EXP_RUN}/${ATMOS_EXP_VERSION_PR}/pr/pr*.nc))
 EVAP_FILES_EXP := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${EXP_RUN}/${ATMOS_EXP_VERSION}/evspsbl/evspsbl*.nc))
 PR_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/pr/pr*.nc))
 EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/evspsbl/evspsbl*.nc))
@@ -49,13 +49,13 @@ PR_FILE_FX := $(firstword ${PR_FILES_FX})
 
 # Directories
 
-PE_YR_DIR_EXP=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Ayr/pe/${GRID_SURFACE}/${ATMOS_EXP_VERSION}
+PE_YR_DIR_EXP=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Ayr/pe/${GRID_SURFACE}/${ATMOS_EXP_VERSION_PR}
 PE_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Ayr/pe/${GRID_SURFACE}/${ATMOS_CNTRL_VERSION}
 
 WFO_YR_DIR_EXP=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Oyr/wfo/${GRID_SURFACE}/${EXP_VERSION}
 WFO_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Oyr/wfo/${GRID_SURFACE}/${CNTRL_VERSION}
 
-PR_YR_DIR_EXP=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Ayr/pr/${GRID_SURFACE}/${ATMOS_EXP_VERSION}
+PR_YR_DIR_EXP=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Ayr/pr/${GRID_SURFACE}/${ATMOS_EXP_VERSION_PR}
 PR_YR_DIR_CNTRL=${MY_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Ayr/pr/${GRID_SURFACE}/${ATMOS_CNTRL_VERSION}
 
 EVAP_YR_DIR_EXP=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Ayr/evspsbl/${GRID_SURFACE}/${ATMOS_EXP_VERSION}
@@ -83,7 +83,7 @@ ${BASIN_FILE} : ${WFO_FILE_EXP}
 
 # P-E
 
-PE_MON_DIR_EXP=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Amon/pe/${GRID_SURFACE}/${ATMOS_EXP_VERSION}
+PE_MON_DIR_EXP=${MY_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Amon/pe/${GRID_SURFACE}/${ATMOS_EXP_VERSION_PR}
 PE_FILE_EXP=${PE_MON_DIR_EXP}/pe_Amon_${MODEL}_${EXPERIMENT}_${EXP_RUN}_${GRID_SURFACE}_${EXP_TIME}.nc
 ${PE_FILE_EXP} :
 	mkdir -p ${PE_MON_DIR_EXP}
@@ -120,7 +120,7 @@ ${AREA_PE_REGIONS_CUMSUM_FILE_EXP}: ${AREA_PE_REGIONS_FILE_EXP}
 AREA_PE_REGIONS_FILE_CNTRL=${AREA_YR_DIR_CNTRL}/areacella-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}.nc
 ${AREA_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${AREA_YR_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) sum $@ --data_files ${AREACELLA_FILE} --data_var cell_area --annual
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) sum $@ --data_files ${AREACELLA_FILE} --data_var cell_area --annual ${CHUNK_ANNUAL}
 	
 AREA_PE_REGIONS_CUMSUM_FILE_CNTRL=${AREA_YR_DIR_CNTRL}/areacella-pe-region-sum_Ayr_${MODEL}_piControl_${EXP_RUN}_${GRID_SURFACE}_${EXP_TIME}-cumsum.nc
 ${AREA_PE_REGIONS_CUMSUM_FILE_CNTRL}: ${AREA_PE_REGIONS_FILE_CNTRL}
@@ -140,7 +140,7 @@ ${PE_REGIONS_CUMSUM_FILE_EXP} : ${PE_REGIONS_FILE_EXP}
 PE_REGIONS_FILE_CNTRL=${PE_YR_DIR_CNTRL}/pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}.nc
 ${PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${PE_YR_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) sum $@ --annual --area
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) sum $@ --annual --area ${CHUNK_ANNUAL}
 
 PE_REGIONS_CUMSUM_FILE_CNTRL=${PE_YR_DIR_CNTRL}/pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}-cumsum.nc
 ${PE_REGIONS_CUMSUM_FILE_CNTRL} : ${PE_REGIONS_FILE_CNTRL}
@@ -160,7 +160,7 @@ ${PE_PER_M2_REGIONS_CUMSUM_FILE_EXP} : ${PE_PER_M2_REGIONS_FILE_EXP}
 PE_PER_M2_REGIONS_FILE_CNTRL=${PE_YR_DIR_CNTRL}/pe-region-mean_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}.nc
 ${PE_PER_M2_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${PE_YR_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) mean $@ --annual
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) mean $@ --annual ${CHUNK_ANNUAL}
 
 PE_PER_M2_REGIONS_CUMSUM_FILE_CNTRL=${PE_YR_DIR_CNTRL}/pe-region-mean_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}-cumsum.nc
 ${PE_PER_M2_REGIONS_CUMSUM_FILE_CNTRL} : ${PE_PER_M2_REGIONS_FILE_CNTRL}
@@ -180,7 +180,7 @@ ${WFO_REGIONS_CUMSUM_FILE_EXP}: ${WFO_REGIONS_FILE_EXP}
 WFO_REGIONS_FILE_CNTRL=${WFO_YR_DIR_CNTRL}/wfo-region-sum_Oyr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}.nc
 ${WFO_REGIONS_FILE_CNTRL}: ${BASIN_FILE}
 	mkdir -p ${WFO_YR_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py ${WFO_FILES_CNTRL} $< sum $@ --annual --area --area_file ${AREACELLO_FILE}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py ${WFO_FILES_CNTRL} $< sum $@ --annual --area --area_file ${AREACELLO_FILE} ${CHUNK_ANNUAL}
 
 WFO_REGIONS_CUMSUM_FILE_CNTRL=${WFO_YR_DIR_CNTRL}/wfo-region-sum_Oyr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}-cumsum.nc
 ${WFO_REGIONS_CUMSUM_FILE_CNTRL}: ${WFO_REGIONS_FILE_CNTRL}
@@ -200,7 +200,7 @@ ${PR_PE_REGIONS_CUMSUM_FILE_EXP}: ${PR_PE_REGIONS_FILE_EXP}
 PR_PE_REGIONS_FILE_CNTRL=${PR_YR_DIR_CNTRL}/pr-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}.nc
 ${PR_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${PR_YR_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) sum $@ --data_files ${PR_FILES_CNTRL} --data_var precipitation_flux --annual --area
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) sum $@ --data_files ${PR_FILES_CNTRL} --data_var precipitation_flux --annual --area ${CHUNK_ANNUAL}
 
 PR_PE_REGIONS_CUMSUM_FILE_CNTRL=${PR_YR_DIR_CNTRL}/pr-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}-cumsum.nc
 ${PR_PE_REGIONS_CUMSUM_FILE_CNTRL}: ${PR_PE_REGIONS_FILE_CNTRL}
@@ -220,7 +220,7 @@ ${PR_PER_M2_PE_REGIONS_CUMSUM_FILE_EXP} : ${PR_PER_M2_PE_REGIONS_FILE_EXP}
 PR_PER_M2_PE_REGIONS_FILE_CNTRL=${PR_YR_DIR_CNTRL}/pr-pe-region-mean_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}.nc
 ${PR_PER_M2_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${PR_YR_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) mean $@ --data_files ${PR_FILES_CNTRL} --data_var precipitation_flux --annual
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) mean $@ --data_files ${PR_FILES_CNTRL} --data_var precipitation_flux --annual ${CHUNK_ANNUAL}
 
 PR_PER_M2_PE_REGIONS_CUMSUM_FILE_CNTRL=${PR_YR_DIR_CNTRL}/pr-pe-region-mean_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}-cumsum.nc
 ${PR_PER_M2_PE_REGIONS_CUMSUM_FILE_CNTRL} : ${PR_PER_M2_PE_REGIONS_FILE_CNTRL}
@@ -240,7 +240,7 @@ ${EVAP_PE_REGIONS_CUMSUM_FILE_EXP}: ${EVAP_PE_REGIONS_FILE_EXP}
 EVAP_PE_REGIONS_FILE_CNTRL=${EVAP_YR_DIR_CNTRL}/evspsbl-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}.nc
 ${EVAP_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${EVAP_YR_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) sum $@ --data_files ${EVAP_FILES_CNTRL} --data_var ${EVAP_VAR} --annual --area
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) sum $@ --data_files ${EVAP_FILES_CNTRL} --data_var ${EVAP_VAR} --annual --area ${CHUNK_ANNUAL}
 
 EVAP_PE_REGIONS_CUMSUM_FILE_CNTRL=${EVAP_YR_DIR_CNTRL}/evspsbl-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}-cumsum.nc
 ${EVAP_PE_REGIONS_CUMSUM_FILE_CNTRL}: ${EVAP_PE_REGIONS_FILE_CNTRL}
@@ -260,7 +260,7 @@ ${EVAP_PER_M2_PE_REGIONS_CUMSUM_FILE_EXP} : ${EVAP_PER_M2_PE_REGIONS_FILE_EXP}
 EVAP_PER_M2_PE_REGIONS_FILE_CNTRL=${EVAP_YR_DIR_CNTRL}/evspsbl-pe-region-mean_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}.nc
 ${EVAP_PER_M2_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${EVAP_YR_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) mean $@ --data_files ${EVAP_FILES_CNTRL} --data_var ${EVAP_VAR} --annual
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) mean $@ --data_files ${EVAP_FILES_CNTRL} --data_var ${EVAP_VAR} --annual ${CHUNK_ANNUAL}
 
 EVAP_PER_M2_PE_REGIONS_CUMSUM_FILE_CNTRL=${EVAP_YR_DIR_CNTRL}/evspsbl-pe-region-mean_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}-cumsum.nc
 ${EVAP_PER_M2_PE_REGIONS_CUMSUM_FILE_CNTRL} : ${EVAP_PER_M2_PE_REGIONS_FILE_CNTRL}
@@ -277,7 +277,7 @@ ${FLUX_PE_REGIONS_FILE_EXP}: ${PE_FILE_EXP} ${FX_BASIN_FILE}
 FLUX_PE_REGIONS_FILE_CNTRL=${FLUX_YR_DIR_CNTRL}/${FLUX_VAR}-pe-region-sum_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}-cumsum.nc
 ${FLUX_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${FLUX_YR_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) sum $@ --data_files ${FLUX_FILES_CNTRL} --data_var ${FLUX_NAME} --annual --cumsum
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) sum $@ --data_files ${FLUX_FILES_CNTRL} --data_var ${FLUX_NAME} --annual --cumsum ${CHUNK_ANNUAL}
 
 ## cumulative anomaly
 
