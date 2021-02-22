@@ -35,11 +35,12 @@ endif
 
 else
 PR_FILES_EXP := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${ATMOS_EXP_RUN}/${ATMOS_EXP_VERSION_PR}/pr/pr*.nc))
+PR_FILES_FX := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${FX_EXP}/mon/atmos/Amon/${FX_RUN}/${REF_PR_VERSION}/pr/pr*.nc))
 EVAP_FILES_EXP := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${ATMOS_EXP_RUN}/${ATMOS_EXP_VERSION}/evspsbl/evspsbl*.nc))
 PR_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION_PR}/pr/pr*.nc))
 EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/evspsbl/evspsbl*.nc))
-AREACELLA_FILE=${AREACELLA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${FX_VERSION}/areacella/areacella*.nc
-SFTLF_FILE=${AREACELLA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${FX_VERSION}/sftlf/sftlf*.nc
+AREACELLA_FILE=${AREACELLA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/r0i0p0/${FX_VERSION}/areacella/areacella*.nc
+SFTLF_FILE=${AREACELLA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/r0i0p0/${FX_VERSION}/sftlf/sftlf*.nc
 endif
 
 PR_FILE_FX := $(firstword ${PR_FILES_FX})
