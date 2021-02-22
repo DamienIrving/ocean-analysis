@@ -121,7 +121,11 @@ def plot_data(ax, file_list, inargs, experiment, var_abbrev,
     nfiles = len(file_list)
     title, label, fmt = get_labels(data_type, inargs.time_bounds, var_abbrev, inargs.ensemble_stat,
                                    experiment, scale_factor, nfiles, pct)
-    vmax = inargs.vmax if inargs.vmax else df[basins_to_plot].abs().max().max() * 1.05
+    
+    if inargs.vmax and not experiment == 'piControl':
+        vmax = inargs.vmax
+    else:
+        vmax = df[basins_to_plot].abs().max().max() * 1.05
 
     g = sns.heatmap(df[basins_to_plot],
                     annot=True,
@@ -205,7 +209,7 @@ if __name__ == '__main__':
     parser.add_argument("--scale_factor", type=int, nargs=4, default=(16, 17, 17, 17),
                         help="Scale factor for each experiment (e.g. scale factor of 17 will divide data by 10^17")
     parser.add_argument("--vmax", type=float, default=None,
-                        help="Colorbar maximum value")
+                        help="Colorbar maximum value (* 10^17)")
     parser.add_argument("--ensemble_stat", type=str, choices=('median', 'mean'), default='mean',
                         help="Ensemble statistic if multiple input files")
 
