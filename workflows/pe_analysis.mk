@@ -33,8 +33,6 @@ else
 SFTLF_FILE=${SFTLF_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/${FX_EXP}/${FX_RUN}/fx/sftlf/${GRID_SURFACE}/${FX_VERSION}/sftlf_fx_${MODEL}_${FX_EXP}_${FX_RUN}_${GRID_SURFACE}.nc
 endif
 
-#EVAP_VAR=water_evapotranspiration_flux
-# water_evapotranspiration_flux water_evaporation_flux
 else
 PR_FILES_EXP := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${ATMOS_EXP_RUN}/${ATMOS_EXP_VERSION_PR}/pr/pr*.nc))
 EVAP_FILES_EXP := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${ATMOS_EXP_RUN}/${ATMOS_EXP_VERSION}/evspsbl/evspsbl*.nc))
@@ -42,7 +40,6 @@ PR_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INST
 EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/piControl/mon/atmos/Amon/${CNTRL_RUN}/${ATMOS_CNTRL_VERSION}/evspsbl/evspsbl*.nc))
 AREACELLA_FILE=${AREACELLA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${FX_VERSION}/areacella/areacella*.nc
 SFTLF_FILE=${AREACELLA_DIR}/${PROJECT}/combined/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/${FX_RUN}/${FX_VERSION}/sftlf/sftlf*.nc
-#EVAP_VAR=water_evaporation_flux
 endif
 
 PR_FILE_FX := $(firstword ${PR_FILES_FX})
