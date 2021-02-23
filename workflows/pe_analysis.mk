@@ -39,7 +39,11 @@ else
 
 PR_FILES_EXP := $(sort $(wildcard ${CMIP5_DATA_DIR}/CMIP5/${CMIP5_INSERT}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${ATMOS_EXP_RUN}/${ATMOS_EXP_VERSION_PR}/pr/pr*.nc))
 PR_FILES_FX := $(sort $(wildcard ${CMIP5_DATA_DIR}/CMIP5/${CMIP5_INSERT}/${INSTITUTION}/${MODEL}/${FX_EXP}/mon/atmos/Amon/${FX_RUN}/${REF_PR_VERSION}/pr/pr*.nc))
+
+EVAP_FILES_EXP=${${MODEL}_EVAP_FILES_EXP_${EXPERIMENT}}
+ifeq (${EVAP_FILES_EXP}, ${EMPTY})
 EVAP_FILES_EXP := $(sort $(wildcard ${CMIP5_DATA_DIR}/CMIP5/${CMIP5_INSERT}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/mon/atmos/Amon/${ATMOS_EXP_RUN}/${ATMOS_EXP_VERSION}/evspsbl/evspsbl*.nc))
+endif
 
 PR_FILES_CNTRL=${${MODEL}_PR_FILES_CNTRL}
 ifeq (${PR_FILES_CNTRL}, ${EMPTY})
