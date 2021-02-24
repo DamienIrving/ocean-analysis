@@ -56,7 +56,7 @@ EVAP_FILES_CNTRL := $(sort $(wildcard ${CMIP5_DATA_DIR}/CMIP5/${CMIP5_INSERT}/${
 endif
 
 AREACELLA_FILE=${AREACELLA_DIR}/CMIP5/${CMIP5_INSERT}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/r0i0p0/${FX_VERSION}/areacella/areacella*.nc
-SFTLF_FILE=${AREACELLA_DIR}/CMIP5/${CMIP5_INSERT}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/r0i0p0/${FX_VERSION}/sftlf/sftlf*.nc
+SFTLF_FILE=${SFTLF_DIR}/CMIP5/${CMIP5_INSERT}/${INSTITUTION}/${MODEL}/${FX_EXP}/fx/atmos/fx/r0i0p0/${FX_VERSION}/sftlf/sftlf*.nc
 
 endif
 
