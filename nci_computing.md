@@ -1,15 +1,16 @@
 ### Links
 
-* CLEX CMS wiki: http://climate-cms.wikis.unsw.edu.au/Home 
-* NCI CMIP community page: https://opus.nci.org.au/display/CMIP/CMIP+Community+Home
-* NCI Data Training Page: https://nci-data-training.readthedocs.io/en/latest/index.html
+CLEX CMS wiki: http://climate-cms.wikis.unsw.edu.au/Home   
+NCI CMIP community page: https://opus.nci.org.au/display/CMIP/CMIP+Community+Home  
+NCI Data Training Page: https://nci-data-training.readthedocs.io/en/latest/index.html  
+NCI data catalogue: https://geonetwork.nci.org.au/  
 
 ### Help
 
-* Website: https://track.nci.org.au/servicedesk/customer/portals
-* Email: cws_help@nci.org.au (i.e. CMS team) or help@nci.org.au (general NCI help)
-* Slack: https://arccss.slack.com
-* Request access to different projects here: https://my.nci.org.au/mancini/
+Website: https://track.nci.org.au/servicedesk/customer/portals  
+Email: cws_help@nci.org.au (i.e. CMS team) or help@nci.org.au (general NCI help)   
+Slack: https://arccss.slack.com  
+Request access to different projects here: https://my.nci.org.au/mancini/  
 
 ### CWS Virtual Desktop
 
@@ -83,4 +84,8 @@ command...
 Use `qstat -u dbi599 -sw` to check status of jobs (job state definitions [here](https://www.jlab.org/hpc/PBS/qstat.html)) and `qdel <jobid>` to kill one.
 
 For large memory, single core jobs it's better to submit to the `hugemem` instead of `normal` queue. 
-  
+
+### Pangeo
+
+User guide: https://opus.nci.org.au/display/Help/5.+Pangeo+on+Gadi  
+Notebooks: https://github.com/NCI-data-analysis-platform or https://nbviewer.jupyter.org/github/NCI-data-analysis-platform/   

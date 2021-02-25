@@ -134,13 +134,12 @@ def get_regional_aggregates(agg_method, var_data, pe_data, lats, basins, area_da
     return output 
 
 
-def read_data(infiles, var, area_cube, annual=False, multiply_by_area=False):
+def read_data(infiles, var, area_cube, annual=False, multiply_by_area=False, chunk_annual=False):
     """Read the input data."""    
 
     cube, history = gio.combine_files(infiles, var)
-
     if annual:
-        cube = timeseries.convert_to_annual(cube, days_in_month=True)
+        cube = timeseries.convert_to_annual(cube, days_in_month=True, chunk=chunk_annual)
 
     cube = uconv.flux_to_magnitude(cube)
     if multiply_by_area:
@@ -167,7 +166,8 @@ def main(inargs):
 
     area_cube = gio.get_ocean_weights(inargs.area_file) if inargs.area_file else None
     pe_cube, pe_lats, pe_history = read_data(inargs.pe_files, var_name, area_cube,
-                                             annual=inargs.annual, multiply_by_area=inargs.area)   
+                                             annual=inargs.annual, multiply_by_area=inargs.area,
+                                             chunk_annual=inargs.chunk)   
     basin_cube = iris.load_cube(inargs.basin_file, 'region')  
 
     metadata = {inargs.pe_files[0]: pe_history[0],
@@ -177,7 +177,8 @@ def main(inargs):
         assert data_cube.shape == pe_cube.shape[1:]
     elif inargs.data_files:
         data_cube, data_lats, data_history = read_data(inargs.data_files, inargs.data_var, area_cube,
-                                                       annual=inargs.annual, multiply_by_area=inargs.area)
+                                                       annual=inargs.annual, multiply_by_area=inargs.area,
+                                                       chunk_annual=inargs.chunk)
         assert data_cube.shape == pe_cube.shape
         metadata[inargs.data_files[0]] = data_history[0]
     else:
@@ -252,6 +253,8 @@ if __name__ == '__main__':
                         help="Output annual mean [default=False]")
     parser.add_argument("--cumsum", action="store_true", default=False,
                         help="Output the cumulative sum [default: False]")
+    parser.add_argument("--chunk", action="store_true", default=False,
+                        help="Perform annual smoothing by year to avoid memory errors [default: False]")
 
     args = parser.parse_args()            
     if args.data_var:

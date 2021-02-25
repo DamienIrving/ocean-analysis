@@ -8,7 +8,8 @@ import argparse
 import iris
 import cmdline_provenance as cmdprov
 
-module_dir = script_dir.replace(script_dir.split('/')[-1], 'modules')
+repo_dir = '/'.join(script_dir.split('/')[:-1])
+module_dir = repo_dir + '/modules'
 sys.path.append(module_dir)
 try:
     import general_io as gio

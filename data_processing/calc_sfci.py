@@ -32,7 +32,6 @@ def main(inargs):
                                   coord_names_tbin.index('sea_surface_temperature'),
                                   sfc_tbin_cube.shape)
     sfci_tbin_cube = sfc_tbin_cube.copy()
-    pdb.set_trace()
     sfci_tbin_cube.data = sfc_tbin_cube.data - (cp * theta * wfo_tbin_cube.data)  # SFCI = SFC - Cp*THETA*SVF
     sfci_tbin_cube.var_name = 'sfci_tbin'
     sfci_tbin_cube.long_name = 'total internal surface forcing binned by temperature'
