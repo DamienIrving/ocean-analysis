@@ -11,8 +11,6 @@
 ## Example:
 ## $ make sf-raw-exp -f water_mass_analysis.mk MODEL=NorESM2-LM EXPERIMENT=historical SF_VAR=hfds
 
-SHELL := /usr/bin/bash
-
 # DIRECTORIES
 
 PYTHON=/g/data/r87/dbi599/miniconda3/envs/ocean3/bin/python
