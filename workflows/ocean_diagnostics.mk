@@ -333,7 +333,7 @@ ${SFCI_BINNED_CNTRL_FILE} : ${SFC_BINNED_CNTRL_FILE} ${WFO_BINNED_CNTRL_FILE}
 # Documentation
 
 ## frazil-3d : bin heat flux from frazil ice
-frazil-3d : ${FRAZIL_BINNED_HIST_FILE} ${FRAZIL_BINNED_CNTRL_FILE}
+frazil-3d : ${FRAZIL_BINNED_CNTRL_FILE}
 
 ## mixdownslope-temp : 
 mixdownslope-temp : ${MIXDOWNSLOPE_BINNED_HIST_FILE} ${MIXDOWNSLOPE_BINNED_CNTRL_FILE}
@@ -360,10 +360,10 @@ temp-rivermix : ${RIVER_BINNED_HIST_FILE} ${RIVER_BINNED_CNTRL_FILE}
 temp-sigma-diff : ${SIGMA_BINNED_HIST_FILE} ${SIGMA_BINNED_CNTRL_FILE}
 
 ## temp-tendency :
-temp-tendency : ${TENDENCY_BINNED_HIST_FILE} ${TENDENCY_BINNED_CNTRL_FILE}
+temp-tendency : ${TENDENCY_BINNED_CNTRL_FILE}
 
 ## temp-vdiffuse-diff-cbt :
-temp-vdiffuse-diff-cbt : ${CBT_BINNED_HIST_FILE} ${CBT_BINNED_CNTRL_FILE}
+temp-vdiffuse-diff-cbt : ${CBT_BINNED_CNTRL_FILE}
 
 ## temp-vdiffuse-k33 :
 temp-vdiffuse-k33 : ${K33_BINNED_HIST_FILE} ${K33_BINNED_CNTRL_FILE}
