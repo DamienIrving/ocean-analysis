@@ -26,71 +26,35 @@ except ImportError:
     raise ImportError('Script and modules in wrong directories')
 
 
-def get_data(infiles, var, time_constraint, operation):
+def get_data(infile, var, time_constraint, operation):
     """Get the data for a particular component"""
     
     assert operation in ['anomaly', 'mean']
 
-    cube_list = iris.cube.CubeList([])
-    for ensnum, infile in enumerate(infiles):
-        cube, history = gio.combine_files(infile, var, new_calendar='365_day')
-        cube = cube[:, :, -1]
-        cube.remove_coord('region')
-        if time_constraint:
-            cube = cube.extract(time_constraint)
-        if operation == 'mean':
-            cube = cube.collapsed('time', iris.analysis.MEAN)
-        else:
-            cube.data = cube.data - cube.data[0, ::]
-            cube = cube[-1, ::]
-        cube.remove_coord('time')
-        new_aux_coord = iris.coords.AuxCoord(ensnum, long_name='ensemble_member', units='no_unit')
-        cube.add_aux_coord(new_aux_coord)
-        cube_list.append(cube)
-
-    if len(cube_list) > 1:
-        ens_cube = ensagg.calc_ensagg(cube_list, operator='mean')
+    cube, history = gio.combine_files(infile, var, new_calendar='365_day')
+    cube = cube[:, :, -1]
+    cube.remove_coord('region')
+    if time_constraint:
+        cube = cube.extract(time_constraint)
+    if operation == 'mean':
+        cube = cube.collapsed('time', iris.analysis.MEAN)
     else:
-        ens_cube = cube_list[0]
+        cube.data = cube.data - cube.data[0, ::]
+        cube = cube[-1, ::]
+    cube.remove_coord('time')
         
-    return ens_cube.data[0:5], history
+    return cube, history
 
 
-def plot_data(ax, total_files, flux_bar_files, flux_dashed_files,
-              area_bar, area_dashed_integral,
-              variable, time_constraint, ylabel, ymax):
+def plot_data(ax, df, variable, ylabel, ymax):
     """Plot data for a given variable and experiment."""
-
-    total, history = get_data(total_files, variable, time_constraint, 'anomaly')
-    flux_bar,history = get_data(flux_bar_files, variable, None, 'mean')
-    flux_dashed_integral, history = get_data(flux_dashed_files, variable, time_constraint, 'anomaly')
-
-    area_component = flux_bar * area_dashed_integral
-    intensity_component = area_bar * flux_dashed_integral
-
-    data = [['total', 'SH-P', total[0]],
-            ['total', 'SH-E', total[1]],
-            ['total', 'T-P', total[2]],
-            ['total', 'NH-E', total[3]],
-            ['total', 'NH-P', total[4]],
-            ['area', 'SH-P', area_component[0]],
-            ['area', 'SH-E', area_component[1]],
-            ['area', 'T-P', area_component[2]],
-            ['area', 'NH-E', area_component[3]],
-            ['area', 'NH-P', area_component[4]],
-            ['intensity', 'SH-P', intensity_component[0]],
-            ['intensity', 'SH-E', intensity_component[1]],
-            ['intensity', 'T-P', intensity_component[2]],
-            ['intensity', 'NH-E', intensity_component[3]],
-            ['intensity', 'NH-P', intensity_component[4]],
-           ]
-
+    
     titles = {'precipitation_flux': 'precipitation',
               'water_evapotranspiration_flux': 'evaporation',
               'precipitation_minus_evaporation_flux': 'P-E'}
 
-    df = pd.DataFrame(data, columns = ['component', 'P-E region', ylabel])
-    g = sns.barplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component")  
+    g = sns.barplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component") 
+    #g = sns.stripplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component", dodge=True)
     if ymax:
         ax.set(ylim=(-ymax * 1e17, ymax * 1e17))  
     ax.set_title(titles[variable])
@@ -119,16 +83,44 @@ def main(args):
     ylabel = f"time integrated anomaly, {start_year}-{end_year} (kg)"
 
     time_constraint = gio.get_time_constraint(args.time_bounds)        
-
-    area_bar, area_bar_history = get_data(args.area_bar_files, 'cell_area', None, 'mean')
-    area_dashed_integral, area_dashed_integral_history = get_data(args.area_dashed_files, 'cell_area', time_constraint, 'anomaly')
-
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     for plotnum, file_list in enumerate(flux_files): 
         total_files, flux_bar_files, flux_dashed_files = file_list
-        plot_data(axes[plotnum], total_files, flux_bar_files, flux_dashed_files,
-                  area_bar, area_dashed_integral,
-                  variables[plotnum], time_constraint, ylabel, args.ymax)
+        data = []
+        var = variables[plotnum]
+        for modelnum in range(nfiles):
+            total_cube, history = get_data(total_files[modelnum], var, time_constraint, 'anomaly')
+            flux_bar_cube, history = get_data(flux_bar_files[modelnum], var, None, 'mean')
+            flux_dashed_integral_cube, history = get_data(flux_dashed_files[modelnum], var, time_constraint, 'anomaly')
+            area_bar_cube, area_bar_history = get_data(args.area_bar_files[modelnum], 'cell_area', None, 'mean')
+            area_dashed_integral_cube, area_dashed_integral_history = get_data(args.area_dashed_files[modelnum], 'cell_area', time_constraint, 'anomaly')
+            
+            area_component = flux_bar_cube.data * area_dashed_integral_cube.data
+            intensity_component = area_bar_cube.data * flux_dashed_integral_cube.data
+
+            try:
+                model = total_cube.attributes['model_id']
+            except KeyError:
+                model = total_cube.attributes['source_id']
+
+            data.append([model, 'total', 'SH-P', total_cube.data[0]])
+            data.append([model, 'total', 'SH-E', total_cube.data[1]])
+            data.append([model, 'total', 'T-P', total_cube.data[2]])
+            data.append([model, 'total', 'NH-E', total_cube.data[3]])
+            data.append([model, 'total', 'NH-P', total_cube.data[4]])
+            data.append([model, 'intensity', 'SH-P', intensity_component[0]])
+            data.append([model, 'intensity', 'SH-E', intensity_component[1]])
+            data.append([model, 'intensity', 'T-P', intensity_component[2]])
+            data.append([model, 'intensity', 'NH-E', intensity_component[3]])
+            data.append([model, 'intensity', 'NH-P', intensity_component[4]])
+            data.append([model, 'area', 'SH-P', area_component[0]])
+            data.append([model, 'area', 'SH-E', area_component[1]])
+            data.append([model, 'area', 'T-P', area_component[2]])
+            data.append([model, 'area', 'NH-E', area_component[3]])
+            data.append([model, 'area', 'NH-P', area_component[4]])
+           
+        df = pd.DataFrame(data, columns=['model', 'component', 'P-E region', ylabel])
+        plot_data(axes[plotnum], df, var, ylabel, args.ymax)
 
     plt.suptitle(args.experiment)
     plt.savefig(args.outfile, bbox_inches='tight')
