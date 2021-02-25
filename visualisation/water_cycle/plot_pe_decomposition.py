@@ -26,7 +26,7 @@ except ImportError:
     raise ImportError('Script and modules in wrong directories')
 
 
-def get_data(infile, var, time_constraint, operation):
+def get_data(infile, var, time_constraint, operation, ref_model=None):
     """Get the data for a particular component"""
     
     assert operation in ['anomaly', 'mean']
@@ -42,6 +42,13 @@ def get_data(infile, var, time_constraint, operation):
         cube.data = cube.data - cube.data[0, ::]
         cube = cube[-1, ::]
     cube.remove_coord('time')
+
+    if ref_model:
+        try:
+            model = cube.attributes['model_id']
+        except KeyError:
+            model = cube.attributes['source_id']
+        assert model == ref_model, f"Model mismatch: {ref_model}, {model}"
         
     return cube, history
 
@@ -68,14 +75,24 @@ def main(args):
     variables = ['precipitation_flux',
                  'water_evapotranspiration_flux',
                  'precipitation_minus_evaporation_flux']
-                 
-    flux_files = [(args.pr_total_files, args.pr_bar_files, args.pr_dashed_files),
-                  (args.evap_total_files, args.evap_bar_files, args.evap_dashed_files),
-                  (args.pe_total_files, args.pe_bar_files, args.pe_dashed_files)]
+
+    flux_files = [[sorted(args.pr_total_files),
+                   sorted(args.pr_bar_files),
+                   sorted(args.pr_dashed_files),
+                  ],
+                  [sorted(args.evap_total_files),
+                   sorted(args.evap_bar_files),
+                   sorted(args.evap_dashed_files),
+                  ],
+                  [sorted(args.pe_total_files),
+                   sorted(args.pe_bar_files),
+                   sorted(args.pe_dashed_files),
+                  ]]
     nfiles = len(args.pr_total_files)
     for group in flux_files:
         for subgroup in group:
-            assert len(subgroup) == nfiles, f"Missing files in {subgroup}"
+            nsubfiles = len(subgroup)
+            assert nsubfiles == nfiles, f"Missing {nfiles - nsubfiles} files in {subgroup}"
     print(f"Number of models = {nfiles}")
 
     start_year = args.time_bounds[0][0:4]
@@ -89,19 +106,20 @@ def main(args):
         data = []
         var = variables[plotnum]
         for modelnum in range(nfiles):
-            total_cube, history = get_data(total_files[modelnum], var, time_constraint, 'anomaly')
-            flux_bar_cube, history = get_data(flux_bar_files[modelnum], var, None, 'mean')
-            flux_dashed_integral_cube, history = get_data(flux_dashed_files[modelnum], var, time_constraint, 'anomaly')
-            area_bar_cube, area_bar_history = get_data(args.area_bar_files[modelnum], 'cell_area', None, 'mean')
-            area_dashed_integral_cube, area_dashed_integral_history = get_data(args.area_dashed_files[modelnum], 'cell_area', time_constraint, 'anomaly')
-            
-            area_component = flux_bar_cube.data * area_dashed_integral_cube.data
-            intensity_component = area_bar_cube.data * flux_dashed_integral_cube.data
-
+            total_cube, history = get_data(total_files[modelnum], var, time_constraint, 'anomaly', ref_model=None)
             try:
                 model = total_cube.attributes['model_id']
             except KeyError:
                 model = total_cube.attributes['source_id']
+            print(model)
+            flux_bar_cube, history = get_data(flux_bar_files[modelnum], var, None, 'mean', ref_model=model)
+            flux_dashed_integral_cube, history = get_data(flux_dashed_files[modelnum], var, time_constraint, 'anomaly', ref_model=model)
+            area_bar_cube, area_bar_history = get_data(args.area_bar_files[modelnum], 'cell_area', None, 'mean', ref_model=model)
+            area_dashed_integral_cube, area_dashed_integral_history = get_data(args.area_dashed_files[modelnum], 'cell_area',
+                                                                               time_constraint, 'anomaly', ref_model=model)
+            
+            area_component = flux_bar_cube.data * area_dashed_integral_cube.data
+            intensity_component = area_bar_cube.data * flux_dashed_integral_cube.data
 
             data.append([model, 'total', 'SH-P', total_cube.data[0]])
             data.append([model, 'total', 'SH-E', total_cube.data[1]])
