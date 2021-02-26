@@ -53,7 +53,7 @@ def get_data(infile, var, time_constraint, operation, ref_model=None):
     return cube, history
 
 
-def plot_data(ax, df, variable, ylabel, ymax):
+def plot_data(ax, df, variable, ylabel, ymax, model_dots=False):
     """Plot data for a given variable and experiment."""
     
     titles = {'precipitation_flux': 'precipitation',
@@ -61,7 +61,8 @@ def plot_data(ax, df, variable, ylabel, ymax):
               'precipitation_minus_evaporation_flux': 'P-E'}
 
     g = sns.barplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component") 
-    #g = sns.stripplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component", dodge=True)
+    if model_dots:
+        g = sns.stripplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component", dodge=True)
     if ymax:
         ax.set(ylim=(-ymax * 1e17, ymax * 1e17))  
     ax.set_title(titles[variable])
@@ -69,13 +70,11 @@ def plot_data(ax, df, variable, ylabel, ymax):
     ax.yaxis.major.formatter._useMathText = True
 
 
-def main(args):
-    """Run the program."""
+def sort_files(args):
+    """Sort the input files."""
 
-    variables = ['precipitation_flux',
-                 'water_evapotranspiration_flux',
-                 'precipitation_minus_evaporation_flux']
-
+    area_bar_files = sorted(args.area_bar_files)
+    area_dashed_files = sorted(args.area_dashed_files)
     flux_files = [[sorted(args.pr_total_files),
                    sorted(args.pr_bar_files),
                    sorted(args.pr_dashed_files),
@@ -92,8 +91,22 @@ def main(args):
     for group in flux_files:
         for subgroup in group:
             nsubfiles = len(subgroup)
-            assert nsubfiles == nfiles, f"Missing {nfiles - nsubfiles} files in {subgroup}"
+            assert nsubfiles == nfiles, f"Missing {nfiles - nsubfiles} file of {nfiles} in {subgroup}"
+    assert len(area_bar_files) == nfiles
+    assert len(area_dashed_files) == nfiles
     print(f"Number of models = {nfiles}")
+
+    return area_bar_files, area_dashed_files, flux_files, nfiles
+
+
+def main(args):
+    """Run the program."""
+
+    variables = ['precipitation_flux',
+                 'water_evapotranspiration_flux',
+                 'precipitation_minus_evaporation_flux']
+    
+    area_bar_files, area_dashed_files, flux_files, nfiles = sort_files(args)
 
     start_year = args.time_bounds[0][0:4]
     end_year = args.time_bounds[1][0:4]
@@ -111,11 +124,10 @@ def main(args):
                 model = total_cube.attributes['model_id']
             except KeyError:
                 model = total_cube.attributes['source_id']
-            print(model)
             flux_bar_cube, history = get_data(flux_bar_files[modelnum], var, None, 'mean', ref_model=model)
             flux_dashed_integral_cube, history = get_data(flux_dashed_files[modelnum], var, time_constraint, 'anomaly', ref_model=model)
-            area_bar_cube, area_bar_history = get_data(args.area_bar_files[modelnum], 'cell_area', None, 'mean', ref_model=model)
-            area_dashed_integral_cube, area_dashed_integral_history = get_data(args.area_dashed_files[modelnum], 'cell_area',
+            area_bar_cube, area_bar_history = get_data(area_bar_files[modelnum], 'cell_area', None, 'mean', ref_model=model)
+            area_dashed_integral_cube, area_dashed_integral_history = get_data(area_dashed_files[modelnum], 'cell_area',
                                                                                time_constraint, 'anomaly', ref_model=model)
             
             area_component = flux_bar_cube.data * area_dashed_integral_cube.data
@@ -138,13 +150,13 @@ def main(args):
             data.append([model, 'area', 'NH-P', area_component[4]])
            
         df = pd.DataFrame(data, columns=['model', 'component', 'P-E region', ylabel])
-        plot_data(axes[plotnum], df, var, ylabel, args.ymax)
+        plot_data(axes[plotnum], df, var, ylabel, args.ymax, model_dots=args.dots)
 
     plt.suptitle(args.experiment)
     plt.savefig(args.outfile, bbox_inches='tight')
 
-    metadata_dict = {args.area_bar_files[0]: area_bar_history[0],
-                     args.area_dashed_files[0]: area_dashed_integral_history[0]}
+    metadata_dict = {area_bar_files[0]: area_bar_history[0],
+                     area_dashed_files[0]: area_dashed_integral_history[0]}
     log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     log_file = re.sub('.png', '.met', args.outfile)
     cmdprov.write_log(log_file, log_text)
@@ -188,6 +200,8 @@ if __name__ == '__main__':
                         help="Time period [default = entire]")
     parser.add_argument("--ymax", type=float, default=None,
                         help="y axis maximum value (* 10^17)")
+    parser.add_argument("--dots", action="store_true", default=False,
+                        help="Plot each model result as a dot [default: False]")
 
     args = parser.parse_args()             
     main(args)
