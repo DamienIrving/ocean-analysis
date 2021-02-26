@@ -60,7 +60,7 @@ def plot_data(ax, df, variable, ylabel, ymax, model_dots=False):
               'water_evapotranspiration_flux': 'evaporation',
               'precipitation_minus_evaporation_flux': 'P-E'}
 
-    g = sns.barplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component") 
+    g = sns.barplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component", estimator=np.mean) 
     if model_dots:
         g = sns.stripplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component", dodge=True)
     if ymax:
