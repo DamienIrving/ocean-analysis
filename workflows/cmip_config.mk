@@ -608,6 +608,8 @@ FGOALS-g2_FX_VERSION=v1
 FGOALS-g2_BASIN_VERSION=v20161204
 FGOALS-g2_ATMOS_EXP_VERSION_historical_r1i1p1=v1
 # there's a 2000-2005 and 2000-2009 file
+FGOALS-g2_PR_FILES_EXP_historical := $(sort $(wildcard /g/data/al33/replicas/CMIP5/combined/LASG-CESS/FGOALS-g2/historical/mon/atmos/Amon/r1i1p1/v1/pr/pr*[!5]12.nc))
+FGOALS-g2_EVAP_FILES_EXP_historical := $(sort $(wildcard /g/data/al33/replicas/CMIP5/combined/LASG-CESS/FGOALS-g2/historical/mon/atmos/Amon/r1i1p1/v1/evspsbl/evspsbl*[!5]12.nc))
 FGOALS-g2_ATMOS_EXP_VERSION_historicalGHG_r1i1p1=v20161204
 FGOALS-g2_ATMOS_EXP_VERSION_historicalMisc_r2i1p1=v20161204
 FGOALS-g2_EXP_TIME_historical=185001-201412
