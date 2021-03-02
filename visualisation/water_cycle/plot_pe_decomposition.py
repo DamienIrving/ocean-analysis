@@ -56,7 +56,7 @@ def get_data(infile, var, time_constraint, operation, ref_model=None):
 def plot_data(ax, df, exp, ylabel, ymax, model_dots=False):
     """Plot data for a given variable and experiment."""
 
-    g = sns.barplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component", estimator=np.mean) 
+    g = sns.barplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component", estimator=np.mean, ci=95) 
     if model_dots:
         g = sns.stripplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component", dodge=True)
     if ymax:

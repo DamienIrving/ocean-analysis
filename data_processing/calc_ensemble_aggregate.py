@@ -12,6 +12,8 @@ import argparse
 import iris
 from iris.experimental.equalise_cubes import equalise_attributes
 import cmdline_provenance as cmdprov
+import numpy as np
+import seaborn as sns
 
 # Import my modules
 
@@ -77,8 +79,24 @@ def unify_variable(cube_list):
     return cube_list
 
 
+def ci_bounds(data, bound):
+    """Calculate 95% confidence interval bounds like seaborn does.
+
+    https://stackoverflow.com/questions/46125182/is-seaborn-confidence-interval-computed-correctly
+
+    """
+
+    boots = sns.algorithms.bootstrap(data)
+    cis = sns.utils.ci(boots, 95)
+    result = cis[0] if bound == 'lower' else cis[1]
+
+    return result
+
+
 def calc_ensagg(cube_list, operator='mean'):
     """Calculate the ensemble mean"""
+
+    assert operator in ['mean', 'median', 'ci-upper', 'ci-lower']
 
     operator_dict = {'mean': iris.analysis.MEAN, 
                      'median': iris.analysis.MEDIAN}
@@ -86,10 +104,19 @@ def calc_ensagg(cube_list, operator='mean'):
     cube_list = unify_coordinates(cube_list)
     cube_list = unify_variable(cube_list)
     ensemble_cube = cube_list.merge_cube()
-    ensemble_mean = ensemble_cube.collapsed('ensemble_member', operator_dict[operator], mdtol=0)
-    ensemble_mean.remove_coord('ensemble_member')
+    if 'ci' in operator:
+        bound = operator.split('-')[-1]
+        coord_names = [coord.name() for coord in ensemble_cube.dim_coords]
+        member_axis = coord_names.index('ensemble_member')
+        assert member_axis == 0
+        ci_bound = np.apply_along_axis(ci_bounds, 0, ensemble_cube.data, bound)
+        ensemble_agg = ensemble_cube[0, ::]
+        ensemble_agg.data = ci_bound
+    else:
+        ensemble_agg = ensemble_cube.collapsed('ensemble_member', operator_dict[operator], mdtol=0)
+    ensemble_agg.remove_coord('ensemble_member')
 
-    return ensemble_mean
+    return ensemble_agg
 
 
 def main(inargs):

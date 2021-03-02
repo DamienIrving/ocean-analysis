@@ -10,7 +10,10 @@ import re
 import pandas as pd
 import seaborn as sns
 import numpy as np
+import scipy.stats as st
 import matplotlib.pyplot as plt
+from matplotlib import rc
+#rc('text', usetex=True)
 import iris
 import cmdline_provenance as cmdprov
 
@@ -114,28 +117,43 @@ def plot_data(ax, file_list, inargs, experiment, var_abbrev,
     pct = False
 
     df, history = get_data(file_list, inargs.var, data_type,
-                           time_constraint, inargs.ensemble_stat, pct=pct)     
+                           time_constraint, inargs.ensemble_stat, pct=pct)
+    df_ci_lower, history = get_data(file_list, inargs.var, data_type,
+                                    time_constraint, 'ci-lower')   
+    df_ci_upper, history = get_data(file_list, inargs.var, data_type,
+                                    time_constraint, 'ci-upper')    
     if not pct:
         df = df / 10**scale_factor
+        df_ci_lower = df_ci_lower / 10**scale_factor
+        df_ci_upper = df_ci_upper / 10**scale_factor
 
     nfiles = len(file_list)
-    title, label, fmt = get_labels(data_type, inargs.time_bounds, var_abbrev, inargs.ensemble_stat,
+    title, cbar_label, fmt = get_labels(data_type, inargs.time_bounds, var_abbrev, inargs.ensemble_stat,
                                    experiment, scale_factor, nfiles, pct)
     
+    nregions, nbasins = df[basins_to_plot].values.shape
+    box_labels = np.empty([nregions, nbasins], dtype=object)
+    for region in range(nregions):
+        for basin in range(nbasins):
+            mean = round(df[basins_to_plot].values[region, basin], 1)
+            lower = round(df_ci_lower[basins_to_plot].values[region, basin], 1)
+            upper = round(df_ci_upper[basins_to_plot].values[region, basin], 1)
+            box_labels[region, basin] = f'{mean}\n({lower}, {upper})'
+
     if inargs.vmax and not experiment == 'piControl':
         vmax = inargs.vmax
     else:
         vmax = df[basins_to_plot].abs().max().max() * 1.05
 
     g = sns.heatmap(df[basins_to_plot],
-                    annot=True,
+                    annot=box_labels,
                     cmap=cmap,
                     linewidths=.5,
                     ax=ax,
                     vmin=-vmax,
                     vmax=vmax,
-                    fmt=fmt,
-                    cbar_kws={'label': label}
+                    fmt='',
+                    cbar_kws={'label': cbar_label}
                    )
     g.set_yticklabels(g.get_yticklabels(), rotation=0)
     ax.set_title(title)
