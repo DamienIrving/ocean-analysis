@@ -430,8 +430,8 @@ ${AREA_PE_REGIONS_CUMSUM_PLOT} : ${AREA_PE_REGIONS_CUMSUM_COEFFICIENTS} ${AREA_P
 
 ## cumulative sum
 
-PE_CUMSUM_HIST=${PE_YR_DIR_EXP}/pe_Ayr_${MODEL}_${EXPERIMENT}_${ATMOS_EXP_RUN}_${GRID_ATMOS}_${EXP_TIME}-cumsum.nc
-${PE_CUMSUM_HIST} : ${PE_FILE_EXP}
+PE_CUMSUM_EXP=${PE_YR_DIR_EXP}/pe_Ayr_${MODEL}_${EXPERIMENT}_${ATMOS_EXP_RUN}_${GRID_ATMOS}_${EXP_TIME}-cumsum.nc
+${PE_CUMSUM_EXP} : ${PE_FILE_EXP}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_cumsum.py $< precipitation_minus_evaporation_flux $@ --annual --flux_to_mag
 
 PE_CUMSUM_CNTRL=${PE_YR_DIR_CNTRL}/pe_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_ATMOS}_${CNTRL_TIME}-cumsum.nc
@@ -445,11 +445,11 @@ ${SPATIAL_COEFFICIENTS} : ${PE_CUMSUM_CNTRL}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_drift_coefficients.py $< precipitation_minus_evaporation_flux $@
 
 PE_CUMSUM_ANOMALY=${PE_YR_DIR_EXP}/pe-anomaly_Ayr_${MODEL}_${EXPERIMENT}_${ATMOS_EXP_RUN}_${GRID_ATMOS}_${EXP_TIME}-cumsum.nc
-${PE_CUMSUM_ANOMALY} : ${PE_CUMSUM_HIST} ${SPATIAL_COEFFICIENTS} 
+${PE_CUMSUM_ANOMALY} : ${PE_CUMSUM_EXP} ${SPATIAL_COEFFICIENTS} 
 	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< precipitation_minus_evaporation_flux annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check
 
 SPATIAL_PLOT=/g/data/e14/dbi599/temp/pe_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_ATMOS}_${CNTRL_TIME}-cumsum_lat10-lon10.png
-${SPATIAL_PLOT} : ${SPATIAL_COEFFICIENTS} ${PE_CUMSUM_CNTRL} ${PE_CUMSUM_HIST} ${PE_CUMSUM_ANOMALY}
+${SPATIAL_PLOT} : ${SPATIAL_COEFFICIENTS} ${PE_CUMSUM_CNTRL} ${PE_CUMSUM_EXP} ${PE_CUMSUM_ANOMALY}
 	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py precipitation_minus_evaporation_flux $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 10 10 ${BRANCH_TIME}
 
 # targets 
