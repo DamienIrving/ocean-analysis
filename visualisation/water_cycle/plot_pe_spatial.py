@@ -1,5 +1,6 @@
 """Plot spatial P-E"""
 
+import re
 import sys
 script_dir = sys.path[0]
 import os
@@ -74,11 +75,11 @@ def main(args):
 
     plt.savefig(args.outfile, bbox_inches='tight')
 
-    #metadata_dict = {area_bar_files[0]: area_bar_history[0],
-    #                 area_dashed_files[0]: area_dashed_integral_history[0]}
-    #log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
-    #log_file = re.sub('.png', '.met', args.outfile)
-    #cmdprov.write_log(log_file, log_text)
+    metadata_dict = {args.cumulative_anomaly_file: anom_history,
+                     args.control_file: clim_history}
+    log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+    log_file = re.sub('.png', '.met', args.outfile)
+    cmdprov.write_log(log_file, log_text)
     
 
 if __name__ == '__main__':
