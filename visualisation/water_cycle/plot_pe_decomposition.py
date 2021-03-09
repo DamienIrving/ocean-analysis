@@ -16,12 +16,9 @@ import cmdline_provenance as cmdprov
 
 repo_dir = '/'.join(script_dir.split('/')[:-2])
 module_dir = repo_dir + '/modules'
-script_dir = repo_dir + '/data_processing'
 sys.path.append(module_dir)
-sys.path.append(script_dir)
 try:
     import general_io as gio
-    import calc_ensemble_aggregate as ensagg
 except ImportError:
     raise ImportError('Script and modules in wrong directories')
 
