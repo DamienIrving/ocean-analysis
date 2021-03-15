@@ -40,7 +40,7 @@ def main(inargs):
 
     cube, history = gio.combine_files(inargs.infiles, inargs.var)
     if inargs.annual:
-        cube = timeseries.convert_to_annual(cube)
+        cube = timeseries.convert_to_annual(cube, aggregation='mean', days_in_month=True)
     if inargs.flux_to_mag:
         cube = uconv.flux_to_magnitude(cube)
 
