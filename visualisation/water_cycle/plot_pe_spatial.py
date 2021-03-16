@@ -61,7 +61,7 @@ def regrid(cube):
     return cube
 
 
-def get_cube_list(infiles, agg, time_bounds=None):
+def get_cube_list(infiles, agg, time_bounds=None, quick=False):
     """Read and process data."""
 
     assert agg in ['clim', 'anom']
@@ -76,6 +76,8 @@ def get_cube_list(infiles, agg, time_bounds=None):
         if time_bounds:
             time_constraint = gio.get_time_constraint(time_bounds) 
             cube = cube.extract(time_constraint)
+        elif quick:
+            cube = cube[0:120, ::]
         if agg == 'clim':
             cube = timeseries.convert_to_annual(cube, aggregation='mean', days_in_month=True)
             cube = cube.collapsed('time', iris.analysis.MEAN)
@@ -111,7 +113,7 @@ def ensemble_stats(cube_list):
     return ensemble_mean, ensemble_agreement
 
 
-def plot_data(ax, ensemble_mean, ensemble_agreement, agg,
+def plot_data(ax, ensemble_mean, ensemble_agreement, agg, title,
               agreement_bounds=None, clim=None):
     """Plot ensemble data"""
 
@@ -124,12 +126,10 @@ def plot_data(ax, ensemble_mean, ensemble_agreement, agg,
         cmap = 'BrBG'
         levels = np.arange(-7, 8, 1)
         cbar_label = 'Annual mean P-E (mm/day)'
-        title = 'Climatology' 
     else:
         cmap = 'RdBu'
-        levels = np.arange(-11000, 11050, 1100)
+        levels = np.arange(-9000, 9100, 1500)
         cbar_label = 'Time-integrated anomaly (kg m-2)'
-        title = "Time-integrated anomaly"
         
     x = ensemble_mean.coord('longitude').points
     y = ensemble_mean.coord('latitude').points
@@ -169,40 +169,70 @@ def plot_data(ax, ensemble_mean, ensemble_agreement, agg,
 def main(args):
     """Run the program."""
 
-    anom_cube_list = get_cube_list(args.anom_files, 'anom', time_bounds=['1861-01-01', '2005-12-31'])
-    anom_ensemble_mean, anom_ensemble_agreement = ensemble_stats(anom_cube_list)
-
-    clim_cube_list = get_cube_list(args.clim_files, 'clim')
+    clim_cube_list = get_cube_list(args.clim_files, 'clim', quick=args.quick)
     clim_ensemble_mean, clim_ensemble_agreement = ensemble_stats(clim_cube_list)
     clim_ensemble_mean.data = clim_ensemble_mean.data * 86400
 
-    nrows = 2
-    ncols = 1
-    fig = plt.figure(figsize=[30, 6])
+    ghg_cube_list = get_cube_list(args.ghg_files, 'anom', time_bounds=args.time_bounds)
+    ghg_ensemble_mean, ghg_ensemble_agreement = ensemble_stats(ghg_cube_list)
+
+    aa_cube_list = get_cube_list(args.aa_files, 'anom', time_bounds=args.time_bounds)
+    aa_ensemble_mean, aa_ensemble_agreement = ensemble_stats(aa_cube_list)
+
+    hist_cube_list = get_cube_list(args.hist_files, 'anom', time_bounds=args.time_bounds)
+    hist_ensemble_mean, hist_ensemble_agreement = ensemble_stats(hist_cube_list)
+
+    width = 25
+    height = 10
+    fig = plt.figure(figsize=[width, height])
     outproj = ccrs.PlateCarree(central_longitude=180.0) 
 
+    nrows = 2
+    ncols = 2
     ax1 = plt.subplot(nrows, ncols, 1, projection=outproj)
     plot_data(ax1,
               clim_ensemble_mean,
               clim_ensemble_agreement,
               'clim',
+              '(a) Climatology',
               agreement_bounds=[0.33, 0.66])
 
     ax2 = plt.subplot(nrows, ncols, 2, projection=outproj)
     plot_data(ax2,
-              anom_ensemble_mean,
-              anom_ensemble_agreement,
+              ghg_ensemble_mean,
+              ghg_ensemble_agreement,
               'anom',
+              '(b) GHG-only experiment, 1861-2005',
               agreement_bounds=[0.33, 0.66],
               clim=clim_ensemble_mean)
 
+    ax3 = plt.subplot(nrows, ncols, 3, projection=outproj)
+    plot_data(ax3,
+              aa_ensemble_mean,
+              aa_ensemble_agreement,
+              'anom',
+              '(c) AA-only experiment, 1861-2005',
+              agreement_bounds=[0.33, 0.66],
+              clim=clim_ensemble_mean)
+
+    ax4 = plt.subplot(nrows, ncols, 4, projection=outproj)
+    plot_data(ax4,
+              hist_ensemble_mean,
+              hist_ensemble_agreement,
+              'anom',
+              '(d) historical experiment, 1861-2005',
+              agreement_bounds=[0.33, 0.66],
+              clim=clim_ensemble_mean)
+
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=-0.15, hspace=0.2)
     plt.savefig(args.outfile, bbox_inches='tight')
 
-    metadata_dict = {args.cumulative_anomaly_file: anom_history,
-                     args.control_file: clim_history}
-    log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
-    log_file = re.sub('.png', '.met', args.outfile)
-    cmdprov.write_log(log_file, log_text)
+    #metadata_dict = {args.anom_files: anom_history,
+    #                 args.clim_files: clim_history}
+    #log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+    #log_file = re.sub('.png', '.met', args.outfile)
+    #cmdprov.write_log(log_file, log_text)
     
 
 if __name__ == '__main__':
@@ -212,11 +242,16 @@ if __name__ == '__main__':
     
     parser.add_argument("outfile", type=str, help="output file") 
 
-    parser.add_argument("--anom_files", type=str, nargs='*', help="time-integrated anomaly files")
     parser.add_argument("--clim_files", type=str, nargs='*', help="climatology files")
+    parser.add_argument("--ghg_files", type=str, nargs='*', help="time-integrated anomaly files for GHG-only experiment")
+    parser.add_argument("--aa_files", type=str, nargs='*', help="time-integrated anomaly files for AA-only experiment")
+    parser.add_argument("--hist_files", type=str, nargs='*', help="time-integrated anomaly files for historical experiment")
 
-#    parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'), default=None,
-#                        help="Time period [default = entire]")
+    parser.add_argument("--time_bounds", type=str, nargs=2, metavar=('START_DATE', 'END_DATE'),
+                        default=['1861-01-01', '2005-12-31'],
+                        help="Time period")
+    parser.add_argument("--quick", action="store_true", default=False,
+                        help="Use only first 10 years of clim files")
 
     args = parser.parse_args()             
     main(args)
