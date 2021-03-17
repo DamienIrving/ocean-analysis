@@ -38,13 +38,17 @@ def get_data(infile, var, time_constraint):
     return cube, history
 
 
-def plot_data(ax, df, exp, ylabel, model_dots=False):
+def plot_data(ax, df, title, ylabel, model_dots=False):
     """Plot data for a given variable and experiment."""
 
-    g = sns.barplot(data=df, ax=ax, x="basin", y=ylabel, hue="experiment", estimator=np.mean, ci=95) 
+    g = sns.barplot(data=df, ax=ax, x="basin", y=ylabel, color='grey', estimator=np.mean, ci=95) 
     if model_dots:
-        g = sns.stripplot(data=df, ax=ax, x="basin", y=ylabel, hue="experiment", dodge=True) 
+        g = sns.stripplot(data=df, ax=ax, x="basin", y=ylabel, hue="model", dodge=True) 
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
+    if not '(a)' in title:
+        g.set(ylabel=None)
+    ax.set_title(title)
+    ax.set_ylim(-2e17, 3e17)
     ax.yaxis.major.formatter._useMathText = True
 
 
@@ -68,6 +72,7 @@ def main(args):
     """Run the program."""
 
     experiments = ['GHG-only', 'AA-only', 'historical']
+    letters = ['(a) ', '(b) ', '(c) ']
     file_dict, nfiles = sort_files(args)
 
     start_year = args.time_bounds[0][0:4]
@@ -79,24 +84,23 @@ def main(args):
     var_name = var_names[args.var]
     ylabel = f"time integrated {var_name} anomaly, {start_year}-{end_year} (kg)"
 
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     time_constraint = gio.get_time_constraint(args.time_bounds)        
-    fig, ax = plt.subplots(1, 1, figsize=(6, 6))
-    data = []
-    for exp in experiments: 
+    for plotnum, exp in enumerate(experiments):
+        data = [] 
         for modelnum, infile in enumerate(file_dict[exp]):
             cube, history = get_data(infile, args.var, time_constraint)
             try:
                 model = cube.attributes['model_id']
             except KeyError:
                 model = cube.attributes['source_id']
-
-            data.append([model, exp, 'Atlantic', cube.data[0]])
-            data.append([model, exp, 'Indian', cube.data[2]])
-            data.append([model, exp, 'Pacific', cube.data[1]])
-            data.append([model, exp, 'Land', cube.data[5]])
-           
-    df = pd.DataFrame(data, columns=['model', 'experiment', 'basin', ylabel])
-    plot_data(ax, df, exp, ylabel, model_dots=args.dots)
+            data.append([model, 'Atlantic', cube.data[0]])
+            data.append([model, 'Indian', cube.data[2]])
+            data.append([model, 'Pacific', cube.data[1]])
+            data.append([model, 'Land', cube.data[5]])
+        df = pd.DataFrame(data, columns=['model', 'basin', ylabel])
+        title = letters[plotnum] + exp
+        plot_data(axes[plotnum], df, title, ylabel, model_dots=args.dots)
 
     plt.savefig(args.outfile, bbox_inches='tight')
 

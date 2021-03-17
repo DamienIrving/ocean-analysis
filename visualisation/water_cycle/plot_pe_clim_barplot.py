@@ -23,13 +23,13 @@ except ImportError:
     raise ImportError('Script and modules in wrong directories')
 
 
-def plot_data(ax, df, xcoord, ylabel, model_dots=False):
+def plot_data(ax, df, xcoord, ylabel, title, model_dots=False):
     """Plot data for a given variable and experiment."""
 
     g = sns.barplot(data=df, ax=ax, x=xcoord, y=ylabel, color='grey', estimator=np.mean, ci=95) 
     if model_dots:
         g = sns.stripplot(data=df, ax=ax, x=xcoord, y=ylabel, dodge=True) 
-    #ax.set_title()
+    ax.set_title(title)
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
 
@@ -77,8 +77,10 @@ def main(args):
            
     region_df = pd.DataFrame(region_data, columns=['model', 'P-E region', ylabel])
     basin_df = pd.DataFrame(basin_data, columns=['model', 'basin', ylabel])
-    plot_data(axes[0], region_df, 'P-E region', ylabel, model_dots=args.dots)
-    plot_data(axes[1], basin_df, 'basin', ylabel, model_dots=args.dots)
+    plot_data(axes[0], region_df, 'P-E region', ylabel,
+              '(a) meridional climatology', model_dots=args.dots)
+    plot_data(axes[1], basin_df, 'basin', ylabel,
+              '(b) zonal climatology', model_dots=args.dots)
 
     plt.savefig(args.outfile, bbox_inches='tight')
 

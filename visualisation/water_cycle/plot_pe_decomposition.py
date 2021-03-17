@@ -50,15 +50,17 @@ def get_data(infile, var, time_constraint, operation, ref_model=None):
     return cube, history
 
 
-def plot_data(ax, df, exp, ylabel, ymax, model_dots=False):
+def plot_data(ax, df, title, ylabel, ymax, model_dots=False):
     """Plot data for a given variable and experiment."""
 
     g = sns.barplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component", estimator=np.mean, ci=95) 
     if model_dots:
         g = sns.stripplot(data=df, ax=ax, x="P-E region", y=ylabel, hue="component", dodge=True)
     if ymax:
-        ax.set(ylim=(-ymax * 1e17, ymax * 1e17))  
-    ax.set_title(exp)
+        ax.set(ylim=(-ymax * 1e17, ymax * 1e17))
+    if not '(a)' in title:
+        g.set(ylabel=None)  
+    ax.set_title(title)
     plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useMathText=True, useOffset=False)
     ax.yaxis.major.formatter._useMathText = True
 
@@ -96,6 +98,7 @@ def main(args):
     """Run the program."""
 
     experiments = ['GHG-only', 'AA-only', 'historical']
+    letters = ['(a) ', '(b) ', '(c) ']
     area_bar_files, flux_bar_files, file_dict, nfiles = sort_files(args)
 
     start_year = args.time_bounds[0][0:4]
@@ -144,7 +147,8 @@ def main(args):
             data.append([model, 'area', 'NH-P', area_component[4]])
            
         df = pd.DataFrame(data, columns=['model', 'component', 'P-E region', ylabel])
-        plot_data(axes[plotnum], df, exp, ylabel, args.ymax, model_dots=args.dots)
+        title = letters[plotnum] + exp
+        plot_data(axes[plotnum], df, title, ylabel, args.ymax, model_dots=args.dots)
 
     plt.savefig(args.outfile, bbox_inches='tight')
 

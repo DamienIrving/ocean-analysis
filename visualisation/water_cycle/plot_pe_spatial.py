@@ -129,7 +129,7 @@ def plot_data(ax, ensemble_mean, ensemble_agreement, agg, title,
     else:
         cmap = 'RdBu'
         levels = np.arange(-9000, 9100, 1500)
-        cbar_label = 'Time-integrated anomaly (kg m-2)'
+        cbar_label = 'Time-integrated P-E anomaly, 1861-2005 (kg m-2)'
         
     x = ensemble_mean.coord('longitude').points
     y = ensemble_mean.coord('latitude').points
@@ -194,7 +194,7 @@ def main(args):
               clim_ensemble_mean,
               clim_ensemble_agreement,
               'clim',
-              '(a) Climatology',
+              '(a) piControl',
               agreement_bounds=[0.33, 0.66])
 
     ax2 = plt.subplot(nrows, ncols, 2, projection=outproj)
@@ -202,7 +202,7 @@ def main(args):
               ghg_ensemble_mean,
               ghg_ensemble_agreement,
               'anom',
-              '(b) GHG-only experiment, 1861-2005',
+              '(b) GHG-only',
               agreement_bounds=[0.33, 0.66],
               clim=clim_ensemble_mean)
 
@@ -211,7 +211,7 @@ def main(args):
               aa_ensemble_mean,
               aa_ensemble_agreement,
               'anom',
-              '(c) AA-only experiment, 1861-2005',
+              '(c) AA-only',
               agreement_bounds=[0.33, 0.66],
               clim=clim_ensemble_mean)
 
@@ -220,7 +220,7 @@ def main(args):
               hist_ensemble_mean,
               hist_ensemble_agreement,
               'anom',
-              '(d) historical experiment, 1861-2005',
+              '(d) historical',
               agreement_bounds=[0.33, 0.66],
               clim=clim_ensemble_mean)
 
