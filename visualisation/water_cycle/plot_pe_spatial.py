@@ -93,7 +93,7 @@ def get_cube_list(infiles, agg, time_bounds=None, quick=False):
         ensemble_cube_list.append(cube)
         print("Total number of models:", len(ensemble_cube_list))
     
-    return ensemble_cube_list
+    return ensemble_cube_list, history
 
 
 def ensemble_stats(cube_list):
@@ -169,17 +169,17 @@ def plot_data(ax, ensemble_mean, ensemble_agreement, agg, title,
 def main(args):
     """Run the program."""
 
-    clim_cube_list = get_cube_list(args.clim_files, 'clim', quick=args.quick)
+    clim_cube_list, clim_history = get_cube_list(args.clim_files, 'clim', quick=args.quick)
     clim_ensemble_mean, clim_ensemble_agreement = ensemble_stats(clim_cube_list)
     clim_ensemble_mean.data = clim_ensemble_mean.data * 86400
 
-    ghg_cube_list = get_cube_list(args.ghg_files, 'anom', time_bounds=args.time_bounds)
+    ghg_cube_list, ghg_history = get_cube_list(args.ghg_files, 'anom', time_bounds=args.time_bounds)
     ghg_ensemble_mean, ghg_ensemble_agreement = ensemble_stats(ghg_cube_list)
 
-    aa_cube_list = get_cube_list(args.aa_files, 'anom', time_bounds=args.time_bounds)
+    aa_cube_list, aa_history = get_cube_list(args.aa_files, 'anom', time_bounds=args.time_bounds)
     aa_ensemble_mean, aa_ensemble_agreement = ensemble_stats(aa_cube_list)
 
-    hist_cube_list = get_cube_list(args.hist_files, 'anom', time_bounds=args.time_bounds)
+    hist_cube_list, hist_history = get_cube_list(args.hist_files, 'anom', time_bounds=args.time_bounds)
     hist_ensemble_mean, hist_ensemble_agreement = ensemble_stats(hist_cube_list)
 
     width = 25
@@ -226,13 +226,12 @@ def main(args):
 
     fig.tight_layout()
     fig.subplots_adjust(wspace=-0.15, hspace=0.2)
-    plt.savefig(args.outfile, bbox_inches='tight')
-
-    #metadata_dict = {args.anom_files: anom_history,
-    #                 args.clim_files: clim_history}
-    #log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
-    #log_file = re.sub('.png', '.met', args.outfile)
-    #cmdprov.write_log(log_file, log_text)
+    plt.savefig(args.outfile, bbox_inches='tight', dpi=300)
+    metadata_dict = {args.ghg_files[-1]: ghg_history[-1],
+                     args.clim_files[-1]: clim_history[-1]}
+    log_text = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
+    log_file = re.sub('.png', '.met', args.outfile)
+    cmdprov.write_log(log_file, log_text)
     
 
 if __name__ == '__main__':
