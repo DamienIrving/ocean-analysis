@@ -35,19 +35,23 @@ mom_vars = {"temp_nonlocal_KPP": "cp*rho*dzt*nonlocal tendency from KPP",
             "temp_tendency": "time tendency for tracer Conservative temperature"}
 
 
-def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube, years,
+def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube,
                    t_values, t_edges, t_units, s_values, s_edges, s_units,
-                   log, mul_ts=False):
+                   log, years=None, mul_ts=False):
     """Create the iris cube for output"""
     
     for key, data in outdata_dict.items():
         outdata_dict[key], b_values, flag_values, flag_meanings = uconv.add_globe_basin(data, b_cube)
 
-    year_coord = iris.coords.DimCoord(years,
-                                      standard_name=t_cube.coord('year').standard_name,
-                                      long_name=t_cube.coord('year').long_name,
-                                      var_name=t_cube.coord('year').var_name,
-                                      units=t_cube.coord('year').units)
+    if years is None:
+        time_coord = t_cube.coord('time')
+    else:
+        assert type(years) == np.ndarray
+        time_coord = iris.coords.DimCoord(years,
+                                          standard_name=t_cube.coord('year').standard_name,
+                                          long_name=t_cube.coord('year').long_name,
+                                          var_name=t_cube.coord('year').var_name,
+                                          units=t_cube.coord('year').units)
 
     t_bounds = uconv.get_bounds_list(t_edges)
     t_coord_std_name = t_cube.standard_name
@@ -81,9 +85,9 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube, years,
                                    attributes={'flag_values': flag_values,
                                                'flag_meanings': flag_meanings})
     
-    tbin_dim_coords_list = [(year_coord, 0), (t_coord, 1), (b_coord, 2)]
-    sbin_dim_coords_list = [(year_coord, 0), (s_coord, 1), (b_coord, 2)]
-    tsbin_dim_coords_list = [(year_coord, 0), (s_coord, 1), (t_coord, 2), (b_coord, 3)]
+    tbin_dim_coords_list = [(time_coord, 0), (t_coord, 1), (b_coord, 2)]
+    sbin_dim_coords_list = [(time_coord, 0), (s_coord, 1), (b_coord, 2)]
+    tsbin_dim_coords_list = [(time_coord, 0), (s_coord, 1), (t_coord, 2), (b_coord, 3)]
 
     outcube_list = iris.cube.CubeList([])
     wvar_list = ['w', 'wt', 'ws'] if mul_ts else ['w']
@@ -367,7 +371,71 @@ def process_data_by_year(t_cube, s_cube, w_cube,
         outdata_dict['ws_tsbin'] = np.ma.masked_invalid(ws_tsbin_outdata)
         outdata_dict['wt_tsbin'] = np.ma.masked_invalid(wt_tsbin_outdata)
 
-    outcube_list = construct_cube(outdata_dict, w_year_cube, t_cube, s_cube, b_cube, years,
+    outcube_list = construct_cube(outdata_dict, w_year_cube, t_cube, s_cube, b_cube,
+                                  t_values, t_edges, t_units, s_values, s_edges, s_units,
+                                  log, years=years, mul_ts=spatial_data)
+
+    return outcube_list
+
+
+def process_data(t_cube, s_cube, w_cube,
+                 a_cube, b_cube,
+                 t_values, s_values, b_values,
+                 nt_values, ns_values,
+                 s_edges, t_edges, b_edges,
+                 flux_data, spatial_data,
+                 log, inargs):
+    """Implement binning."""
+
+    nmonths = t_cube.coord('time').shape[0]
+    
+    w_tbin_outdata = np.ma.zeros([nmonths, nt_values, len(b_values)])
+    w_sbin_outdata = np.ma.zeros([nmonths, ns_values, len(b_values)])
+    w_tsbin_outdata = np.ma.zeros([nmonths, ns_values, nt_values, len(b_values)])
+    if spatial_data:
+        ws_tbin_outdata = np.ma.zeros([nmonths, nt_values, len(b_values)])
+        wt_tbin_outdata = np.ma.zeros([nmonths, nt_values, len(b_values)])
+        ws_sbin_outdata = np.ma.zeros([nmonths, ns_values, len(b_values)])
+        wt_sbin_outdata = np.ma.zeros([nmonths, ns_values, len(b_values)])
+        ws_tsbin_outdata = np.ma.zeros([nmonths, ns_values, nt_values, len(b_values)])
+        wt_tsbin_outdata = np.ma.zeros([nmonths, ns_values, nt_values, len(b_values)])
+
+    for month in range(nmonths):
+        print(month)         
+        s_month_cube = s_cube[month, ::]
+        t_month_cube = t_cube[month, ::]
+
+        if flux_data:
+            w_month_cube = w_cube[month, ::]
+            w_month_cube = spatial_weights.multiply_by_area(w_month_cube, area_cube=a_cube)
+        else:
+            w_month_cube = w_cube
+        df, s_units, t_units = water_mass.create_df(w_month_cube, t_month_cube, s_month_cube, b_cube)
+        if flux_data:
+            w_tbin_outdata[month, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges])
+            w_sbin_outdata[month, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges])
+            w_tsbin_outdata[month, ::] = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges])
+        else:
+            tbin_list = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], mul_ts=True)
+            sbin_list = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], mul_ts=True)
+            tsbin_list = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], mul_ts=True)
+            w_tbin_outdata[month, ::], ws_tbin_outdata[month, ::], wt_tbin_outdata[month, ::] = tbin_list
+            w_sbin_outdata[month, ::], ws_sbin_outdata[month, ::], wt_sbin_outdata[month, ::] = sbin_list
+            w_tsbin_outdata[month, ::], ws_tsbin_outdata[month, ::], wt_tsbin_outdata[month, ::] = tsbin_list
+
+    outdata_dict = {}
+    outdata_dict['w_tbin'] = np.ma.masked_invalid(w_tbin_outdata)
+    outdata_dict['w_sbin'] = np.ma.masked_invalid(w_sbin_outdata)
+    outdata_dict['w_tsbin'] = np.ma.masked_invalid(w_tsbin_outdata)
+    if spatial_data:
+        outdata_dict['ws_tbin'] = np.ma.masked_invalid(ws_tbin_outdata)
+        outdata_dict['wt_tbin'] = np.ma.masked_invalid(wt_tbin_outdata)
+        outdata_dict['ws_sbin'] = np.ma.masked_invalid(ws_sbin_outdata)
+        outdata_dict['wt_sbin'] = np.ma.masked_invalid(wt_sbin_outdata)
+        outdata_dict['ws_tsbin'] = np.ma.masked_invalid(ws_tsbin_outdata)
+        outdata_dict['wt_tsbin'] = np.ma.masked_invalid(wt_tsbin_outdata)
+
+    outcube_list = construct_cube(outdata_dict, w_month_cube, t_cube, s_cube, b_cube,
                                   t_values, t_edges, t_units, s_values, s_edges, s_units,
                                   log, mul_ts=spatial_data)
 
@@ -404,13 +472,22 @@ def main(inargs):
     nt_values = len(t_values)
     ns_values = len(s_values)
 
-    outcube_list = process_data_by_year(t_cube, s_cube, w_cube,
-                                        a_cube, b_cube,
-                                        t_values, s_values, b_values,
-                                        nt_values, ns_values,
-                                        s_edges, t_edges, b_edges,
-                                        flux_data, spatial_data,
-                                        log, inargs)  
+    if inargs.annual:
+        outcube_list = process_data_by_year(t_cube, s_cube, w_cube,
+                                            a_cube, b_cube,
+                                            t_values, s_values, b_values,
+                                            nt_values, ns_values,
+                                            s_edges, t_edges, b_edges,
+                                            flux_data, spatial_data,
+                                            log, inargs) 
+    else:
+        outcube_list = process_data(t_cube, s_cube, w_cube,
+                                    a_cube, b_cube,
+                                    t_values, s_values, b_values,
+                                    nt_values, ns_values,
+                                    s_edges, t_edges, b_edges,
+                                    flux_data, spatial_data,
+                                    log, inargs)
 
     equalise_attributes(outcube_list)
     iris.save(outcube_list, inargs.outfile)
@@ -437,6 +514,8 @@ if __name__ == '__main__':
                         help='bounds for the temperature (Y) axis')
     bin_default = 1/3.
     parser.add_argument("--tbin_size", type=float, default=bin_default, help='temperature bin size')
+    parser.add_argument("--annual", action="store_true", default=False,
+                        help="Annual binning [default=False]")
 
     args = parser.parse_args()             
     main(args)
