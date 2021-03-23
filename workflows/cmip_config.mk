@@ -7,6 +7,7 @@
 ## Variables required for certain targets:
 ## - SF_VAR (choices: wfo, hfds)
 ## - FLUX_VAR (choices: rsds rsus rlds rlus hfss)
+## - BIN_FREQ (choices: yr mon)
 ##
 ## Example:
 ## $ make sf-raw-exp -f water_mass_analysis.mk MODEL=NorESM2-LM EXPERIMENT=historical SF_VAR=hfds

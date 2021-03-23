@@ -472,7 +472,7 @@ def main(inargs):
     nt_values = len(t_values)
     ns_values = len(s_values)
 
-    if inargs.annual:
+    if inargs.bin_freq == 'yr':
         outcube_list = process_data_by_year(t_cube, s_cube, w_cube,
                                             a_cube, b_cube,
                                             t_values, s_values, b_values,
@@ -480,7 +480,7 @@ def main(inargs):
                                             s_edges, t_edges, b_edges,
                                             flux_data, spatial_data,
                                             log, inargs) 
-    else:
+    elif inargs.bin_freq == 'mon':
         outcube_list = process_data(t_cube, s_cube, w_cube,
                                     a_cube, b_cube,
                                     t_values, s_values, b_values,
@@ -501,6 +501,7 @@ if __name__ == '__main__':
     parser.add_argument("weights_files", type=str, nargs='*', help="volume, area or a flux")
     parser.add_argument("weights_var", type=str, help="weights variable")
     parser.add_argument("basin_file", type=str, help="basin file (from calc_basin.py)")
+    parser.add_argument("bin_freq", type=str, choices=('mon', 'yr'), help="Binning frequency")
     parser.add_argument("outfile", type=str, help="output file")
                         
     parser.add_argument("--temperature_files", type=str, nargs='*', help="temperature files for the binning") 
@@ -514,8 +515,6 @@ if __name__ == '__main__':
                         help='bounds for the temperature (Y) axis')
     bin_default = 1/3.
     parser.add_argument("--tbin_size", type=float, default=bin_default, help='temperature bin size')
-    parser.add_argument("--annual", action="store_true", default=False,
-                        help="Annual binning [default=False]")
 
     args = parser.parse_args()             
     main(args)
