@@ -186,25 +186,25 @@ def broadcast_array(array, axis_index, shape):
     
     """
 
-    assert not array.shape == shape, "Array shape same as target shape"
+    if not array.shape == shape:
 
-    if type(axis_index) in [float, int]:
-        start_axis_index = end_axis_index = axis_index
-    else:
-        assert len(axis_index) == 2
-        start_axis_index, end_axis_index = axis_index
+        if type(axis_index) in [float, int]:
+            start_axis_index = end_axis_index = axis_index
+        else:
+            assert len(axis_index) == 2
+            start_axis_index, end_axis_index = axis_index
     
-    dim = start_axis_index - 1
-    while dim >= 0:
-        array = array[numpy.newaxis, ...]
-        array = numpy.repeat(array, shape[dim], axis=0)
-        dim = dim - 1
+        dim = start_axis_index - 1
+        while dim >= 0:
+            array = array[numpy.newaxis, ...]
+            array = numpy.repeat(array, shape[dim], axis=0)
+            dim = dim - 1
     
-    dim = end_axis_index + 1
-    while dim < len(shape):    
-        array = array[..., numpy.newaxis]
-        array = numpy.repeat(array, shape[dim], axis=-1)
-        dim = dim + 1
+        dim = end_axis_index + 1
+        while dim < len(shape):    
+            array = array[..., numpy.newaxis]
+            array = numpy.repeat(array, shape[dim], axis=-1)
+            dim = dim + 1
 
     assert array.shape == shape, "Final broadcast array not target shape"
 

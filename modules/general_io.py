@@ -39,7 +39,7 @@ from dateutil import parser
 from collections import defaultdict
 import re
 import iris
-from iris.experimental.equalise_cubes import equalise_attributes
+import iris.util
 import cftime
 import cf_units
 import xarray as xr
@@ -375,7 +375,7 @@ def check_data(cube):
 def combine_cubes(cube_list, new_calendar=None, data_checks=False):
     """Combine multiple iris cubes."""
 
-    equalise_attributes(cube_list)
+    iris.util.equalise_attributes(cube_list)
     iris.util.unify_time_units(cube_list)
     ref_dtype = cube_list[0].dtype
     for cube in cube_list:

@@ -10,7 +10,7 @@ import logging
 import numpy as np
 import iris
 import iris.coord_categorisation
-from iris.experimental.equalise_cubes import equalise_attributes
+import iris.util
 import cmdline_provenance as cmdprov
 from statsmodels.stats.weightstats import DescrStatsW
 
@@ -37,7 +37,7 @@ mom_vars = {"temp_nonlocal_KPP": "cp*rho*dzt*nonlocal tendency from KPP",
 
 def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube,
                    t_values, t_edges, t_units, s_values, s_edges, s_units,
-                   log, years=None, mul_ts=False):
+                   log, years=None, mul_ts=False, global_only=False):
     """Create the iris cube for output"""
     
     for key, data in outdata_dict.items():
@@ -119,6 +119,9 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube,
                                    attributes=t_cube.attributes,
                                    dim_coords_and_dims=tbin_dim_coords_list)
         tbin_cube.attributes['history'] = log
+        if global_only:
+            tbin_cube = tbin_cube[:, :, -1]
+            tbin_cube.remove_coord('region') 
         outcube_list.append(tbin_cube)
 
         if std_base_name:
@@ -134,6 +137,9 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube,
                                    attributes=t_cube.attributes,
                                    dim_coords_and_dims=sbin_dim_coords_list)
         sbin_cube.attributes['history'] = log
+        if global_only:
+            sbin_cube = sbin_cube[:, :, -1]
+            sbin_cube.remove_coord('region') 
         outcube_list.append(sbin_cube)
 
         if std_base_name:
@@ -149,6 +155,9 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube,
                                     attributes=t_cube.attributes,
                                     dim_coords_and_dims=tsbin_dim_coords_list)
         tsbin_cube.attributes['history'] = log
+        if global_only:
+            tsbin_cube = tsbin_cube[:, :, :, -1]
+            tsbin_cube.remove_coord('region') 
         outcube_list.append(tsbin_cube)
 
     return outcube_list
@@ -373,7 +382,7 @@ def process_data_by_year(t_cube, s_cube, w_cube,
 
     outcube_list = construct_cube(outdata_dict, w_year_cube, t_cube, s_cube, b_cube,
                                   t_values, t_edges, t_units, s_values, s_edges, s_units,
-                                  log, years=years, mul_ts=spatial_data)
+                                  log, years=years, mul_ts=spatial_data, global_only=inargs.global_only)
 
     return outcube_list
 
@@ -437,7 +446,7 @@ def process_data(t_cube, s_cube, w_cube,
 
     outcube_list = construct_cube(outdata_dict, w_month_cube, t_cube, s_cube, b_cube,
                                   t_values, t_edges, t_units, s_values, s_edges, s_units,
-                                  log, mul_ts=spatial_data)
+                                  log, mul_ts=spatial_data, global_only=inargs.global_only)
 
     return outcube_list
 
@@ -489,7 +498,7 @@ def main(inargs):
                                     flux_data, spatial_data,
                                     log, inargs)
 
-    equalise_attributes(outcube_list)
+    iris.util.equalise_attributes(outcube_list)
     iris.save(outcube_list, inargs.outfile)
 
 
@@ -515,6 +524,8 @@ if __name__ == '__main__':
                         help='bounds for the temperature (Y) axis')
     bin_default = 1/3.
     parser.add_argument("--tbin_size", type=float, default=bin_default, help='temperature bin size')
+    parser.add_argument("--global_only", action="store_true", default=False,
+                        help="Only output the global basin/region [default=False]")
 
     args = parser.parse_args()             
     main(args)

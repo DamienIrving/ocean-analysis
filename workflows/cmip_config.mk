@@ -14,7 +14,7 @@
 
 # DIRECTORIES
 
-PYTHON=/g/data/r87/dbi599/miniconda3/envs/ocean3/bin/python
+PYTHON=/g/data/e14/dbi599/miniconda3/envs/cmip/bin/python
 DATA_SCRIPT_DIR=/home/599/dbi599/ocean-analysis/data_processing
 VIZ_SCRIPT_DIR=/home/599/dbi599/ocean-analysis/visualisation
 MY_DATA_DIR=/g/data/e14/dbi599
