@@ -37,12 +37,9 @@ mom_vars = {"temp_nonlocal_KPP": "cp*rho*dzt*nonlocal tendency from KPP",
 
 def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube,
                    t_values, t_edges, t_units, s_values, s_edges, s_units,
-                   log, years=None, mul_ts=False, global_only=False):
+                   log, years=None, mul_ts=False):
     """Create the iris cube for output"""
     
-    for key, data in outdata_dict.items():
-        outdata_dict[key], b_values, flag_values, flag_meanings = uconv.add_globe_basin(data, b_cube)
-
     if years is None:
         time_coord = t_cube.coord('time')
     else:
@@ -76,18 +73,10 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube,
                                    var_name=s_coord_var_name,
                                    units=s_coord_units,
                                    bounds=s_bounds)
-
-    b_coord = iris.coords.DimCoord(b_values,
-                                   standard_name=b_cube.standard_name,
-                                   long_name=b_cube.long_name,
-                                   var_name=b_cube.var_name,
-                                   units=b_cube.units,
-                                   attributes={'flag_values': flag_values,
-                                               'flag_meanings': flag_meanings})
-    
-    tbin_dim_coords_list = [(time_coord, 0), (t_coord, 1), (b_coord, 2)]
-    sbin_dim_coords_list = [(time_coord, 0), (s_coord, 1), (b_coord, 2)]
-    tsbin_dim_coords_list = [(time_coord, 0), (s_coord, 1), (t_coord, 2), (b_coord, 3)]
+ 
+    tbin_dim_coords_list = [(time_coord, 0), (t_coord, 1)]
+    sbin_dim_coords_list = [(time_coord, 0), (s_coord, 1)]
+    tsbin_dim_coords_list = [(time_coord, 0), (s_coord, 1), (t_coord, 2)]
 
     outcube_list = iris.cube.CubeList([])
     wvar_list = ['w', 'wt', 'ws'] if mul_ts else ['w']
@@ -119,9 +108,6 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube,
                                    attributes=t_cube.attributes,
                                    dim_coords_and_dims=tbin_dim_coords_list)
         tbin_cube.attributes['history'] = log
-        if global_only:
-            tbin_cube = tbin_cube[:, :, -1]
-            tbin_cube.remove_coord('region') 
         outcube_list.append(tbin_cube)
 
         if std_base_name:
@@ -137,9 +123,6 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube,
                                    attributes=t_cube.attributes,
                                    dim_coords_and_dims=sbin_dim_coords_list)
         sbin_cube.attributes['history'] = log
-        if global_only:
-            sbin_cube = sbin_cube[:, :, -1]
-            sbin_cube.remove_coord('region') 
         outcube_list.append(sbin_cube)
 
         if std_base_name:
@@ -155,9 +138,6 @@ def construct_cube(outdata_dict, w_cube, t_cube, s_cube, b_cube,
                                     attributes=t_cube.attributes,
                                     dim_coords_and_dims=tsbin_dim_coords_list)
         tsbin_cube.attributes['history'] = log
-        if global_only:
-            tsbin_cube = tsbin_cube[:, :, :, -1]
-            tsbin_cube.remove_coord('region') 
         outcube_list.append(tsbin_cube)
 
     return outcube_list
@@ -185,7 +165,7 @@ def clipping_details(orig_data, clipped_data, bin_edges, var_name):
     logging.info(f"Last {var_name} bin had {npoints_max} values, clipping added {npoints_over}")
     
 
-def bin_data(df, var_list, edge_list, mul_ts=False):
+def bin_data(df, var_list, edge_list, b_cube, mul_ts=False):
     """Bin the data.
 
     Args:
@@ -211,13 +191,35 @@ def bin_data(df, var_list, edge_list, mul_ts=False):
     logging.info(f"Global total before binning: {orig_total_weight}")
     logging.info(f"Global total after binning: {binned_total_weight}")
     np.testing.assert_allclose(orig_total_weight, binned_total_weight, rtol=0.05)
+    w_dist = select_basin(w_dist, b_cube)
     if mul_ts:
         ws_dist, edges = np.histogramdd(data, weights=w_data * df['salinity'].values, bins=edge_list)
         wt_dist, edges = np.histogramdd(data, weights=w_data * df['temperature'].values, bins=edge_list)
+        ws_dist = select_basin(ws_dist, b_cube)
+        wt_dist = select_basin(wt_dist, b_cube)
         return w_dist, ws_dist, wt_dist
     else:
         return w_dist
     
+
+def select_basin(data, b_cube, basin='globe'):
+    """Select a basin"""
+
+    assert basin == 'globe'
+
+    data = np.ma.masked_invalid(data)
+    data, b_values, flag_values, flag_meanings = uconv.add_globe_basin(data, b_cube)
+    
+    assert data.ndim in [2, 3, 4]
+    if data.ndim == 2:
+        data = data[:, -1]
+    elif data.ndim == 3:
+        data = data[:, :, -1]
+    else:
+        data = data[:, :, :, -1]
+
+    return data
+
 
 def get_weights_data(file_list, var, area_file):
     """Read the weights data file/s"""
@@ -333,16 +335,16 @@ def process_data_by_year(t_cube, s_cube, w_cube,
     years = np.array(list(t_years))
     years.sort()
     
-    w_tbin_outdata = np.ma.zeros([len(years), nt_values, len(b_values)])
-    w_sbin_outdata = np.ma.zeros([len(years), ns_values, len(b_values)])
-    w_tsbin_outdata = np.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
+    w_tbin_outdata = np.ma.zeros([len(years), nt_values])
+    w_sbin_outdata = np.ma.zeros([len(years), ns_values])
+    w_tsbin_outdata = np.ma.zeros([len(years), ns_values, nt_values])
     if spatial_data:
-        ws_tbin_outdata = np.ma.zeros([len(years), nt_values, len(b_values)])
-        wt_tbin_outdata = np.ma.zeros([len(years), nt_values, len(b_values)])
-        ws_sbin_outdata = np.ma.zeros([len(years), ns_values, len(b_values)])
-        wt_sbin_outdata = np.ma.zeros([len(years), ns_values, len(b_values)])
-        ws_tsbin_outdata = np.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
-        wt_tsbin_outdata = np.ma.zeros([len(years), ns_values, nt_values, len(b_values)])
+        ws_tbin_outdata = np.ma.zeros([len(years), nt_values])
+        wt_tbin_outdata = np.ma.zeros([len(years), nt_values])
+        ws_sbin_outdata = np.ma.zeros([len(years), ns_values])
+        wt_sbin_outdata = np.ma.zeros([len(years), ns_values])
+        ws_tsbin_outdata = np.ma.zeros([len(years), ns_values, nt_values])
+        wt_tsbin_outdata = np.ma.zeros([len(years), ns_values, nt_values])
 
     for year_index, year in enumerate(years):
         print(year)         
@@ -357,32 +359,32 @@ def process_data_by_year(t_cube, s_cube, w_cube,
         df, s_units, t_units = water_mass.create_df(w_year_cube, t_year_cube, s_year_cube, b_cube,
                                                     multiply_weights_by_days_in_year_frac=True)
         if flux_data:
-            w_tbin_outdata[year_index, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges])
-            w_sbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges])
-            w_tsbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges])
+            w_tbin_outdata[year_index, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], b_cube)
+            w_sbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], b_cube)
+            w_tsbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], b_cube)
         else:
-            tbin_list = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], mul_ts=True)
-            sbin_list = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], mul_ts=True)
-            tsbin_list = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], mul_ts=True)
+            tbin_list = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], b_cube, mul_ts=True)
+            sbin_list = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], b_cube, mul_ts=True)
+            tsbin_list = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], b_cube, mul_ts=True)
             w_tbin_outdata[year_index, ::], ws_tbin_outdata[year_index, ::], wt_tbin_outdata[year_index, ::] = tbin_list
             w_sbin_outdata[year_index, ::], ws_sbin_outdata[year_index, ::], wt_sbin_outdata[year_index, ::] = sbin_list
             w_tsbin_outdata[year_index, ::], ws_tsbin_outdata[year_index, ::], wt_tsbin_outdata[year_index, ::] = tsbin_list
 
     outdata_dict = {}
-    outdata_dict['w_tbin'] = np.ma.masked_invalid(w_tbin_outdata)
-    outdata_dict['w_sbin'] = np.ma.masked_invalid(w_sbin_outdata)
-    outdata_dict['w_tsbin'] = np.ma.masked_invalid(w_tsbin_outdata)
+    outdata_dict['w_tbin'] = w_tbin_outdata
+    outdata_dict['w_sbin'] = w_sbin_outdata
+    outdata_dict['w_tsbin'] = w_tsbin_outdata
     if spatial_data:
-        outdata_dict['ws_tbin'] = np.ma.masked_invalid(ws_tbin_outdata)
-        outdata_dict['wt_tbin'] = np.ma.masked_invalid(wt_tbin_outdata)
-        outdata_dict['ws_sbin'] = np.ma.masked_invalid(ws_sbin_outdata)
-        outdata_dict['wt_sbin'] = np.ma.masked_invalid(wt_sbin_outdata)
-        outdata_dict['ws_tsbin'] = np.ma.masked_invalid(ws_tsbin_outdata)
-        outdata_dict['wt_tsbin'] = np.ma.masked_invalid(wt_tsbin_outdata)
+        outdata_dict['ws_tbin'] = ws_tbin_outdata
+        outdata_dict['wt_tbin'] = wt_tbin_outdata
+        outdata_dict['ws_sbin'] = ws_sbin_outdata
+        outdata_dict['wt_sbin'] = wt_sbin_outdata
+        outdata_dict['ws_tsbin'] = ws_tsbin_outdata
+        outdata_dict['wt_tsbin'] = wt_tsbin_outdata
 
     outcube_list = construct_cube(outdata_dict, w_year_cube, t_cube, s_cube, b_cube,
                                   t_values, t_edges, t_units, s_values, s_edges, s_units,
-                                  log, years=years, mul_ts=spatial_data, global_only=inargs.global_only)
+                                  log, years=years, mul_ts=spatial_data)
 
     return outcube_list
 
@@ -398,16 +400,16 @@ def process_data(t_cube, s_cube, w_cube,
 
     nmonths = t_cube.coord('time').shape[0]
     
-    w_tbin_outdata = np.ma.zeros([nmonths, nt_values, len(b_values)])
-    w_sbin_outdata = np.ma.zeros([nmonths, ns_values, len(b_values)])
-    w_tsbin_outdata = np.ma.zeros([nmonths, ns_values, nt_values, len(b_values)])
+    w_tbin_outdata = np.ma.zeros([nmonths, nt_values])
+    w_sbin_outdata = np.ma.zeros([nmonths, ns_values])
+    w_tsbin_outdata = np.ma.zeros([nmonths, ns_values, nt_values])
     if spatial_data:
-        ws_tbin_outdata = np.ma.zeros([nmonths, nt_values, len(b_values)])
-        wt_tbin_outdata = np.ma.zeros([nmonths, nt_values, len(b_values)])
-        ws_sbin_outdata = np.ma.zeros([nmonths, ns_values, len(b_values)])
-        wt_sbin_outdata = np.ma.zeros([nmonths, ns_values, len(b_values)])
-        ws_tsbin_outdata = np.ma.zeros([nmonths, ns_values, nt_values, len(b_values)])
-        wt_tsbin_outdata = np.ma.zeros([nmonths, ns_values, nt_values, len(b_values)])
+        ws_tbin_outdata = np.ma.zeros([nmonths, nt_values])
+        wt_tbin_outdata = np.ma.zeros([nmonths, nt_values])
+        ws_sbin_outdata = np.ma.zeros([nmonths, ns_values])
+        wt_sbin_outdata = np.ma.zeros([nmonths, ns_values])
+        ws_tsbin_outdata = np.ma.zeros([nmonths, ns_values, nt_values])
+        wt_tsbin_outdata = np.ma.zeros([nmonths, ns_values, nt_values])
 
     for month in range(nmonths):
         print(month)         
@@ -421,32 +423,32 @@ def process_data(t_cube, s_cube, w_cube,
             w_month_cube = w_cube
         df, s_units, t_units = water_mass.create_df(w_month_cube, t_month_cube, s_month_cube, b_cube)
         if flux_data:
-            w_tbin_outdata[month, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges])
-            w_sbin_outdata[month, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges])
-            w_tsbin_outdata[month, ::] = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges])
+            w_tbin_outdata[month, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], b_cube)
+            w_sbin_outdata[month, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], b_cube)
+            w_tsbin_outdata[month, ::] = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], b_cube)
         else:
-            tbin_list = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], mul_ts=True)
-            sbin_list = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], mul_ts=True)
-            tsbin_list = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], mul_ts=True)
+            tbin_list = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], b_cube, mul_ts=True)
+            sbin_list = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], b_cube, mul_ts=True)
+            tsbin_list = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], b_cube, mul_ts=True)
             w_tbin_outdata[month, ::], ws_tbin_outdata[month, ::], wt_tbin_outdata[month, ::] = tbin_list
             w_sbin_outdata[month, ::], ws_sbin_outdata[month, ::], wt_sbin_outdata[month, ::] = sbin_list
             w_tsbin_outdata[month, ::], ws_tsbin_outdata[month, ::], wt_tsbin_outdata[month, ::] = tsbin_list
 
     outdata_dict = {}
-    outdata_dict['w_tbin'] = np.ma.masked_invalid(w_tbin_outdata)
-    outdata_dict['w_sbin'] = np.ma.masked_invalid(w_sbin_outdata)
-    outdata_dict['w_tsbin'] = np.ma.masked_invalid(w_tsbin_outdata)
+    outdata_dict['w_tbin'] = w_tbin_outdata
+    outdata_dict['w_sbin'] = w_sbin_outdata
+    outdata_dict['w_tsbin'] = w_tsbin_outdata
     if spatial_data:
-        outdata_dict['ws_tbin'] = np.ma.masked_invalid(ws_tbin_outdata)
-        outdata_dict['wt_tbin'] = np.ma.masked_invalid(wt_tbin_outdata)
-        outdata_dict['ws_sbin'] = np.ma.masked_invalid(ws_sbin_outdata)
-        outdata_dict['wt_sbin'] = np.ma.masked_invalid(wt_sbin_outdata)
-        outdata_dict['ws_tsbin'] = np.ma.masked_invalid(ws_tsbin_outdata)
-        outdata_dict['wt_tsbin'] = np.ma.masked_invalid(wt_tsbin_outdata)
+        outdata_dict['ws_tbin'] = ws_tbin_outdata
+        outdata_dict['wt_tbin'] = wt_tbin_outdata
+        outdata_dict['ws_sbin'] = ws_sbin_outdata
+        outdata_dict['wt_sbin'] = wt_sbin_outdata
+        outdata_dict['ws_tsbin'] = ws_tsbin_outdata
+        outdata_dict['wt_tsbin'] = wt_tsbin_outdata
 
     outcube_list = construct_cube(outdata_dict, w_month_cube, t_cube, s_cube, b_cube,
                                   t_values, t_edges, t_units, s_values, s_edges, s_units,
-                                  log, mul_ts=spatial_data, global_only=inargs.global_only)
+                                  log, mul_ts=spatial_data)
 
     return outcube_list
 
@@ -524,8 +526,6 @@ if __name__ == '__main__':
                         help='bounds for the temperature (Y) axis')
     bin_default = 1/3.
     parser.add_argument("--tbin_size", type=float, default=bin_default, help='temperature bin size')
-    parser.add_argument("--global_only", action="store_true", default=False,
-                        help="Only output the global basin/region [default=False]")
 
     args = parser.parse_args()             
     main(args)
