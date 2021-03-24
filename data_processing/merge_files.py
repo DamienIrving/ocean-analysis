@@ -10,7 +10,7 @@ Description:  Merge a bunch of files
 import sys, os, pdb, re
 import argparse
 import iris
-from iris.experimental.equalise_cubes import equalise_attributes
+import iris.util
 import cmdline_provenance as cmdprov
 
 # Import my modules
@@ -37,16 +37,21 @@ def main(inargs):
     """Run the program."""
 
     assert len(inargs.infiles) > 1
+    if inargs.variables:
+        variable_list = inargs.variables
+    else:
+        cube_list = iris.load(inargs.infiles[0])
+        variable_list = [cube.long_name for cube in cube_list]
 
     cube_list = iris.cube.CubeList([])
-    for var in inargs.variables:
+    for var in variable_list:
         cube, history = gio.combine_files(inargs.infiles, var)
         cube_list.append(cube)
 
     metadata_dict = {inargs.infiles[-1]: history[-1]}
     log_entry = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
     if len(cube_list) > 1:
-        equalise_attributes(cube_list)
+        iris.util.equalise_attributes(cube_list)
         for cube in cube_list:
             cube.attributes['history'] = log_entry
     else:
@@ -73,7 +78,8 @@ author:
                                      
     parser.add_argument("infiles", type=str, nargs='*', help="Input files")
     parser.add_argument("outfile", type=str, help="Output file")
-    parser.add_argument("--variables", type=str, nargs='*', help="Variables to include")
+    parser.add_argument("--variables", type=str, nargs='*', default=None,
+                        help="Variables to include [default=all]")
 
     args = parser.parse_args()
     main(args)
