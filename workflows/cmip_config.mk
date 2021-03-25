@@ -2,9 +2,9 @@
 
 ## Variables always required at the command line:
 ## - MODEL (choices: see below)
-## - EXPERIMENT (choices: historical, hist-GHG, hist-aer)
 ##
 ## Variables required for certain targets:
+## - EXPERIMENT (choices: historical, hist-GHG, hist-aer)
 ## - SF_VAR (choices: wfo, hfds)
 ## - FLUX_VAR (choices: rsds rsus rlds rlus hfss)
 ## - BIN_FREQ (choices: yr mon)
@@ -1366,7 +1366,6 @@ __check_defined = \
       $(error Undefined $1$(if $2, ($2))))
 
 $(call check_defined, MODEL)
-$(call check_defined, EXPERIMENT)
 
 # Check that key variables aren't empty
 
