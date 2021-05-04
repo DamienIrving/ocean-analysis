@@ -1,39 +1,24 @@
-"""
-Filename:     regrid.py
-Author:       Damien Irving, irving.damien@gmail.com
-Description:  Regrid input data
-"""
+"""Regrid data"""
 
-# Import general Python modules
-
-import sys, os, pdb
+import sys
+script_dir = sys.path[0]
+import os
+import pdb
 import argparse
 import numpy
 import iris
 import cmdline_provenance as cmdprov
 
-# Import my modules
-
-cwd = os.getcwd()
-repo_dir = '/'
-for directory in cwd.split('/')[1:]:
-    repo_dir = os.path.join(repo_dir, directory)
-    if directory == 'ocean-analysis':
-        break
-
-modules_dir = os.path.join(repo_dir, 'modules')
-sys.path.append(modules_dir)
-
+repo_dir = '/'.join(script_dir.split('/')[:-1])
+module_dir = repo_dir + '/modules'
+sys.path.append(module_dir)
 try:
     import timeseries
     import grids
     import general_io as gio
     import spatial_weights
 except ImportError:
-    raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
-
-
-# Define functions
+    raise ImportError('Script and modules in wrong directories')
 
 
 def check_inputs(inargs):
@@ -110,11 +95,10 @@ def remove_nans(cube):
 def main(inargs):
     """Run the program."""
 
-    cube = iris.load_cube(inargs.infile, inargs.var)
-    cube = gio.check_time_units(cube)
+    cube, history = gio.combine_files(inargs.infiles, inargs.var, checks=True)
     if inargs.annual:
         cube = timeseries.convert_to_annual(cube, chunk=inargs.chunk)
-    log = cmdprov.new_log(infile_history={inargs.infile: cube.attributes['history']}, git_repo=repo_dir) 
+    log = cmdprov.new_log(infile_history={inargs.infiles[0]: history[0]}, git_repo=repo_dir) 
 
     dim_vals = {}
     dim_vals['latitude'] = get_dim_vals(inargs.lats) 
@@ -154,18 +138,7 @@ def main(inargs):
 
 
 if __name__ == '__main__':
-
-    extra_info =""" 
-example:
-    
-author:
-    Damien Irving, irving.damien@gmail.com
-    
-"""
-
-    description='Apply annual timescale smoothing'
-    parser = argparse.ArgumentParser(description=description,
-                                     epilog=extra_info, 
+    parser = argparse.ArgumentParser(description=__doc__,
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
@@ -187,9 +160,7 @@ author:
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Chunk annual timescale conversion to avoid memory errors [default: False]")
 
-
     args = parser.parse_args()            
     check_inputs(args)
-
     main(args)
 
