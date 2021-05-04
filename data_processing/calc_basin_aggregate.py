@@ -1,38 +1,26 @@
-"""
-Filename:     calc_basin_aggregate.py
-Author:       Damien Irving, irving.damien@gmail.com
-Description:  Calculate the horizontal basin aggregate
-"""
+"""Calculate the horizontal basin aggregate"""
 
-# Import general Python modules
-
-import sys, os, pdb, re
+import sys
+script_dir = sys.path[0]
+import os
+import pdb
+import re
 import argparse
 import numpy
 import iris
-from iris.experimental.equalise_cubes import equalise_attributes
+import iris.util
 import cmdline_provenance as cmdprov
 
-# Import my modules
-
-cwd = os.getcwd()
-repo_dir = '/'
-for directory in cwd.split('/')[1:]:
-    repo_dir = os.path.join(repo_dir, directory)
-    if directory == 'ocean-analysis':
-        break
-
-modules_dir = os.path.join(repo_dir, 'modules')
-sys.path.append(modules_dir)
+repo_dir = '/'.join(script_dir.split('/')[:-1])
+module_dir = repo_dir + '/modules'
+sys.path.append(module_dir)
 try:
     import general_io as gio
     import convenient_universal as uconv
     import timeseries
 except ImportError:
-    raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
+    raise ImportError('Script and modules in wrong directories')
 
-
-# Define functions
 
 def main(inargs):
     """Run the program."""
@@ -42,12 +30,12 @@ def main(inargs):
     
     basin_cube = iris.load_cube(inargs.basin_file, 'region')
     assert basin_cube.data.min() == 11
-    assert basin_cube.data.max() == 17
-    basin_numbers = numpy.array([11, 12, 13, 14, 15, 16, 17, 18])
+    assert basin_cube.data.max() == 18
+    basin_numbers = numpy.array([1, 2, 3])
     metadata_dict[inargs.basin_file] = basin_cube.attributes['history']
 
-    flag_values = basin_cube.attributes['flag_values'] + ' 18'
-    flag_meanings = basin_cube.attributes['flag_meanings'] + ' globe'
+    flag_values = '0 1 2'
+    flag_meanings = 'atlantic indo-pacific globe'
     basin_coord = iris.coords.DimCoord(basin_numbers,
                                        standard_name=basin_cube.standard_name,
                                        long_name=basin_cube.long_name,
@@ -63,17 +51,25 @@ def main(inargs):
     output_cubelist = iris.cube.CubeList([])
     for infile in inargs.infiles:
         print(infile)
+
         if inargs.var == 'ocean_volume':
             cube = gio.get_ocean_weights(infile)
             history = [cube.attributes['history']]
         else:
             cube, history = gio.combine_files(infile, inargs.var, checks=True)
+
         assert cube.ndim in [3, 4]
         coord_names = [coord.name() for coord in cube.dim_coords]
+
         if inargs.annual:
             cube = timeseries.convert_to_annual(cube, chunk=inargs.chunk)   
+
         assert basin_cube.shape == cube.shape[-2:]
         basin_array = uconv.broadcast_array(basin_cube.data, [cube.ndim - 2, cube.ndim - 1], cube.shape)
+        basin_masks = {'atlantic': basin_array > 12,
+                       'indo-pacific': (basin_array < 13) | (basin_array > 15),
+                       'globe': basin_array > 16}
+
         if inargs.weights:
             assert weights_cube.data.shape == cube.shape[-3:]
             if cube.ndim == 4:
@@ -88,12 +84,10 @@ def main(inargs):
         else:
             outdata = numpy.ma.zeros([cube.shape[0], cube.shape[1], len(basin_numbers)])
 
-        for basin_index, basin_number in enumerate(basin_numbers):
+        for basin_index, basin_name in enumerate(['atlantic', 'indo-pacific', 'globe']):
             temp_cube = cube.copy()
-            if basin_number == 18:
-                temp_cube.data = numpy.ma.masked_where(basin_array == 17, temp_cube.data)
-            else:
-                temp_cube.data = numpy.ma.masked_where(basin_array != basin_number, temp_cube.data)
+            mask = basin_masks[basin_name]
+            temp_cube.data = numpy.ma.masked_where(mask, temp_cube.data)
             if len(coord_names) == cube.ndim:
                 horiz_agg = temp_cube.collapsed(coord_names[-2:], agg_functions[inargs.agg], weights=weights_array).data
             elif inargs.agg == 'mean':
@@ -120,7 +114,7 @@ def main(inargs):
                                  dim_coords_and_dims=coord_list)
         output_cubelist.append(outcube)
 
-    equalise_attributes(output_cubelist)
+    iris.util.equalise_attributes(output_cubelist)
     iris.util.unify_time_units(output_cubelist)
     outcube = output_cubelist.concatenate_cube()
     if history:
@@ -130,15 +124,7 @@ def main(inargs):
 
 
 if __name__ == '__main__':
-
-    extra_info =""" 
-author:
-    Damien Irving, irving.damien@gmail.com
-"""
-
-    description = 'Calculate the horizontal basin aggregate'
-    parser = argparse.ArgumentParser(description=description,
-                                     epilog=extra_info, 
+    parser = argparse.ArgumentParser(description=__doc__, 
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
                                      
