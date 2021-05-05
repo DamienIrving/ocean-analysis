@@ -1,39 +1,25 @@
-"""
-Filename:     remove_drift.py
-Author:       Damien Irving, irving.damien@gmail.com
-Description:  Remove drift from a data series
+"""Remove drift from a data series"""
 
-"""
-
-# Import general Python modules
-
-import sys, os, pdb
-import argparse, re
+import sys
+script_dir = sys.path[0]
+import os
+import pdb
+import argparse
+import re
 import numpy
 import iris
+import iris.util
 import cf_units
-from iris.experimental.equalise_cubes import equalise_attributes
 
-# Import my modules
-
-cwd = os.getcwd()
-repo_dir = '/'
-for directory in cwd.split('/')[1:]:
-    repo_dir = os.path.join(repo_dir, directory)
-    if directory == 'ocean-analysis':
-        break
-
-modules_dir = os.path.join(repo_dir, 'modules')
-sys.path.append(modules_dir)
-
+repo_dir = '/'.join(script_dir.split('/')[:-1])
+module_dir = repo_dir + '/modules'
+sys.path.append(module_dir)
 try:
     import general_io as gio
     import timeseries
 except ImportError:
-    raise ImportError('Must run this script from anywhere within the ocean-analysis git repo')
+    raise ImportError('Script and modules in wrong directories')
 
-
-# Define functions
 
 def apply_polynomial(x_data, coefficient_a_data, coefficient_b_data, coefficient_c_data, coefficient_d_data,
                      poly_start=None, chunk=False):
@@ -344,7 +330,7 @@ def main(inargs):
 
     if inargs.outfile[-3:] == '.nc':
         new_cubelist = iris.cube.CubeList(new_cubelist)
-        equalise_attributes(new_cubelist)
+        iris.util.equalise_attributes(new_cubelist)
         new_cubelist = new_cubelist.concatenate_cube()
 
         try: 
@@ -359,19 +345,11 @@ def main(inargs):
 
 
 if __name__ == '__main__':
-
     extra_info =""" 
-example:
-    
-author:
-    Damien Irving, irving.damien@gmail.com
 notes:
     Generate the polynomial coefficients first from calc_drift_coefficients.py
-    
 """
-
-    description='Remove drift from a data series'
-    parser = argparse.ArgumentParser(description=description,
+    parser = argparse.ArgumentParser(description=__doc__,
                                      epilog=extra_info, 
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -405,5 +383,4 @@ notes:
                         help="Convert data files to annual timescale [default: False]")
 
     args = parser.parse_args()            
-
     main(args)
