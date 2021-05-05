@@ -13,22 +13,12 @@ repo_dir = '/'.join(script_dir.split('/')[:-1])
 module_dir = repo_dir + '/modules'
 sys.path.append(module_dir)
 try:
+    import general_io as gio
     import timeseries
     import grids
-    import general_io as gio
     import spatial_weights
 except ImportError:
     raise ImportError('Script and modules in wrong directories')
-
-
-def check_inputs(inargs):
-    """Check inputs"""
-
-    if inargs.lats:
-        assert inargs.lons, 'must provide new lats and lons'
-
-    if inargs.lons:
-        assert inargs.lats, 'must provide new lats and lons'
 
 
 def get_dim_vals(user_input, bounds=False):
@@ -96,6 +86,12 @@ def main(inargs):
     """Run the program."""
 
     cube, history = gio.combine_files(inargs.infiles, inargs.var, checks=True)
+    if inargs.surface:
+        coord_names = [coord.name() for coord in cube.dim_coords]
+        if 'depth' in coord_names:
+            cube = cube.extract(iris.Constraint(depth=0))
+        else:
+            print('no depth axis for surface extraction')
     if inargs.annual:
         cube = timeseries.convert_to_annual(cube, chunk=inargs.chunk)
     log = cmdprov.new_log(infile_history={inargs.infiles[0]: history[0]}, git_repo=repo_dir) 
@@ -118,8 +114,11 @@ def main(inargs):
     if dim_vals['depth'] or not regrid_status:
         sample_points = get_sample_points(cube, dim_vals)
         cube = cube.interpolate(sample_points, iris.analysis.Linear())
-        cube.coord('latitude').guess_bounds()
-        cube.coord('longitude').guess_bounds()
+        coord_names = [coord.name() for coord in cube.dim_coords]
+        if 'latitude' in coord_names:
+            cube.coord('latitude').guess_bounds()
+        if 'longitude' in coord_names:
+            cube.coord('longitude').guess_bounds()
         if inargs.levs:
             cube = spatial_weights.guess_depth_bounds(cube)
         else:
@@ -142,7 +141,7 @@ if __name__ == '__main__':
                                      argument_default=argparse.SUPPRESS,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("infile", type=str, help="Input file")
+    parser.add_argument("infiles", nargs='*', type=str, help="Input files")
     parser.add_argument("var", type=str, help="Variable name")
     parser.add_argument("outfile", type=str, help="Output file")
 
@@ -157,10 +156,11 @@ if __name__ == '__main__':
 
     parser.add_argument("--annual", action="store_true", default=False,
                         help="Convert data to annual timescale [default: False]")
+    parser.add_argument("--surface", action="store_true", default=False,
+                        help="Extract the surface layer [default: False]")
     parser.add_argument("--chunk", action="store_true", default=False,
                         help="Chunk annual timescale conversion to avoid memory errors [default: False]")
 
     args = parser.parse_args()            
-    check_inputs(args)
     main(args)
 
