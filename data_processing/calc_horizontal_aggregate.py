@@ -145,13 +145,13 @@ def main(inargs):
 
     if inargs.basin:
         basin_file, basin_name = inargs.basin
-        basin_cube = iris.load_cube(basin_file, 'region' & depth_constraint)
+        basin_cube = iris.load_cube(basin_file, 'region') #& depth_constraint)
         metadata_dict[basin_file] = basin_cube.attributes['history']
     else:
         basin_cube = None
 
     if inargs.area:
-        area_cube = iris.load_cube(inargs.area, 'cell_area' & depth_constraint)
+        area_cube = iris.load_cube(inargs.area, 'cell_area') # & depth_constraint)
     else:
         area_cube = None
 
