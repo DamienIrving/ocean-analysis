@@ -41,11 +41,11 @@ ${DRIFT_COEFFICIENT_FILE} : ${SALINITY_MEAN_FILE_CNTRL}
 
 SALINITY_MEAN_DEDRIFTED_FILE=${SALINITY_MEAN_DIR_EXP}/so-${BASIN}-zonal-mean-dedrifted_Oyr_${MODEL}_historical_${EXP_RUN}_${GRID_OCEAN}_${EXP_TIME}.nc
 ${SALINITY_MEAN_DEDRIFTED_FILE} : ${SALINITY_MEAN_FILE_EXP} ${DRIFT_COEFFICIENT_FILE}
-	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< sea_water_salinity annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_time_check
+	${PYTHON} ${DATA_SCRIPT_DIR}/remove_drift.py $< sea_water_salinity annual $(word 2,$^) $@ ${BRANCH_TIME} --no_parent_check --no_time_check 
 
-SALINITY_MEAN_PLOT_FILE=/g/data/r87/dbi599/temp/SALINITY-${BASIN}-zonal-mean-dedrifted_Oyr_${MODEL}_piControl_${EXP_RUN}_${GRID_OCEAN}_${CNTRL_TIME}_depth-index-15.png
+SALINITY_MEAN_PLOT_FILE=/g/data/r87/dbi599/temp/so-${BASIN}-zonal-mean-dedrifted_Oyr_${MODEL}_piControl_${EXP_RUN}_${GRID_OCEAN}_${CNTRL_TIME}_depth-index-15.png
 ${SALINITY_MEAN_PLOT_FILE} : ${DRIFT_COEFFICIENT_FILE} ${SALINITY_MEAN_FILE_CNTRL} ${SALINITY_MEAN_FILE_EXP} ${SALINITY_MEAN_DEDRIFTED_FILE}
-	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py sea_water_salinity $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 15 -1 ${BRANCH_TIME}
+	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py sea_water_salinity $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 15 30 ${BRANCH_TIME}
 
 # remap
 
