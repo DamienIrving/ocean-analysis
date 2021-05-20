@@ -339,28 +339,25 @@ def clean_coordinate_attributes(cube):
 
 
 def name_horiz_coords(cube):
-    """Name the horizontal coordinates."""
+    """Check that the horizontal coordinates have names."""
 
     ndim = cube.ndim
     coord_names = [coord.name() for coord in cube.dim_coords]
-    assert len(coord_names) == ndim - 2
-
-    y_len = cube.shape[-2]
-    y_values = np.arange(y_len)
-    y_coord = iris.coords.DimCoord(y_values,
-                                   long_name='cell index along second dimension',
-                                   var_name='y',
-                                   units='1')
-
-    x_len = cube.shape[-1]
-    x_values = np.arange(x_len)
-    x_coord = iris.coords.DimCoord(x_values,
-                                   long_name='cell index along first dimension',
-                                   var_name='x',
-                                   units='1')
-
-    cube.add_dim_coord(y_coord, ndim - 2)
-    cube.add_dim_coord(x_coord, ndim - 1)
+    if len(coord_names) == ndim - 2:
+        y_len = cube.shape[-2]
+        y_values = np.arange(y_len)
+        y_coord = iris.coords.DimCoord(y_values,
+                                       long_name='cell index along second dimension',
+                                       var_name='y',
+                                       units='1')
+        x_len = cube.shape[-1]
+        x_values = np.arange(x_len)
+        x_coord = iris.coords.DimCoord(x_values,
+                                       long_name='cell index along first dimension',
+                                       var_name='x',
+                                       units='1')
+        cube.add_dim_coord(y_coord, ndim - 2)
+        cube.add_dim_coord(x_coord, ndim - 1)
 
     return cube
 
@@ -376,7 +373,7 @@ def check_data(cube):
     if model in ['MRI-ESM2-0']:
         cube.data = np.ma.masked_invalid(cube.data)
 
-    if model in ['CNRM-CM6-1', 'CNRM-ESM2-1']:
+    if model in ['CNRM-CM6-1', 'CNRM-ESM2-1', 'IPSL-CM6A-LR', 'MIROC-ES2L']:
         cube = name_horiz_coords(cube)
 
     if cube.standard_name == 'water_flux_into_sea_water':
@@ -402,7 +399,7 @@ def check_data(cube):
     for coord in cube.dim_coords:
         name = coord.name()
         var_name = coord.var_name
-        if (name == 'lev') or (var_name == 'lev'):
+        if (name == 'lev') or (var_name == 'lev') or (var_name == 'olevel'):
             coord.standard_name = 'depth'
 
     return cube
