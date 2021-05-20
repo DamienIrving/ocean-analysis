@@ -219,11 +219,11 @@ def check_data(new_cube, orig_cube, infile):
     new_max = new_cube.data.max()
     new_min = new_cube.data.min()
 
-    valid_max = orig_max * 1.2 if orig_max > 0.0 else orig_max * 0.8
-    valid_min = orig_min * 1.2 if orig_min < 0.0 else orig_min * 0.8 
+    valid_max = orig_max * 1.4 if orig_max > 0.0 else orig_max * 0.6
+    valid_min = orig_min * 1.4 if orig_min < 0.0 else orig_min * 0.6 
 
-    assert new_max < valid_max, 'New data max is %f, %s' %(new_max, infile)
-    assert new_min >= valid_min, 'New data min is %f, %s' %(new_min, infile)
+    assert new_max < valid_max, f'New data max is {new_max} compared to old value of {orig_max}, {infile}'
+    assert new_min >= valid_min, f'New data min is {new_min} compared to old value of {orig_min}, {infile}'
 
 
 def main(inargs):
