@@ -34,7 +34,8 @@ Functions:
 
 import os, sys, pdb
 import argparse
-import datetime, numpy
+import datetime
+import numpy as np
 from dateutil import parser
 from collections import defaultdict
 import re
@@ -43,7 +44,6 @@ import iris.util
 import cftime
 import cf_units
 import xarray as xr
-import numpy
 
 # Import my modules
 
@@ -338,6 +338,33 @@ def clean_coordinate_attributes(cube):
     return cube
 
 
+def name_horiz_coords(cube):
+    """Name the horizontal coordinates."""
+
+    ndim = cube.ndim
+    coord_names = [coord.name() for coord in cube.dim_coords]
+    assert len(coord_names) == ndim - 2
+
+    y_len = cube.shape[-2]
+    y_values = np.arange(y_len)
+    y_coord = iris.coords.DimCoord(y_values,
+                                   long_name='cell index along second dimension',
+                                   var_name='y',
+                                   units='1')
+
+    x_len = cube.shape[-1]
+    x_values = np.arange(x_len)
+    x_coord = iris.coords.DimCoord(x_values,
+                                   long_name='cell index along first dimension',
+                                   var_name='x',
+                                   units='1')
+
+    cube.add_dim_coord(y_coord, ndim - 2)
+    cube.add_dim_coord(x_coord, ndim - 1)
+
+    return cube
+
+
 def check_data(cube):
     """Check (and fix if needed) the data in an iris cube."""
 
@@ -347,7 +374,10 @@ def check_data(cube):
         model = cube.attributes['model_id']
 
     if model in ['MRI-ESM2-0']:
-        cube.data = numpy.ma.masked_invalid(cube.data)
+        cube.data = np.ma.masked_invalid(cube.data)
+
+    if model in ['CNRM-CM6-1', 'CNRM-ESM2-1']:
+        cube = name_horiz_coords(cube)
 
     if cube.standard_name == 'water_flux_into_sea_water':
         cube = check_wfo_sign(cube)
@@ -369,6 +399,12 @@ def check_data(cube):
     if cube.standard_name in ['sea_water_salinity', 'sea_surface_salinity']:
         cube = salinity_unit_check(cube)
     
+    for coord in cube.dim_coords:
+        name = coord.name()
+        var_name = coord.var_name
+        if (name == 'lev') or (var_name == 'lev'):
+            coord.standard_name = 'depth'
+
     return cube
 
 
@@ -580,19 +616,19 @@ def get_timescale(times):
     """Get the timescale.
     
     Args:
-      times (list/tuple): Tuple containing two or more numpy.datetime64 instances. 
+      times (list/tuple): Tuple containing two or more np.datetime64 instances. 
         The difference between them is used to determine the timescale. 
 
     """
 
     diff = times[1] - times[0]
 
-    thresholds = {'yearly': numpy.timedelta64(365, 'D'),
-                  'monthly': numpy.timedelta64(27, 'D'),
-                  'daily': numpy.timedelta64(1, 'D'),
-                  '12hourly': numpy.timedelta64(12, 'h'),
-                  '6hourly': numpy.timedelta64(6, 'h'),
-                  'hourly': numpy.timedelta64(1, 'h')}
+    thresholds = {'yearly': np.timedelta64(365, 'D'),
+                  'monthly': np.timedelta64(27, 'D'),
+                  'daily': np.timedelta64(1, 'D'),
+                  '12hourly': np.timedelta64(12, 'h'),
+                  '6hourly': np.timedelta64(6, 'h'),
+                  'hourly': np.timedelta64(1, 'h')}
     
     timescale = None
     scales = ['yearly', 'monthly', 'daily', '12hourly', '6hourly', 'hourly']
@@ -692,13 +728,13 @@ def salinity_unit_check(cube, valid_min=-10, valid_max=120, abort=True):
         npoints = cube.data.size
         if data_max > valid_max:
             masked_points_before = cube.data.mask.sum()
-            cube.data = numpy.ma.masked_where(cube.data > valid_max, cube.data)
+            cube.data = np.ma.masked_where(cube.data > valid_max, cube.data)
             masked_points_after = cube.data.mask.sum()
             new_masked_points = masked_points_after - masked_points_before
             print(f'Salinity max is {data_max}. New masked points = {new_masked_points} of {npoints}')
         if data_min < valid_min:
             masked_points_before = cube.data.mask.sum()
-            cube.data = numpy.ma.masked_where(cube.data < valid_min, cube.data)
+            cube.data = np.ma.masked_where(cube.data < valid_min, cube.data)
             masked_points_after = cube.data.mask.sum()
             new_masked_points = masked_points_after - masked_points_before
             print(f'Salinity min is {data_min}. New masked points = {new_masked_points} of {npoints}')
@@ -803,7 +839,7 @@ def temperature_unit_check(cube, output_unit, abort=True):
     assert output_unit in ['K', 'C']
     valid_bounds = {'K': [263, 333], 'C': [-10, 60]}
     
-    data_median = numpy.ma.median(cube.data)
+    data_median = np.ma.median(cube.data)
     assert data_median < 400
     in_unit = 'K' if data_median > 200 else 'C'
 
@@ -811,7 +847,7 @@ def temperature_unit_check(cube, output_unit, abort=True):
     data_max = cube.data.max()
     data_min = cube.data.min()
     if (data_max < valid_max) or (data_min >= valid_min):
-        cube.data = numpy.ma.masked_where(cube.data == -1 * cube.data.fill_value, cube.data)
+        cube.data = np.ma.masked_where(cube.data == -1 * cube.data.fill_value, cube.data)
         data_max = cube.data.max()
         data_min = cube.data.min()
 
@@ -821,13 +857,13 @@ def temperature_unit_check(cube, output_unit, abort=True):
     else: 
         if data_max > valid_max:
             masked_points_before = cube.data.mask.sum()
-            cube.data = numpy.ma.masked_where(cube.data > valid_max, cube.data)
+            cube.data = np.ma.masked_where(cube.data > valid_max, cube.data)
             masked_points_after = cube.data.mask.sum()
             new_masked_points = masked_points_after - masked_points_before
             print('Temperature max is %f. New masked points = %f' %(data_max, new_masked_points))
         if data_min < valid_min:
             masked_points_before = cube.data.mask.sum()
-            cube.data = numpy.ma.masked_where(cube.data < valid_min, cube.data)
+            cube.data = np.ma.masked_where(cube.data < valid_min, cube.data)
             masked_points_after = cube.data.mask.sum()
             new_masked_points = masked_points_after - masked_points_before
             print('Temperature min is %f. New masked points = %f' %(data_min, new_masked_points))

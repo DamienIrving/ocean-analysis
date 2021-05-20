@@ -91,6 +91,7 @@ def curvilinear_agg(cube, ref_cube, keep_coord, agg_method, weights=None):
     """Horizontal aggregation for curvilinear data."""
 
     coord_names = [coord.name() for coord in cube.dim_coords]
+    coord_var_names = [coord.var_name for coord in cube.dim_coords]
     target_shape = []
     target_coords = []
     target_horiz_index = 0
@@ -100,15 +101,15 @@ def curvilinear_agg(cube, ref_cube, keep_coord, agg_method, weights=None):
         target_coords.append((cube.coord('time'), 0))
         target_horiz_index = 1
         if cube.ndim == 4:
-            assert coord_names[1] == 'depth'
+            assert coord_var_names[1] == 'lev'
             target_shape.append(cube.shape[1])
-            target_coords.append((cube.coord('depth'), 1))
+            target_coords.append((cube.coord(coord_names[1]), 1))
             target_horiz_index = 2
     else:
-        assert coord_names[0] == 'depth'
+        assert coord_var_names[0] == 'lev'
         assert cube.ndim == 3
         target_shape.append(cube.shape[0])
-        target_coords.append((cube.coord('depth'), 0))
+        target_coords.append((cube.coord(coord_names[1]), 0))
         target_horiz_index = 1
         
     new_horiz_bounds = ref_cube.coord(keep_coord).bounds
