@@ -12,7 +12,7 @@ include cmip_config.mk
 
 
 FLUX_FILES_EXP := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/${EXPERIMENT}/${EXP_RUN}/Omon/${VAR}/${GRID_SURFACE}/${EXP_VERSION}/${VAR}*.nc))
-FLUX_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Omon/${VAR}/${GRID_SURFACE}/${CNTRL_VERSION}/${VAR}*.nc))
+FLUX_FILES_CNTRL := $(sort $(wildcard ${CMIP6_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/Omon/${VAR}/${GRID_SURFACE}/${CNTRL_VERSION}/${VAR}*${CNTRL_FILE_END}))
 
 FLUX_STD_NAME=${STD_NAME_${VAR}}
 
