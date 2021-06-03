@@ -362,6 +362,23 @@ def name_horiz_coords(cube):
     return cube
 
 
+def check_depth_coordinate(cube):
+    """Check (and fix if needed) the depth coordinate"""
+    
+    aux_coords = [coord.name() for coord in cube.aux_coords]
+    if 'depth' in aux_coords:
+        cube.remove_coord('depth')
+    
+    for coord in cube.dim_coords:
+        name = coord.name()
+        var_name = coord.var_name
+        if (name == 'lev') or (var_name == 'lev') or (var_name == 'olevel'):
+            coord.standard_name = 'depth'
+            coord.var_name = 'lev'
+    
+    return cube
+
+
 def check_data(cube):
     """Check (and fix if needed) the data in an iris cube."""
 
@@ -395,13 +412,8 @@ def check_data(cube):
     
     if cube.standard_name in ['sea_water_salinity', 'sea_surface_salinity']:
         cube = salinity_unit_check(cube)
-    
-    for coord in cube.dim_coords:
-        name = coord.name()
-        var_name = coord.var_name
-        if (name == 'lev') or (var_name == 'lev') or (var_name == 'olevel'):
-            coord.standard_name = 'depth'
-            coord.var_name = 'lev'
+
+    cube = check_depth_coordinate(cube)
 
     return cube
 
