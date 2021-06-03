@@ -401,6 +401,7 @@ def check_data(cube):
         var_name = coord.var_name
         if (name == 'lev') or (var_name == 'lev') or (var_name == 'olevel'):
             coord.standard_name = 'depth'
+            coord.var_name = 'lev'
 
     return cube
 
