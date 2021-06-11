@@ -11,6 +11,7 @@ The [recommended acknowledgement](https://pcmdi.llnl.gov/CMIP6/TermsOfUse/TermsO
 
 ## Resources
 
+* [Publication Hub](https://cmip-publications.llnl.gov/) (list of all papers using CMIP data)
 * [A Guide to CMIP6 Participation](https://pcmdi.llnl.gov/CMIP6/Guide/index.html)
 * Model documentation, errata submission etc at [ES-DOC](https://es-doc.org/cmip6/)
   * At the [ES-DOC Search](https://search.es-doc.org/) page you can find detailed documentation about each of the models, including the values for static variables like `cpocean` and `rhozero`. There might be some model information at the [ES-DOC-INSTITUTIONAL GitHub repo](https://github.com/ES-DOC-INSTITUTIONAL) that isn't up at ES-DOC?
