@@ -121,7 +121,6 @@ def main(inargs):
     coord_names = [coord.name() for coord in control_cube.dim_coords]
     time_var = coord_names[0]
     assert time_var in ['time', 'year']
-
     experiment_cube, experiment_history = read_data(inargs.experiment_files, inargs.variable,
                                                     inargs.grid_point, convert_to_annual=inargs.annual)
     metadata_dict[inargs.experiment_files[0]] = experiment_history
@@ -143,9 +142,14 @@ def main(inargs):
             first_data_cube = select_point(first_data_cube, inargs.grid_point, timeseries=True)
         if inargs.annual:
             first_data_cube = timeseries.convert_to_annual(first_data_cube)
-        time_diff, branch_time, new_time_unit = remove_drift.time_adjustment(first_data_cube, control_cube, 'annual',
+            timescale = 'annual'
+            offset = 182.5
+        else:
+            timescale = 'monthly'
+            offset = 15.5
+        time_diff, branch_time, new_time_unit = remove_drift.time_adjustment(first_data_cube, control_cube, timescale,
                                                                              branch_time=inargs.branch_time)
-        print(f'branch time: {branch_time - 182.5}')
+        print(f'branch time: {branch_time - offset}')
         time_coord = experiment_cube.coord('time')
         time_coord.convert_units(new_time_unit)
         experiment_time_values = time_coord.points.astype(numpy.float32) - time_diff
@@ -167,6 +171,7 @@ def main(inargs):
     fig = plt.figure(figsize=[14, 7])
     plt.plot(control_cube.coord(time_var).points, control_cube.data, label='control')
     plt.plot(experiment_time_values, experiment_cube.data, label='experiment')
+
     if inargs.dedrifted_files:
         plt.plot(experiment_time_values, dedrifted_cube.data, label='dedrifted')
     if inargs.coefficient_file:
