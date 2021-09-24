@@ -21,23 +21,23 @@ import convenient_universal as uconv
 def _main(args):
     """Run the command line program."""
 
-    thetao_cube, thetao_history = gio.combine_files(args.temperature_file, 'sea_water_potential_temperature')
-    so_cube, so_history = gio.combine_files(args.salinity_file, 'sea_water_salinity')
+    bigthetao_cube, bigthetao_history = gio.combine_files(args.temperature_file, 'sea_water_conservative_temperature', checks=True)
+    so_cube, so_history = gio.combine_files(args.salinity_file, 'sea_water_salinity', checks=True)
 
-    target_shape = thetao_cube.shape[1:]
-    depth = thetao_cube.coord('depth').points * -1
+    target_shape = bigthetao_cube.shape[1:]
+    depth = bigthetao_cube.coord('depth').points * -1
     broadcast_depth = uconv.broadcast_array(depth, 0, target_shape)
-    broadcast_latitude = uconv.broadcast_array(thetao_cube.coord('latitude').points, [1, 2], target_shape)
+    broadcast_latitude = uconv.broadcast_array(bigthetao_cube.coord('latitude').points, [1, 2], target_shape)
     pressure = gsw.p_from_z(broadcast_depth, broadcast_latitude)
 
     if args.coefficient == 'alpha':
-        coefficient_data = gsw.alpha(thetao_cube.data, so_cube.data, pressure)
+        coefficient_data = gsw.alpha(bigthetao_cube.data, so_cube.data, pressure)
         var_name = 'alpha'
         standard_name = 'thermal_expansion_coefficient'
         long_name = 'thermal expansion coefficient'
         units = '1/K'
     elif args.coefficient == 'beta':
-        coefficient_data = gsw.beta(thetao_cube.data, so_cube.data, pressure)
+        coefficient_data = gsw.beta(bigthetao_cube.data, so_cube.data, pressure)
         var_name = 'beta'
         standard_name = 'saline_contraction_coefficient'
         long_name = 'saline contraction coefficient'
@@ -46,7 +46,7 @@ def _main(args):
         raise ValueError('Coefficient must be alpha or beta')
 
     iris.std_names.STD_NAMES[standard_name] = {'canonical_units': units}
-    coefficient_cube = thetao_cube.copy()
+    coefficient_cube = bigthetao_cube.copy()
     coefficient_cube.data = coefficient_data
     coefficient_cube.standard_name = standard_name    
     coefficient_cube.long_name = long_name
