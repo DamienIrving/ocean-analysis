@@ -44,7 +44,7 @@ def _main(args):
         units = 'kg/g'
     else:
         raise ValueError('Coefficient must be alpha or beta')
-    pdb.set_trace()
+
     iris.std_names.STD_NAMES[standard_name] = {'canonical_units': units}
     coefficient_cube = thetao_cube.copy()
     coefficient_cube.data = coefficient_data
