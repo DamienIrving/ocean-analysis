@@ -221,7 +221,7 @@ def select_basin(data, b_cube, basin='globe'):
     return data
 
 
-def get_weights_data(file_list, var, area_file):
+def get_weights_data(file_list, var):
     """Read the weights data file/s"""
     
     w_var = mom_vars[var] if var in mom_vars else var
@@ -230,13 +230,12 @@ def get_weights_data(file_list, var, area_file):
         w_cube = gio.get_ocean_weights(file_list[0])
         history = w_cube.attributes['history'] 
     else:
-        assert area_file, "Area file needed for flux weights"
         w_cube, history = gio.combine_files(file_list, var, checks=True)
 
     return w_cube, history
 
 
-def get_log(inargs, w_history, t_history, s_history, b_cube, a_cube):
+def get_log(inargs, w_history, t_history, s_history, b_cube, a_cube, v_cube):
     """Get the log entry for the output file history attribute."""
 
     metadata_dict = {}
@@ -251,6 +250,9 @@ def get_log(inargs, w_history, t_history, s_history, b_cube, a_cube):
     if a_cube:
         if 'history' in a_cube.attributes:
             metadata_dict[inargs.area_file] = a_cube.attributes['history']
+    if v_cube:
+        if 'history' in v_cube.attributes:
+            metadata_dict[inargs.volume_file] = v_cube.attributes['history']
 
     log = cmdprov.new_log(infile_history=metadata_dict, git_repo=repo_dir)
 
@@ -315,12 +317,11 @@ def weighted_percentiles(data, weights, percentiles):
 
 
 def process_data_by_year(t_cube, s_cube, w_cube,
-                         a_cube, b_cube,
+                         a_cube, v_cube, b_cube,
                          t_values, s_values, b_values,
                          nt_values, ns_values,
                          s_edges, t_edges, b_edges,
-                         flux_data, spatial_data,
-                         log, inargs):
+                         w_dtype, log, inargs):
     """Implement annual binning."""
 
     iris.coord_categorisation.add_year(t_cube, 'time')
@@ -328,7 +329,7 @@ def process_data_by_year(t_cube, s_cube, w_cube,
     t_years = set(t_cube.coord('year').points)
     s_years = set(s_cube.coord('year').points)
     assert t_years == s_years
-    if flux_data:
+    if not w_dtype == 'spatial':
         iris.coord_categorisation.add_year(w_cube, 'time')
         w_years = set(w_cube.coord('year').points)
         assert w_years == t_years
@@ -338,7 +339,7 @@ def process_data_by_year(t_cube, s_cube, w_cube,
     w_tbin_outdata = np.ma.zeros([len(years), nt_values])
     w_sbin_outdata = np.ma.zeros([len(years), ns_values])
     w_tsbin_outdata = np.ma.zeros([len(years), ns_values, nt_values])
-    if spatial_data:
+    if w_dtype == 'spatial':
         ws_tbin_outdata = np.ma.zeros([len(years), nt_values])
         wt_tbin_outdata = np.ma.zeros([len(years), nt_values])
         ws_sbin_outdata = np.ma.zeros([len(years), ns_values])
@@ -351,51 +352,58 @@ def process_data_by_year(t_cube, s_cube, w_cube,
         year_constraint = iris.Constraint(year=year)
         s_year_cube = s_cube.extract(year_constraint)
         t_year_cube = t_cube.extract(year_constraint)
-        if flux_data:
-            w_year_cube = w_cube.extract(year_constraint)
-            w_year_cube = spatial_weights.multiply_by_area(w_year_cube, area_cube=a_cube)
-        else:
+        if w_dtype == 'spatial':
             w_year_cube = w_cube
+        else:
+            w_year_cube = w_cube.extract(year_constraint)
+
+        if a_cube:
+            w_year_cube = spatial_weights.multiply_by_area(w_year_cube, area_cube=a_cube)
+        elif v_cube:
+            w_year_cube = spatial_weights.multiply_by_volume(w_year_cube, volume_cube=v_cube)
+
         df, s_units, t_units = water_mass.create_df(w_year_cube, t_year_cube, s_year_cube, b_cube,
                                                     multiply_weights_by_days_in_year_frac=True)
-        if flux_data:
-            w_tbin_outdata[year_index, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], b_cube)
-            w_sbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], b_cube)
-            w_tsbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], b_cube)
-        else:
+        if w_dtype == 'spatial':
             tbin_list = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], b_cube, mul_ts=True)
             sbin_list = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], b_cube, mul_ts=True)
             tsbin_list = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], b_cube, mul_ts=True)
             w_tbin_outdata[year_index, ::], ws_tbin_outdata[year_index, ::], wt_tbin_outdata[year_index, ::] = tbin_list
             w_sbin_outdata[year_index, ::], ws_sbin_outdata[year_index, ::], wt_sbin_outdata[year_index, ::] = sbin_list
             w_tsbin_outdata[year_index, ::], ws_tsbin_outdata[year_index, ::], wt_tsbin_outdata[year_index, ::] = tsbin_list
-
+        else:
+            w_tbin_outdata[year_index, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], b_cube)
+            w_sbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], b_cube)
+            w_tsbin_outdata[year_index, ::] = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], b_cube)
+            
     outdata_dict = {}
     outdata_dict['w_tbin'] = w_tbin_outdata
     outdata_dict['w_sbin'] = w_sbin_outdata
     outdata_dict['w_tsbin'] = w_tsbin_outdata
-    if spatial_data:
+    if w_dtype == 'spatial':
         outdata_dict['ws_tbin'] = ws_tbin_outdata
         outdata_dict['wt_tbin'] = wt_tbin_outdata
         outdata_dict['ws_sbin'] = ws_sbin_outdata
         outdata_dict['wt_sbin'] = wt_sbin_outdata
         outdata_dict['ws_tsbin'] = ws_tsbin_outdata
         outdata_dict['wt_tsbin'] = wt_tsbin_outdata
+        mul_ts = True
+    else:
+        mul_ts = False
 
     outcube_list = construct_cube(outdata_dict, w_year_cube, t_cube, s_cube, b_cube,
                                   t_values, t_edges, t_units, s_values, s_edges, s_units,
-                                  log, years=years, mul_ts=spatial_data)
+                                  log, years=years, mul_ts=mul_ts)
 
     return outcube_list
 
 
 def process_data(t_cube, s_cube, w_cube,
-                 a_cube, b_cube,
+                 a_cube, v_cube, b_cube,
                  t_values, s_values, b_values,
                  nt_values, ns_values,
                  s_edges, t_edges, b_edges,
-                 flux_data, spatial_data,
-                 log, inargs):
+                 w_dtype, log, inargs):
     """Implement binning."""
 
     nmonths = t_cube.coord('time').shape[0]
@@ -403,7 +411,7 @@ def process_data(t_cube, s_cube, w_cube,
     w_tbin_outdata = np.ma.zeros([nmonths, nt_values])
     w_sbin_outdata = np.ma.zeros([nmonths, ns_values])
     w_tsbin_outdata = np.ma.zeros([nmonths, ns_values, nt_values])
-    if spatial_data:
+    if w_dtype == 'spatial':
         ws_tbin_outdata = np.ma.zeros([nmonths, nt_values])
         wt_tbin_outdata = np.ma.zeros([nmonths, nt_values])
         ws_sbin_outdata = np.ma.zeros([nmonths, ns_values])
@@ -416,39 +424,47 @@ def process_data(t_cube, s_cube, w_cube,
         s_month_cube = s_cube[month, ::]
         t_month_cube = t_cube[month, ::]
 
-        if flux_data:
-            w_month_cube = w_cube[month, ::]
-            w_month_cube = spatial_weights.multiply_by_area(w_month_cube, area_cube=a_cube)
-        else:
+        if w_dtype == 'spatial':
             w_month_cube = w_cube
-        df, s_units, t_units = water_mass.create_df(w_month_cube, t_month_cube, s_month_cube, b_cube)
-        if flux_data:
-            w_tbin_outdata[month, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], b_cube)
-            w_sbin_outdata[month, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], b_cube)
-            w_tsbin_outdata[month, ::] = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], b_cube)
         else:
+            w_month_cube = w_cube[month, ::]
+
+        if a_cube:
+            w_month_cube = spatial_weights.multiply_by_area(w_month_cube, area_cube=a_cube)
+        elif v_cube:
+            w_month_cube = spatial_weights.multiply_by_volume(w_month_cube, volume_cube=v_cube)
+        
+        df, s_units, t_units = water_mass.create_df(w_month_cube, t_month_cube, s_month_cube, b_cube)
+        if w_dtype == 'spatial':
             tbin_list = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], b_cube, mul_ts=True)
             sbin_list = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], b_cube, mul_ts=True)
             tsbin_list = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], b_cube, mul_ts=True)
             w_tbin_outdata[month, ::], ws_tbin_outdata[month, ::], wt_tbin_outdata[month, ::] = tbin_list
             w_sbin_outdata[month, ::], ws_sbin_outdata[month, ::], wt_sbin_outdata[month, ::] = sbin_list
             w_tsbin_outdata[month, ::], ws_tsbin_outdata[month, ::], wt_tsbin_outdata[month, ::] = tsbin_list
+        else:
+            w_tbin_outdata[month, ::] = bin_data(df, ['temperature', 'basin'], [t_edges, b_edges], b_cube)
+            w_sbin_outdata[month, ::] = bin_data(df, ['salinity', 'basin'], [s_edges, b_edges], b_cube)
+            w_tsbin_outdata[month, ::] = bin_data(df, ['salinity', 'temperature', 'basin'], [s_edges, t_edges, b_edges], b_cube)
 
     outdata_dict = {}
     outdata_dict['w_tbin'] = w_tbin_outdata
     outdata_dict['w_sbin'] = w_sbin_outdata
     outdata_dict['w_tsbin'] = w_tsbin_outdata
-    if spatial_data:
+    if w_dtype == 'spatial':
         outdata_dict['ws_tbin'] = ws_tbin_outdata
         outdata_dict['wt_tbin'] = wt_tbin_outdata
         outdata_dict['ws_sbin'] = ws_sbin_outdata
         outdata_dict['wt_sbin'] = wt_sbin_outdata
         outdata_dict['ws_tsbin'] = ws_tsbin_outdata
         outdata_dict['wt_tsbin'] = wt_tsbin_outdata
+        mul_ts = True
+    else:
+        mul_ts = False
 
     outcube_list = construct_cube(outdata_dict, w_month_cube, t_cube, s_cube, b_cube,
                                   t_values, t_edges, t_units, s_values, s_edges, s_units,
-                                  log, mul_ts=spatial_data)
+                                  log, mul_ts=mul_ts)
 
     return outcube_list
 
@@ -457,22 +473,29 @@ def main(inargs):
     """Run the program."""
 
     logging.basicConfig(level=logging.DEBUG)
+    if ('vol' in inargs.weights_var) or ('area' in inargs.weights_var):
+        weights_dtype = 'spatial'
+    elif 'flux' in inargs.weights_var:
+        weights_dtype = 'flux'
+    else:
+        weights_dtype = 'full field'
 
-    spatial_data = ('vol' in inargs.weights_var) or ('area' in inargs.weights_var)
-    flux_data = not spatial_data
-
-    w_cube, w_history = get_weights_data(inargs.weights_files, inargs.weights_var, inargs.area_file)
+    w_cube, w_history = get_weights_data(inargs.weights_files, inargs.weights_var)
     t_cube, t_history = get_bin_data(inargs.temperature_files, inargs.temperature_var, w_cube)
     s_cube, s_history = get_bin_data(inargs.salinity_files, inargs.salinity_var, w_cube)
     b_cube = iris.load_cube(inargs.basin_file, 'region')
     if inargs.area_file:
-        assert flux_data
+        assert not inargs.volume_file, "Cannot multiply weights by area and volume"
         a_cube = gio.get_ocean_weights(inargs.area_file)
     else:
-        assert spatial_data
         a_cube = None
+    if inargs.volume_file:
+        assert not inargs.area_file, "Cannot multiply weights by area and volume"
+        v_cube = gio.get_ocean_weights(inargs.volume_file)
+    else:
+        v_cube = None
 
-    log = get_log(inargs, w_history, t_history, s_history, b_cube, a_cube)
+    log = get_log(inargs, w_history, t_history, s_history, b_cube, a_cube, v_cube)
 
     b_values, b_edges = uconv.get_basin_details(b_cube)
     t_min, t_max = inargs.temperature_bounds
@@ -485,19 +508,19 @@ def main(inargs):
 
     if inargs.bin_freq == 'yr':
         outcube_list = process_data_by_year(t_cube, s_cube, w_cube,
-                                            a_cube, b_cube,
+                                            a_cube, v_cube, b_cube,
                                             t_values, s_values, b_values,
                                             nt_values, ns_values,
                                             s_edges, t_edges, b_edges,
-                                            flux_data, spatial_data,
+                                            weights_dtype,
                                             log, inargs) 
     elif inargs.bin_freq == 'mon':
         outcube_list = process_data(t_cube, s_cube, w_cube,
-                                    a_cube, b_cube,
+                                    a_cube, v_cube, b_cube,
                                     t_values, s_values, b_values,
                                     nt_values, ns_values,
                                     s_edges, t_edges, b_edges,
-                                    flux_data, spatial_data,
+                                    weights_dtype,
                                     log, inargs)
 
     iris.util.equalise_attributes(outcube_list)
@@ -520,7 +543,8 @@ if __name__ == '__main__':
     parser.add_argument("--salinity_files", type=str, nargs='*', help="salinity files for the binning") 
     parser.add_argument("--salinity_var", type=str, help="salinity variable")
 
-    parser.add_argument("--area_file", type=str, default=None, help="For converting m-2 flux to total")
+    parser.add_argument("--area_file", type=str, default=None, help="For multiplying weights by area")
+    parser.add_argument("--volume_file", type=str, default=None, help="For multiplying weights by volume")
 
     parser.add_argument("--temperature_bounds", type=float, nargs=2, default=(-6, 50),
                         help='bounds for the temperature (Y) axis')
