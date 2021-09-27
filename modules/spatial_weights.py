@@ -254,6 +254,32 @@ def multiply_by_area(cube, area_cube=None):
     return cube
 
 
+def multiply_by_volume(cube, volume_cube=None):
+    """Multiply by cell volume."""
+
+    if volume_cube:
+        cube_ndim = cube.ndim
+        volume_ndim = volume_cube.ndim
+        if not cube_ndim == volume_ndim:
+            diff = cube_ndim - volume_ndim
+            assert cube.shape[diff:] == volume_cube.shape
+            volume_data = uconv.broadcast_array(volume_cube.data, [cube_ndim - volume_ndim, cube_ndim - 1], cube.shape)
+        else:
+            volume_data = volume_cube.data
+    else:
+        volume_data = volume_array(cube)
+
+    units = str(cube.units)
+    cube.data = cube.data * volume_data   
+
+    if 'm-3' in units:
+        cube.units = units.replace('m-3', '').replace("  ", " ")
+    else:
+        cube.units = units + ' m3'
+
+    return cube
+
+
 def volume_array(target_cube, volume_cube=None, area_cube=None):
     """Create a volume array.
 
