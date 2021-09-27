@@ -31,13 +31,13 @@ def _main(args):
     pressure = gsw.p_from_z(broadcast_depth, broadcast_latitude)
 
     if args.coefficient == 'alpha':
-        coefficient_data = gsw.alpha(bigthetao_cube.data, so_cube.data, pressure)
+        coefficient_data = gsw.alpha(so_cube.data, bigthetao_cube.data, pressure)
         var_name = 'alpha'
         standard_name = 'thermal_expansion_coefficient'
         long_name = 'thermal expansion coefficient'
         units = '1/K'
     elif args.coefficient == 'beta':
-        coefficient_data = gsw.beta(bigthetao_cube.data, so_cube.data, pressure)
+        coefficient_data = gsw.beta(so_cube.data, bigthetao_cube.data, pressure)
         var_name = 'beta'
         standard_name = 'saline_contraction_coefficient'
         long_name = 'saline contraction coefficient'
@@ -60,9 +60,9 @@ def _main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-                                     
+
+    parser.add_argument("salinity_file", type=str, help="Input seawater salinity file")                                     
     parser.add_argument("temperature_file", type=str, help="Input seawater temperature file")
-    parser.add_argument("salinity_file", type=str, help="Input seawater salinity file")
     parser.add_argument("coefficient", type=str, choices=('alpha', 'beta'),
                         help='Calculate thermal expansion (alpha) or saline contraction (beta) coefficient')
     parser.add_argument("outfile", type=str, help="Output file")
