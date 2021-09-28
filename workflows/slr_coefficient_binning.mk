@@ -3,7 +3,9 @@
 # Description: Binning of sea level rise coefficients
 #
 # To execute:
-#   make all -n -B -f slr_coefficient_binning.mk  (-n is a dry run) (-B is a force make)
+#   make all -n -B -f slr_coefficient_binning.mk MODEL=ACCESS-CM2 EXPERIMENT=historical BIN_FREQ=yr
+#
+# (-n is a dry run) (-B is a force make)
 # 
 
 .PHONY : all exp control
