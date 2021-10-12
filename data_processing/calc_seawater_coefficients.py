@@ -39,7 +39,7 @@ def _main(args):
     broadcast_latitude = uconv.broadcast_array(temperature_cube.coord('latitude').points, [1, 2], target_shape)
     pressure = gsw.p_from_z(broadcast_depth, broadcast_latitude)
 
-    absolute_salinity = gsw.SA_from_SP(so_cube.data, pressure, broadcast_longitude, broadcast_latitude)
+    absolute_salinity = gsw.SA_from_SP(salinity_cube.data, pressure, broadcast_longitude, broadcast_latitude)
     if args.temperature_var == 'sea_water_conservative_temperature':
         conservative_temperature = temperature_cube.data
     elif args.temperature_var == 'sea_water_potential_temperature':  
