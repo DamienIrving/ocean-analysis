@@ -305,17 +305,6 @@ ${FLUX_PE_REGIONS_FILE_CNTRL}: ${PE_FILE_CNTRL} ${FX_BASIN_FILE}
 	mkdir -p ${FLUX_YR_DIR_CNTRL}
 	${PYTHON} ${DATA_SCRIPT_DIR}/calc_pe_spatial_totals.py $< $(word 2,$^) sum $@ --data_files ${FLUX_FILES_CNTRL} --data_var ${FLUX_NAME} --annual --cumsum ${CHUNK_ANNUAL}
 
-## tasga
-
-TASGA_FILE_EXP=${TAS_YR_DIR_EXP}/tasga_Ayr_${MODEL}_${EXPERIMENT}_${ATMOS_EXP_RUN}_${GRID_ATMOS}_${EXP_TIME}.nc
-${TASGA_FILE_EXP}:
-	mkdir -p ${TAS_YR_DIR_EXP}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_tasga.py ${TAS_FILES_EXP} ${STD_NAME_tas} $@ --annual
-
-TASGA_FILE_CNTRL=${TAS_YR_DIR_CNTRL}/tasga_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_ATMOS}_${CNTRL_TIME}.nc
-${TASGA_FILE_CNTRL}:
-	mkdir -p ${TAS_YR_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/calc_tasga.py ${TAS_FILES_CNTRL} ${STD_NAME_tas} $@ --annual
 
 ## cumulative anomaly
 
@@ -471,6 +460,22 @@ SPATIAL_PLOT=/g/data/e14/dbi599/temp/pe_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GR
 ${SPATIAL_PLOT} : ${SPATIAL_COEFFICIENTS} ${PE_CUMSUM_CNTRL} ${PE_CUMSUM_EXP} ${PE_CUMSUM_ANOMALY}
 	${PYTHON} ${VIZ_SCRIPT_DIR}/plot_drift.py precipitation_minus_evaporation_flux $@ --coefficient_file $< --control_files $(word 2,$^) --experiment_files $(word 3,$^) --dedrifted_files $(word 4,$^) --grid_point 10 10 ${BRANCH_TIME}
 
+## Comparison against 7% per degree of warming
+
+TASGA_FILE_EXP=${TAS_YR_DIR_EXP}/tasga_Ayr_${MODEL}_${EXPERIMENT}_${ATMOS_EXP_RUN}_${GRID_ATMOS}_${EXP_TIME}.nc
+${TASGA_FILE_EXP}:
+	mkdir -p ${TAS_YR_DIR_EXP}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_tasga.py ${TAS_FILES_EXP} ${STD_NAME_tas} $@ --annual
+
+TASGA_FILE_CNTRL=${TAS_YR_DIR_CNTRL}/tasga_Ayr_${MODEL}_piControl_${CNTRL_RUN}_${GRID_ATMOS}_${CNTRL_TIME}.nc
+${TASGA_FILE_CNTRL}:
+	mkdir -p ${TAS_YR_DIR_CNTRL}
+	${PYTHON} ${DATA_SCRIPT_DIR}/calc_tasga.py ${TAS_FILES_CNTRL} ${STD_NAME_tas} $@ --annual
+
+PCT_ANALYSIS=/g/data/e14/dbi599/figures/water-cycle/pe_7pct_${MODEL}_${EXPERIMENT}.ipynb
+${PCT_ANALYSIS} : pe_7pct.ipynb ${TASGA_FILE_EXP} ${TASGA_FILE_CNTRL} ${PE_REGIONS_FILE_CNTRL} ${PE_REGIONS_CUMSUM_ANOMALY}
+	papermill -p tasga_exp_file $(word 2,$^) -p tasga_cntrl_file $(word 3,$^) -p pe_cntrl_file $(word 4,$^) -p pe_exp_file $(word 5,$^) -p model_name ${MODEL} -p experiment_name ${EXPERIMENT} $< $@
+
 # targets 
 
 pe-spatial : ${SPATIAL_PLOT}
@@ -484,6 +489,7 @@ evap-per-m2-regions : ${EVAP_PER_M2_PE_REGIONS_CUMSUM_PLOT}
 flux-regions : ${FLUX_PE_REGIONS_PLOT}
 area-regions : ${AREA_PE_REGIONS_CUMSUM_PLOT}
 tasga : ${TASGA_FILE_EXP} ${TASGA_FILE_CNTRL}
+pct : ${PCT_ANALYSIS}
 
 all : ${PE_REGIONS_CUMSUM_DRIFT_PLOT} ${PE_PER_M2_REGIONS_CUMSUM_DRIFT_PLOT} ${PR_PE_REGIONS_CUMSUM_PLOT} ${PR_PER_M2_PE_REGIONS_CUMSUM_PLOT} ${EVAP_PE_REGIONS_CUMSUM_PLOT} ${EVAP_PER_M2_PE_REGIONS_CUMSUM_PLOT} ${AREA_PE_REGIONS_CUMSUM_PLOT}
 	@echo ${EVAP_PE_REGIONS_CUMSUM_ANOMALY}
