@@ -370,7 +370,6 @@ def check_depth_coordinate(cube):
         cube.remove_coord('depth')
     
     for coord in cube.dim_coords:
-        name = coord.name()
         var_name = coord.var_name
         if (name == 'lev') or (var_name == 'lev') or (var_name == 'olevel'):
             coord.standard_name = 'depth'
@@ -600,7 +599,7 @@ def get_time_constraint(time_list):
         assert re.search(date_pattern, start_date)
 
         if len(time_list) == 1:
-            time_constraint = iris.Constraint(time=lambda t: cftime.DatetimeNoLeap(int(start_year), int(start_month), int(start_day)) <= t.point)
+            time_constraint = iris.Constraint(time=lambda t: iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)) <= t.point)
         else:
             end_date = time_list[1]
             assert re.search(date_pattern, end_date)
@@ -609,8 +608,8 @@ def get_time_constraint(time_list):
                 time_constraint = iris.Constraint(time=iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)))
             else:  
                 end_year, end_month, end_day = end_date.split('-')
-                start_constraint = iris.Constraint(time=lambda t: cftime.DatetimeNoLeap(int(start_year), int(start_month), int(start_day)) <= t.point)
-                end_constraint = iris.Constraint(time=lambda t: t.point <= cftime.DatetimeNoLeap(int(end_year), int(end_month), int(end_day)))
+                start_constraint = iris.Constraint(time=lambda t: iris.time.PartialDateTime(year=int(start_year), month=int(start_month), day=int(start_day)) <= t.point)
+                end_constraint = iris.Constraint(time=lambda t: t.point <= iris.time.PartialDateTime(year=int(end_year), month=int(end_month), day=int(end_day)))
                 time_constraint = start_constraint & end_constraint
 
                 #time_constraint = iris.Constraint(time=lambda t: cftime.DatetimeNoLeap(int(start_year), int(start_month), int(start_day)) <= t.point <= cftime.DatetimeNoLeap(int(end_year), int(end_month), int(end_day)))
