@@ -40,6 +40,7 @@ STD_NAME_sos=sea_surface_salinity
 STD_NAME_thetao=sea_water_potential_temperature
 STD_NAME_tos=sea_surface_temperature
 STD_NAME_wfo=water_flux_into_sea_water
+STD_NAME_tas=air_temperature
 
 # PROJECTS
 
