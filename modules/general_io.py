@@ -371,7 +371,7 @@ def check_depth_coordinate(cube):
     
     for coord in cube.dim_coords:
         var_name = coord.var_name
-        if (name == 'lev') or (var_name == 'lev') or (var_name == 'olevel'):
+        if (var_name == 'lev') or (var_name == 'olevel'):
             coord.standard_name = 'depth'
             coord.var_name = 'lev'
     
