@@ -80,6 +80,6 @@ command="${python} mom_to_cmip.py ${data_dir}/ocean_month.nc-* ${data_var} ${ref
 fi
 
 echo ${command}
-#${command}
+${command}
 
 done
