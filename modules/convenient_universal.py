@@ -44,7 +44,7 @@ def add_globe_basin(data, basin_cube):
 
     flag_meanings = basin_cube.attributes['flag_meanings']
     flag_values = basin_cube.attributes['flag_values']
-    basin_values = basin_values = numpy.array([int(num) for num in flag_values.split(' ')])
+    basin_values = numpy.array([int(num) for num in flag_values.split(' ')])
     
     assert data.shape[-1] == len(basin_values), 'Basin axis must be final axis'
     assert data.ndim in [2, 3, 4], 'function only setup to handle data of 2, 3 or 4 dimensions'

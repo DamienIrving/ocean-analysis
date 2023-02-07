@@ -59,7 +59,7 @@ fi
 
 file_var=`echo ${data_var} | sed s:_:-:g`
 ref_dir=/g/data/fs38/publications/CMIP6/${project}/CSIRO-ARCCSS/ACCESS-CM2/${experiment}/${run}/Omon/tos/gn/${version}
-out_dir=/g/data/e14/dbi599/CMIP6/CMIP/CSIRO-ARCCSS/ACCESS-CM2/${experiment}/${run}/Omon/${file_var}/gn/${version}
+out_dir=/g/data/e14/dbi599/CMIP6/${project}/CSIRO-ARCCSS/ACCESS-CM2/${experiment}/${run}/Omon/${file_var}/gn/${version}
 python=/g/data/e14/dbi599/miniconda3/envs/cmip/bin/python
 
 mkdir -p ${out_dir}
