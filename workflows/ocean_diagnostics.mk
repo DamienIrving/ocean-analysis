@@ -31,9 +31,9 @@ SOS_FILES_CNTRL := $(sort $(wildcard /g/data/fs38/publications/CMIP6/CMIP/CSIRO-
 FRAZIL_FILES_HIST := $(sort $(wildcard ${MYDIR_HIST}/${EXP}/${RUN}/Omon/frazil-3d/gn/${VERSION_HIST}/frazil-3d_Omon_ACCESS-CM2_${EXP}_${RUN}_gn_*.nc))
 MIXDOWNSLOPE_FILES_HIST := $(sort $(wildcard ${MYDIR_HIST}/${EXP}/${RUN}/Omon/mixdownslope-temp/gn/${VERSION_HIST}/mixdownslope-temp_Omon_ACCESS-CM2_${EXP}_${RUN}_gn_*.nc))
 NEUTRAL_FILES_HIST := $(sort $(wildcard ${MYDIR_HIST}/${EXP}/${RUN}/Omon/neutral-diffusion-temp/gn/${VERSION_HIST}/neutral-diffusion-temp_Omon_ACCESS-CM2_${EXP}_${RUN}_gn_*.nc))
-SFCHP_FILE_HIST=${MYDIR_HIST}/${EXP}/${RUN}/Omon/sfc-hflux-pme/gn/${VERSION_HIST}/sfc-hflux-pme_Omon_ACCESS-CM2_${EXP}_${RUN}_gn_185001-201412.nc
+SFCHP_FILE_HIST=${MYDIR_HIST}/${EXP}/${RUN}/Omon/sfc-hflux-pme/gn/${VERSION_HIST}/sfc-hflux-pme_Omon_ACCESS-CM2_${EXP}_${RUN}_gn_${TIME_HIST}.nc
 SWHEAT_FILES_HIST := $(sort $(wildcard ${MYDIR_HIST}/${EXP}/${RUN}/Omon/sw-heat/gn/${VERSION_HIST}/sw-heat_Omon_ACCESS-CM2_${EXP}_${RUN}_gn_*.nc))
-ETA_FILE_HIST=${MYDIR_HIST}/${EXP}/${RUN}/Omon/temp-eta-smooth/gn/${VERSION_HIST}/temp-eta-smooth_Omon_ACCESS-CM2_${EXP}_${RUN}_gn_185001-201412.nc
+ETA_FILE_HIST=${MYDIR_HIST}/${EXP}/${RUN}/Omon/temp-eta-smooth/gn/${VERSION_HIST}/temp-eta-smooth_Omon_ACCESS-CM2_${EXP}_${RUN}_gn_${TIME_HIST}.nc
 KPP_FILES_HIST := $(sort $(wildcard ${MYDIR_HIST}/${EXP}/${RUN}/Omon/temp-nonlocal-KPP/gn/${VERSION_HIST}/temp-nonlocal-KPP_Omon_ACCESS-CM2_${EXP}_${RUN}_gn_*.nc))
 RIVER_FILES_HIST := $(sort $(wildcard ${MYDIR_HIST}/${EXP}/${RUN}/Omon/temp-rivermix/gn/${VERSION_HIST}/temp-rivermix_Omon_ACCESS-CM2_${EXP}_${RUN}_gn_*.nc))
 SIGMA_FILES_HIST := $(sort $(wildcard ${MYDIR_HIST}/${EXP}/${RUN}/Omon/temp-sigma-diff/gn/${VERSION_HIST}/temp-sigma-diff_Omon_ACCESS-CM2_${EXP}_${RUN}_gn_*.nc))
@@ -369,10 +369,10 @@ temp-rivermix : ${RIVER_BINNED_HIST_FILE} ${RIVER_BINNED_CNTRL_FILE}
 temp-sigma-diff : ${SIGMA_BINNED_HIST_FILE} ${SIGMA_BINNED_CNTRL_FILE}
 
 ## temp-tendency :
-temp-tendency : ${TENDENCY_BINNED_CNTRL_FILE}
+temp-tendency : ${TENDENCY_BINNED_HIST_FILE} ${TENDENCY_BINNED_CNTRL_FILE}
 
 ## temp-vdiffuse-diff-cbt :
-temp-vdiffuse-diff-cbt : ${CBT_BINNED_CNTRL_FILE}
+temp-vdiffuse-diff-cbt : ${CBT_BINNED_HIST_FILE} ${CBT_BINNED_CNTRL_FILE}
 
 ## temp-vdiffuse-k33 :
 temp-vdiffuse-k33 : ${K33_BINNED_HIST_FILE} ${K33_BINNED_CNTRL_FILE}
