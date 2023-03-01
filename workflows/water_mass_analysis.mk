@@ -33,13 +33,13 @@ SF_BINNED_DIR_EXP=${SHARED_DATA_DIR}/${PROJECT}/${MIP}/${INSTITUTION}/${MODEL}/$
 SF_BINNED_FILE_EXP=${SF_BINNED_DIR_EXP}/${SF_VAR}-${SURFACE_TBIN_VAR}-${SURFACE_SBIN_VAR}-binned_O${BIN_FREQ}_${MODEL}_${EXPERIMENT}_${EXP_RUN}_${GRID_SURFACE}_${EXP_TIME}.nc
 ${SF_BINNED_FILE_EXP} : ${BASIN_FILE_SURFACE} ${AREACELLO_FILE}
 	mkdir -p ${SF_BINNED_DIR_EXP}
-	${PYTHON} ${DATA_SCRIPT_DIR}/water_mass_binning.py ${SF_FILES_EXP} ${SF_STD_NAME} $< ${BIN_FREQ} $@ --temperature_files ${SURFACE_TBIN_FILES_EXP} --temperature_var ${SURFACE_TBIN_STD_NAME} --salinity_files ${SURFACE_SBIN_FILES_EXP} --salinity_var ${SURFACE_SBIN_STD_NAME} --area_file $(word 2,$^)
+	${PYTHON} ${DATA_SCRIPT_DIR}/water_mass_binning.py ${SF_FILES_EXP} ${SF_STD_NAME} $< ${BIN_FREQ} $@ --temperature_files ${SURFACE_TBIN_FILES_EXP} --temperature_var ${SURFACE_TBIN_STD_NAME} --area_file $(word 2,$^) --salinity_files ${SURFACE_SBIN_FILES_EXP} --salinity_var ${SURFACE_SBIN_STD_NAME}
 
 SF_BINNED_DIR_CNTRL=${SHARED_DATA_DIR}/${PROJECT}/CMIP/${INSTITUTION}/${MODEL}/piControl/${CNTRL_RUN}/O${BIN_FREQ}/${SF_VAR}/${GRID_SURFACE}/${CNTRL_VERSION}
 SF_BINNED_FILE_CNTRL=${SF_BINNED_DIR_CNTRL}/${SF_VAR}-${SURFACE_TBIN_VAR}-${SURFACE_SBIN_VAR}-binned_O${BIN_FREQ}_${MODEL}_piControl_${CNTRL_RUN}_${GRID_SURFACE}_${CNTRL_TIME}.nc
 ${SF_BINNED_FILE_CNTRL} : ${BASIN_FILE_SURFACE} ${AREACELLO_FILE} 
 	mkdir -p ${SF_BINNED_DIR_CNTRL}
-	${PYTHON} ${DATA_SCRIPT_DIR}/water_mass_binning.py ${SF_FILES_CNTRL} ${SF_STD_NAME} $< ${BIN_FREQ} $@ --temperature_files ${SURFACE_TBIN_FILES_CNTRL} --temperature_var ${SURFACE_TBIN_STD_NAME} --salinity_files ${SURFACE_SBIN_FILES_CNTRL} --salinity_var ${SURFACE_SBIN_STD_NAME} --area_file $(word 2,$^)
+	${PYTHON} ${DATA_SCRIPT_DIR}/water_mass_binning.py ${SF_FILES_CNTRL} ${SF_STD_NAME} $< ${BIN_FREQ} $@ --temperature_files ${SURFACE_TBIN_FILES_CNTRL} --temperature_var ${SURFACE_TBIN_STD_NAME} --area_file $(word 2,$^) --salinity_files ${SURFACE_SBIN_FILES_CNTRL} --salinity_var ${SURFACE_SBIN_STD_NAME}
 
 ## cumulative sum
 

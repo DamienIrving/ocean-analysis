@@ -98,7 +98,8 @@ def create_df(w_cube, t_cube, s_cube, b_cube, pct_cube=None,
         w_data = multiply_by_days_in_year_frac(w_data, t_cube.coord('time'))
 
     t_cube = gio.temperature_unit_check(t_cube, 'C', abort=False)
-    s_cube = gio.salinity_unit_check(s_cube, abort=False)
+    if s_cube:
+        s_cube = gio.salinity_unit_check(s_cube, abort=False)
 
     coord_names = [coord.name() for coord in t_cube.dim_coords]
     if t_cube.coord('latitude').points.ndim == 1:
@@ -109,29 +110,34 @@ def create_df(w_cube, t_cube, s_cube, b_cube, pct_cube=None,
     lats = uconv.broadcast_array(t_cube.coord('latitude').points, lat_pos, t_cube.shape)
     lons = uconv.broadcast_array(t_cube.coord('longitude').points, lon_pos, t_cube.shape)
    
-    t_masked_points = t_cube.data.mask.sum()
-    s_masked_points = s_cube.data.mask.sum()
     w_masked_points = w_data.mask.sum()
-    if not t_masked_points == s_masked_points: 
-        logging.info(f"salinity ({s_masked_points} points) and temperature ({t_masked_points}) masks are different")
-    if not w_masked_points == s_masked_points:
-         logging.info(f"salinity ({s_masked_points} points) and weights data ({w_masked_points}) masks are different")
-    common_mask = w_data.mask + t_cube.data.mask + s_cube.data.mask
+    t_masked_points = t_cube.data.mask.sum()
+    if s_cube:
+        s_masked_points = s_cube.data.mask.sum()
+        if not t_masked_points == s_masked_points: 
+            logging.info(f"salinity ({s_masked_points} points) and temperature ({t_masked_points}) masks are different")
+    if not w_masked_points == t_masked_points:
+         logging.info(f"temperature ({t_masked_points} points) and weights data ({w_masked_points}) masks are different")
+    common_mask = w_data.mask + t_cube.data.mask
+    if s_cube:
+        common_mask = common_mask + s_cube.data.mask
     if pct_cube:
         pct_masked_points = pct_data.mask.sum()
-        if not pct_masked_points == s_masked_points: 
-            logging.info(f"salinity ({s_masked_points} points) and percentile weight ({pct_masked_points}) masks are different")
+        if not pct_masked_points == t_masked_points: 
+            logging.info(f"temperature ({s_masked_points} points) and percentile weight ({pct_masked_points}) masks are different")
         common_mask = common_mask + pct_data.mask
         pct_data.mask = common_mask
     t_cube.data.mask = common_mask
-    s_cube.data.mask = common_mask
+    if s_cube:
+        s_cube.data.mask = common_mask
     lats = numpy.ma.masked_array(lats, common_mask)
     lons = numpy.ma.masked_array(lons, common_mask)
     b_data.mask = common_mask
     w_data.mask = common_mask
 
     t_data = t_cube.data.compressed()
-    s_data = s_cube.data.compressed()
+    if s_cube:
+        s_data = s_cube.data.compressed()
     w_data = w_data.compressed()
     b_data = b_data.compressed()
     lat_data = lats.compressed()
@@ -139,17 +145,19 @@ def create_df(w_cube, t_cube, s_cube, b_cube, pct_cube=None,
     if pct_cube:
         pct_data = pct_data.compressed()
 
-    assert s_data.shape == t_data.shape
-    assert s_data.shape == w_data.shape
-    assert s_data.shape == b_data.shape
-    assert s_data.shape == lat_data.shape
-    assert s_data.shape == lon_data.shape
+    if s_cube:
+        assert t_data.shape == s_data.shape
+    assert t_data.shape == w_data.shape
+    assert t_data.shape == b_data.shape
+    assert t_data.shape == lat_data.shape
+    assert t_data.shape == lon_data.shape
     if pct_cube:
-        assert s_data.shape == pct_data.shape
+        assert t_data.shape == pct_data.shape
 
     df = pandas.DataFrame(index=range(t_data.shape[0]))
     df['temperature'] = t_data
-    df['salinity'] = s_data
+    if s_cube:
+        df['salinity'] = s_data
     df['weight'] = w_data
     df['basin'] = b_data
     df['latitude'] = lat_data
@@ -157,5 +165,8 @@ def create_df(w_cube, t_cube, s_cube, b_cube, pct_cube=None,
     if pct_cube:
         df['percentile_weights'] = pct_data
 
-    return df, s_cube.units, t_cube.units
+    t_units = t_cube.units
+    s_units = s_cube.units if s_cube else None
+
+    return df, s_units, t_units
     
